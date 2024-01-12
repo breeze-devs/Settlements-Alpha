@@ -1,0 +1,29 @@
+{
+    "item.settlements.sapphire": "Sapphire",
+    "item.settlements.raw_sapphire": "Raw Sapphire",
+    "item.settlements.metal_destroyer": "Metal Destroyer",
+
+    "item.settlements.corn": "Corn",
+    "item.settlements.corn_seeds": "Corn Seeds",
+
+    "item.settlements.blueberry": "\"Blueberry\"",
+    "item.settlements.blueberry_seeds": "\"Blueberry\" Seeds",
+
+    "block.settlements.sapphire_ore": "Sapphire Ore",
+    "block.settlements.raw_sapphire_block": "Block of Raw Sapphire",
+    "block.settlements.sapphire_block": "Block of Sapphire",
+
+    "block.settlements.sapphire_stairs": "Sapphire Stairs",
+    "block.settlements.sapphire_slab": "Sapphire Slab",
+    "block.settlements.sapphire_button": "Sapphire Button",
+    "block.settlements.sapphire_pressure_plate": "Sapphire Pressure Plate",
+    "block.settlements.sapphire_fence": "Sapphire Fence",
+    "block.settlements.sapphire_fence_gate": "Sapphire Fence Gate",
+    "block.settlements.sapphire_wall": "Sapphire Wall",
+    "block.settlements.sapphire_door": "Sapphire Door",
+    "block.settlements.sapphire_trapdoor": "Sapphire Trapdoor",
+
+    "block.settlements.cat_mint": "Cat Mint",
+
+    "creative_tab.settlements": "Settlements"
+}
