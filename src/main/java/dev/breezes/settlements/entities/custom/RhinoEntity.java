@@ -2,8 +2,6 @@ package dev.breezes.settlements.entities.custom;
 
 import dev.breezes.settlements.entities.goal.RhinoAttackGoal;
 import dev.breezes.settlements.registry.EntityRegistry;
-import dev.breezes.settlements.util.RandomUtil;
-import dev.breezes.settlements.util.TimeUtil;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -27,7 +25,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
+
+import javax.annotation.Nullable;
 
 public class RhinoEntity extends Animal {
 
@@ -56,7 +55,8 @@ public class RhinoEntity extends Animal {
     private void setupAnimationStates() {
         // Idle animation
         if (--this.idleAnimationTimeout < 0) {
-            this.idleAnimationTimeout = TimeUtil.seconds(RandomUtil.randomInt(3, 5, true));
+//            this.idleAnimationTimeout = TimeUtil.seconds(RandomUtil.randomInt(3, 5, true));
+            this.idleAnimationTimeout = 1234;
             this.idleAnimationState.start(this.tickCount);
         }
 

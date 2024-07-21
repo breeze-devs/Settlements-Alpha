@@ -1,7 +1,6 @@
 package dev.breezes.settlements.entities.goal;
 
 import dev.breezes.settlements.entities.custom.RhinoEntity;
-import dev.breezes.settlements.util.TimeUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
@@ -10,7 +9,7 @@ import net.minecraft.world.phys.AABB;
 
 public class RhinoAttackGoal extends MeleeAttackGoal {
 
-    private static final int PATHFINDING_COOLDOWN = TimeUtil.ticks(10);
+    private static final int PATHFINDING_COOLDOWN = 10; // ticks
     private static final double ATTACK_AOE = 1.5;
 
     private final RhinoEntity rhino;
@@ -47,7 +46,7 @@ public class RhinoAttackGoal extends MeleeAttackGoal {
             this.mob.getNavigation().moveTo(target, this.speedModifier);
 
             boolean hasLineOfSight = this.mob.getSensing().hasLineOfSight(target);
-            this.pathfindCooldownRemaining = this.adjustedTickDelay(PATHFINDING_COOLDOWN + (hasLineOfSight ? 0 : TimeUtil.seconds(2)));
+            this.pathfindCooldownRemaining = this.adjustedTickDelay(PATHFINDING_COOLDOWN + (hasLineOfSight ? 0 : 2 * 20));
         }
 
         double distance = this.mob.getPerceivedTargetDistanceSquareForMeleeAttack(target);
@@ -121,9 +120,9 @@ public class RhinoAttackGoal extends MeleeAttackGoal {
     @Getter
     private enum AttackState {
         IDLE(-1),
-        PRE_ATTACK(TimeUtil.ticks(10)),
+        PRE_ATTACK(10),
         ATTACKING(0),
-        POST_ATTACK(TimeUtil.ticks(10));
+        POST_ATTACK(10);
 
         private final int stateDuration;
     }

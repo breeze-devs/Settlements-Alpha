@@ -1,9 +1,11 @@
 package dev.breezes.settlements;
 
 import com.mojang.logging.LogUtils;
-import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import dev.breezes.settlements.configuration.Config;
-import dev.breezes.settlements.registry.*;
+import dev.breezes.settlements.registry.BlockRegistry;
+import dev.breezes.settlements.registry.CreativeTabRegistry;
+import dev.breezes.settlements.registry.EntityRegistry;
+import dev.breezes.settlements.registry.ItemRegistry;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraftforge.common.MinecraftForge;
@@ -23,8 +25,6 @@ public final class SettlementsMod {
 
     public static final String MOD_ID = "settlements";
     public static final String MOD_NAME = "Settlements";
-
-    public static final NonNullSupplier<SettlementsRegistrate> REGISTRATE = NonNullSupplier.lazy(() -> SettlementsRegistrate.create());
 
     private static final Logger LOGGER = LogUtils.getLogger();
 

@@ -2,28 +2,27 @@ package dev.breezes.settlements.entities.villager.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.breezes.settlements.entities.villager.BaseVillager;
-import dev.breezes.settlements.entities.villager.animation.BaseVillagerAnimation;
+import dev.breezes.settlements.entities.villager.animations.animator.ConditionAnimator;
+import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
 import dev.breezes.settlements.util.ResourceLocationUtil;
-import net.minecraft.client.model.ArmedModel;
-import net.minecraft.client.model.HeadedModel;
-import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 
 @SuppressWarnings("MagicNumber")
-public class BaseVillagerModel<T extends Entity> extends HierarchicalModel<T> implements HeadedModel, ArmedModel {
+public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerModel<T> {
 
     public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocationUtil.mod("base_villager"), "main");
+    private final ModelPart root;
     private final ModelPart villager;
     private final ModelPart head;
 
     public BaseVillagerModel(ModelPart root) {
-        this.villager = root.getChild("villager");
+        this.root = root.getChild("root");
+        this.villager = this.root.getChild("villager");
         this.head = this.villager.getChild("head");
     }
 
@@ -31,7 +30,8 @@ public class BaseVillagerModel<T extends Entity> extends HierarchicalModel<T> im
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 
-        PartDefinition villager = partdefinition.addOrReplaceChild("villager", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
+        PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
+        PartDefinition villager = root.addOrReplaceChild("villager", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
         PartDefinition head = villager.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 0).addBox(-4.0F, -10.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -24.0F, 0.0F));
         PartDefinition monobrow = head.addOrReplaceChild("monobrow", CubeListBuilder.create().texOffs(33, 2).addBox(-3.0F, -0.5F, -0.1875F, 6.0F, 1.0F, 1.0F, new CubeDeformation(0.05F)), PartPose.offset(0.0F, -4.5F, -4.0F));
         PartDefinition eye_left = head.addOrReplaceChild("eye_left", CubeListBuilder.create(), PartPose.offset(2.0F, -3.5F, -4.0F));
@@ -54,7 +54,7 @@ public class BaseVillagerModel<T extends Entity> extends HierarchicalModel<T> im
 
         PartDefinition legs = villager.addOrReplaceChild("legs", CubeListBuilder.create(), PartPose.offset(-2.0F, -12.0F, 0.0F));
         PartDefinition left_leg = legs.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(0, 22).mirror().addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(4.0F, 0.0F, 0.0F));
-        PartDefinition right_leg = left_leg.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 22).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-4.0F, 0.0F, 0.0F));
+        PartDefinition right_leg = legs.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 22).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
@@ -64,21 +64,29 @@ public class BaseVillagerModel<T extends Entity> extends HierarchicalModel<T> im
      */
     @Override
     public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        BaseVillager villager = (BaseVillager) entity;
         this.root().getAllParts().forEach(ModelPart::resetPose);
 
         // Apply head rotations
         this.head.yRot = Mth.clamp(netHeadYaw, -30F, 30F) * Mth.DEG_TO_RAD;
         this.head.xRot = Mth.clamp(headPitch, -25F, 45F) * Mth.DEG_TO_RAD;
 
-        // Animations
-//        this.animateWalk(BaseVillagerAnimation.ARM_CROSS, limbSwing, limbSwingAmount, 1, 2);
-        this.animate(villager.getWiggleAnimator().getAnimationState(), BaseVillagerAnimation.NITWIT, ageInTicks, 1);
+        /*
+         * Animations
+         */
+        // Walk & run animations
+        // TODO: differentiate between walk and run
+        this.animateWalk(BaseVillagerAnimation.WALK_1.definition(), limbSwing, limbSwingAmount, 1, 2);
+
+        // Nitwit animation
+        ConditionAnimator animator = entity.getWiggleAnimator();
+        if (animator.isAnimationPlaying()) {
+            this.animate(animator.getCurrentState().get(), animator.getCurrentDefinition().get(), ageInTicks, 1);
+        }
     }
 
     @Override
     public ModelPart root() {
-        return this.villager;
+        return this.root;
     }
 
     @Override

@@ -1,9 +1,11 @@
 package dev.breezes.settlements.entities.villager;
 
 import com.mojang.logging.LogUtils;
-import dev.breezes.settlements.entities.villager.animation.BaseVillagerAnimation;
-import dev.breezes.settlements.entities.villager.animation.animator.ConditionAnimator;
-import dev.breezes.settlements.entities.villager.animation.conditions.BooleanAnimationCondition;
+import dev.breezes.settlements.entities.ISettlementsBrainEntity;
+import dev.breezes.settlements.entities.villager.animations.animator.ConditionAnimator;
+import dev.breezes.settlements.entities.villager.animations.conditions.BooleanAnimationCondition;
+import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
+import dev.breezes.settlements.models.brain.IBrain;
 import dev.breezes.settlements.util.SyncedDataWrapper;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -18,9 +20,11 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 
+import java.util.List;
+
 // TODO: make this class abstract
 @Getter
-public class BaseVillager extends Villager {
+public class BaseVillager extends Villager implements ISettlementsBrainEntity {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -29,7 +33,7 @@ public class BaseVillager extends Villager {
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
 
-        this.wiggleAnimator = new ConditionAnimator(this, BooleanAnimationCondition.of(SyncedData.IS_WIGGLING), BaseVillagerAnimation.NITWIT.lengthInSeconds(), false);
+        this.wiggleAnimator = new ConditionAnimator(this, BooleanAnimationCondition.of(SyncedData.IS_WIGGLING), List.of(BaseVillagerAnimation.NITWIT, BaseVillagerAnimation.ARM_CROSS), false);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -73,8 +77,14 @@ public class BaseVillager extends Villager {
         this.walkAnimation.update(animationSpeed, 1F);
     }
 
+    @Override
+    public IBrain getSettlementsBrain() {
+        // TODO: implement
+        return null;
+    }
+
     /**
-     * Class for all the synced data for this entity
+     * Class for all the synced data for this entity, mostly used to play animations
      */
     public static class SyncedData {
 
@@ -82,6 +92,15 @@ public class BaseVillager extends Villager {
          * Whether the arms are extended or crossed, with TRUE as extended
          */
         public static final SyncedDataWrapper<Boolean> ARMS_EXTENDED = SyncedDataWrapper.<Boolean>builder()
+                .entityClass(BaseVillager.class)
+                .serializer(EntityDataSerializers.BOOLEAN)
+                .defaultValue(false)
+                .build();
+
+        /**
+         * Whether the villager is idling or not. Idling
+         */
+        public static final SyncedDataWrapper<Boolean> PLAY_IDLE_ANIMATION = SyncedDataWrapper.<Boolean>builder()
                 .entityClass(BaseVillager.class)
                 .serializer(EntityDataSerializers.BOOLEAN)
                 .defaultValue(false)
@@ -99,8 +118,13 @@ public class BaseVillager extends Villager {
         public static void defineAll(SynchedEntityData entityData) {
             ARMS_EXTENDED.define(entityData);
             IS_WIGGLING.define(entityData);
+            PLAY_IDLE_ANIMATION.define(entityData);
         }
 
+    }
+
+    public Logger getLogger() {
+        return LOGGER;
     }
 
 }

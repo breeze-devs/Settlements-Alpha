@@ -19,12 +19,12 @@ public final class CreativeTabRegistry {
                 pOutput.accept(ItemRegistry.SAPPHIRE.get());
                 pOutput.accept(ItemRegistry.RAW_SAPPHIRE.get());
                 pOutput.accept(ItemRegistry.METAL_DETECTOR.get());
-                pOutput.accept(ItemRegistry.SAPPHIRE_STAFF.get());
-
-                pOutput.accept(ItemRegistry.SAPPHIRE_HELMET.get());
-                pOutput.accept(ItemRegistry.SAPPHIRE_CHESTPLATE.get());
-                pOutput.accept(ItemRegistry.SAPPHIRE_LEGGINGS.get());
-                pOutput.accept(ItemRegistry.SAPPHIRE_BOOTS.get());
+//                pOutput.accept(ItemRegistry.SAPPHIRE_STAFF.get());
+//
+//                pOutput.accept(ItemRegistry.SAPPHIRE_HELMET.get());
+//                pOutput.accept(ItemRegistry.SAPPHIRE_CHESTPLATE.get());
+//                pOutput.accept(ItemRegistry.SAPPHIRE_LEGGINGS.get());
+//                pOutput.accept(ItemRegistry.SAPPHIRE_BOOTS.get());
 
                 pOutput.accept(BlockRegistry.SAPPHIRE_BLOCK.get());
                 pOutput.accept(BlockRegistry.RAW_SAPPHIRE_BLOCK.get());
@@ -39,8 +39,8 @@ public final class CreativeTabRegistry {
                 pOutput.accept(BlockRegistry.SAPPHIRE_FENCE_GATE.get());
                 pOutput.accept(BlockRegistry.SAPPHIRE_WALL.get());
 
-                pOutput.accept(ItemRegistry.STRAWBERRY_SEEDS.get());
-                pOutput.accept(ItemRegistry.STRAWBERRY.get());
+//                pOutput.accept(ItemRegistry.STRAWBERRY_SEEDS.get());
+//                pOutput.accept(ItemRegistry.STRAWBERRY.get());
 
                 pOutput.accept(ItemRegistry.BLUEBERRY_SEEDS.get());
                 pOutput.accept(ItemRegistry.BLUEBERRY.get());

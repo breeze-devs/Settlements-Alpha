@@ -29,3 +29,4 @@ src/generated/
 run/
 run-data/
 gradle/
+logs/
