@@ -1,21 +1,37 @@
 package dev.breezes.settlements.models.behaviors;
 
 import dev.breezes.settlements.entities.ISettlementsBrainEntity;
+import dev.breezes.settlements.logging.ILogger;
 import dev.breezes.settlements.models.conditions.IEntityCondition;
 import dev.breezes.settlements.models.misc.ITickable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
 public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntity> implements IBehavior<T> {
 
+    private final ILogger log;
     private final List<IEntityCondition<T>> preconditions;
+    private final List<IEntityCondition<T>> continueConditions;
+    private final ITickable preconditionCheckCooldown;
+    private final ITickable behaviorCoolDown;
+    private final ITickable behaviorTickCooldown;
 
-    protected AbstractBehavior(Logger log, List<IEntityCondition<T>> preconditions) {
+
+    protected AbstractBehavior(@Nonnull ILogger log,
+                               @Nonnull List<IEntityCondition<T>> preconditions,
+                               @Nonnull List<IEntityCondition<T>> continueConditions,
+                               @Nonnull ITickable preconditionCheckCooldown,
+                               @Nonnull ITickable behaviorCoolDown,
+                               @Nonnull ITickable behaviorTickCooldown) {
+        this.log = log;
         this.preconditions = preconditions;
+        this.continueConditions = continueConditions;
+        this.preconditionCheckCooldown = preconditionCheckCooldown;
+        this.behaviorCoolDown = behaviorCoolDown;
+        this.behaviorTickCooldown = behaviorTickCooldown;
     }
 
 
@@ -47,6 +63,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
     @Override
     public void start(@Nonnull Level world, @Nonnull T entity) {
         // TODO: logging and/or preprocessing
+        log.debug("Behavior %s has started", this.getClass().getSimpleName());
         this.doStart(world, entity);
     }
 

@@ -1,6 +1,7 @@
 package dev.breezes.settlements.models;
 
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.models.behaviors.RepairIronGolemBehavior;
 import dev.breezes.settlements.models.conditions.GameRuleBooleanCondition;
 import dev.breezes.settlements.models.conditions.MemoryPresentCondition;
 import dev.breezes.settlements.models.memory.MemoryTypeRegistry;
@@ -13,6 +14,11 @@ public final class Test {
 
     public static void main(String[] args) {
         System.out.println("Hello, World!");
+
+        RepairIronGolemBehavior behavior = new RepairIronGolemBehavior();
+    }
+
+    private static void testPreconditions() {
         GameRuleBooleanCondition<BaseVillager> mobGriefingEnabledCondition = GameRuleBooleanCondition.<BaseVillager>builder()
                 .gameRule(GameRules.RULE_MOBGRIEFING)
                 .expectedValue(true)

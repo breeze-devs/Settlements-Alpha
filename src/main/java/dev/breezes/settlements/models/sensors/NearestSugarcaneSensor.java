@@ -29,7 +29,7 @@ public class NearestSugarcaneSensor<T extends BaseVillager> extends AbstractSens
     private final int horizontalRange;
     private final int verticalRange;
 
-    public NearestSugarcaneSensor(List<IEntityCondition<T>> preconditions, ITickable senseCooldown, T entity, int horizontalRange, int verticalRange) {
+    public NearestSugarcaneSensor(@Nonnull List<IEntityCondition<T>> preconditions, @Nonnull ITickable senseCooldown, @Nonnull T entity, int horizontalRange, int verticalRange) {
         super(preconditions, senseCooldown, entity);
         this.horizontalRange = horizontalRange;
         this.verticalRange = verticalRange;

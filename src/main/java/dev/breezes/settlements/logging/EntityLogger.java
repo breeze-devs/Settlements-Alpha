@@ -1,4 +1,4 @@
-package dev.breezes.settlements.util.logging;
+package dev.breezes.settlements.logging;
 
 import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
