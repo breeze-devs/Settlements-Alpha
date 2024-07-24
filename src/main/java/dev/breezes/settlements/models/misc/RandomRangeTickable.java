@@ -22,7 +22,7 @@ public class RandomRangeTickable extends Tickable {
      */
     @Override
     public void reset() {
-        this.currentTicks = RandomUtil.RANDOM.nextLong(this.maxStartingTicks, this.minStartingTicks + 1);
+        this.currentTicks = RandomUtil.RANDOM.nextLong(this.maxTicks, this.minStartingTicks + 1);
     }
 
 }

@@ -2,7 +2,7 @@ package dev.breezes.settlements.models.brain;
 
 import dev.breezes.settlements.models.memory.MemoryType;
 import dev.breezes.settlements.models.memory.entry.IMemoryEntry;
-import dev.breezes.settlements.util.TimePeriod;
+import dev.breezes.settlements.util.Ticks;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -22,7 +22,7 @@ public interface IBrain {
     <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull IMemoryEntry<T> memory);
 
     // TODO: evaluate how we should set expiration
-    <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull IMemoryEntry<T> memory, TimePeriod expiration);
+    <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull IMemoryEntry<T> memory, @Nonnull Ticks expiration);
 
     void clearMemory(@Nonnull MemoryType<?> type);
 

@@ -1,4 +1,9 @@
 package dev.breezes.settlements.models.actions;
 
-public interface IActionPlan {
+import java.util.List;
+
+public interface IActionPlan<T> {
+
+    List<IActionStep<T>> actionSteps();
+
 }

@@ -5,8 +5,9 @@ import dev.breezes.settlements.models.conditions.ICondition;
 
 public interface IStateMachineAction<T> extends IAction<T> {
 
-    IStateMachineAction<T> getNextAction();
-
     ICondition<T> getTransitionCondition();
+
+    // TODO: boolean canTransition() ?
+    // TODO: or is this covered by the condition?
 
 }

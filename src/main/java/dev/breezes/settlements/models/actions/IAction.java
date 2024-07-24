@@ -5,6 +5,6 @@ public interface IAction<T> {
     /**
      * Should be called to progress the action
      */
-    void tickAction(int delta);
+    void tick(int delta);
 
 }
