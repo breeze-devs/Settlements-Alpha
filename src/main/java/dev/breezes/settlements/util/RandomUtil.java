@@ -2,6 +2,7 @@ package dev.breezes.settlements.util;
 
 import net.minecraft.util.Mth;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 public class RandomUtil {
@@ -36,16 +37,20 @@ public class RandomUtil {
         return list[RANDOM.nextInt(list.length)];
     }
 
-    public static <T> T weightedChoice(Map<T, Integer> weightMap) {
-        int max = weightMap.values().stream().mapToInt(Integer::intValue).sum();
-        int target = RANDOM.nextInt(max);
+    public static <T> T weightedChoice(@Nonnull Map<T, Double> weightMap) {
+        double totalWeight = weightMap.values().stream()
+                .mapToDouble(Double::doubleValue)
+                .sum();
 
-        int prefixSum = 0;
-        for (Map.Entry<T, Integer> entry : weightMap.entrySet()) {
-            prefixSum += entry.getValue();
-            if (prefixSum > target)
+        double targetWeight = randomDouble(0, totalWeight);
+        double currentWeight = 0;
+        for (Map.Entry<T, Double> entry : weightMap.entrySet()) {
+            currentWeight += entry.getValue();
+            if (currentWeight > targetWeight) {
                 return entry.getKey();
+            }
         }
+
         throw new ArithmeticException("Invalid weights! Check if any weight(s) are zero or negative");
     }
 
