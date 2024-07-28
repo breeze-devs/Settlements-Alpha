@@ -32,6 +32,8 @@ public interface IBehavior<T extends Entity> {
      */
     ITickable getBehaviorCoolDown();
 
+    BehaviorStatus getStatus();
+
     /**
      * Perform the behavior or tick cooldowns
      * <p>
@@ -45,9 +47,11 @@ public interface IBehavior<T extends Entity> {
     void start(@Nonnull Level world, @Nonnull T entity);
 
     /**
-     * Called every delta ticks while the behavior is running
+     * Can be called any time to request the behavior to stop immediately
+     * <p>
+     * This is called within the behavior if a condition is no longer met
      */
-    void tickBehavior(int delta, @Nonnull Level world, @Nonnull T entity);
+    void requestStop();
 
     /**
      * Logic to be performed when the behavior stops
