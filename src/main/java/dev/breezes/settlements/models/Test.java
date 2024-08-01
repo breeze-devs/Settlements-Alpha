@@ -12,7 +12,7 @@ import java.util.function.Predicate;
 
 public final class Test {
 
-    public static void main(String[] args) {
+    public static void notMain(String[] args) {
         System.out.println("Hello, World!");
 
         RepairIronGolemBehavior behavior = new RepairIronGolemBehavior();

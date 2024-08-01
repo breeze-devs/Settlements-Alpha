@@ -23,42 +23,42 @@ public class ApacheLogger implements ILogger {
 
     @Override
     public void log(@Nonnull LogLevel level, @Nonnull String format, @Nonnull Object... args) {
-        this.logger.log(ApacheLogLevelAdapter.adapt(level), format, args);
+        this.logger.log(ApacheLogLevelAdapter.adapt(level), format.formatted(args));
     }
 
     @Override
     public void log(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.info(format, args);
+        this.logger.info(format.formatted(args));
     }
 
     @Override
     public void trace(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.trace(format, args);
+        this.logger.trace(format.formatted(args));
     }
 
     @Override
     public void debug(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.debug(format, args);
+        this.logger.debug(format.formatted(args));
     }
 
     @Override
     public void info(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.info(format, args);
+        this.logger.info(format.formatted(args));
     }
 
     @Override
     public void warn(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.warn(format, args);
+        this.logger.warn(format.formatted(args));
     }
 
     @Override
     public void error(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.error(format, args);
+        this.logger.error(format.formatted(args));
     }
 
     @Override
     public void error(@Nonnull Throwable e, @Nonnull String format, @Nonnull Object... args) {
-        this.logger.error(format, args, e);
+        this.logger.error(format.formatted(args), e);
     }
 
 }

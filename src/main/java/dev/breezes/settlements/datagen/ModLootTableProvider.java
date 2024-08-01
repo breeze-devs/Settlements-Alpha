@@ -65,7 +65,7 @@ public class ModLootTableProvider {
             LootItemCondition.Builder strawberryGrownCondition = LootItemBlockStatePropertyCondition
                     .hasBlockStateProperties(BlockRegistry.STRAWBERRY_CROP.get())
                     .setProperties(StatePropertiesPredicate.Builder.properties().hasProperty(StrawberryCropBlock.AGE, StrawberryCropBlock.MAX_AGE));
-//            this.add(BlockRegistry.STRAWBERRY_CROP.get(), createCropDrops(BlockRegistry.STRAWBERRY_CROP.get(), ItemRegistry.STRAWBERRY.get(), ItemRegistry.STRAWBERRY_SEEDS.get(), strawberryGrownCondition));
+            this.add(BlockRegistry.STRAWBERRY_CROP.get(), createCropDrops(BlockRegistry.STRAWBERRY_CROP.get(), ItemRegistry.BLUEBERRY.get(), ItemRegistry.BLUEBERRY_SEEDS.get(), strawberryGrownCondition));
 
             // "Blueberry"
             this.add(BlockRegistry.BLUEBERRY_CROP.get(), CropAgeRegistry.INSTANCE.cropLootTable(BlockRegistry.BLUEBERRY_CROP.get(), BlueberryCropBlock.CROP_ID, ItemRegistry.BLUEBERRY.get(), ItemRegistry.BLUEBERRY_SEEDS.get()));

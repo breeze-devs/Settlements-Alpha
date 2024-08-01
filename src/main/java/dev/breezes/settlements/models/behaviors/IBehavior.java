@@ -35,11 +35,15 @@ public interface IBehavior<T extends Entity> {
     BehaviorStatus getStatus();
 
     /**
-     * Perform the behavior or tick cooldowns
+     * Performs a check on all preconditions to determine if the behavior can start
      * <p>
-     * Should be called every delta ticks
+     * This method will return false if the behavior is:
+     * 1. already running
+     * 2. the precondition check cooldown is still ticking
+     *
+     * @return whether the behavior should start
      */
-    void tick(int delta, @Nonnull Level world, @Nonnull T entity);
+    boolean tickPreconditions(int delta, @Nonnull Level world, @Nonnull T entity);
 
     /**
      * Logic to be performed when the behavior starts
@@ -47,15 +51,22 @@ public interface IBehavior<T extends Entity> {
     void start(@Nonnull Level world, @Nonnull T entity);
 
     /**
-     * Can be called any time to request the behavior to stop immediately
+     * Advance the behavior to the next delta ticks
      * <p>
-     * This is called within the behavior if a condition is no longer met
+     * This method does nothing if the behavior is not running
      */
-    void requestStop();
+    void tick(int delta, @Nonnull Level world, @Nonnull T entity);
 
     /**
      * Logic to be performed when the behavior stops
      */
     void stop(@Nonnull Level world, @Nonnull T entity);
+
+    /**
+     * Can be called any time to request the behavior to stop immediately
+     * <p>
+     * This is usually called within the behavior if a condition is no longer met
+     */
+    void requestStop();
 
 }

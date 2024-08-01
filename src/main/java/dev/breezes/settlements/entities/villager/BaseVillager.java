@@ -1,10 +1,13 @@
 package dev.breezes.settlements.entities.villager;
 
+import com.google.common.collect.ImmutableList;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.animations.animator.ConditionAnimator;
 import dev.breezes.settlements.entities.villager.animations.conditions.BooleanAnimationCondition;
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
+import dev.breezes.settlements.models.behaviors.RepairIronGolemBehaviorAdapter;
 import dev.breezes.settlements.models.brain.IBrain;
 import dev.breezes.settlements.models.navigation.INavigationManager;
 import dev.breezes.settlements.models.navigation.VanillaMemoryNavigationManager;
@@ -12,6 +15,7 @@ import dev.breezes.settlements.util.SyncedDataWrapper;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
@@ -20,6 +24,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
@@ -68,6 +73,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         if (this.level().isClientSide()) {
             this.wiggleAnimator.tickAnimations(this.tickCount);
         }
+    }
+
+    @Override
+    public void refreshBrain(@Nonnull ServerLevel level) {
+        super.refreshBrain(level);
+
+        // Add custom behaviors
+        this.getBrain().addActivity(Activity.IDLE, ImmutableList.of(Pair.of(0, new RepairIronGolemBehaviorAdapter())));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.block.crops;
 
+import dev.breezes.settlements.registry.ItemRegistry;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
@@ -35,8 +36,7 @@ public class StrawberryCropBlock extends CropBlock {
 
     @Override
     protected ItemLike getBaseSeedId() {
-//        return ItemRegistry.STRAWBERRY_SEEDS.get();
-        return null;
+        return ItemRegistry.BLUEBERRY_SEEDS.get();
     }
 
 }
