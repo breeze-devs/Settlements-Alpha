@@ -61,9 +61,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        SyncedData.defineAll(this.entityData);
+    protected void defineSynchedData(@Nonnull SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        SyncedData.defineAll(builder);
     }
 
     @Override
@@ -105,14 +105,16 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     @Override
     public Optional<ItemStack> getHeldItem() {
-        // TODO: implement
         return Optional.of(this.getItemInHand(InteractionHand.MAIN_HAND));
     }
 
     @Override
     public void setHeldItem(@Nonnull ItemStack itemStack) {
-        // TODO: implement
         this.setItemInHand(InteractionHand.MAIN_HAND, itemStack);
+    }
+
+    public void clearHeldItem() {
+        this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
     }
 
     /**
@@ -147,7 +149,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         /**
          * Registers all synced data defined here to the entity
          */
-        public static void defineAll(SynchedEntityData entityData) {
+        public static void defineAll(SynchedEntityData.Builder entityData) {
             ARMS_EXTENDED.define(entityData);
             IS_WIGGLING.define(entityData);
             PLAY_IDLE_ANIMATION.define(entityData);

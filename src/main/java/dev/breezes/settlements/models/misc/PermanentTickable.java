@@ -20,4 +20,9 @@ public class PermanentTickable implements ITickable {
         return false;
     }
 
+    @Override
+    public String getRemainingCooldownsAsPrettyString() {
+        return "∞";
+    }
+
 }

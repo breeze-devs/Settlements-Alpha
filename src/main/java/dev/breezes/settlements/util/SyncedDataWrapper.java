@@ -7,6 +7,8 @@ import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 
+import javax.annotation.Nonnull;
+
 /**
  * Synchronizes entity data between server and client.
  * Allows registering up to 254 parameters per entity class.
@@ -24,7 +26,7 @@ public final class SyncedDataWrapper<T> {
         this.defaultValue = defaultValue;
     }
 
-    public void define(SynchedEntityData entityData) {
+    public void define(@Nonnull SynchedEntityData.Builder entityData) {
         entityData.define(this.dataAccessor, this.defaultValue);
     }
 

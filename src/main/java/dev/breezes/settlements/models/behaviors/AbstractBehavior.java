@@ -45,14 +45,26 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
 
     @Override
     public boolean tickPreconditions(int delta, @Nonnull Level world, @Nonnull T entity) {
-        // TODO: do we want to also tick the behavior cooldown here
-        if (this.preconditionCheckCooldown.tickCheckAndReset(delta)) {
-            return false;
-        }
+        // Only check preconditions & tick cooldowns if the behavior is not running
         if (this.status != BehaviorStatus.STOPPED) {
             log.debug("Behavior is not stopped, skipping precondition check");
             return false;
         }
+
+        // Check behavior cooldowns first
+        // - we don't need to check preconditions if the behavior is on cooldown
+        // - but we still need to tick the precondition check cooldown
+        boolean preconditionCheckCooldownComplete = this.preconditionCheckCooldown.tickAndCheck(delta);
+        if (!this.behaviorCoolDown.tickAndCheck(delta)) {
+            log.debug("Behavior is cooling down, with %s remaining", this.behaviorCoolDown.getRemainingCooldownsAsPrettyString());
+            return false;
+        } else if (!preconditionCheckCooldownComplete) {
+            log.debug("Precondition check is cooling down, with %s remaining", this.preconditionCheckCooldown.getRemainingCooldownsAsPrettyString());
+            return false;
+        }
+
+        // Reset precondition check cooldown
+        this.preconditionCheckCooldown.reset();
 
         // Loop through all preconditions and check if they are all met
         for (IEntityCondition<T> precondition : this.preconditions) {
@@ -76,6 +88,9 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         log.debug("Starting behavior");
         this.doStart(world, entity);
         this.status = BehaviorStatus.RUNNING;
+
+        // Reset behavior cooldown
+        this.behaviorCoolDown.reset();
     }
 
     public abstract void doStart(@Nonnull Level world, @Nonnull T entity);

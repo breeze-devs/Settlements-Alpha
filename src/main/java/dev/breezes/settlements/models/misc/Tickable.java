@@ -34,4 +34,13 @@ public class Tickable implements ITickable {
         return this.currentTicks <= 0;
     }
 
+    @Override
+    public String getRemainingCooldownsAsPrettyString() {
+        long remainingTicks = Math.max(currentTicks, 0);
+        long totalSeconds = remainingTicks / Ticks.TICKS_PER_SECOND;
+        long minutes = totalSeconds / Ticks.SECONDS_PER_MINUTE;
+        long seconds = totalSeconds % Ticks.SECONDS_PER_MINUTE;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+
 }

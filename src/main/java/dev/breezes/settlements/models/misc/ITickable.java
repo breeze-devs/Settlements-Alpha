@@ -13,6 +13,14 @@ public interface ITickable {
         return this.isComplete();
     }
 
+    default boolean checkAndReset() {
+        boolean result = this.isComplete();
+        if (result) {
+            this.reset();
+        }
+        return result;
+    }
+
     default boolean tickCheckAndReset(long delta) {
         boolean result = this.tickAndCheck(delta);
         if (result) {
@@ -24,5 +32,7 @@ public interface ITickable {
     void reset();
 
     boolean isComplete();
+
+    String getRemainingCooldownsAsPrettyString();
 
 }

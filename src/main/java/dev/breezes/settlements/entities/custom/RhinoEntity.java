@@ -26,6 +26,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class RhinoEntity extends Animal {
@@ -83,9 +84,14 @@ public class RhinoEntity extends Animal {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(IS_ATTACKING, false);
+    protected void defineSynchedData(@Nonnull SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(IS_ATTACKING, false);
+    }
+
+    @Override
+    public SynchedEntityData getEntityData() {
+        return super.getEntityData();
     }
 
     public void setAttacking(boolean attacking) {

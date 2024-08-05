@@ -20,4 +20,9 @@ public class InstantTickable implements ITickable {
         return true;
     }
 
+    @Override
+    public String getRemainingCooldownsAsPrettyString() {
+        return "00:00";
+    }
+
 }
