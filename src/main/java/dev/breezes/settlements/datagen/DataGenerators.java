@@ -1,10 +1,7 @@
 package dev.breezes.settlements.datagen;
 
 import dev.breezes.settlements.SettlementsMod;
-import dev.breezes.settlements.datagen.block.ModBlockStateProvider;
-import dev.breezes.settlements.datagen.block.ModBlockTagProvider;
 import dev.breezes.settlements.datagen.item.ModItemModelProvider;
-import dev.breezes.settlements.datagen.item.ModItemTagProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
@@ -25,14 +22,14 @@ public class DataGenerators {
         ExistingFileHelper helper = event.getExistingFileHelper();
         CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
 
-        generator.addProvider(event.includeServer(), new ModRecipeProvider(output, generator));
-        generator.addProvider(event.includeServer(), ModLootTableProvider.create(output));
+//        generator.addProvider(event.includeServer(), new ModRecipeProvider(output, generator));
+//        generator.addProvider(event.includeServer(), ModLootTableProvider.create(output));
 
-        generator.addProvider(event.includeClient(), new ModBlockStateProvider(output, helper));
+//        generator.addProvider(event.includeClient(), new ModBlockStateProvider(output, helper));
         generator.addProvider(event.includeClient(), new ModItemModelProvider(output, helper));
 
-        ModBlockTagProvider blockTagProvider = generator.addProvider(event.includeServer(), new ModBlockTagProvider(output, lookupProvider, helper));
-        generator.addProvider(event.includeClient(), new ModItemTagProvider(output, lookupProvider, blockTagProvider.contentsGetter(), helper));
+//        ModBlockTagProvider blockTagProvider = generator.addProvider(event.includeServer(), new ModBlockTagProvider(output, lookupProvider, helper));
+//        generator.addProvider(event.includeClient(), new ModItemTagProvider(output, lookupProvider, blockTagProvider.contentsGetter(), helper));
     }
 
 }

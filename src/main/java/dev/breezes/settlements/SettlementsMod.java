@@ -2,12 +2,9 @@ package dev.breezes.settlements;
 
 import com.mojang.logging.LogUtils;
 import dev.breezes.settlements.configuration.Config;
-import dev.breezes.settlements.registry.BlockRegistry;
 import dev.breezes.settlements.registry.CreativeTabRegistry;
 import dev.breezes.settlements.registry.EntityRegistry;
 import dev.breezes.settlements.registry.ItemRegistry;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -34,7 +31,7 @@ public final class SettlementsMod {
 
         // Link our registries to the mod event bus
         ItemRegistry.register(modEventBus);
-        BlockRegistry.register(modEventBus);
+//        BlockRegistry.register(modEventBus);
         CreativeTabRegistry.register(modEventBus);
         EntityRegistry.register(modEventBus);
 
@@ -52,7 +49,7 @@ public final class SettlementsMod {
         LOGGER.info("HELLO FROM COMMON SETUP");
 
         event.enqueueWork(() -> {
-            ((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(BlockRegistry.CAT_MINT.getId(), BlockRegistry.POTTED_CAT_MINT);
+//            ((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(BlockRegistry.CAT_MINT.getId(), BlockRegistry.POTTED_CAT_MINT);
         });
     }
 

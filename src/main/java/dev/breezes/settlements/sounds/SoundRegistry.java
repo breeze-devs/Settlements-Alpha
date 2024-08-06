@@ -11,7 +11,7 @@ public enum SoundRegistry {
 
     // TODO: we might want to account for chained sounds -- i.e. multiple sounds playing in sequence, such as notes
 
-    PLACEHOLDER(SoundEvents.GENERIC_EXPLODE);
+    PLACEHOLDER(SoundEvents.VILLAGER_AMBIENT);
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound
     private final SoundEvent minecraftSound;
