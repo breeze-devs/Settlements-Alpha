@@ -4,42 +4,47 @@ import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbyDamagedIronGolemExistsCondition;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
 import dev.breezes.settlements.models.misc.Tickable;
+import dev.breezes.settlements.particles.ParticleRegistry;
+import dev.breezes.settlements.sounds.SoundRegistry;
 import dev.breezes.settlements.util.DistanceUtils;
+import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
 import lombok.CustomLog;
-import net.minecraft.world.entity.MoverType;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @CustomLog
-public class RepairIronGolemBehavior extends AbstractBehavior<BaseVillager> {
-
-//    private IActionPlan actionPlan = ActionPlan.builder()
-//            .action(Actions.REPAIR_IRON_GOLEM)
-//            .build();
+public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior<BaseVillager> {
 
     private static final int NAVIGATE_STOP_DISTANCE = 1;
-    private static final double INTERACTION_DISTANCE = 1.5D;
+    private static final double INTERACTION_DISTANCE = 2D;
     private static final double REPAIR_HP_PERCENTAGE = 0.75D;
 
     private final NearbyDamagedIronGolemExistsCondition<BaseVillager> nearbyDamagedIronGolemExistsCondition;
 
     @Nullable
     private IronGolem targetToRepair;
+    private int remainingRepairAttempts;
 
     public RepairIronGolemBehavior() {
-        super(log, Tickable.of(Ticks.fromSeconds(20)), RandomRangeTickable.of(Ticks.fromMinutes(1), Ticks.fromMinutes(2)), Tickable.of(Ticks.of(1)));
+        super(
+                log,
+                RandomRangeTickable.of(Ticks.seconds(10), Ticks.seconds(20)),
+                RandomRangeTickable.of(Ticks.seconds(30), Ticks.minutes(1)), // TODO: move to config
+                Tickable.of(Ticks.seconds(2)) // repair every 3 seconds; TODO: this should be based on the animation duration
+        );
 
         // Create behavior preconditions
-        this.nearbyDamagedIronGolemExistsCondition = new NearbyDamagedIronGolemExistsCondition<>(10, 5, REPAIR_HP_PERCENTAGE);
+        this.nearbyDamagedIronGolemExistsCondition = new NearbyDamagedIronGolemExistsCondition<>(30, 15, REPAIR_HP_PERCENTAGE);
         this.preconditions.add(this.nearbyDamagedIronGolemExistsCondition);
 
         // Initialize variables
@@ -49,31 +54,43 @@ public class RepairIronGolemBehavior extends AbstractBehavior<BaseVillager> {
     @Override
     public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
         this.targetToRepair = this.nearbyDamagedIronGolemExistsCondition.getTargets().get(0);
+        this.remainingRepairAttempts = RandomUtil.randomInt(2, 5, true);
     }
 
     @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.targetToRepair == null) {
-            this.requestStop();
-            return;
-        }
+    protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetToRepair.position(), 0.5F, NAVIGATE_STOP_DISTANCE));
+    }
 
+    @Override
+    protected void interactWithTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+        // TODO: play animation, particles, and sounds
+        double healAmount = RandomUtil.randomDouble(3, 8); // TODO: calculate based on villager profession & expertise
+        this.targetToRepair.heal((float) healAmount);
+
+        SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(world, villager.getX(), villager.getY(), villager.getZ(), SoundSource.NEUTRAL);
+        ParticleRegistry.repairIronGolem((ServerLevel) world, this.targetToRepair.getX(), this.targetToRepair.getY(), this.targetToRepair.getZ());
+        log.info("Repaired iron golem for %.2f HP, %d attempts remaining", healAmount, this.remainingRepairAttempts - 1);
+        villager.playSpinAnimationOnce();
+
+        if (--this.remainingRepairAttempts <= 0) {
+            this.requestStop();
+        }
+    }
+
+    @Override
+    protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
         villager.setHeldItem(new ItemStack(Items.IRON_INGOT));
-        boolean inRange = DistanceUtils.isWithinDistance(villager.position(), this.targetToRepair.position(), INTERACTION_DISTANCE);
-        if (!inRange) {
-            villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetToRepair.position(), 0.5F, NAVIGATE_STOP_DISTANCE));
-//            if (!villager.getNavigationManager().isNavigating()) {
-//                villager.getNavigationManager().navigateTo(this.targetToRepair.position(), villager.getSpeed(), NAVIGATE_STOP_DISTANCE);
-//            }
-        } else {
-            // TODO: phase 2: assuming that we are next to the golem
-            // TODO: play animation, particles, and sounds
-            double healAmount = 4000; // TODO: calculate based on villager profession & expertise
-            this.targetToRepair.heal((float) healAmount);
-            villager.move(MoverType.SELF, new Vec3(0, 0.1D, 0));
+    }
 
-            this.requestStop();
-        }
+    @Override
+    protected boolean hasTarget(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        return this.targetToRepair != null;
+    }
+
+    @Override
+    protected boolean isTargetInReach(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        return DistanceUtils.isWithinDistance(villager.position(), this.targetToRepair.position(), INTERACTION_DISTANCE);
     }
 
     @Override

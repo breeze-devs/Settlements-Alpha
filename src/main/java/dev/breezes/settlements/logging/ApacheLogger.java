@@ -32,8 +32,19 @@ public class ApacheLogger implements ILogger {
     }
 
     @Override
+    public void behaviorStatus(@Nonnull String format, @Nonnull Object... args) {
+        this.debug(format.formatted(args));
+    }
+
+    @Override
+    public void behaviorTrace(@Nonnull String format, @Nonnull Object... args) {
+        this.trace(format, args);
+    }
+
+    @Override
     public void trace(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.trace(format.formatted(args));
+        // TODO: re-enable trace logging
+//        this.logger.trace(format.formatted(args));
     }
 
     @Override

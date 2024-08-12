@@ -12,10 +12,10 @@ import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 
-@SuppressWarnings("MagicNumber")
 public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerModel<T> {
 
     public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocationUtil.mod("base_villager"), "main");
+
     private final ModelPart root;
     private final ModelPart villager;
     private final ModelPart head;
@@ -44,14 +44,12 @@ public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerM
         PartDefinition pupil_right = eyeball_right.addOrReplaceChild("pupil_right", CubeListBuilder.create().texOffs(39, 8).addBox(-0.5F, -0.5F, -0.0375F, 1.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.5F, 0.0F, 0.0F));
         PartDefinition nose = head.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(24, 0).addBox(-1.0F, -1.0F, -2.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -2.0F, -4.0F));
         PartDefinition mouth = head.addOrReplaceChild("mouth", CubeListBuilder.create().texOffs(33, 5).addBox(-2.0F, -0.5F, -0.125F, 4.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -1.5F, -4.0F));
-
         PartDefinition torso = villager.addOrReplaceChild("torso", CubeListBuilder.create().texOffs(16, 20).addBox(-4.0F, -24.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
         PartDefinition arms = torso.addOrReplaceChild("arms", CubeListBuilder.create(), PartPose.offsetAndRotation(0.0F, -22.0F, 0.0F, -0.7854F, 0.0F, 0.0F));
         PartDefinition right_arm = arms.addOrReplaceChild("right_arm", CubeListBuilder.create().texOffs(44, 22).addBox(-3.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-5.0F, 0.0F, 0.0F));
         PartDefinition right_hand = right_arm.addOrReplaceChild("right_hand", CubeListBuilder.create().texOffs(0, 40).addBox(0.0F, -4.0F, -2.0F, 8.0F, 4.0F, 4.0F, new CubeDeformation(-0.001F)), PartPose.offset(-3.0F, 6.0F, 0.0F));
-        PartDefinition left_arm = arms.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(44, 22).mirror().addBox(4.0F, -24.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(0.0F, 22.0F, 0.0F));
-        PartDefinition left_hand = left_arm.addOrReplaceChild("left_hand", CubeListBuilder.create().texOffs(0, 48).addBox(-8.0F, -4.0F, -2.0F, 8.0F, 4.0F, 4.0F, new CubeDeformation(-0.001F)), PartPose.offset(8.0F, -16.0F, 0.0F));
-
+        PartDefinition left_arm = arms.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(44, 22).mirror().addBox(-2.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(6.0F, 0.0F, 0.0F));
+        PartDefinition left_hand = left_arm.addOrReplaceChild("left_hand", CubeListBuilder.create().texOffs(0, 48).addBox(-8.0F, -4.0F, -2.0F, 8.0F, 4.0F, 4.0F, new CubeDeformation(-0.001F)), PartPose.offset(2.0F, 6.0F, 0.0F));
         PartDefinition legs = villager.addOrReplaceChild("legs", CubeListBuilder.create(), PartPose.offset(-2.0F, -12.0F, 0.0F));
         PartDefinition left_leg = legs.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(0, 22).mirror().addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(4.0F, 0.0F, 0.0F));
         PartDefinition right_leg = legs.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 22).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
@@ -82,6 +80,12 @@ public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerM
         if (animator.isAnimationPlaying()) {
             this.animate(animator.getCurrentState().get(), animator.getCurrentDefinition().get(), ageInTicks, 1);
         }
+
+        // Repair iron golem animation; TODO: make an one-shot animator
+        animator = entity.getSpinAnimator();
+        if (animator.isAnimationPlaying()) {
+            this.animate(animator.getCurrentState().get(), animator.getCurrentDefinition().get(), ageInTicks, 1);
+        }
     }
 
     @Override
@@ -96,7 +100,7 @@ public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerM
 
     @Override
     public void translateToHand(HumanoidArm side, PoseStack stack) {
-        // TODO: wiggle
+        // TODO: implement
     }
 
 }

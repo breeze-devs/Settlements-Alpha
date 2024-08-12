@@ -3,10 +3,10 @@ package dev.breezes.settlements.entities.villager.animations.animator;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.entities.villager.animations.definitions.VillagerAnimationDefinition;
 import dev.breezes.settlements.util.RandomUtil;
+import lombok.CustomLog;
 import net.minecraft.client.animation.AnimationDefinition;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.AnimationState;
-import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,12 +16,12 @@ import java.util.Optional;
 /**
  * A class that listens to the synced data (condition) and plays/stops the specified animation accordingly
  */
+@CustomLog
 public abstract class BaseAnimator {
 
     private static final long DO_NOT_STOP = -1;
 
     protected final SynchedEntityData entityData;
-    private final Logger logger;
     private final boolean stopImmediately;
 
     /**
@@ -42,7 +42,6 @@ public abstract class BaseAnimator {
 
     public BaseAnimator(BaseVillager villager, List<VillagerAnimationDefinition> animations, boolean stopImmediately) {
         this.entityData = villager.getEntityData();
-        this.logger = villager.getLogger();
 
         this.stopImmediately = stopImmediately;
 
@@ -74,7 +73,7 @@ public abstract class BaseAnimator {
             // Reset the stop flag if set
             if (this.stopTime > 0) {
                 this.stopTime = DO_NOT_STOP;
-                this.logger.info("Reset delayed-stop flag @ {} ticks", tickCount);
+                log.info("Reset delayed-stop flag @ %d ticks", tickCount);
             }
         } else {
             // Stop animation if playing
@@ -105,13 +104,13 @@ public abstract class BaseAnimator {
 
     protected void setStopFlag(int tickCount) {
         if (!this.isAnimationPlaying()) {
-            this.logger.warn("Ignoring request to set stop flag for an animation that is not playing");
+            log.warn("Ignoring request to set stop flag for an animation that is not playing");
             return;
         }
 
         Optional<AnimationState> currentAnimationState = this.getCurrentState();
         if (currentAnimationState.isEmpty()) {
-            this.logger.warn("Current animation state is null when setting stop flag");
+            log.warn("Current animation state is null when setting stop flag");
             this.stopTime = 0; // stop immediately
         } else {
             // Calculate & set stop time
@@ -121,12 +120,12 @@ public abstract class BaseAnimator {
             this.stopTime = (currentIterations + 1) * animationDuration;
         }
 
-        this.logger.info("Set delayed-stop flag @ {} ticks", tickCount);
+        log.info("Set delayed-stop flag @ %d ticks", tickCount);
     }
 
     protected void start(int tickCount) {
         if (this.isAnimationPlaying()) {
-            this.logger.warn("Ignoring request to start an animation that is already playing");
+            log.warn("Ignoring request to start an animation that is already playing");
             return;
         }
 
@@ -135,23 +134,23 @@ public abstract class BaseAnimator {
         this.currentAnimationDefinition = this.randomAnimation();
         this.animationStates.get(this.currentAnimationDefinition).start(tickCount);
 
-        this.logger.info("Started animation @ {} ticks", tickCount);
+        log.info("Started animation @ %d ticks", tickCount);
     }
 
     protected void stop(int tickCount) {
         if (!this.isAnimationPlaying()) {
-            this.logger.warn("Ignoring request to stop an animation that is not playing");
+            log.warn("Ignoring request to stop an animation that is not playing");
             return;
         }
 
         Optional<AnimationState> currentAnimationState = this.getCurrentState();
         if (currentAnimationState.isEmpty()) {
-            this.logger.error("Cancelling stop request since current animation state is null");
+            log.error("Cancelling stop request since current animation state is null");
             return;
         }
 
         currentAnimationState.get().stop();
-        this.logger.info("Stopped animation @ {} ticks", tickCount);
+        log.info("Stopped animation @ %d ticks", tickCount);
     }
 
     public boolean isAnimationPlaying() {
@@ -161,7 +160,7 @@ public abstract class BaseAnimator {
 
     private VillagerAnimationDefinition randomAnimation() {
         VillagerAnimationDefinition animation = RandomUtil.choice(this.animationStates.keySet().stream().toList());
-        this.logger.info("Randomly selected animation: {}", animation.name());
+        log.info("Randomly selected animation: %s", animation.name());
         return animation;
     }
 

@@ -30,7 +30,7 @@ public class RepairIronGolemBehaviorAdapter extends Behavior<Villager> {
 
     @Override
     protected void start(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
-        log.debug("Starting behavior because parent behavior is starting");
+        log.behaviorStatus("Starting behavior because parent behavior is starting");
         this.wrappedBehavior.start(level, (BaseVillager) villager);
     }
 
@@ -46,7 +46,7 @@ public class RepairIronGolemBehaviorAdapter extends Behavior<Villager> {
 
     @Override
     protected void stop(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
-        log.debug("Stopping behavior because parent behavior is stopping");
+        log.behaviorStatus("Stopping behavior because parent behavior is stopping");
         this.wrappedBehavior.stop(level, (BaseVillager) villager);
     }
 

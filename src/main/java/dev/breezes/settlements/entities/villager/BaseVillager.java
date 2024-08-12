@@ -2,7 +2,6 @@ package dev.breezes.settlements.entities.villager;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
-import com.mojang.logging.LogUtils;
 import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.animations.animator.ConditionAnimator;
 import dev.breezes.settlements.entities.villager.animations.conditions.BooleanAnimationCondition;
@@ -12,6 +11,7 @@ import dev.breezes.settlements.models.brain.IBrain;
 import dev.breezes.settlements.models.navigation.INavigationManager;
 import dev.breezes.settlements.models.navigation.VanillaMemoryNavigationManager;
 import dev.breezes.settlements.util.SyncedDataWrapper;
+import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -27,31 +27,40 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ForkJoinPool;
 
 // TODO: make this class abstract
+@CustomLog
 @Getter
 public class BaseVillager extends Villager implements ISettlementsVillager {
 
     private static final double DEFAULT_MOVEMENT_SPEED = 0.5D;
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
 
-    private static final Logger LOGGER = LogUtils.getLogger();
-
     private final IBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
-    private final ConditionAnimator wiggleAnimator;
+
+    public final ConditionAnimator wiggleAnimator;
+    public final ConditionAnimator spinAnimator;
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
 
         this.settlementsBrain = null; // TODO: implement
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
-        this.wiggleAnimator = new ConditionAnimator(this, BooleanAnimationCondition.of(SyncedData.IS_WIGGLING), List.of(BaseVillagerAnimation.NITWIT, BaseVillagerAnimation.ARM_CROSS), false);
+
+        this.wiggleAnimator = new ConditionAnimator(this,
+                BooleanAnimationCondition.of(SyncedData.IS_WIGGLING),
+                List.of(BaseVillagerAnimation.NITWIT, BaseVillagerAnimation.ARM_CROSS),
+                false);
+        this.spinAnimator = new ConditionAnimator(this,
+                BooleanAnimationCondition.of(SyncedData.IS_SPINNING),
+                List.of(BaseVillagerAnimation.SPIN),
+                false);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -72,6 +81,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
         if (this.level().isClientSide()) {
             this.wiggleAnimator.tickAnimations(this.tickCount);
+            this.spinAnimator.tickAnimations(this.tickCount);
         }
     }
 
@@ -85,9 +95,26 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     @Override
     public boolean hurt(@Nonnull DamageSource pSource, float pAmount) {
-        boolean wiggling = SyncedData.IS_WIGGLING.get(this.entityData);
-        SyncedData.IS_WIGGLING.set(this.entityData, !wiggling);
+        boolean active = SyncedData.IS_SPINNING.get(this.entityData);
+        SyncedData.IS_SPINNING.set(this.entityData, !active);
         return super.hurt(pSource, pAmount);
+    }
+
+    // TODO: debug this method
+    public void playSpinAnimationOnce() {
+        SyncedData.IS_SPINNING.set(this.entityData, true);
+
+        try (ForkJoinPool pool = new ForkJoinPool()) {
+            pool.execute(() -> {
+                try {
+                    Thread.sleep(1000);
+                    log.info("Spinning... " + SyncedData.IS_SPINNING.get(this.entityData));
+                } catch (InterruptedException e) {
+                    log.error("Failed to sleep thread", e);
+                }
+                SyncedData.IS_SPINNING.set(this.entityData, false);
+            });
+        }
     }
 
     /**
@@ -123,16 +150,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     public static class SyncedData {
 
         /**
-         * Whether the arms are extended or crossed, with TRUE as extended
-         */
-        public static final SyncedDataWrapper<Boolean> ARMS_EXTENDED = SyncedDataWrapper.<Boolean>builder()
-                .entityClass(BaseVillager.class)
-                .serializer(EntityDataSerializers.BOOLEAN)
-                .defaultValue(false)
-                .build();
-
-        /**
-         * Whether the villager is idling or not. Idling
+         * Whether the villager is idling or not
          */
         public static final SyncedDataWrapper<Boolean> PLAY_IDLE_ANIMATION = SyncedDataWrapper.<Boolean>builder()
                 .entityClass(BaseVillager.class)
@@ -146,19 +164,21 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
                 .defaultValue(false)
                 .build();
 
+        public static final SyncedDataWrapper<Boolean> IS_SPINNING = SyncedDataWrapper.<Boolean>builder()
+                .entityClass(BaseVillager.class)
+                .serializer(EntityDataSerializers.BOOLEAN)
+                .defaultValue(false)
+                .build();
+
         /**
          * Registers all synced data defined here to the entity
          */
         public static void defineAll(SynchedEntityData.Builder entityData) {
-            ARMS_EXTENDED.define(entityData);
-            IS_WIGGLING.define(entityData);
             PLAY_IDLE_ANIMATION.define(entityData);
+            IS_WIGGLING.define(entityData);
+            IS_SPINNING.define(entityData);
         }
 
-    }
-
-    public Logger getLogger() {
-        return LOGGER;
     }
 
 }

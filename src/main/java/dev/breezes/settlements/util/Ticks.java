@@ -17,15 +17,15 @@ public class Ticks {
         return new Ticks(ticks);
     }
 
-    public static Ticks fromSeconds(long seconds) {
+    public static Ticks seconds(long seconds) {
         return new Ticks(seconds * TICKS_PER_SECOND);
     }
 
-    public static Ticks fromMinutes(long minutes) {
+    public static Ticks minutes(long minutes) {
         return new Ticks(minutes * SECONDS_PER_MINUTE * TICKS_PER_SECOND);
     }
 
-    public static Ticks fromHours(long hours) {
+    public static Ticks hours(long hours) {
         return new Ticks(hours * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * TICKS_PER_SECOND);
     }
 
