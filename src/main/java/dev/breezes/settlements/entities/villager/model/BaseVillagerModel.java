@@ -3,8 +3,10 @@ package dev.breezes.settlements.entities.villager.model;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.entities.villager.animations.animator.ConditionAnimator;
+import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnimator;
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
 import dev.breezes.settlements.util.ResourceLocationUtil;
+import lombok.CustomLog;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -12,6 +14,7 @@ import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 
+@CustomLog
 public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerModel<T> {
 
     public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocationUtil.mod("base_villager"), "main");
@@ -58,10 +61,10 @@ public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerM
     }
 
     /**
-     * Executed every tick to update the entity's animations
+     * Executed every tick to update the villager's animations
      */
     @Override
-    public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+    public void setupAnim(T villager, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         this.root().getAllParts().forEach(ModelPart::resetPose);
 
         // Apply head rotations
@@ -76,15 +79,15 @@ public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerM
         this.animateWalk(BaseVillagerAnimation.WALK_1.definition(), limbSwing, limbSwingAmount, 1, 2);
 
         // Nitwit animation
-        ConditionAnimator animator = entity.getWiggleAnimator();
-        if (animator.isAnimationPlaying()) {
-            this.animate(animator.getCurrentState().get(), animator.getCurrentDefinition().get(), ageInTicks, 1);
+        ConditionAnimator nitwitAnimator = villager.getWiggleAnimator();
+        if (nitwitAnimator.isAnimationPlaying()) {
+            this.animate(nitwitAnimator.getCurrentState().get(), nitwitAnimator.getCurrentDefinition().get(), ageInTicks, 1);
         }
 
         // Repair iron golem animation; TODO: make an one-shot animator
-        animator = entity.getSpinAnimator();
-        if (animator.isAnimationPlaying()) {
-            this.animate(animator.getCurrentState().get(), animator.getCurrentDefinition().get(), ageInTicks, 1);
+        OneShotAnimator spinAnimator = villager.getSpinAnimator();
+        if (spinAnimator.isAnimationPlaying()) {
+            this.animate(spinAnimator.getCurrentState().get(), spinAnimator.getCurrentDefinition().get(), ageInTicks, 1);
         }
     }
 

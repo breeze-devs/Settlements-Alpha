@@ -6,6 +6,7 @@ import dev.breezes.settlements.models.misc.RandomRangeTickable;
 import dev.breezes.settlements.models.misc.Tickable;
 import dev.breezes.settlements.particles.ParticleRegistry;
 import dev.breezes.settlements.sounds.SoundRegistry;
+import dev.breezes.settlements.util.ClientServerUtil;
 import dev.breezes.settlements.util.DistanceUtils;
 import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
@@ -63,20 +64,24 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior<Ba
     }
 
     @Override
-    protected void interactWithTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+    protected void interactWithTarget(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
         // TODO: play animation, particles, and sounds
         double healAmount = RandomUtil.randomDouble(3, 8); // TODO: calculate based on villager profession & expertise
         this.targetToRepair.heal((float) healAmount);
 
-        SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(world, villager.getX(), villager.getY(), villager.getZ(), SoundSource.NEUTRAL);
-        ParticleRegistry.repairIronGolem((ServerLevel) world, this.targetToRepair.getX(), this.targetToRepair.getY(), this.targetToRepair.getZ());
+        SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(level, villager.getX(), villager.getY(), villager.getZ(), SoundSource.NEUTRAL);
+        ParticleRegistry.repairIronGolem((ServerLevel) level, this.targetToRepair.getX(), this.targetToRepair.getY(), this.targetToRepair.getZ());
         log.info("Repaired iron golem for %.2f HP, %d attempts remaining", healAmount, this.remainingRepairAttempts - 1);
-        villager.playSpinAnimationOnce();
+
+        ClientServerUtil.runOnClient(() ->
+                ClientServerUtil.getClientSideVillager(villager)
+                        .ifPresent(clientVillager -> clientVillager.getSpinAnimator().playOnce()));
 
         if (--this.remainingRepairAttempts <= 0) {
             this.requestStop();
         }
     }
+
 
     @Override
     protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {

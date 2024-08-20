@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.animations.animator.ConditionAnimator;
+import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnimator;
 import dev.breezes.settlements.entities.villager.animations.conditions.BooleanAnimationCondition;
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
 import dev.breezes.settlements.models.behaviors.RepairIronGolemBehaviorAdapter;
@@ -45,7 +46,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     private final INavigationManager<BaseVillager> navigationManager;
 
     public final ConditionAnimator wiggleAnimator;
-    public final ConditionAnimator spinAnimator;
+    public final OneShotAnimator spinAnimator;
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
@@ -53,14 +54,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         this.settlementsBrain = null; // TODO: implement
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
 
-        this.wiggleAnimator = new ConditionAnimator(this,
+        this.wiggleAnimator = new ConditionAnimator("NitwitAnimator", this,
                 BooleanAnimationCondition.of(SyncedData.IS_WIGGLING),
                 List.of(BaseVillagerAnimation.NITWIT, BaseVillagerAnimation.ARM_CROSS),
                 false);
-        this.spinAnimator = new ConditionAnimator(this,
-                BooleanAnimationCondition.of(SyncedData.IS_SPINNING),
-                List.of(BaseVillagerAnimation.SPIN),
-                false);
+        this.spinAnimator = new OneShotAnimator("SpinAnimator", this, List.of(BaseVillagerAnimation.SPIN));
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -95,8 +93,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     @Override
     public boolean hurt(@Nonnull DamageSource pSource, float pAmount) {
-        boolean active = SyncedData.IS_SPINNING.get(this.entityData);
-        SyncedData.IS_SPINNING.set(this.entityData, !active);
+        this.spinAnimator.playOnce();
         return super.hurt(pSource, pAmount);
     }
 
