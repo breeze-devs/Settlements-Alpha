@@ -1,18 +1,12 @@
-package dev.breezes.settlements.util;
+package dev.breezes.settlements.client;
 
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
-public class ClientServerUtil {
-
-    public static void runOnClient(@Nonnull Runnable runnable) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> runnable);
-    }
+public class ClientUtil {
 
     public static Optional<BaseVillager> getClientSideVillager(@Nonnull BaseVillager serverSideVillager) {
         return Optional.ofNullable(Minecraft.getInstance().level)

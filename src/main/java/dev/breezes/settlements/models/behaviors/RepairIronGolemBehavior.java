@@ -1,12 +1,13 @@
 package dev.breezes.settlements.models.behaviors;
 
+import dev.breezes.settlements.client.ClientExecutor;
+import dev.breezes.settlements.client.ClientUtil;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbyDamagedIronGolemExistsCondition;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
 import dev.breezes.settlements.models.misc.Tickable;
 import dev.breezes.settlements.particles.ParticleRegistry;
 import dev.breezes.settlements.sounds.SoundRegistry;
-import dev.breezes.settlements.util.ClientServerUtil;
 import dev.breezes.settlements.util.DistanceUtils;
 import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
@@ -73,9 +74,10 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior<Ba
         ParticleRegistry.repairIronGolem((ServerLevel) level, this.targetToRepair.getX(), this.targetToRepair.getY(), this.targetToRepair.getZ());
         log.info("Repaired iron golem for %.2f HP, %d attempts remaining", healAmount, this.remainingRepairAttempts - 1);
 
-        ClientServerUtil.runOnClient(() ->
-                ClientServerUtil.getClientSideVillager(villager)
-                        .ifPresent(clientVillager -> clientVillager.getSpinAnimator().playOnce()));
+        ClientExecutor.runOnClient(() -> {
+            ClientUtil.getClientSideVillager(villager)
+                    .ifPresent(clientVillager -> clientVillager.getSpinAnimator().playOnce());
+        });
 
         if (--this.remainingRepairAttempts <= 0) {
             this.requestStop();

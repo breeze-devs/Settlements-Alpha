@@ -2,7 +2,6 @@ package dev.breezes.settlements.entities.villager.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.breezes.settlements.entities.villager.BaseVillager;
-import dev.breezes.settlements.entities.villager.animations.animator.ConditionAnimator;
 import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnimator;
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
 import dev.breezes.settlements.util.ResourceLocationUtil;
@@ -78,13 +77,7 @@ public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerM
         // TODO: differentiate between walk and run
         this.animateWalk(BaseVillagerAnimation.WALK_1.definition(), limbSwing, limbSwingAmount, 1, 2);
 
-        // Nitwit animation
-        ConditionAnimator nitwitAnimator = villager.getWiggleAnimator();
-        if (nitwitAnimator.isAnimationPlaying()) {
-            this.animate(nitwitAnimator.getCurrentState().get(), nitwitAnimator.getCurrentDefinition().get(), ageInTicks, 1);
-        }
-
-        // Repair iron golem animation; TODO: make an one-shot animator
+        // Repair iron golem animation
         OneShotAnimator spinAnimator = villager.getSpinAnimator();
         if (spinAnimator.isAnimationPlaying()) {
             this.animate(spinAnimator.getCurrentState().get(), spinAnimator.getCurrentDefinition().get(), ageInTicks, 1);

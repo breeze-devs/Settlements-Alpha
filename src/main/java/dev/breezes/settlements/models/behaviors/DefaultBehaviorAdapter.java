@@ -10,49 +10,54 @@ import javax.annotation.Nonnull;
 import java.util.Map;
 
 @CustomLog
-public class RepairIronGolemBehaviorAdapter extends Behavior<Villager> {
+public class DefaultBehaviorAdapter extends Behavior<Villager> {
 
-    private final RepairIronGolemBehavior wrappedBehavior;
+    private final IBehavior<BaseVillager> wrappedBehavior;
 
     private long previousGameTime;
 
-    public RepairIronGolemBehaviorAdapter() {
-        super(Map.of(), 20, 100 * 20);
-        this.wrappedBehavior = new RepairIronGolemBehavior();
+    public DefaultBehaviorAdapter(IBehavior<BaseVillager> wrappedBehavior) {
+        super(Map.of(), 1, 100 * 20);
+        this.wrappedBehavior = wrappedBehavior;
         this.previousGameTime = 0;
     }
 
     @Override
     protected boolean checkExtraStartConditions(@Nonnull ServerLevel level, @Nonnull Villager villager) {
-        // There's no game time passed into this method, so we'll default to 1
+        // This method is called every tick in vanilla
         return this.wrappedBehavior.tickPreconditions(1, level, (BaseVillager) villager);
     }
 
     @Override
     protected void start(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
-        log.behaviorStatus("Starting behavior because parent behavior is starting");
+        log.behaviorTrace("Starting behavior because parent behavior is starting");
         this.wrappedBehavior.start(level, (BaseVillager) villager);
     }
 
     @Override
     protected void tick(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
-        this.wrappedBehavior.tick(1, level, (BaseVillager) villager);
-
         // Stop the wrapper behavior if the wrapped behavior is stopped
         if (this.wrappedBehavior.getStatus() == BehaviorStatus.STOPPED) {
+            log.behaviorTrace("Stopping behavior because wrapped behavior is stopping");
             this.doStop(level, villager, gameTime);
+            return;
         }
+
+        this.wrappedBehavior.tick(this.calculateDeltaTicks(gameTime), level, (BaseVillager) villager);
     }
 
     @Override
     protected void stop(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
-        log.behaviorStatus("Stopping behavior because parent behavior is stopping");
-        this.wrappedBehavior.stop(level, (BaseVillager) villager);
+        if (this.wrappedBehavior.getStatus() != BehaviorStatus.STOPPED) {
+            log.behaviorTrace("Stopping behavior because parent behavior is stopping");
+            this.wrappedBehavior.stop(level, (BaseVillager) villager);
+        }
     }
 
     @Override
     protected boolean canStillUse(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
-        return this.wrappedBehavior.tickContinueConditions(this.calculateDeltaTicks(gameTime), level, (BaseVillager) villager);
+        // Always return true here since the wrapped behavior will handle its own stopping
+        return true;
     }
 
     private int calculateDeltaTicks(long gameTime) {

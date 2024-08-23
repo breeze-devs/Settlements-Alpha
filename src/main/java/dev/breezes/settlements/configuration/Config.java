@@ -16,12 +16,13 @@ import java.util.stream.Collectors;
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
 // Demonstrates how to use Forge's config APIs
 @Mod.EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public final class Config {
+public class Config {
+
     private static final ForgeConfigSpec.Builder CONFIG_BUILDER = new ForgeConfigSpec.Builder();
 
-    private static final ForgeConfigSpec.BooleanValue LOG_DIRT_BLOCK = CONFIG_BUILDER
-            .comment("Whether to log the dirt block on common setup")
-            .define("logDirtBlock", true);
+    private static final ForgeConfigSpec.BooleanValue ENABLE_CLIENT = CONFIG_BUILDER
+            .comment("Client functionalities enabled")
+            .define("enable_client", false);
 
     private static final ForgeConfigSpec.IntValue MAGIC_NUMBER = CONFIG_BUILDER
             .comment("A magic number")
@@ -38,7 +39,7 @@ public final class Config {
 
     public static final ForgeConfigSpec SPEC = CONFIG_BUILDER.build();
 
-    public static boolean logDirtBlock;
+    public static boolean clientEnabled;
     public static int magicNumber;
     public static String magicNumberIntroduction;
     public static Set<Item> items;
@@ -48,8 +49,8 @@ public final class Config {
     }
 
     @SubscribeEvent
-    static void onLoad(final ModConfigEvent event) {
-        logDirtBlock = LOG_DIRT_BLOCK.get();
+    public static void onLoad(ModConfigEvent event) {
+        clientEnabled = ENABLE_CLIENT.get();
         magicNumber = MAGIC_NUMBER.get();
         magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
 
