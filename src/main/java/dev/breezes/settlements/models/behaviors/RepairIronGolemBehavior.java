@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @CustomLog
-public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior<BaseVillager> {
+public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
 
     private static final int NAVIGATE_STOP_DISTANCE = 1;
     private static final double INTERACTION_DISTANCE = 2D;

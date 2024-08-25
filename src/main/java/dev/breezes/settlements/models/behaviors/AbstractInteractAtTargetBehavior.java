@@ -7,7 +7,7 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 
-public abstract class AbstractInteractAtTargetBehavior<T extends BaseVillager> extends AbstractBehavior<BaseVillager> {
+public abstract class AbstractInteractAtTargetBehavior extends BaseVillagerBehavior {
 
     protected final ITickable interactionCooldown;
 

@@ -1,6 +1,7 @@
 package dev.breezes.settlements.models.behaviors;
 
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.util.Ticks;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.Behavior;
@@ -12,14 +13,24 @@ import java.util.Map;
 @CustomLog
 public class DefaultBehaviorAdapter extends Behavior<Villager> {
 
+    private static final Ticks DEFAULT_MAX_DURATION = Ticks.minutes(2);
+
     private final IBehavior<BaseVillager> wrappedBehavior;
 
     private long previousGameTime;
 
-    public DefaultBehaviorAdapter(IBehavior<BaseVillager> wrappedBehavior) {
-        super(Map.of(), 1, 100 * 20);
+    private DefaultBehaviorAdapter(@Nonnull IBehavior<BaseVillager> wrappedBehavior, @Nonnull Ticks maxDuration) {
+        super(Map.of(), 1, (int) maxDuration.getTicks());
         this.wrappedBehavior = wrappedBehavior;
         this.previousGameTime = 0;
+    }
+
+    public static DefaultBehaviorAdapter adapt(@Nonnull IBehavior<BaseVillager> wrappedBehavior) {
+        return new DefaultBehaviorAdapter(wrappedBehavior, DEFAULT_MAX_DURATION);
+    }
+
+    public static DefaultBehaviorAdapter adapt(@Nonnull IBehavior<BaseVillager> wrappedBehavior, @Nonnull Ticks maxDuration) {
+        return new DefaultBehaviorAdapter(wrappedBehavior, maxDuration);
     }
 
     @Override
