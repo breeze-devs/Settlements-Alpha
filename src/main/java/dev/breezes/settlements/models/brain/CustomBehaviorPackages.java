@@ -5,10 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.entities.villager.BaseVillager;
-import dev.breezes.settlements.models.behaviors.BaseVillagerBehavior;
-import dev.breezes.settlements.models.behaviors.DefaultBehaviorAdapter;
-import dev.breezes.settlements.models.behaviors.IBehavior;
-import dev.breezes.settlements.models.behaviors.RepairIronGolemBehavior;
+import dev.breezes.settlements.models.behaviors.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
@@ -144,7 +141,7 @@ public final class CustomBehaviorPackages {
             // TODO: add behavior
         } else if (profession == VillagerProfession.SHEPHERD) {
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-//            customBehaviorWeightMap.put(new ShearSheepBehavior(), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ShearSheepBehavior()), customGoalWeight);
 //            customBehaviorWeightMap.put(new BreedAnimalsBehavior(Set.of(EntityType.SHEEP)), customGoalWeight);
         } else if (profession == VillagerProfession.TOOLSMITH) {
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior()), customGoalWeight);

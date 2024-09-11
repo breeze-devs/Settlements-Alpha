@@ -29,4 +29,8 @@ public class Ticks {
         return new Ticks(hours * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * TICKS_PER_SECOND);
     }
 
+    public static Ticks one() {
+        return new Ticks(1);
+    }
+
 }

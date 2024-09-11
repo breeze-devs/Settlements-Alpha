@@ -33,7 +33,7 @@ public class ApacheLogger implements ILogger {
 
     @Override
     public void behaviorStatus(@Nonnull String format, @Nonnull Object... args) {
-        this.debug(format.formatted(args));
+        this.info(format.formatted(args));
     }
 
     @Override
@@ -44,7 +44,7 @@ public class ApacheLogger implements ILogger {
     @Override
     public void trace(@Nonnull String format, @Nonnull Object... args) {
         // TODO: re-enable trace logging
-//        this.logger.trace(format.formatted(args));
+        this.logger.trace(format.formatted(args));
     }
 
     @Override

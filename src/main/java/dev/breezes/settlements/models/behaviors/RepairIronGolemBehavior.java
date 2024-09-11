@@ -38,12 +38,11 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
     private int remainingRepairAttempts;
 
     public RepairIronGolemBehavior() {
-        super(
-                log,
+        super(log,
                 RandomRangeTickable.of(Ticks.seconds(10), Ticks.seconds(20)),
                 RandomRangeTickable.of(Ticks.seconds(30), Ticks.minutes(1)), // TODO: move to config
-                Tickable.of(Ticks.seconds(2)) // repair every 3 seconds; TODO: this should be based on the animation duration
-        );
+                Tickable.of(Ticks.seconds(2))); // repair every 3 seconds; TODO: this should be based on the animation duration
+
 
         // Create behavior preconditions
         this.nearbyDamagedIronGolemExistsCondition = new NearbyDamagedIronGolemExistsCondition<>(30, 15, REPAIR_HP_PERCENTAGE);
@@ -72,7 +71,7 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
 
         SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(level, villager.getX(), villager.getY(), villager.getZ(), SoundSource.NEUTRAL);
         ParticleRegistry.repairIronGolem((ServerLevel) level, this.targetToRepair.getX(), this.targetToRepair.getY(), this.targetToRepair.getZ());
-        log.info("Repaired iron golem for %.2f HP, %d attempts remaining", healAmount, this.remainingRepairAttempts - 1);
+        log.behaviorStatus("Repaired iron golem for %.2f HP, %d attempts remaining", healAmount, this.remainingRepairAttempts - 1);
 
         ClientExecutor.runOnClient(() -> {
             ClientUtil.getClientSideVillager(villager)
