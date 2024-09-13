@@ -33,4 +33,8 @@ public class Ticks {
         return new Ticks(1);
     }
 
+    public int getTicksAsInt() {
+        return (int) ticks;
+    }
+
 }

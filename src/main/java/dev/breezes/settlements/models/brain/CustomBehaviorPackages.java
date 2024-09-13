@@ -107,7 +107,7 @@ public final class CustomBehaviorPackages {
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior()), customGoalWeight);
         } else if (profession == VillagerProfession.BUTCHER) {
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-//            customBehaviorWeightMap.put(new BreedAnimalsBehavior(Set.of(EntityType.COW, EntityType.PIG, EntityType.RABBIT)), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.COW, EntityType.PIG, EntityType.RABBIT))), customGoalWeight);
 //            customBehaviorWeightMap.put(new ButcherAnimalsBehavior(Map.of(
 //                    EntityType.COW, 3,
 //                    EntityType.SHEEP, 5,
@@ -123,7 +123,7 @@ public final class CustomBehaviorPackages {
 //            customBehaviorWeightMap.put(new HarvestSugarcaneBehavior(), customGoalWeight);
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
 //            customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
-//            customBehaviorWeightMap.put(new BreedAnimalsBehavior(Set.of(EntityType.CHICKEN)), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.CHICKEN))), customGoalWeight);
 //            customBehaviorWeightMap.put(new MakeCakeBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.FISHERMAN) {
 //            customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
@@ -131,10 +131,10 @@ public final class CustomBehaviorPackages {
         } else if (profession == VillagerProfession.FLETCHER) {
 //            customBehaviorWeightMap.put(new CollectArrowsBehavior(), customGoalWeight);
 //            customBehaviorWeightMap.put(new MakeTippedArrowsBehavior(), customGoalWeight);
-//            customBehaviorWeightMap.put(new BreedAnimalsBehavior(Set.of(EntityType.CHICKEN)), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.CHICKEN))), customGoalWeight);
         } else if (profession == VillagerProfession.LEATHERWORKER) {
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-//            customBehaviorWeightMap.put(new BreedAnimalsBehavior(Set.of(EntityType.COW)), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.COW))), customGoalWeight);
         } else if (profession == VillagerProfession.LIBRARIAN) {
 //            customBehaviorWeightMap.put(new EnchantItemBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.MASON) {
@@ -142,7 +142,7 @@ public final class CustomBehaviorPackages {
         } else if (profession == VillagerProfession.SHEPHERD) {
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ShearSheepBehavior()), customGoalWeight);
-//            customBehaviorWeightMap.put(new BreedAnimalsBehavior(Set.of(EntityType.SHEEP)), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.SHEEP))), customGoalWeight);
         } else if (profession == VillagerProfession.TOOLSMITH) {
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior()), customGoalWeight);
         } else if (profession == VillagerProfession.WEAPONSMITH) {

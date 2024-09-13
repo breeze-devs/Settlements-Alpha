@@ -37,6 +37,16 @@ public class ApacheLogger implements ILogger {
     }
 
     @Override
+    public void behaviorWarn(@Nonnull String format, @Nonnull Object... args) {
+        this.warn(format.formatted(args));
+    }
+
+    @Override
+    public void behaviorError(@Nonnull String format, @Nonnull Object... args) {
+        this.error(format.formatted(args));
+    }
+
+    @Override
     public void behaviorTrace(@Nonnull String format, @Nonnull Object... args) {
         this.trace(format, args);
     }

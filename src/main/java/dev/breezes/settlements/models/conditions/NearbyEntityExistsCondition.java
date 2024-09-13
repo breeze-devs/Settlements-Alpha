@@ -13,9 +13,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-/**
- *
- */
 public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> implements IEntityCondition<T> {
 
     private final double rangeHorizontal;
@@ -24,7 +21,7 @@ public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> imp
     private final IEntityCondition<E> extraEntityCondition;
     private final int minimumTargetCount;
 
-    @Nullable
+    @Nonnull
     private List<E> targets;
 
     public NearbyEntityExistsCondition(double rangeHorizontal, double rangeVertical,
@@ -35,6 +32,7 @@ public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> imp
         this.targetEntityType = targetEntityType;
         this.extraEntityCondition = extraEntityCondition == null ? (entity) -> true : extraEntityCondition;
         this.minimumTargetCount = minimumTargetCount;
+        this.targets = Collections.emptyList();
 
         if (this.minimumTargetCount < 1) {
             throw new IllegalArgumentException("Minimum target count must be at least 1");
@@ -45,6 +43,7 @@ public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> imp
     public boolean test(@Nullable T entity) {
         if (entity == null) {
             this.targets = Collections.emptyList();
+//            log.warn("Source entity is null, returning empty targets");
             return false;
         }
 
@@ -64,6 +63,7 @@ public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> imp
             this.targets = nearbyEntitiesStream.toList();
         }
 
+//        log.sensor something
         return this.targets.size() >= this.minimumTargetCount;
     }
 

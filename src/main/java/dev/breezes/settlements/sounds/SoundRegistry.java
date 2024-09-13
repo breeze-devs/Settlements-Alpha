@@ -14,7 +14,9 @@ public enum SoundRegistry {
 
     // TODO: we might want to account for chained sounds -- i.e. multiple sounds playing in sequence, such as notes
 
-    REPAIR_IRON_GOLEM(SoundEventPlayable.of(SoundEvents.IRON_GOLEM_REPAIR, 1.0F, 1F));
+    REPAIR_IRON_GOLEM(SoundEventPlayable.of(SoundEvents.IRON_GOLEM_REPAIR, 1.0F, 1F)),
+    GENERIC_EAT(SoundEventPlayable.of(SoundEvents.GENERIC_EAT, 1.0F, 1F)),
+    ;
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound
     @Nonnull

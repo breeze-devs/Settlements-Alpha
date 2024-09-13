@@ -1,0 +1,206 @@
+package dev.breezes.settlements.models.behaviors;
+
+import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.models.conditions.NearbyBreedableAnimalPairExistsCondition;
+import dev.breezes.settlements.models.misc.RandomRangeTickable;
+import dev.breezes.settlements.models.misc.Tickable;
+import dev.breezes.settlements.particles.ParticleRegistry;
+import dev.breezes.settlements.sounds.SoundRegistry;
+import dev.breezes.settlements.util.DistanceUtils;
+import dev.breezes.settlements.util.RandomUtil;
+import dev.breezes.settlements.util.Ticks;
+import lombok.CustomLog;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+@CustomLog
+public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
+
+    private static final ItemStack WHEAT = new ItemStack(Items.WHEAT);
+    private static final ItemStack CARROT = new ItemStack(Items.CARROT);
+    private static final ItemStack POTATO = new ItemStack(Items.POTATO);
+    private static final ItemStack BEETROOT = new ItemStack(Items.BEETROOT);
+    private static final ItemStack WHEAT_SEEDS = new ItemStack(Items.WHEAT_SEEDS);
+    private static final ItemStack BEETROOT_SEEDS = new ItemStack(Items.BEETROOT_SEEDS);
+    private static final ItemStack MELON_SEEDS = new ItemStack(Items.MELON_SEEDS);
+    private static final ItemStack PUMPKIN_SEEDS = new ItemStack(Items.PUMPKIN_SEEDS);
+
+    private static final Map<EntityType<? extends Animal>, ItemStack[]> BREED_ITEMS = Map.of(
+            EntityType.COW, new ItemStack[]{WHEAT},
+            EntityType.SHEEP, new ItemStack[]{WHEAT},
+            EntityType.CHICKEN, new ItemStack[]{WHEAT_SEEDS, BEETROOT_SEEDS, MELON_SEEDS, PUMPKIN_SEEDS},
+            EntityType.PIG, new ItemStack[]{CARROT, POTATO, BEETROOT},
+            EntityType.RABBIT, new ItemStack[]{CARROT}
+    );
+
+    private static final int NAVIGATE_STOP_DISTANCE = 1;
+    private static final double INTERACTION_DISTANCE = 2D;
+
+    private final Set<EntityType<? extends Animal>> breedableAnimalTypes;
+    private final NearbyBreedableAnimalPairExistsCondition<BaseVillager> nearbyBreedableAnimalPairExistsCondition;
+
+    @Nonnull
+    private BehaviorState behaviorState;
+    @Nullable
+    private ItemStack heldItem;
+    @Nullable
+    private Animal breedTarget1;
+    @Nullable
+    private Animal breedTarget2;
+
+    public BreedAnimalsBehavior(Set<EntityType<? extends Animal>> breedableAnimalTypes) {
+        super(log,
+                RandomRangeTickable.of(Ticks.seconds(10), Ticks.seconds(20)),
+                RandomRangeTickable.of(Ticks.seconds(30), Ticks.minutes(1)),
+                Tickable.of(Ticks.one()));
+
+        this.breedableAnimalTypes = breedableAnimalTypes;
+
+        // Create behavior preconditions
+        this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(30, 15, this.breedableAnimalTypes);
+        this.preconditions.add(this.nearbyBreedableAnimalPairExistsCondition);
+
+        // Initialize variables
+        this.behaviorState = BehaviorState.STANDBY;
+        this.heldItem = null;
+        this.breedTarget1 = null;
+        this.breedTarget2 = null;
+    }
+
+    @Override
+    public void doStart(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        Optional<NearbyBreedableAnimalPairExistsCondition.BreedablePair<?>> breedablePair = this.nearbyBreedableAnimalPairExistsCondition.getBreedablePair();
+        if (breedablePair.isEmpty()) {
+            log.warn("No breedable pair found, stopping behavior");
+            this.requestStop();
+            return;
+        }
+
+        this.behaviorState = BehaviorState.FEEDING_FIRST;
+        this.breedTarget1 = breedablePair.get().getFirst();
+        this.breedTarget2 = breedablePair.get().getSecond();
+
+        // Set held item
+        ItemStack[] breedItems = BREED_ITEMS.get(this.breedTarget1.getType());
+        this.heldItem = RandomUtil.choice(breedItems);
+    }
+
+    @Override
+    protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+        Animal target = this.behaviorState == BehaviorState.FEEDING_FIRST ? this.breedTarget1 : this.breedTarget2;
+        if (target == null) {
+            log.behaviorWarn("Target is null");
+            return;
+        }
+
+        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(target.position(), 0.5F, NAVIGATE_STOP_DISTANCE));
+    }
+
+    @Override
+    protected void interactWithTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+        Animal target = this.getCurrentTarget();
+        if (target == null) {
+            log.behaviorWarn("Target is null");
+            return;
+        }
+        log.behaviorStatus("Feeding animal in behavior stage '%s': '%s'".formatted(this.behaviorState.toString(), target.toString()));
+
+        // Feed the animal
+        target.setInLoveTime(Ticks.seconds(30).getTicksAsInt());
+
+        // Display effects
+        ParticleRegistry.breedHearts(((ServerLevel) world), target.getX(), target.getEyeY(), target.getZ());
+        ParticleRegistry.itemBreak(((ServerLevel) world), target.getX(), target.getEyeY(), target.getZ(), this.heldItem);
+        SoundRegistry.GENERIC_EAT.playGlobally(world, target.getX(), target.getY(), target.getZ(), SoundSource.NEUTRAL);
+
+        // Update behavior state
+        if (this.behaviorState == BehaviorState.FEEDING_FIRST) {
+            this.behaviorState = BehaviorState.FEEDING_SECOND;
+            log.behaviorStatus("Feeding second animal");
+        } else {
+            log.behaviorStatus("Successfully bred animals, stopping behavior");
+            this.requestStop();
+        }
+    }
+
+    @Override
+    protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
+        // Make both animals follow the villager
+        for (Animal target : new Animal[]{this.breedTarget1, this.breedTarget2}) {
+            if (target == null || !target.isAlive()) {
+                log.behaviorWarn("Breed target is null or dead");
+                this.requestStop();
+                return;
+            } else if (target.getNavigation().isDone()) {
+                target.getNavigation().moveTo(villager, 1.0D);
+            }
+        }
+
+        // Set held item
+        if (this.heldItem == null) {
+            log.behaviorWarn("Held item is null");
+            return;
+        }
+        villager.setHeldItem(this.heldItem);
+    }
+
+    @Override
+    protected boolean hasTarget(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        return this.breedTarget1 != null && this.breedTarget2 != null;
+    }
+
+    @Override
+    protected boolean isTargetInReach(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        Animal target = this.getCurrentTarget();
+        if (target == null) {
+            return false;
+        }
+        return DistanceUtils.isWithinDistance(villager.position(), target.position(), INTERACTION_DISTANCE);
+    }
+
+    @Nullable
+    private Animal getCurrentTarget() {
+        return this.behaviorState == BehaviorState.FEEDING_FIRST ? this.breedTarget1 : this.breedTarget2;
+    }
+
+    @Override
+    public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        villager.clearHeldItem();
+
+        this.behaviorState = BehaviorState.STANDBY;
+        this.heldItem = null;
+        this.breedTarget1 = null;
+        this.breedTarget2 = null;
+    }
+
+    private enum BehaviorState {
+        /**
+         * Not actively breeding
+         */
+        STANDBY,
+
+        /**
+         * Feeding the first animal
+         */
+        FEEDING_FIRST,
+
+        /**
+         * Feeding the second animal
+         */
+        FEEDING_SECOND
+    }
+
+}

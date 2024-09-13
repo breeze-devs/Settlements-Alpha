@@ -21,6 +21,10 @@ public interface ILogger {
      */
     void behaviorStatus(@Nonnull String format, @Nonnull Object... args);
 
+    void behaviorWarn(@Nonnull String format, @Nonnull Object... args);
+
+    void behaviorError(@Nonnull String format, @Nonnull Object... args);
+
     void behaviorTrace(@Nonnull String format, @Nonnull Object... args);
 
     /*
