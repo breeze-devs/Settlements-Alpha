@@ -26,6 +26,12 @@ public class VanillaMemoryNavigationManager<T extends BaseVillager> implements I
     }
 
     @Override
+    public void stop() {
+        villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+        villager.getNavigation().stop();
+    }
+
+    @Override
     public void navigateTo(@Nonnull Vec3 target, float speed, int completionRange) {
         if (this.isReachable(target, completionRange)) {
             return;

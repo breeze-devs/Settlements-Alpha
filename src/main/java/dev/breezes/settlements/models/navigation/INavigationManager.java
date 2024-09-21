@@ -16,6 +16,8 @@ public interface INavigationManager<T extends ISettlementsEntity> {
 
     boolean isNavigating();
 
+    void stop();
+
     /**
      * Navigate to the target position with the given speed and completion range
      * <p>

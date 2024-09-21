@@ -27,7 +27,7 @@ public class NearbyBreedableAnimalPairExistsCondition<T extends BaseVillager> im
         this.breedableAnimalTypes = breedableAnimalTypes;
 
         this.breedablePair = null;
-        
+
         if (this.breedableAnimalTypes.isEmpty()) {
             throw new IllegalArgumentException("Breedable animal types must not be empty");
         }
@@ -52,7 +52,7 @@ public class NearbyBreedableAnimalPairExistsCondition<T extends BaseVillager> im
             }
 
             // Check breeding requirements
-            if (animal.getAge() < 0 || !animal.canFallInLove()) {
+            if (animal.getAge() != 0 || !animal.canFallInLove()) {
                 continue;
             }
 
