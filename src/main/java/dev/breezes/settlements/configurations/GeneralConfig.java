@@ -1,4 +1,4 @@
-package dev.breezes.settlements.configuration;
+package dev.breezes.settlements.configurations;
 
 import dev.breezes.settlements.SettlementsMod;
 import net.minecraft.resources.ResourceLocation;
@@ -13,10 +13,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// An example config class. This is not required, but it's a good idea to have one to keep your config organized.
-// Demonstrates how to use Forge's config APIs
 @Mod.EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class Config {
+public class GeneralConfig {
 
     private static final ForgeConfigSpec.Builder CONFIG_BUILDER = new ForgeConfigSpec.Builder();
 
@@ -35,7 +33,7 @@ public class Config {
     // a list of strings that are treated as resource locations for items
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = CONFIG_BUILDER
             .comment("A list of items to log on common setup.")
-            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
+            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), GeneralConfig::validateItemName);
 
     public static final ForgeConfigSpec SPEC = CONFIG_BUILDER.build();
 

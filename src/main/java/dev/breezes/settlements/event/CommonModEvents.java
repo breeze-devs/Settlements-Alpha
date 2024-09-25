@@ -9,12 +9,18 @@ import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 
 @Mod.EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 @CustomLog
 public class CommonModEvents {
+
+    // TODO: refactor this!!! ugly
+    public static List<Runnable> loadCompleteTasks = new ArrayList<>();
 
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
@@ -31,6 +37,13 @@ public class CommonModEvents {
 
             // TODO: add more common setup tasks here
         });
+    }
+
+    @SubscribeEvent
+    public static void onLoadComplete(@Nonnull FMLLoadCompleteEvent event) {
+        log.debug("Running load complete tasks...");
+        loadCompleteTasks.forEach(Runnable::run);
+        log.debug("Load complete tasks complete");
     }
 
 }

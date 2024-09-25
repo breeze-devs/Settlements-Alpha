@@ -1,6 +1,6 @@
 package dev.breezes.settlements.client;
 
-import dev.breezes.settlements.configuration.Config;
+import dev.breezes.settlements.configurations.GeneralConfig;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
@@ -15,7 +15,7 @@ public class ClientExecutor {
     }
 
     private static boolean isClientEnabled() {
-        return Config.clientEnabled;
+        return GeneralConfig.clientEnabled;
     }
 
 }
