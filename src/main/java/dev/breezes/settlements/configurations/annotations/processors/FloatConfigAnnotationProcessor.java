@@ -7,6 +7,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +25,7 @@ public class FloatConfigAnnotationProcessor implements ConfigAnnotationSubProces
         log.debug("Found %d fields annotated with %s".formatted(fields.size(), this.getAnnotationClass().getSimpleName()));
 
         Map<Field, ForgeConfigSpec.FloatValue> configValues = new HashMap<>();
-        for (Field field : fields) {
+        for (Field field : fields.stream().sorted(Comparator.comparing(Field::getName)).toList()) {
             FloatConfig annotation = field.getAnnotation(FloatConfig.class);
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 

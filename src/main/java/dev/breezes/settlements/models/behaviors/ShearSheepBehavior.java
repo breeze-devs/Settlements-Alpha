@@ -1,5 +1,7 @@
 package dev.breezes.settlements.models.behaviors;
 
+import dev.breezes.settlements.configurations.annotations.declarations.IntegerConfig;
+import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbyShearableSheepExistsCondition;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
@@ -24,6 +26,32 @@ public class ShearSheepBehavior extends AbstractInteractAtTargetBehavior {
     private static final int NAVIGATE_STOP_DISTANCE = 1;
     private static final double INTERACTION_DISTANCE = 2D;
 
+    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
+            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
+            defaultValue = 10, min = 1)
+    private static int preconditionCheckCooldownMin;
+    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
+            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
+            defaultValue = 20, min = 1)
+    private static int preconditionCheckCooldownMax;
+    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
+            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
+            defaultValue = 60, min = 1)
+    private static int behaviorCooldownMin;
+    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
+            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
+            defaultValue = 240, min = 1)
+    private static int behaviorCooldownMax;
+
+    @IntegerConfig(identifier = "scan_range_horizontal",
+            description = "Horizontal range (in blocks) to scan for nearby sheep to shear",
+            defaultValue = 32, min = 5, max = 128)
+    private static int scanRangeHorizontal;
+    @IntegerConfig(identifier = "scan_range_vertical",
+            description = "Vertical range (in blocks) to scan for nearby sheep to shear",
+            defaultValue = 16, min = 1, max = 16)
+    private static int scanRangeVertical;
+
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
 
     @Nullable
@@ -31,12 +59,12 @@ public class ShearSheepBehavior extends AbstractInteractAtTargetBehavior {
 
     public ShearSheepBehavior() {
         super(log,
-                RandomRangeTickable.of(Ticks.seconds(10), Ticks.seconds(20)),
-                RandomRangeTickable.of(Ticks.seconds(30), Ticks.minutes(1)),
+                RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin), Ticks.seconds(preconditionCheckCooldownMax)),
+                RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin), Ticks.seconds(behaviorCooldownMax)),
                 Tickable.of(Ticks.one()));
 
         // Create behavior preconditions
-        this.nearbyShearableSheepExistsCondition = new NearbyShearableSheepExistsCondition<>(30, 15);
+        this.nearbyShearableSheepExistsCondition = new NearbyShearableSheepExistsCondition<>(scanRangeHorizontal, scanRangeVertical);
         this.preconditions.add(this.nearbyShearableSheepExistsCondition);
 
         // Initialize variables

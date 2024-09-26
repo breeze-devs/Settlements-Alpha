@@ -2,10 +2,9 @@ package dev.breezes.settlements.models.behaviors;
 
 import dev.breezes.settlements.client.ClientExecutor;
 import dev.breezes.settlements.client.ClientUtil;
-import dev.breezes.settlements.configurations.annotations.declarations.BooleanConfig;
 import dev.breezes.settlements.configurations.annotations.declarations.DoubleConfig;
-import dev.breezes.settlements.configurations.annotations.declarations.FloatConfig;
 import dev.breezes.settlements.configurations.annotations.declarations.IntegerConfig;
+import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbyDamagedIronGolemExistsCondition;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
@@ -32,51 +31,38 @@ import javax.annotation.Nullable;
 public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
 
     private static final int NAVIGATE_STOP_DISTANCE = 1;
-    private static final double INTERACTION_DISTANCE = 2D;
+    private static final double INTERACTION_DISTANCE = 2.0;
+
+    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
+            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
+            defaultValue = 10, min = 1)
+    private static int preconditionCheckCooldownMin;
+    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
+            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
+            defaultValue = 20, min = 1)
+    private static int preconditionCheckCooldownMax;
+    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
+            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
+            defaultValue = 60, min = 1)
+    private static int behaviorCooldownMin;
+    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
+            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
+            defaultValue = 240, min = 1)
+    private static int behaviorCooldownMax;
 
     @DoubleConfig(identifier = "repair_hp_percentage",
-            description = "The percentage of health that the iron golem should have before it is considered damaged",
+            description = "Health percentage threshold to consider the iron golem as damaged",
             defaultValue = 0.75, min = 0.0, max = 1.0)
     private static double repairHpPercentage;
 
-    // TODO: === Test & Example Only == Delete Me ===
-    @BooleanConfig(identifier = "boolean_config_unchanged",
-            description = "Boolean config unchanged",
-            defaultValue = true)
-    private static boolean booleanConfigUnchanged;
-    @BooleanConfig(identifier = "boolean_config_changed",
-            description = "Boolean config changed",
-            defaultValue = true)
-    private static boolean booleanConfigChanged;
-
-    @DoubleConfig(identifier = "double_config_unchanged",
-            description = "Double config unchanged",
-            defaultValue = 0.25, min = 0.0, max = 1.0)
-    private static double doubleConfigUnchanged;
-    @DoubleConfig(identifier = "double_config_changed",
-            description = "Double config changed",
-            defaultValue = 0.25, min = 0.0, max = 1.0)
-    private static double doubleConfigChanged;
-
-    @FloatConfig(identifier = "float_config_unchanged",
-            description = "Float config unchanged",
-            defaultValue = 0.5F, min = 0.0F, max = 1.0F)
-    private static float floatConfigUnchanged;
-    @FloatConfig(identifier = "float_config_changed",
-            description = "Float config changed",
-            defaultValue = 0.5F, min = 0.0F, max = 1.0F)
-    private static float floatConfigChanged;
-
-    @IntegerConfig(identifier = "integer_config_unchanged",
-            description = "Integer config unchanged",
-            defaultValue = 75, min = 0, max = 100)
-    private static int integerConfigUnchanged;
-    @IntegerConfig(identifier = "integer_config_changed",
-            description = "Integer config changed",
-            defaultValue = 75, min = 0, max = 100)
-    private static int integerConfigChanged;
-
-    // TODO: === End ===
+    @IntegerConfig(identifier = "scan_range_horizontal",
+            description = "Horizontal range (in blocks) to scan for iron golems to repair",
+            defaultValue = 32, min = 5, max = 128)
+    private static int scanRangeHorizontal;
+    @IntegerConfig(identifier = "scan_range_vertical",
+            description = "Vertical range (in blocks) to scan for iron golems to repair",
+            defaultValue = 16, min = 1, max = 16)
+    private static int scanRangeVertical;
 
     private final NearbyDamagedIronGolemExistsCondition<BaseVillager> nearbyDamagedIronGolemExistsCondition;
 
@@ -86,25 +72,13 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
 
     public RepairIronGolemBehavior() {
         super(log,
-                RandomRangeTickable.of(Ticks.seconds(10), Ticks.seconds(20)),
-                RandomRangeTickable.of(Ticks.seconds(30), Ticks.minutes(1)), // TODO: move to config
-                Tickable.of(Ticks.seconds(2))); // repair every 3 seconds; TODO: this should be based on the animation duration
-
+                RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin), Ticks.seconds(preconditionCheckCooldownMax)),
+                RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin), Ticks.seconds(behaviorCooldownMax)),
+                Tickable.of(Ticks.seconds(2))); // repair every 2 seconds; TODO: this should be based on the animation duration
 
         // Create behavior preconditions
-        this.nearbyDamagedIronGolemExistsCondition = new NearbyDamagedIronGolemExistsCondition<>(30, 15, repairHpPercentage);
+        this.nearbyDamagedIronGolemExistsCondition = new NearbyDamagedIronGolemExistsCondition<>(scanRangeHorizontal, scanRangeVertical, repairHpPercentage);
         this.preconditions.add(this.nearbyDamagedIronGolemExistsCondition);
-
-        // TODO: === Test & Example Only == Delete Me ===
-        log.info("booleanConfigUnchanged: " + booleanConfigUnchanged);
-        log.info("booleanConfigChanged: " + booleanConfigChanged);
-        log.info("doubleConfigUnchanged: " + doubleConfigUnchanged);
-        log.info("doubleConfigChanged: " + doubleConfigChanged);
-        log.info("floatConfigUnchanged: " + floatConfigUnchanged);
-        log.info("floatConfigChanged: " + floatConfigChanged);
-        log.info("integerConfigUnchanged: " + integerConfigUnchanged);
-        log.info("integerConfigChanged: " + integerConfigChanged);
-        // TODO: === End ===
 
         // Initialize variables
         this.targetToRepair = null;
@@ -113,7 +87,7 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
     @Override
     public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
         this.targetToRepair = this.nearbyDamagedIronGolemExistsCondition.getTargets().get(0);
-        this.remainingRepairAttempts = RandomUtil.randomInt(2, 5, true);
+        this.remainingRepairAttempts = RandomUtil.randomInt(1, 3, true); // TODO: this could be based on inventory, e.g. iron ingot count
     }
 
     @Override
