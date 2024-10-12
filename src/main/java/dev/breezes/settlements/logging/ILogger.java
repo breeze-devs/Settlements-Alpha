@@ -28,6 +28,17 @@ public interface ILogger {
     void behaviorTrace(@Nonnull String format, @Nonnull Object... args);
 
     /*
+     * Logging for sensors
+     */
+    void sensorStatus(@Nonnull String format, @Nonnull Object... args);
+
+    void sensorWarn(@Nonnull String format, @Nonnull Object... args);
+
+    void sensorError(@Nonnull String format, @Nonnull Object... args);
+
+    void sensorTrace(@Nonnull String format, @Nonnull Object... args);
+
+    /*
      * Convenience methods for logging at different levels
      */
     void trace(@Nonnull String format, @Nonnull Object... args);

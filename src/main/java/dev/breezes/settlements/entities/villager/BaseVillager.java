@@ -7,6 +7,7 @@ import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnim
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
 import dev.breezes.settlements.models.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.models.brain.IBrain;
+import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.navigation.INavigationManager;
 import dev.breezes.settlements.models.navigation.VanillaMemoryNavigationManager;
 import lombok.CustomLog;
@@ -133,6 +134,18 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     public void clearHeldItem() {
         this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+    }
+
+    public int getExpertiseLevel() {
+        return this.getVillagerData().getLevel();
+    }
+
+    public Location getLocation(boolean useEyeHeight) {
+        return Location.fromEntity(this, useEyeHeight);
+    }
+
+    public Location getLocation() {
+        return Location.fromEntity(this, true);
     }
 
 }

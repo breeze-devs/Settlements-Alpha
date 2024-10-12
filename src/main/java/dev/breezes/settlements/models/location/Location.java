@@ -195,6 +195,10 @@ public class Location implements Cloneable {
         return this.level.getEntities(except, scanBoundary, filter).stream();
     }
 
+    public Vector getDirectionTo(@Nonnull Location other) {
+        return new Vector(other.x - this.x, other.y - this.y, other.z - this.z).normalize(false);
+    }
+
     public Optional<Level> getLevel() {
         return Optional.ofNullable(this.level);
     }

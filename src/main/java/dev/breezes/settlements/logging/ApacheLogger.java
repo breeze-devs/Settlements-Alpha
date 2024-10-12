@@ -52,6 +52,26 @@ public class ApacheLogger implements ILogger {
     }
 
     @Override
+    public void sensorStatus(@Nonnull String format, @Nonnull Object... args) {
+        this.info(format.formatted(args));
+    }
+
+    @Override
+    public void sensorWarn(@Nonnull String format, @Nonnull Object... args) {
+        this.warn(format.formatted(args));
+    }
+
+    @Override
+    public void sensorError(@Nonnull String format, @Nonnull Object... args) {
+        this.error(format.formatted(args));
+    }
+
+    @Override
+    public void sensorTrace(@Nonnull String format, @Nonnull Object... args) {
+        this.trace(format, args);
+    }
+
+    @Override
     public void trace(@Nonnull String format, @Nonnull Object... args) {
         // TODO: re-enable trace logging
         this.logger.trace(format.formatted(args));
