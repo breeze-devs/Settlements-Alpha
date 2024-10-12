@@ -118,7 +118,8 @@ public final class CustomBehaviorPackages {
         } else if (profession == VillagerProfession.CARTOGRAPHER) {
             // TODO: add behavior
         } else if (profession == VillagerProfession.CLERIC) {
-            // TODO: add behavior
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior(EntityType.PLAYER)), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior(EntityType.VILLAGER)), customGoalWeight);
         } else if (profession == VillagerProfession.FARMER) {
 //            customBehaviorWeightMap.put(new HarvestSugarcaneBehavior(), customGoalWeight);
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
