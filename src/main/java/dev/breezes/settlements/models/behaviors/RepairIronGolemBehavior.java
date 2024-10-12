@@ -7,6 +7,7 @@ import dev.breezes.settlements.configurations.annotations.declarations.IntegerCo
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbyDamagedIronGolemExistsCondition;
+import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
 import dev.breezes.settlements.models.misc.Tickable;
 import dev.breezes.settlements.particles.ParticleRegistry;
@@ -15,7 +16,6 @@ import dev.breezes.settlements.util.DistanceUtils;
 import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
 import lombok.CustomLog;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -101,8 +101,9 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
         double healAmount = RandomUtil.randomDouble(3, 8); // TODO: calculate based on villager profession & expertise
         this.targetToRepair.heal((float) healAmount);
 
-        SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(level, villager.getX(), villager.getY(), villager.getZ(), SoundSource.NEUTRAL);
-        ParticleRegistry.repairIronGolem((ServerLevel) level, this.targetToRepair.getX(), this.targetToRepair.getY(), this.targetToRepair.getZ());
+        Location targetLocation = Location.fromEntity(this.targetToRepair, false);
+        SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(targetLocation, SoundSource.NEUTRAL);
+        ParticleRegistry.repairIronGolem(targetLocation);
         log.behaviorStatus("Repaired iron golem for %.2f HP, %d attempts remaining", healAmount, this.remainingRepairAttempts - 1);
 
         ClientExecutor.runOnClient(() -> {

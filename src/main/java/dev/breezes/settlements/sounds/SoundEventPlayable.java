@@ -1,10 +1,10 @@
 package dev.breezes.settlements.sounds;
 
+import dev.breezes.settlements.models.location.Location;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 
@@ -24,8 +24,8 @@ public class SoundEventPlayable implements IPlayable {
     }
 
     @Override
-    public void playGlobally(@Nonnull Level level, double x, double y, double z, @Nonnull SoundSource soundSource) {
-        level.playSound(null, x, y, z, this.minecraftSound, soundSource, this.volume, this.pitch);
+    public void playGlobally(@Nonnull Location location, @Nonnull SoundSource soundSource) {
+        location.playSound(this.minecraftSound, this.volume, this.pitch, soundSource);
     }
 
 }

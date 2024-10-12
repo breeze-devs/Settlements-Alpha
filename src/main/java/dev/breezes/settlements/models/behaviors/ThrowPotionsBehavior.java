@@ -4,6 +4,7 @@ import dev.breezes.settlements.client.ClientExecutor;
 import dev.breezes.settlements.client.ClientUtil;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbyNeedsPotionExistsCondition;
+import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
 import dev.breezes.settlements.models.misc.Tickable;
 import dev.breezes.settlements.sounds.SoundRegistry;
@@ -26,10 +27,9 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Set;
 
 @CustomLog
-public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior{
+public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior {
 
     private NearbyNeedsPotionExistsCondition<BaseVillager, LivingEntity> nearbyNeedsPotionExistsCondition;
 
@@ -40,8 +40,8 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior{
     public ThrowPotionsBehavior(EntityType<? extends LivingEntity> type) {
         super(log, Tickable.of(Ticks.seconds(0)), RandomRangeTickable.of(Ticks.seconds(5), Ticks.seconds(15)), Tickable.of(Ticks.seconds(1)));
 
-       this.nearbyNeedsPotionExistsCondition = new NearbyNeedsPotionExistsCondition<>(30, 15, type);
-       this.preconditions.add(this.nearbyNeedsPotionExistsCondition);
+        this.nearbyNeedsPotionExistsCondition = new NearbyNeedsPotionExistsCondition<>(30, 15, type);
+        this.preconditions.add(this.nearbyNeedsPotionExistsCondition);
 
         // Initialize variables
         this.targetToThrow = null;
@@ -49,13 +49,11 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior{
 
     public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
         this.targetToThrow = this.nearbyNeedsPotionExistsCondition.getTargets().getFirst();
-        if(this.targetToThrow.isUnderWater() && !this.targetToThrow.hasEffect(MobEffects.WATER_BREATHING)){
+        if (this.targetToThrow.isUnderWater() && !this.targetToThrow.hasEffect(MobEffects.WATER_BREATHING)) {
             potionToThrow = PotionContents.createItemStack(Items.SPLASH_POTION, Potions.WATER_BREATHING);
-        }
-        else if (this.targetToThrow.isOnFire() && !this.targetToThrow.hasEffect(MobEffects.FIRE_RESISTANCE)){
+        } else if (this.targetToThrow.isOnFire() && !this.targetToThrow.hasEffect(MobEffects.FIRE_RESISTANCE)) {
             potionToThrow = PotionContents.createItemStack(Items.SPLASH_POTION, Potions.FIRE_RESISTANCE);
-        }
-        else{
+        } else {
             potionToThrow = PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HEALING);
         }
     }
@@ -68,7 +66,8 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior{
     @Override
     protected void interactWithTarget(int delta, @NotNull Level world, @NotNull BaseVillager villager) {
         villager.clearHeldItem();
-        SoundRegistry.THROW_POTION.playGlobally(world, villager.getX(), villager.getY(), villager.getZ(), SoundSource.NEUTRAL);
+        Location location = Location.fromEntity(villager, true);
+        SoundRegistry.THROW_POTION.playGlobally(location, SoundSource.NEUTRAL);
         double xDistance = targetToThrow.getX() + targetToThrow.getDeltaMovement().x - villager.getX();
         double yDistance = targetToThrow.getY() + targetToThrow.getDeltaMovement().y - villager.getY();
         double zDistance = targetToThrow.getZ() + targetToThrow.getDeltaMovement().z - villager.getZ();

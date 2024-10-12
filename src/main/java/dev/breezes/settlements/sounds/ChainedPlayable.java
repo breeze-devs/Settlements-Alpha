@@ -1,7 +1,7 @@
 package dev.breezes.settlements.sounds;
 
+import dev.breezes.settlements.models.location.Location;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 
@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 public class ChainedPlayable implements IPlayable {
 
     @Override
-    public void playGlobally(@Nonnull Level level, double x, double y, double z, @Nonnull SoundSource soundSource) {
+    public void playGlobally(@Nonnull Location location, @Nonnull SoundSource soundSource) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

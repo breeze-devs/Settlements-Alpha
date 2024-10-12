@@ -4,6 +4,7 @@ import dev.breezes.settlements.configurations.annotations.declarations.IntegerCo
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbyBreedableAnimalPairExistsCondition;
+import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.misc.ITickable;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
 import dev.breezes.settlements.models.misc.Tickable;
@@ -14,7 +15,6 @@ import dev.breezes.settlements.util.DistanceUtils;
 import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
 import lombok.CustomLog;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -160,9 +160,10 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
         target.setLeashedTo(villager, true);
 
         // Display effects
-        ParticleRegistry.breedHearts(((ServerLevel) world), target.getX(), target.getEyeY(), target.getZ());
-        ParticleRegistry.itemBreak(((ServerLevel) world), target.getX(), target.getEyeY(), target.getZ(), this.heldItem);
-        SoundRegistry.GENERIC_EAT.playGlobally(world, target.getX(), target.getY(), target.getZ(), SoundSource.NEUTRAL);
+        Location targetLocation = Location.fromEntity(target, false);
+        ParticleRegistry.breedHearts(targetLocation);
+        ParticleRegistry.itemBreak(targetLocation, this.heldItem);
+        SoundRegistry.FEED_ANIMAL.playGlobally(targetLocation, SoundSource.NEUTRAL);
 
         // Update behavior state
         if (this.behaviorState == BehaviorState.FEEDING_FIRST) {
