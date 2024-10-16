@@ -107,7 +107,7 @@ public final class CustomBehaviorPackages {
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior()), customGoalWeight);
         } else if (profession == VillagerProfession.BUTCHER) {
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.COW, EntityType.PIG, EntityType.RABBIT))), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.PIG))), customGoalWeight);
 //            customBehaviorWeightMap.put(new ButcherAnimalsBehavior(Map.of(
 //                    EntityType.COW, 3,
 //                    EntityType.SHEEP, 5,
@@ -118,7 +118,7 @@ public final class CustomBehaviorPackages {
         } else if (profession == VillagerProfession.CARTOGRAPHER) {
             // TODO: add behavior
         } else if (profession == VillagerProfession.CLERIC) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), customGoalWeight);
+            // TODO: add behavior
         } else if (profession == VillagerProfession.FARMER) {
 //            customBehaviorWeightMap.put(new HarvestSugarcaneBehavior(), customGoalWeight);
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
@@ -232,7 +232,7 @@ public final class CustomBehaviorPackages {
 
         // Throw healing potion behavior
         if (profession == VillagerProfession.CLERIC) {
-//            addChoiceBehavior(new ThrowHealingPotionBehavior(), customMeetChoiceBehaviors, 1, customBehaviors);
+            addChoiceBehavior(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), customMeetChoiceBehaviors, 10);
         }
 
         // Nitwit behaviors
@@ -321,6 +321,10 @@ public final class CustomBehaviorPackages {
 //            addBehavior(new ThrowSnowballBehavior(), idleBehaviors, 1, customBehaviors);
 //            addBehavior(new RunAroundBehavior(), idleBehaviors, 1, customBehaviors);
 //        }
+
+        if (profession == VillagerProfession.CLERIC) {
+            addChoiceBehavior(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), idleChoiceBehaviors, 10);
+        }
 
         // Add choice behaviors to Minecraft behaviors
         idleBehaviors.add(Pair.of(2, new RunOne<>(idleChoiceBehaviors)));

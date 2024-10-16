@@ -74,7 +74,7 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
             }
 
             // Check if entity needs a potion
-            Optional<PotionType> potionType = needsPotion(villager, entity);
+            Optional<PotionType> potionType = this.needsPotion(villager, entity);
             potionType.ifPresent(type -> this.friendlyNeedsPotionMap.put(entity, type));
 
             log.sensorTrace("Entity '%s' needs potion type: %s", entity.getName(), potionType.orElse(null));
@@ -89,7 +89,7 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
         return villager.getGossips().getReputation(player.getUUID(), Predicates.alwaysTrue());
     }
 
-    private static Optional<PotionType> needsPotion(@Nonnull BaseVillager villager, @Nonnull Entity entity) {
+    private Optional<PotionType> needsPotion(@Nonnull BaseVillager villager, @Nonnull Entity entity) {
         if (!(entity instanceof LivingEntity livingEntity)) {
             return Optional.empty();
         }
@@ -106,7 +106,7 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
                 return Optional.of(PotionType.REGENERATION);
             } else if (villager.getExpertiseLevel() >= PotionType.STRONG_HEALING.getRequiredExpertiseLevel()) {
                 return Optional.of(PotionType.STRONG_HEALING);
-            } else if (villager.getExpertiseLevel() >= PotionType.HEALING.getRequiredExpertiseLevel()) {
+            } else {
                 return Optional.of(PotionType.HEALING);
             }
         }

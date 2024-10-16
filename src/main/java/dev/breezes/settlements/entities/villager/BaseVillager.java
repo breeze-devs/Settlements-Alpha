@@ -136,6 +136,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
     }
 
+    /**
+     * Get the expertise level of the villager
+     * 1. Novice
+     * 2. Apprentice
+     * 3. Journeyman
+     * 4. Expert
+     * 5. Master
+     */
     public int getExpertiseLevel() {
         return this.getVillagerData().getLevel();
     }

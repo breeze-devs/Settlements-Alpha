@@ -37,19 +37,19 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior {
 
     @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 10, min = 1)
+            defaultValue = 5, min = 1)
     private static int preconditionCheckCooldownMin;
     @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 20, min = 1)
+            defaultValue = 10, min = 1)
     private static int preconditionCheckCooldownMax;
     @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 60, min = 1)
+            defaultValue = 30, min = 1)
     private static int behaviorCooldownMin;
     @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
             description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 240, min = 1)
+            defaultValue = 120, min = 1)
     private static int behaviorCooldownMax;
 
     @IntegerConfig(identifier = "minimum_player_reputation",
@@ -59,14 +59,14 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior {
 
     @IntegerConfig(identifier = "scan_range_horizontal",
             description = "Horizontal range (in blocks) to search for entities that need a potion",
-            defaultValue = 32, min = 5, max = 128)
+            defaultValue = 16, min = 5, max = 128)
     private static int scanRangeHorizontal;
     @IntegerConfig(identifier = "scan_range_vertical",
             description = "Vertical range (in blocks) to search for entities that need a potion",
-            defaultValue = 16, min = 1, max = 16)
+            defaultValue = 8, min = 1, max = 16)
     private static int scanRangeVertical;
 
-    private NearbyFriendlyNeedsPotionCondition<BaseVillager> nearbyFriendlyNeedsPotionCondition;
+    private final NearbyFriendlyNeedsPotionCondition<BaseVillager> nearbyFriendlyNeedsPotionCondition;
 
     @Nullable
     private LivingEntity targetToThrow;
