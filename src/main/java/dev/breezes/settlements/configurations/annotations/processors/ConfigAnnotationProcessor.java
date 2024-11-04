@@ -2,30 +2,35 @@ package dev.breezes.settlements.configurations.annotations.processors;
 
 import dev.breezes.settlements.event.CommonModEvents;
 import lombok.CustomLog;
-import net.minecraftforge.common.ForgeConfigSpec;
-import org.reflections.Reflections;
-import org.reflections.scanners.Scanners;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforgespi.language.ModFileScanData;
 
+import javax.annotation.Nonnull;
+import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @CustomLog
 public class ConfigAnnotationProcessor {
 
-    public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    public static ForgeConfigSpec SPEC;
+    public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    public static ModConfigSpec SPEC;
 
     public static void process() {
         log.info("Processing mod config annotations");
 
         // Scan the package for fields annotated with the specified annotations
-        Reflections reflections = new Reflections(new ConfigurationBuilder()
-                .setUrls(ClasspathHelper.forPackage("dev.breezes.settlements"))
-                .setScanners(Scanners.FieldsAnnotated));
+        ModFileScanData scanner = ModLoadingContext.get()
+                .getActiveContainer()
+                .getModInfo()
+                .getOwningFile()
+                .getFile()
+                .getScanResult();
 
         List<ConfigAnnotationSubProcessor<?>> processors = List.of(
                 new BooleanConfigAnnotationProcessor(),
@@ -35,7 +40,11 @@ public class ConfigAnnotationProcessor {
         );
         List<Runnable> tasks = new ArrayList<>();
         for (ConfigAnnotationSubProcessor<?> processor : processors) {
-            Set<Field> fields = reflections.getFieldsAnnotatedWith(processor.getAnnotationClass());
+            Set<Field> fields = scanner.getAnnotatedBy(processor.getAnnotationClass(), ElementType.FIELD)
+                    .map(ConfigAnnotationProcessor::getFieldFromAnnotationData)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
             tasks.add(processor.buildConfig(BUILDER, fields));
         }
 
@@ -43,5 +52,14 @@ public class ConfigAnnotationProcessor {
         CommonModEvents.loadCompleteTasks.addAll(tasks);
     }
 
+    private static Optional<Field> getFieldFromAnnotationData(@Nonnull ModFileScanData.AnnotationData annotationData) {
+        try {
+            return Optional.of(Class.forName(annotationData.clazz().getClassName())
+                    .getDeclaredField(annotationData.memberName()));
+        } catch (Exception e) {
+            log.error("Failed to process annotation in class '{}' field '{}'", annotationData.clazz().getClassName(), annotationData.memberName(), e);
+            return Optional.empty();
+        }
+    }
 
 }

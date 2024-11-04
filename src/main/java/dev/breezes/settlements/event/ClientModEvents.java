@@ -1,19 +1,19 @@
 package dev.breezes.settlements.event;
 
-import dev.breezes.settlements.SettlementsMod;
-import dev.breezes.settlements.configurations.ui.ConfigScreen;
 import dev.breezes.settlements.registry.EntityRegistry;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.VillagerRenderer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
-@Mod.EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
 
     @SubscribeEvent
@@ -21,11 +21,8 @@ public class ClientModEvents {
         // TODO: replace with custom model when ready
         EntityRenderers.register(EntityRegistry.BASE_VILLAGER.get(), VillagerRenderer::new);
 
-        ModLoadingContext context = ModLoadingContext.get();
-        context.registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
-                () -> new ConfigScreenHandler.ConfigScreenFactory((mc, prevScreen) -> new ConfigScreen() {
-                })
-        );
+        ModContainer container = ModLoadingContext.get().getActiveContainer();
+        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
 
 

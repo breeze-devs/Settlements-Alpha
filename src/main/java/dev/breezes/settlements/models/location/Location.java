@@ -172,7 +172,7 @@ public class Location implements Cloneable {
         this.level.playSound(null, this.x, this.y, this.z, minecraftSound, soundSource, volume, pitch);
     }
 
-    public <T extends ParticleOptions> void displayParticles(T type, int count, double dx, double dy, double dz, double speed) {
+    public <T extends ParticleOptions> void displayParticles(@Nonnull T type, int count, double dx, double dy, double dz, double speed) {
         if (this.level == null || !(this.level instanceof ServerLevel serverLevel)) {
             log.error("Attempted to spawn particles from a location '%s' with no server level", this.toString());
             return;

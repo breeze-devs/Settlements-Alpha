@@ -3,7 +3,7 @@ package dev.breezes.settlements.configurations.annotations.processors;
 import com.google.common.base.CaseFormat;
 import dev.breezes.settlements.configurations.annotations.declarations.DoubleConfig;
 import lombok.CustomLog;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
@@ -21,16 +21,16 @@ public class DoubleConfigAnnotationProcessor implements ConfigAnnotationSubProce
     }
 
     @Override
-    public Runnable buildConfig(@Nonnull ForgeConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
+    public Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
         log.debug("Found %d fields annotated with %s".formatted(fields.size(), this.getAnnotationClass().getSimpleName()));
 
-        Map<Field, ForgeConfigSpec.DoubleValue> configValues = new HashMap<>();
+        Map<Field, ModConfigSpec.DoubleValue> configValues = new HashMap<>();
         for (Field field : fields.stream().sorted(Comparator.comparing(Field::getName)).toList()) {
             DoubleConfig annotation = field.getAnnotation(DoubleConfig.class);
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
             configBuilder.push(className);
-            ForgeConfigSpec.DoubleValue configValue = configBuilder.comment(annotation.description())
+            ModConfigSpec.DoubleValue configValue = configBuilder.comment(annotation.description())
                     .defineInRange(annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
             configBuilder.pop();
 
@@ -41,12 +41,12 @@ public class DoubleConfigAnnotationProcessor implements ConfigAnnotationSubProce
         return () -> populateDoubles(configValues);
     }
 
-    private void populateDoubles(@Nonnull Map<Field, ForgeConfigSpec.DoubleValue> doubleConfigValues) {
+    private void populateDoubles(@Nonnull Map<Field, ModConfigSpec.DoubleValue> doubleConfigValues) {
         log.debug("Populating %d double fields from config".formatted(doubleConfigValues.size()));
 
-        for (Map.Entry<Field, ForgeConfigSpec.DoubleValue> entry : doubleConfigValues.entrySet()) {
+        for (Map.Entry<Field, ModConfigSpec.DoubleValue> entry : doubleConfigValues.entrySet()) {
             Field field = entry.getKey();
-            ForgeConfigSpec.DoubleValue configValue = entry.getValue();
+            ModConfigSpec.DoubleValue configValue = entry.getValue();
             try {
                 field.setAccessible(true);
                 field.set(null, configValue.get()); // instance is null for static fields

@@ -1,21 +1,19 @@
 package dev.breezes.settlements.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.entities.villager.BaseVillager;
-import dev.breezes.settlements.packets.PacketHandler;
 import dev.breezes.settlements.registry.EntityRegistry;
 import lombok.CustomLog;
-import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 @CustomLog
 public class CommonModEvents {
 
@@ -31,9 +29,9 @@ public class CommonModEvents {
     public static void onCommonSetup(@Nonnull FMLCommonSetupEvent event) {
         // Register packets
         event.enqueueWork(() -> {
-            log.debug("Registering packets...");
-            PacketHandler.registerPackets();
-            log.debug("Packet registration complete");
+//            log.debug("Registering packets...");
+//            PacketHandler.registerPackets();
+//            log.debug("Packet registration complete");
 
             // TODO: add more common setup tasks here
         });

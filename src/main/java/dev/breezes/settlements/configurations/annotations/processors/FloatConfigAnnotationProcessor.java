@@ -3,7 +3,7 @@ package dev.breezes.settlements.configurations.annotations.processors;
 import com.google.common.base.CaseFormat;
 import dev.breezes.settlements.configurations.annotations.declarations.FloatConfig;
 import lombok.CustomLog;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
@@ -21,16 +21,16 @@ public class FloatConfigAnnotationProcessor implements ConfigAnnotationSubProces
     }
 
     @Override
-    public Runnable buildConfig(@Nonnull ForgeConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
+    public Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
         log.debug("Found %d fields annotated with %s".formatted(fields.size(), this.getAnnotationClass().getSimpleName()));
 
-        Map<Field, ForgeConfigSpec.FloatValue> configValues = new HashMap<>();
+        Map<Field, ModConfigSpec.DoubleValue> configValues = new HashMap<>();
         for (Field field : fields.stream().sorted(Comparator.comparing(Field::getName)).toList()) {
             FloatConfig annotation = field.getAnnotation(FloatConfig.class);
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
             configBuilder.push(className);
-            ForgeConfigSpec.FloatValue configValue = configBuilder.comment(annotation.description())
+            ModConfigSpec.DoubleValue configValue = configBuilder.comment(annotation.description())
                     .defineInRange(annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
             configBuilder.pop();
 
@@ -41,15 +41,15 @@ public class FloatConfigAnnotationProcessor implements ConfigAnnotationSubProces
         return () -> populateFloats(configValues);
     }
 
-    private void populateFloats(@Nonnull Map<Field, ForgeConfigSpec.FloatValue> floatConfigValues) {
+    private void populateFloats(@Nonnull Map<Field, ModConfigSpec.DoubleValue> floatConfigValues) {
         log.debug("Populating %d float fields from config".formatted(floatConfigValues.size()));
 
-        for (Map.Entry<Field, ForgeConfigSpec.FloatValue> entry : floatConfigValues.entrySet()) {
+        for (Map.Entry<Field, ModConfigSpec.DoubleValue> entry : floatConfigValues.entrySet()) {
             Field field = entry.getKey();
-            ForgeConfigSpec.FloatValue configValue = entry.getValue();
+            ModConfigSpec.DoubleValue configValue = entry.getValue();
             try {
                 field.setAccessible(true);
-                field.set(null, configValue.get()); // instance is null for static fields
+                field.set(null, configValue.get().floatValue()); // instance is null for static fields
                 log.debug("Set field '%s.%s' to %f".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()));
             } catch (IllegalAccessException e) {
                 log.error("Failed to set field '%s.%s' to %f".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()), e);

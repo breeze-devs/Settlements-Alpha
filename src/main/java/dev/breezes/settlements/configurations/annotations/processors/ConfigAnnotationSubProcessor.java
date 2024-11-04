@@ -1,6 +1,6 @@
 package dev.breezes.settlements.configurations.annotations.processors;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
@@ -16,6 +16,6 @@ public interface ConfigAnnotationSubProcessor<T extends Annotation> {
      *
      * @return a runnable to populate the class variables from the config after config load complete
      */
-    Runnable buildConfig(@Nonnull ForgeConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields);
+    Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields);
 
 }

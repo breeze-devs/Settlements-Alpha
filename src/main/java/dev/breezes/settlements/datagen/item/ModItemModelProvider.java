@@ -3,8 +3,8 @@ package dev.breezes.settlements.datagen.item;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.registry.ItemRegistry;
 import net.minecraft.data.PackOutput;
-import net.minecraftforge.client.model.generators.ItemModelProvider;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
 public class ModItemModelProvider extends ItemModelProvider {
 

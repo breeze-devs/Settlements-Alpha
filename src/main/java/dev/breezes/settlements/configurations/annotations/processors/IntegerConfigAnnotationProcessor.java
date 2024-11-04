@@ -3,7 +3,7 @@ package dev.breezes.settlements.configurations.annotations.processors;
 import com.google.common.base.CaseFormat;
 import dev.breezes.settlements.configurations.annotations.declarations.IntegerConfig;
 import lombok.CustomLog;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
@@ -21,16 +21,16 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
     }
 
     @Override
-    public Runnable buildConfig(@Nonnull ForgeConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
+    public Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
         log.debug("Found %d fields annotated with %s".formatted(fields.size(), this.getAnnotationClass().getSimpleName()));
 
-        Map<Field, ForgeConfigSpec.IntValue> configValues = new HashMap<>();
+        Map<Field, ModConfigSpec.IntValue> configValues = new HashMap<>();
         for (Field field : fields.stream().sorted(Comparator.comparing(Field::getName)).toList()) {
             IntegerConfig annotation = field.getAnnotation(IntegerConfig.class);
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
             configBuilder.push(className);
-            ForgeConfigSpec.IntValue configValue = configBuilder.comment(annotation.description())
+            ModConfigSpec.IntValue configValue = configBuilder.comment(annotation.description())
                     .defineInRange(annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
             configBuilder.pop();
 
@@ -41,12 +41,12 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
         return () -> populateInts(configValues);
     }
 
-    private void populateInts(@Nonnull Map<Field, ForgeConfigSpec.IntValue> integerConfigValues) {
+    private void populateInts(@Nonnull Map<Field, ModConfigSpec.IntValue> integerConfigValues) {
         log.debug("Populating %d integer fields from config".formatted(integerConfigValues.size()));
 
-        for (Map.Entry<Field, ForgeConfigSpec.IntValue> entry : integerConfigValues.entrySet()) {
+        for (Map.Entry<Field, ModConfigSpec.IntValue> entry : integerConfigValues.entrySet()) {
             Field field = entry.getKey();
-            ForgeConfigSpec.IntValue configValue = entry.getValue();
+            ModConfigSpec.IntValue configValue = entry.getValue();
             try {
                 field.setAccessible(true);
                 field.set(null, configValue.get()); // instance is null for static fields
