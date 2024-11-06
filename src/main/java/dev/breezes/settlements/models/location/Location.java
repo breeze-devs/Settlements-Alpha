@@ -1,8 +1,13 @@
 package dev.breezes.settlements.models.location;
 
+import dev.breezes.settlements.models.block.PhysicalBlock;
 import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.util.MathUtil;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.CustomLog;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -106,8 +111,20 @@ public class Location implements Cloneable {
         return MathUtil.square(this.x - other.x) + MathUtil.square(this.y - other.y) + MathUtil.square(this.z - other.z);
     }
 
+    public double distanceSquared(@Nonnull Entity entity) {
+        if (this.level != entity.level()) {
+            return Double.POSITIVE_INFINITY;
+        }
+
+        return MathUtil.square(this.x - entity.getX()) + MathUtil.square(this.y - entity.getY()) + MathUtil.square(this.z - entity.getZ());
+    }
+
     public double distance(@Nonnull Location other) {
         return Math.sqrt(this.distanceSquared(other));
+    }
+
+    public double distance(@Nonnull Entity entity) {
+        return Math.sqrt(this.distanceSquared(entity));
     }
 
     /*
@@ -149,6 +166,15 @@ public class Location implements Cloneable {
     /*
      * Miscellaneous methods
      */
+    public Optional<PhysicalBlock> getBlock() {
+        if (this.level == null) {
+            log.warn("Attempted to get block from a location '%s' with no level", this.toString());
+            return Optional.empty();
+        }
+
+        return Optional.of(PhysicalBlock.of(this, this.level.getBlockState(this.toBlockPos())));
+    }
+
     public boolean isChunkLoaded() {
         // TODO: implement this
         throw new UnsupportedOperationException("Not implemented");
@@ -213,6 +239,16 @@ public class Location implements Cloneable {
 
     public int getBlockZ() {
         return (int) Math.floor(this.z);
+    }
+
+    public void spawnEntity(@Nonnull Entity entity) {
+        if (this.level == null) {
+            log.error("Attempted to spawn entity at a location '%s' with no level", this.toString());
+            return;
+        }
+
+        entity.moveTo(this.x, this.y, this.z, this.yaw, this.pitch);
+        this.level.addFreshEntity(entity);
     }
 
 }

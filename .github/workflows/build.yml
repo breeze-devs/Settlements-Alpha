@@ -1,6 +1,6 @@
 name: Build
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   build:
@@ -12,10 +12,10 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup JDK 17
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Build with Gradle

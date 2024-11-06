@@ -17,16 +17,16 @@ public class Ticks {
         return new Ticks(ticks);
     }
 
-    public static Ticks seconds(long seconds) {
-        return new Ticks(seconds * TICKS_PER_SECOND);
+    public static Ticks seconds(double seconds) {
+        return new Ticks((long) (seconds * TICKS_PER_SECOND));
     }
 
-    public static Ticks minutes(long minutes) {
-        return new Ticks(minutes * SECONDS_PER_MINUTE * TICKS_PER_SECOND);
+    public static Ticks minutes(double minutes) {
+        return new Ticks((long) (minutes * SECONDS_PER_MINUTE * TICKS_PER_SECOND));
     }
 
-    public static Ticks hours(long hours) {
-        return new Ticks(hours * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * TICKS_PER_SECOND);
+    public static Ticks hours(double hours) {
+        return new Ticks((long) (hours * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * TICKS_PER_SECOND));
     }
 
     public static Ticks one() {

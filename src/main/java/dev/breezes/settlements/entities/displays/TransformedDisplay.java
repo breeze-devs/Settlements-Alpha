@@ -1,11 +1,12 @@
 package dev.breezes.settlements.entities.displays;
 
-import com.mojang.math.Transformation;
+import dev.breezes.settlements.entities.displays.models.TransformationMatrix;
+import dev.breezes.settlements.mixins.DisplayEntityMixin;
 import dev.breezes.settlements.models.location.Location;
+import dev.breezes.settlements.util.Ticks;
+import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.world.entity.Display;
-import org.apache.commons.lang3.reflect.MethodUtils;
-import org.joml.Matrix4f;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -13,11 +14,12 @@ import javax.annotation.Nullable;
 /**
  * https://eszesbalint.github.io/bdstudio/editor
  */
+@CustomLog
 @Getter
 public abstract class TransformedDisplay {
 
     @Nonnull
-    protected final Matrix4f transformationMatrix;
+    protected final TransformationMatrix transformationMatrix;
     @Nonnull
     protected final DisplayType displayType;
 
@@ -27,7 +29,7 @@ public abstract class TransformedDisplay {
     protected final boolean temporary;
     private boolean spawned;
 
-    public TransformedDisplay(@Nonnull Matrix4f transformationMatrix, @Nonnull DisplayType displayType, boolean temporary) {
+    public TransformedDisplay(@Nonnull TransformationMatrix transformationMatrix, @Nonnull DisplayType displayType, boolean temporary) {
         this.transformationMatrix = transformationMatrix;
         this.displayType = displayType;
         this.temporary = temporary;
@@ -42,22 +44,9 @@ public abstract class TransformedDisplay {
         }
 
         this.displayEntity = this.createEntity(location);
-
-        try {
-            MethodUtils.invokeMethod(this.displayEntity, "setTransformation", new Transformation(this.transformationMatrix));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-//        this.displayEntity.setTransformation(new Transformation(
-//                transformationMatrix.getTranslation(new Vector3f()),
-//                transformationMatrix.getUnnormalizedRotation(new Quaternionf()),
-//                transformationMatrix.getScale(new Vector3f()),
-//                new Quaternionf()  // Assuming no right rotation
-//        ));
-
         this.spawned = true;
 
-        // Add to removal list if temporary
+        // TODO: Add to removal list if temporary
         if (this.temporary) {
 //            DisplayModuleController.TEMPORARY_DISPLAYS.add(this);
         }
@@ -66,18 +55,39 @@ public abstract class TransformedDisplay {
     }
 
     @Nonnull
-    public abstract Display createEntity(@Nonnull Location location);
+    protected abstract Display createEntity(@Nonnull Location location);
 
     public void remove() {
-        if (this.displayEntity != null && !this.displayEntity.isAlive()) {
+        if (this.displayEntity != null) {
             this.displayEntity.discard();
         }
-
         this.spawned = false;
     }
 
     @Nonnull
     public abstract TransformedDisplay cloneWithoutEntity(boolean temporary);
+
+    public void setTransformation(@Nonnull TransformationMatrix newTransformation) {
+        this.setTransformation(newTransformation, null);
+    }
+
+    public void setTransformation(@Nonnull TransformationMatrix newTransformation, @Nullable Ticks duration) {
+        if (this.displayEntity == null) {
+            log.info("TODO: change to entity-level logger"); // TODO: change to entity-level logger
+            log.error("Cannot set transformation on a display that has not been spawned!");
+            return;
+        }
+
+        DisplayEntityMixin display = (DisplayEntityMixin) this.displayEntity;
+        if (duration != null) {
+            display.invokeSetTransformationInterpolationDelay(0);
+            display.invokeSetTransformationInterpolationDuration(duration.getTicksAsInt());
+            display.setUpdateInterpolationDuration(true);
+        }
+
+        ((DisplayEntityMixin) this.displayEntity).invokeSetTransformation(newTransformation.getMinecraftTransformation());
+    }
+
 
     public enum DisplayType {
         BLOCK,

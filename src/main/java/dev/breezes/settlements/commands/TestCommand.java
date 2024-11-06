@@ -4,15 +4,20 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import dev.breezes.settlements.entities.displays.TransformedBlockDisplay;
+import dev.breezes.settlements.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.models.location.Location;
+import dev.breezes.settlements.util.Ticks;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
-import org.joml.Matrix4f;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class TestCommand {
@@ -39,15 +44,27 @@ public class TestCommand {
     private static void test(@Nonnull Player player) {
         // This is a test method
         TransformedBlockDisplay display = TransformedBlockDisplay.builder()
-                .blockState(Blocks.SMOOTH_BASALT.defaultBlockState())
-                .transform(new Matrix4f(
-                        0.6055f, 0.0000f, 0.0000f, 0.1973f,
-                        0.0000f, 0.0938f, 0.0000f, 0.0000f,
-                        0.0000f, 0.0000f, 0.6055f, 0.1973f,
+                .blockState(Blocks.SMOOTH_STONE.defaultBlockState())
+                .transform(new TransformationMatrix(
+                        0.8000f, 0.0000f, 0.0000f, -0.4000f,
+                        0.0000f, 0.8000f, 0.0000f, 0.1000f,
+                        0.0000f, 0.0000f, 0.8000f, -0.4000f,
                         0.0000f, 0.0000f, 0.0000f, 1.0000f
-                ).transpose())
+                ))
                 .build();
-        display.createEntity(Location.fromEntity(player, true));
+        Display displayEntity = display.spawn(Location.fromEntity(player, true));
+
+        // Schedule a delayed run
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        executor.schedule(() -> {
+            display.setTransformation(new TransformationMatrix(
+                    2.6000f, 0.0000f, 0.0000f, 0.1000f,
+                    0.0000f, 0.5657f, -0.5657f, 0.1000f,
+                    0.0000f, 0.5657f, 0.5657f, 0.1000f,
+                    0.0000f, 0.0000f, 0.0000f, 1.0000f), Ticks.seconds(2));
+        }, 2 * 1000, TimeUnit.MILLISECONDS);
+
+        executor.schedule(display::remove, 10 * 1000, TimeUnit.MILLISECONDS);
     }
 
 }

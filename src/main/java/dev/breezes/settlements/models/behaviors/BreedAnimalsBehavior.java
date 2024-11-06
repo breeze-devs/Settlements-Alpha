@@ -162,7 +162,7 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
         // Display effects
         Location targetLocation = Location.fromEntity(target, false);
         ParticleRegistry.breedHearts(targetLocation);
-        ParticleRegistry.itemBreak(targetLocation, this.heldItem);
+        ParticleRegistry.breedItemConsume(targetLocation, this.heldItem);
         SoundRegistry.FEED_ANIMAL.playGlobally(targetLocation, SoundSource.NEUTRAL);
 
         // Update behavior state
