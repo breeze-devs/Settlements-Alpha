@@ -1,8 +1,8 @@
 package dev.breezes.settlements.models.navigation;
 
 import dev.breezes.settlements.entities.ISettlementsEntity;
+import dev.breezes.settlements.models.location.Location;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -23,12 +23,17 @@ public interface INavigationManager<T extends ISettlementsEntity> {
      * <p>
      * Note that if the target is not reachable, the navigation will be cancelled
      */
-    void navigateTo(@Nonnull Vec3 target, float speed, int completionRange);
+    void navigateTo(@Nonnull Location target, float speed, int completionRange);
+
+    /**
+     * Same as {@link #navigateTo(Location, float, int)} but with the default walking speed
+     */
+    void walkTo(@Nonnull Location target, int completionRange);
 
     /**
      * Whether the position is reachable within the given maximum distance
      */
-    boolean isReachable(@Nonnull Vec3 target, double distance);
+    boolean isReachable(@Nonnull Location target, double distance);
 
 
 }

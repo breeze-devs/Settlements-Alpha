@@ -4,6 +4,7 @@
     "package": "dev.breezes.settlements.mixins",
     "compatibilityLevel": "JAVA_21",
     "mixins": [
+        "BaseContainerBlockEntityMixin",
         "BlockDisplayMixin",
         "DisplayEntityMixin"
     ],

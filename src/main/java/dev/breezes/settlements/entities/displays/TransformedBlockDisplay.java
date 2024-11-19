@@ -20,7 +20,7 @@ import java.util.Optional;
 public class TransformedBlockDisplay extends TransformedDisplay {
 
     @Nonnull
-    private final BlockState blockState;
+    private BlockState blockState;
 
     @Builder
     public TransformedBlockDisplay(@Nonnull BlockState blockState, @Nonnull TransformationMatrix transform, boolean temporary) {
@@ -49,6 +49,13 @@ public class TransformedBlockDisplay extends TransformedDisplay {
     @Override
     public TransformedDisplay cloneWithoutEntity(boolean temporary) {
         return new TransformedBlockDisplay(this.blockState, this.transformationMatrix, temporary);
+    }
+
+    public void setBlockState(@Nonnull BlockState blockState) {
+        this.blockState = blockState;
+        if (this.displayEntity != null) {
+            ((BlockDisplayMixin) this.displayEntity).invokeSetBlockState(blockState);
+        }
     }
 
 }

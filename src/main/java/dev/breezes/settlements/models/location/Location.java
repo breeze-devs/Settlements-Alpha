@@ -1,6 +1,6 @@
 package dev.breezes.settlements.models.location;
 
-import dev.breezes.settlements.models.block.PhysicalBlock;
+import dev.breezes.settlements.models.blocks.PhysicalBlock;
 import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.util.MathUtil;
 import lombok.AllArgsConstructor;
@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
@@ -17,6 +18,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -95,6 +97,10 @@ public class Location implements Cloneable {
                 .map((level) -> GlobalPos.of(level.dimension(), this.toBlockPos()));
     }
 
+    public Vec3 toVec3() {
+        return new Vec3(this.x, this.y, this.z);
+    }
+
     /*
      * Comparison methods
      */
@@ -139,6 +145,17 @@ public class Location implements Cloneable {
         this.y += y;
         this.z += z;
         return this;
+    }
+
+    public Location add(@Nonnull Direction direction, double magnitude, boolean clone) {
+        double dx = direction.getStepX() * magnitude;
+        double dy = direction.getStepY() * magnitude;
+        double dz = direction.getStepZ() * magnitude;
+        return this.add(dx, dy, dz, clone);
+    }
+
+    public Location add(@Nonnull Direction direction, boolean clone) {
+        return this.add(direction, 1, clone);
     }
 
     public Location multiply(double factor, boolean clone) {

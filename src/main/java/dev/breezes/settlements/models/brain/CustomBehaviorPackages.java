@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.behaviors.BaseVillagerBehavior;
+import dev.breezes.settlements.models.behaviors.BlastOreBehavior;
 import dev.breezes.settlements.models.behaviors.BreedAnimalsBehavior;
 import dev.breezes.settlements.models.behaviors.CutStoneBehavior;
 import dev.breezes.settlements.models.behaviors.DefaultBehaviorAdapter;
@@ -172,6 +173,7 @@ public final class CustomBehaviorPackages {
             // Unreachable code, because villager does not have job site
         } else if (profession == VillagerProfession.ARMORER) {
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior()), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BlastOreBehavior()), customGoalWeight);
         } else if (profession == VillagerProfession.BUTCHER) {
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.PIG))), customGoalWeight);

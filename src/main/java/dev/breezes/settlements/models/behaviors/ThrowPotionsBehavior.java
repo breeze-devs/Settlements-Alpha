@@ -24,7 +24,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -112,12 +111,12 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior {
     }
 
     @Override
-    protected void navigateToTarget(int delta, @NotNull Level world, @NotNull BaseVillager villager) {
+    protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetToThrow.position(), 0.5F, NAVIGATE_STOP_DISTANCE));
     }
 
     @Override
-    protected void interactWithTarget(int delta, @NotNull Level world, @NotNull BaseVillager villager) {
+    protected void interactWithTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
         Location location = Location.fromEntity(villager, true);
         SoundRegistry.THROW_POTION.playGlobally(location, SoundSource.NEUTRAL);
 

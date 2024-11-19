@@ -1,6 +1,5 @@
 package dev.breezes.settlements;
 
-import dev.breezes.settlements.configurations.GeneralConfig;
 import dev.breezes.settlements.configurations.annotations.processors.ConfigAnnotationProcessor;
 import dev.breezes.settlements.registry.CreativeTabRegistry;
 import dev.breezes.settlements.registry.EntityRegistry;
@@ -31,7 +30,6 @@ public final class SettlementsMod {
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
-        modContainer.registerConfig(ModConfig.Type.COMMON, GeneralConfig.SPEC);
         // TODO: adapt annotations so that we can specify files and also rename this file
         modContainer.registerConfig(ModConfig.Type.COMMON, ConfigAnnotationProcessor.SPEC, "settlements-annotations.toml");
     }

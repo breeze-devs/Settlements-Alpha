@@ -5,7 +5,7 @@ import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.entities.villager.BaseVillager;
-import dev.breezes.settlements.models.block.PhysicalBlock;
+import dev.breezes.settlements.models.blocks.PhysicalBlock;
 import dev.breezes.settlements.models.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.misc.ITickable;

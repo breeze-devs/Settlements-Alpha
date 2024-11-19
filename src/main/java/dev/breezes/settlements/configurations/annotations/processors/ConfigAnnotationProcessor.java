@@ -36,7 +36,8 @@ public class ConfigAnnotationProcessor {
                 new BooleanConfigAnnotationProcessor(),
                 new DoubleConfigAnnotationProcessor(),
                 new FloatConfigAnnotationProcessor(),
-                new IntegerConfigAnnotationProcessor()
+                new IntegerConfigAnnotationProcessor(),
+                new StringConfigAnnotationProcessor()
         );
         List<Runnable> tasks = new ArrayList<>();
         for (ConfigAnnotationSubProcessor<?> processor : processors) {

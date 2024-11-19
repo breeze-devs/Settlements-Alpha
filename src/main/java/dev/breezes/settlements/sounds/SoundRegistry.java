@@ -18,6 +18,8 @@ public enum SoundRegistry {
     FEED_ANIMAL(SoundEventPlayable.of(SoundEvents.GENERIC_EAT, 1.0F, 1F)),
     THROW_POTION(SoundEventPlayable.of(SoundEvents.SPLASH_POTION_THROW, 1.0f, 1f)),
     STONE_CUTTER_WORKING(SoundEventPlayable.of(SoundEvents.VILLAGER_WORK_MASON, 0.3f, 2f)),
+    ITEM_POP_IN(SoundEventPlayable.of(SoundEvents.ITEM_PICKUP, 0.3f, 0.8f)),
+    ITEM_POP_OUT(SoundEventPlayable.of(SoundEvents.ITEM_PICKUP, 0.3f, 1.2f)),
     ;
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound

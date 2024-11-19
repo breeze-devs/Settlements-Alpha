@@ -1,11 +1,11 @@
 package dev.breezes.settlements.models.navigation;
 
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.models.location.Location;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
-import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -32,15 +32,20 @@ public class VanillaMemoryNavigationManager<T extends BaseVillager> implements I
     }
 
     @Override
-    public void navigateTo(@Nonnull Vec3 target, float speed, int completionRange) {
-        if (this.isReachable(target, completionRange)) {
+    public void navigateTo(@Nonnull Location target, float speed, int completionRange) {
+        if (!this.isReachable(target, completionRange)) {
             return;
         }
-        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(target, speed, completionRange));
+        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(target.toBlockPos(), speed, completionRange));
     }
 
     @Override
-    public boolean isReachable(@Nonnull Vec3 target, double distance) {
+    public void walkTo(@Nonnull Location target, int completionRange) {
+        this.navigateTo(target, 0.5F, completionRange);
+    }
+
+    @Override
+    public boolean isReachable(@Nonnull Location target, double distance) {
         // TODO: implement this
         return true;
     }

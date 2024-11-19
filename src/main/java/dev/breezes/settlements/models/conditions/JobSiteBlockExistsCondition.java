@@ -1,6 +1,6 @@
 package dev.breezes.settlements.models.conditions;
 
-import dev.breezes.settlements.models.block.PhysicalBlock;
+import dev.breezes.settlements.models.blocks.PhysicalBlock;
 import dev.breezes.settlements.models.location.Location;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
