@@ -3,7 +3,11 @@ package dev.breezes.settlements.util;
 import net.minecraft.util.Mth;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class RandomUtil {
 
@@ -60,6 +64,14 @@ public class RandomUtil {
     public static <T> ArrayList<T> shuffle(ArrayList<T> list) {
         Collections.shuffle(list);
         return list;
+    }
+
+    public static String randomString(int length) {
+        return RANDOM.ints(48, 123)
+                .filter(i -> (i < 58 || i > 64) && (i < 91 || i > 96))
+                .limit(length)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
     }
 
 }

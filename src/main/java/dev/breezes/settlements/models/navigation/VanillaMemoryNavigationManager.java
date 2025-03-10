@@ -50,4 +50,14 @@ public class VanillaMemoryNavigationManager<T extends BaseVillager> implements I
         return true;
     }
 
+    @Override
+    public float getWalkSpeed() {
+        return 0.4f;
+    }
+
+    @Override
+    public float getRunSpeed() {
+        return 0.7f;
+    }
+
 }

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.configurations.annotations.declarations.IntegerConfig;
+import dev.breezes.settlements.annotations.configurations.declarations.IntegerConfig;
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.entities.displays.models.TransformationMatrix;

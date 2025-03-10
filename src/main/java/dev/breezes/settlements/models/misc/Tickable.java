@@ -25,6 +25,11 @@ public class Tickable implements ITickable {
     }
 
     @Override
+    public long getTicksElapsed() {
+        return this.maxTicks - this.currentTicks;
+    }
+
+    @Override
     public void reset() {
         this.currentTicks = this.maxTicks;
     }

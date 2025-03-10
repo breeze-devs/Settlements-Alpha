@@ -14,7 +14,12 @@ public interface ISettlementsVillager extends ISettlementsBrainEntity {
 
     void setHeldItem(@Nonnull ItemStack itemStack);
 
+    void clearHeldItem();
+
     // Navigation
     INavigationManager<BaseVillager> getNavigationManager();
+
+    @Override
+    BaseVillager getMinecraftEntity();
 
 }

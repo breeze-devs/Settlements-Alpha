@@ -11,6 +11,12 @@ public class PermanentTickable implements ITickable {
     }
 
     @Override
+    public long getTicksElapsed() {
+        // TODO: do we want to track ticks?
+        return 0;
+    }
+
+    @Override
     public void reset() {
         // Do nothing
     }

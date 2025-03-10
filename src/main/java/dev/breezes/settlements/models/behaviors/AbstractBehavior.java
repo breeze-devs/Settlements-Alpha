@@ -107,12 +107,18 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         }
 
         log.behaviorTrace("Ticking behavior with delta %d", delta);
-        this.tickBehavior(delta, world, entity);
+        try {
+            this.tickBehavior(delta, world, entity);
+        } catch (StopBehaviorException e) {
+            log.behaviorStatus("Behavior stop requested by exception", e);
+            this.requestStop();
+        }
 
         // No cooldown for checking continue conditions
-        boolean canContinue = this.tickContinueConditions(delta, world, entity);
+        boolean canContinue = !this.stopRequested && this.tickContinueConditions(delta, world, entity);
         if (!canContinue) {
-            this.requestStop();
+            log.behaviorStatus("Behavior can no longer continue, stopping behavior");
+            this.stop(world, entity);
         }
     }
 
@@ -131,6 +137,11 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
 
     @Override
     public void requestStop() {
+        if (this.stopRequested) {
+            log.behaviorTrace("Ignoring stop request since behavior is already stopping");
+            return;
+        }
+
         log.behaviorStatus("Requesting to stop behavior");
         this.stopRequested = true;
     }

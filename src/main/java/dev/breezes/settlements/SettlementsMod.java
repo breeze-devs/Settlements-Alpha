@@ -1,6 +1,6 @@
 package dev.breezes.settlements;
 
-import dev.breezes.settlements.configurations.annotations.processors.ConfigAnnotationProcessor;
+import dev.breezes.settlements.annotations.configurations.processors.ConfigAnnotationProcessor;
 import dev.breezes.settlements.registry.CreativeTabRegistry;
 import dev.breezes.settlements.registry.EntityRegistry;
 import dev.breezes.settlements.registry.ItemRegistry;

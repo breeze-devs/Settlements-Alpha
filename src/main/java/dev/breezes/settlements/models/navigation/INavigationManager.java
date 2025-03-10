@@ -35,5 +35,8 @@ public interface INavigationManager<T extends ISettlementsEntity> {
      */
     boolean isReachable(@Nonnull Location target, double distance);
 
+    float getWalkSpeed();
+
+    float getRunSpeed();
 
 }

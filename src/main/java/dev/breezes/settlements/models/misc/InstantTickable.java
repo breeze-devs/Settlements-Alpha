@@ -11,6 +11,11 @@ public class InstantTickable implements ITickable {
     }
 
     @Override
+    public long getTicksElapsed() {
+        return 0;
+    }
+
+    @Override
     public void reset() {
         // Do nothing
     }

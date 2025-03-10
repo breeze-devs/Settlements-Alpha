@@ -1,9 +1,9 @@
 package dev.breezes.settlements.models.behaviors;
 
+import dev.breezes.settlements.annotations.configurations.declarations.DoubleConfig;
+import dev.breezes.settlements.annotations.configurations.declarations.IntegerConfig;
 import dev.breezes.settlements.client.ClientExecutor;
 import dev.breezes.settlements.client.ClientUtil;
-import dev.breezes.settlements.configurations.annotations.declarations.DoubleConfig;
-import dev.breezes.settlements.configurations.annotations.declarations.IntegerConfig;
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbyDamagedIronGolemExistsCondition;

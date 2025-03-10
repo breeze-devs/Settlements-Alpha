@@ -1,5 +1,6 @@
 package dev.breezes.settlements.util;
 
+import dev.breezes.settlements.models.misc.Tickable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -35,6 +36,10 @@ public class Ticks {
 
     public int getTicksAsInt() {
         return (int) ticks;
+    }
+
+    public Tickable asTickable() {
+        return Tickable.of(this);
     }
 
 }

@@ -156,4 +156,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         return Location.fromEntity(this, true);
     }
 
+    @Override
+    public BaseVillager getMinecraftEntity() {
+        return this;
+    }
+
 }

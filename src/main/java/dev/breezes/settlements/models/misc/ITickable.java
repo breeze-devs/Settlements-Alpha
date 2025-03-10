@@ -4,11 +4,12 @@ public interface ITickable {
 
     void tick(long delta);
 
-    default boolean tickAndCheck(long delta) {
-        if (this.isComplete()) {
-            return true;
-        }
+    /**
+     * Get the number of ticks that have elapsed since the last reset
+     */
+    long getTicksElapsed();
 
+    default boolean tickAndCheck(long delta) {
         this.tick(delta);
         return this.isComplete();
     }
