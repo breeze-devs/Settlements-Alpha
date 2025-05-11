@@ -50,9 +50,14 @@ public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> imp
         AABB scanBoundary = entity.getBoundingBox().inflate(this.rangeHorizontal, this.rangeVertical, this.rangeHorizontal);
         Predicate<Entity> entityPredicate = (targetEntity) -> targetEntity.getType() == this.targetEntityType
                 && this.extraEntityCondition.test(this.targetEntityType.tryCast(targetEntity));
-        Stream<E> nearbyEntitiesStream = entity.level().getEntities(entity, scanBoundary, entityPredicate).stream()
+        Stream<E> nearbyEntitiesStream = entity.level().getEntities(entity, scanBoundary, entityPredicate).parallelStream()
                 .map(targetEntityType::tryCast)
-                .filter(Objects::nonNull);
+                .filter(Objects::nonNull)
+                .sorted((entity1, entity2) -> {
+                    double distance1 = entity.distanceToSqr(entity1);
+                    double distance2 = entity.distanceToSqr(entity2);
+                    return Double.compare(distance1, distance2);
+                });
 
         if (this.minimumTargetCount == 1) {
             // If we only need one target, we can just find any target to optimize efficiency
@@ -63,7 +68,7 @@ public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> imp
             this.targets = nearbyEntitiesStream.toList();
         }
 
-//        log.sensor something
+        // LOGTODO: log.sensor something
         return this.targets.size() >= this.minimumTargetCount;
     }
 

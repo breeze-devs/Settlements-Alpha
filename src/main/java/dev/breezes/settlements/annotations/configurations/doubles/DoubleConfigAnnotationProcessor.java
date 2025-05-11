@@ -1,7 +1,7 @@
-package dev.breezes.settlements.annotations.configurations.processors;
+package dev.breezes.settlements.annotations.configurations.doubles;
 
 import com.google.common.base.CaseFormat;
-import dev.breezes.settlements.annotations.configurations.declarations.DoubleConfig;
+import dev.breezes.settlements.annotations.configurations.ConfigAnnotationSubProcessor;
 import lombok.CustomLog;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -51,7 +51,7 @@ public class DoubleConfigAnnotationProcessor implements ConfigAnnotationSubProce
                 field.setAccessible(true);
                 field.set(null, configValue.get()); // instance is null for static fields
                 log.debug("Set field '%s.%s' to %f".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()));
-            } catch (IllegalAccessException e) {
+            } catch (Exception e) {
                 log.error("Failed to set field '%s.%s' to %f".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()), e);
             }
         }

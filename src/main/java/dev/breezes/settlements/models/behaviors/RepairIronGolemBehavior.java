@@ -1,7 +1,7 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.annotations.configurations.declarations.DoubleConfig;
-import dev.breezes.settlements.annotations.configurations.declarations.IntegerConfig;
+import dev.breezes.settlements.annotations.configurations.doubles.DoubleConfig;
+import dev.breezes.settlements.annotations.configurations.integers.IntegerConfig;
 import dev.breezes.settlements.client.ClientExecutor;
 import dev.breezes.settlements.client.ClientUtil;
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;

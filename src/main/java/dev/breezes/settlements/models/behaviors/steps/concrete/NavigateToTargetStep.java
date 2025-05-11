@@ -29,10 +29,12 @@ public class NavigateToTargetStep extends AbstractStep {
     public Optional<Stage> tick(@Nonnull BehaviorContext context) {
         ISettlementsVillager initiator = context.getInitiator();
 
-        // Don't navigate if already navigating
-        if (initiator.getNavigationManager().isNavigating()) {
-            return Optional.empty();
-        }
+        // TODO: Don't navigate if already navigating
+        // TODO: this is causing the villager to run back to the workstation due to vanilla logic
+        // TODO: re-enable this check after fixing the issue
+//        if (initiator.getNavigationManager().isNavigating()) {
+//            return Optional.empty();
+//        }
 
         Optional<Location> target = context.getState(BehaviorStateType.TARGET, TargetState.class)
                 .flatMap(TargetState::getFirst)

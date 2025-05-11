@@ -13,7 +13,7 @@ import dev.breezes.settlements.models.behaviors.DefaultBehaviorAdapter;
 import dev.breezes.settlements.models.behaviors.IBehavior;
 import dev.breezes.settlements.models.behaviors.RepairIronGolemBehavior;
 import dev.breezes.settlements.models.behaviors.ThrowPotionsBehavior;
-import dev.breezes.settlements.models.behaviors.steps.gg.wiggle.ShearSheepBehaviorV2;
+import dev.breezes.settlements.models.behaviors.ShearSheepBehaviorV2;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;

@@ -30,7 +30,6 @@ public class StayCloseStep extends ConditionalStep {
 
     private static boolean isCloseEnough(@Nullable BehaviorContext context, double closeEnoughDistanceSquared) {
         if (context == null) {
-            // LOGTODO
             log.behaviorWarn("Behavior context is null");
             return false;
         }

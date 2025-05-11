@@ -1,5 +1,11 @@
-package dev.breezes.settlements.annotations.configurations.processors;
+package dev.breezes.settlements.annotations.configurations;
 
+import dev.breezes.settlements.annotations.configurations.booleans.BooleanConfigAnnotationProcessor;
+import dev.breezes.settlements.annotations.configurations.doubles.DoubleConfigAnnotationProcessor;
+import dev.breezes.settlements.annotations.configurations.floats.FloatConfigAnnotationProcessor;
+import dev.breezes.settlements.annotations.configurations.integers.IntegerConfigAnnotationProcessor;
+import dev.breezes.settlements.annotations.configurations.maps.MapConfigAnnotationProcessor;
+import dev.breezes.settlements.annotations.configurations.strings.StringConfigAnnotationProcessor;
 import dev.breezes.settlements.event.CommonModEvents;
 import lombok.CustomLog;
 import net.neoforged.fml.ModLoadingContext;
@@ -37,7 +43,8 @@ public class ConfigAnnotationProcessor {
                 new DoubleConfigAnnotationProcessor(),
                 new FloatConfigAnnotationProcessor(),
                 new IntegerConfigAnnotationProcessor(),
-                new StringConfigAnnotationProcessor()
+                new StringConfigAnnotationProcessor(),
+                new MapConfigAnnotationProcessor()
         );
         List<Runnable> tasks = new ArrayList<>();
         for (ConfigAnnotationSubProcessor<?> processor : processors) {

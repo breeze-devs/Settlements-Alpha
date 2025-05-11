@@ -9,6 +9,7 @@ import lombok.CustomLog;
 import lombok.Getter;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -22,11 +23,21 @@ public class StagedStep extends AbstractStep {
     private final Stage initialActionStage;
     private final Stage nextStage;
 
+    @Nullable
+    private final BehaviorStep onStart;
+    @Nullable
+    private final BehaviorStep onEnd;
+
     @Getter
     private Stage currentStage;
 
     @Builder
-    private StagedStep(@Nonnull String name, @Nonnull Map<Stage, BehaviorStep> stageStepMap, @Nonnull Stage initialStage, @Nonnull Stage nextStage) {
+    private StagedStep(@Nonnull String name,
+                       @Nonnull Map<Stage, BehaviorStep> stageStepMap,
+                       @Nonnull Stage initialStage,
+                       @Nonnull Stage nextStage,
+                       @Nullable BehaviorStep onStart,
+                       @Nullable BehaviorStep onEnd) {
         super("StagedStep[%s]".formatted(name));
         if (stageStepMap.isEmpty()) {
             throw new IllegalArgumentException("Staged step must have at least one stage");
@@ -40,10 +51,16 @@ public class StagedStep extends AbstractStep {
         this.stageStepMap.put(this.startingStage, this::onStart);
 
         this.currentStage = this.startingStage;
+
+        this.onStart = onStart;
+        this.onEnd = onEnd;
     }
 
     protected Optional<Stage> onStart(@Nonnull BehaviorContext context) {
         log.behaviorStatus("Starting %s (%s)".formatted(this.getName(), this.getUuid()));
+        if (this.onStart != null) {
+            this.onStart.tick(context);
+        }
         return Optional.of(this.initialActionStage);
     }
 
@@ -70,6 +87,9 @@ public class StagedStep extends AbstractStep {
 
     protected void onEnd(@Nonnull BehaviorContext context) {
         log.behaviorStatus("Ending %s (%s)".formatted(this.getName(), this.getUuid()));
+        if (this.onEnd != null) {
+            this.onEnd.tick(context);
+        }
     }
 
     public void reset() {

@@ -1,4 +1,4 @@
-package dev.breezes.settlements.annotations.configurations.declarations;
+package dev.breezes.settlements.annotations.configurations.floats;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,12 +7,16 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
-public @interface StringConfig {
+public @interface FloatConfig {
 
     String identifier();
 
     String description();
 
-    String defaultValue();
+    float defaultValue();
+
+    float min() default Float.MIN_VALUE;
+
+    float max() default Float.MAX_VALUE;
 
 }

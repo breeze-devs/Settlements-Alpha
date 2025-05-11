@@ -11,9 +11,7 @@ import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Executes a series of behavior steps based on the elapsed ticks of a {@link ITickable}
@@ -29,29 +27,35 @@ public class TimeBasedStep extends AbstractStep {
      */
     private final Map<Long, BehaviorStep> keyFrames;
 
+    /**
+     * Map of intervals to the behavior steps to execute periodically
+     */
+    @Nonnull
+    private final Map<Integer, List<BehaviorStep>> periodicSteps;
+
     @Nullable
     private final BehaviorStep onStart;
     @Nullable
     private final BehaviorStep onEnd;
 
-    /**
-     * Step to execute on every tick
-     */
-    @Nullable
-    private final BehaviorStep everyTick;
-
-    public TimeBasedStep(@Nonnull ITickable tickable, @Nullable BehaviorStep onStart, @Nullable BehaviorStep onEnd, @Nullable BehaviorStep everyTick) {
+    public TimeBasedStep(@Nonnull ITickable tickable,
+                         @Nullable BehaviorStep onStart,
+                         @Nullable BehaviorStep onEnd) {
         super("TimeBasedStep[%s]".formatted(tickable.getRemainingCooldownsAsPrettyString()));
         this.tickable = tickable;
         this.keyFrames = new HashMap<>();
+        this.periodicSteps = new HashMap<>();
 
         this.onStart = onStart;
         this.onEnd = onEnd;
-        this.everyTick = everyTick;
     }
 
     public void addKeyFrames(@Nonnull Map<Long, BehaviorStep> keyFrames) {
         this.keyFrames.putAll(keyFrames);
+    }
+
+    public void addPeriodicSteps(@Nonnull Map<Integer, List<BehaviorStep>> periodicSteps) {
+        this.periodicSteps.putAll(periodicSteps);
     }
 
     @Override
@@ -61,10 +65,6 @@ public class TimeBasedStep extends AbstractStep {
         }
 
         boolean completed = this.tickable.tickCheckAndReset(1);
-        if (this.everyTick != null) {
-            this.everyTick.tick(context);
-        }
-
         if (completed) {
             // By default, we return the STEP_END stage
             if (this.onEnd == null) {
@@ -78,7 +78,16 @@ public class TimeBasedStep extends AbstractStep {
             return nextStage;
         }
 
+        // Execute periodic steps
         long elapsed = this.tickable.getTicksElapsed();
+        for (Map.Entry<Integer, List<BehaviorStep>> entry : this.periodicSteps.entrySet()) {
+            int interval = entry.getKey();
+            if (elapsed % interval == 0) {
+                entry.getValue().forEach(step -> step.tick(context));
+            }
+        }
+
+        // Execute keyframes
         if (!this.keyFrames.containsKey(elapsed)) {
             return Optional.empty();
         }
@@ -97,15 +106,16 @@ public class TimeBasedStep extends AbstractStep {
         private ITickable tickable;
         @Nonnull
         private final Map<Long, BehaviorStep> keyFrames;
+        @Nonnull
+        private final Map<Integer, List<BehaviorStep>> periodicSteps;
         @Nullable
         private BehaviorStep onStart;
         @Nullable
         private BehaviorStep onEnd;
-        @Nullable
-        private BehaviorStep everyTick;
 
         public Builder() {
             this.keyFrames = new HashMap<>();
+            this.periodicSteps = new HashMap<>();
         }
 
         public Builder withTickable(@Nonnull ITickable tickable) {
@@ -115,6 +125,20 @@ public class TimeBasedStep extends AbstractStep {
 
         public Builder addKeyFrame(@Nonnull Ticks elapsed, @Nonnull BehaviorStep step) {
             this.keyFrames.put(elapsed.getTicks(), step);
+            return this;
+        }
+
+        public Builder everyTick(@Nonnull BehaviorStep step) {
+            return this.addPeriodicStep(1, step);
+        }
+
+        public Builder addPeriodicStep(int interval, @Nonnull BehaviorStep step) {
+            if (interval <= 0) {
+                throw new IllegalArgumentException("Interval must be greater than 0");
+            }
+            List<BehaviorStep> steps = this.periodicSteps.getOrDefault(interval, new ArrayList<>());
+            steps.add(step);
+            this.periodicSteps.put(interval, steps);
             return this;
         }
 
@@ -128,17 +152,14 @@ public class TimeBasedStep extends AbstractStep {
             return this;
         }
 
-        public Builder everyTick(@Nonnull BehaviorStep step) {
-            this.everyTick = step;
-            return this;
-        }
 
         public TimeBasedStep build() {
             if (this.tickable == null) {
                 throw new IllegalStateException("Tickable must be set");
             }
-            TimeBasedStep step = new TimeBasedStep(this.tickable, this.onStart, this.onEnd, this.everyTick);
+            TimeBasedStep step = new TimeBasedStep(this.tickable, this.onStart, this.onEnd);
             step.addKeyFrames(this.keyFrames);
+            step.addPeriodicSteps(this.periodicSteps);
             return step;
         }
 

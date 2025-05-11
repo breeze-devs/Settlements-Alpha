@@ -1,4 +1,4 @@
-package dev.breezes.settlements.annotations.configurations.processors;
+package dev.breezes.settlements.annotations.configurations;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 

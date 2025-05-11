@@ -8,6 +8,7 @@ import dev.breezes.settlements.entities.villager.animations.definitions.BaseVill
 import dev.breezes.settlements.models.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.models.brain.IBrain;
 import dev.breezes.settlements.models.location.Location;
+import dev.breezes.settlements.models.misc.Expertise;
 import dev.breezes.settlements.models.navigation.INavigationManager;
 import dev.breezes.settlements.models.navigation.VanillaMemoryNavigationManager;
 import lombok.CustomLog;
@@ -136,16 +137,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
     }
 
-    /**
-     * Get the expertise level of the villager
-     * 1. Novice
-     * 2. Apprentice
-     * 3. Journeyman
-     * 4. Expert
-     * 5. Master
-     */
-    public int getExpertiseLevel() {
-        return this.getVillagerData().getLevel();
+    public Expertise getExpertise() {
+        return Expertise.fromLevel(this.getVillagerData().getLevel());
     }
 
     public Location getLocation(boolean useEyeHeight) {

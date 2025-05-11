@@ -1,6 +1,7 @@
 package dev.breezes.settlements.models.behaviors.states.registry;
 
 import dev.breezes.settlements.models.behaviors.states.BehaviorState;
+import dev.breezes.settlements.models.behaviors.states.registry.items.ItemState;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import lombok.Getter;
 public enum BehaviorStateType {
 
     TARGET("target", TargetState.class),
+    ITEMS_TO_PICK_UP("items_to_pick_up", ItemState.class),
     ;
 
     private final String name;

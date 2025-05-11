@@ -94,17 +94,18 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
             return Optional.empty();
         }
 
+        int expertiseLevel = villager.getExpertise().getLevel();
         if (livingEntity.isUnderWater() && !livingEntity.hasEffect(MobEffects.WATER_BREATHING)
-                && villager.getExpertiseLevel() >= PotionType.WATER_BREATHING.getRequiredExpertiseLevel()) {
+                && expertiseLevel >= PotionType.WATER_BREATHING.getRequiredExpertiseLevel()) {
             return Optional.of(PotionType.WATER_BREATHING);
         } else if (livingEntity.isOnFire() && !livingEntity.hasEffect(MobEffects.FIRE_RESISTANCE)
-                && villager.getExpertiseLevel() >= PotionType.FIRE_RESISTANCE.getRequiredExpertiseLevel()) {
+                && expertiseLevel >= PotionType.FIRE_RESISTANCE.getRequiredExpertiseLevel()) {
             return Optional.of(PotionType.FIRE_RESISTANCE);
         } else if (livingEntity.getHealth() < livingEntity.getMaxHealth()) {
             if (!livingEntity.hasEffect(MobEffects.REGENERATION)
-                    && villager.getExpertiseLevel() >= PotionType.REGENERATION.getRequiredExpertiseLevel()) {
+                    && expertiseLevel >= PotionType.REGENERATION.getRequiredExpertiseLevel()) {
                 return Optional.of(PotionType.REGENERATION);
-            } else if (villager.getExpertiseLevel() >= PotionType.STRONG_HEALING.getRequiredExpertiseLevel()) {
+            } else if (expertiseLevel >= PotionType.STRONG_HEALING.getRequiredExpertiseLevel()) {
                 return Optional.of(PotionType.STRONG_HEALING);
             } else {
                 return Optional.of(PotionType.HEALING);

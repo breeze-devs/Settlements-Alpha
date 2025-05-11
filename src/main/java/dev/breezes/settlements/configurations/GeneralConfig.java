@@ -1,7 +1,7 @@
 package dev.breezes.settlements.configurations;
 
-import dev.breezes.settlements.annotations.configurations.declarations.BooleanConfig;
-import dev.breezes.settlements.annotations.configurations.declarations.StringConfig;
+import dev.breezes.settlements.annotations.configurations.booleans.BooleanConfig;
+import dev.breezes.settlements.annotations.configurations.strings.StringConfig;
 
 public class GeneralConfig {
 

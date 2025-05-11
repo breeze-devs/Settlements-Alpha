@@ -23,27 +23,27 @@ public class ApacheLogger implements ILogger {
 
     @Override
     public void log(@Nonnull LogLevel level, @Nonnull String format, @Nonnull Object... args) {
-        this.logger.log(ApacheLogLevelAdapter.adapt(level), format.formatted(args));
+        this.logger.log(ApacheLogLevelAdapter.adapt(level), format, args);
     }
 
     @Override
     public void log(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.info(format.formatted(args));
+        this.logger.info(format, args);
     }
 
     @Override
     public void behaviorStatus(@Nonnull String format, @Nonnull Object... args) {
-        this.info(format.formatted(args));
+        this.info(format, args);
     }
 
     @Override
     public void behaviorWarn(@Nonnull String format, @Nonnull Object... args) {
-        this.warn(format.formatted(args));
+        this.warn(format, args);
     }
 
     @Override
     public void behaviorError(@Nonnull String format, @Nonnull Object... args) {
-        this.error(format.formatted(args));
+        this.error(format, args);
     }
 
     @Override
@@ -53,17 +53,17 @@ public class ApacheLogger implements ILogger {
 
     @Override
     public void sensorStatus(@Nonnull String format, @Nonnull Object... args) {
-        this.info(format.formatted(args));
+        this.info(format, args);
     }
 
     @Override
     public void sensorWarn(@Nonnull String format, @Nonnull Object... args) {
-        this.warn(format.formatted(args));
+        this.warn(format, args);
     }
 
     @Override
     public void sensorError(@Nonnull String format, @Nonnull Object... args) {
-        this.error(format.formatted(args));
+        this.error(format, args);
     }
 
     @Override
@@ -74,32 +74,32 @@ public class ApacheLogger implements ILogger {
     @Override
     public void trace(@Nonnull String format, @Nonnull Object... args) {
         // TODO: re-enable trace logging
-        this.logger.trace(format.formatted(args));
+        this.logger.trace(format, args);
     }
 
     @Override
     public void debug(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.debug(format.formatted(args));
+        this.logger.debug(format, args);
     }
 
     @Override
     public void info(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.info(format.formatted(args));
+        this.logger.info(format, args);
     }
 
     @Override
     public void warn(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.warn(format.formatted(args));
+        this.logger.warn(format, args);
     }
 
     @Override
     public void error(@Nonnull String format, @Nonnull Object... args) {
-        this.logger.error(format.formatted(args));
+        this.logger.error(format, args);
     }
 
     @Override
     public void error(@Nonnull Throwable e, @Nonnull String format, @Nonnull Object... args) {
-        this.logger.error(format.formatted(args), e);
+        this.logger.error(format, args, e);
     }
 
 }

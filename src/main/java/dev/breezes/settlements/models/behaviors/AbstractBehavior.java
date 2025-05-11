@@ -110,7 +110,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         try {
             this.tickBehavior(delta, world, entity);
         } catch (StopBehaviorException e) {
-            log.behaviorStatus("Behavior stop requested by exception", e);
+            log.behaviorStatus("Behavior stop requested by exception");
             this.requestStop();
         }
 
