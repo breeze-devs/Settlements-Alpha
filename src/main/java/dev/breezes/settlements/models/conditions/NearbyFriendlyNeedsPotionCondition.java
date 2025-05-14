@@ -122,7 +122,7 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
         WATER_BREATHING(2, Potions.WATER_BREATHING),
         FIRE_RESISTANCE(3, Potions.FIRE_RESISTANCE),
         STRONG_HEALING(4, Potions.STRONG_HEALING),
-        REGENERATION(5, Potions.LONG_REGENERATION);
+        REGENERATION(5, Potions.STRONG_REGENERATION);
 
         private final int requiredExpertiseLevel;
         private final Holder<Potion> potion;
