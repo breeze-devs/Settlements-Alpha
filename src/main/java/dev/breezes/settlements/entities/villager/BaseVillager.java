@@ -5,6 +5,7 @@ import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnimator;
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
+import dev.breezes.settlements.entities.villager.navigation.VillagerPathNavigation;
 import dev.breezes.settlements.models.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.models.brain.IBrain;
 import dev.breezes.settlements.models.location.Location;
@@ -52,6 +53,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
         this.settlementsBrain = null; // TODO: implement
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
+        VillagerPathNavigation navigation = new VillagerPathNavigation(this, this.level());
+        navigation.setCanOpenDoors(true);
+        navigation.setCanFloat(true);
+        this.navigation = navigation;
 
         this.spinAnimator = new OneShotAnimator("SpinAnimator", this, List.of(BaseVillagerAnimation.SPIN));
     }

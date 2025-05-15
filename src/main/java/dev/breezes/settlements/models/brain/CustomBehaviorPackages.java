@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.entities.villager.navigation.OpenFenceGates;
 import dev.breezes.settlements.models.behaviors.BaseVillagerBehavior;
 import dev.breezes.settlements.models.behaviors.BlastOreBehavior;
 import dev.breezes.settlements.models.behaviors.BreedAnimalsBehavior;
@@ -108,6 +109,7 @@ public final class CustomBehaviorPackages {
         coreBehaviors.addAll(List.of(
                 Pair.of(0, new Swim(0.8F)),
                 Pair.of(0, InteractWithDoor.create()),
+                Pair.of(0, new OpenFenceGates()),
                 Pair.of(0, new LookAtTargetSink(45, 90)),
                 Pair.of(0, new VillagerPanicTrigger()),
                 Pair.of(0, WakeUp.create()),
@@ -187,7 +189,7 @@ public final class CustomBehaviorPackages {
         } else if (profession == VillagerProfession.CARTOGRAPHER) {
             // TODO: add behavior
         } else if (profession == VillagerProfession.CLERIC) {
-            // TODO: add behavior
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), customGoalWeight);
         } else if (profession == VillagerProfession.FARMER) {
 //            customBehaviorWeightMap.put(new HarvestSugarcaneBehavior(), customGoalWeight);
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
