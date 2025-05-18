@@ -6,15 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.entities.villager.navigation.OpenFenceGates;
-import dev.breezes.settlements.models.behaviors.BaseVillagerBehavior;
-import dev.breezes.settlements.models.behaviors.BlastOreBehavior;
-import dev.breezes.settlements.models.behaviors.BreedAnimalsBehavior;
-import dev.breezes.settlements.models.behaviors.CutStoneBehavior;
-import dev.breezes.settlements.models.behaviors.DefaultBehaviorAdapter;
-import dev.breezes.settlements.models.behaviors.IBehavior;
-import dev.breezes.settlements.models.behaviors.RepairIronGolemBehavior;
-import dev.breezes.settlements.models.behaviors.ThrowPotionsBehavior;
-import dev.breezes.settlements.models.behaviors.ShearSheepBehaviorV2;
+import dev.breezes.settlements.models.behaviors.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
@@ -190,6 +182,7 @@ public final class CustomBehaviorPackages {
             // TODO: add behavior
         } else if (profession == VillagerProfession.CLERIC) {
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSoulSandBehavior()), customGoalWeight);
         } else if (profession == VillagerProfession.FARMER) {
 //            customBehaviorWeightMap.put(new HarvestSugarcaneBehavior(), customGoalWeight);
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);

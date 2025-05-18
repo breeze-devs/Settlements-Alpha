@@ -1,5 +1,6 @@
 package dev.breezes.settlements.entities.villager;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.entities.ISettlementsVillager;
@@ -7,6 +8,7 @@ import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnim
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
 import dev.breezes.settlements.entities.villager.navigation.VillagerPathNavigation;
 import dev.breezes.settlements.models.brain.CustomBehaviorPackages;
+import dev.breezes.settlements.models.brain.CustomMemoryModuleType;
 import dev.breezes.settlements.models.brain.IBrain;
 import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.misc.Expertise;
@@ -23,11 +25,15 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.sensing.Sensor;
+import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.schedule.Schedule;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
@@ -42,6 +48,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     private static final double DEFAULT_MOVEMENT_SPEED = 0.5D;
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
+
+    private static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES;
+    private static final ImmutableList<SensorType<? extends Sensor<? super Villager>>> SENSOR_TYPES;
 
     private final IBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
@@ -82,6 +91,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         brain.stopAll(level, this);
         this.brain = brain.copyWithoutBehaviors();
         this.registerBrainGoals(this.getBrain());
+    }
+
+    public boolean hasItemInInventory(Item item){
+        return this.getInventory().hasAnyMatching((itemStack) -> itemStack.is(item));
     }
 
     /**
@@ -157,6 +170,71 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     @Override
     public BaseVillager getMinecraftEntity() {
         return this;
+    }
+
+    @Override
+    protected Brain.Provider<Villager> brainProvider() {
+        return Brain.provider(MEMORY_TYPES, SENSOR_TYPES);
+    }
+
+    @Override
+    public boolean wantsToPickUp(ItemStack item){
+        boolean wantsToPickUp = super.wantsToPickUp(item);
+        switch (this.getVillagerData().getProfession().name()){
+            case ("cleric") -> {
+                if (item.is(Items.NETHER_WART) && this.getInventory().canAddItem(item)) wantsToPickUp = true;
+            }
+            default -> {}
+        }
+        return wantsToPickUp;
+    }
+
+    static {
+        MEMORY_TYPES = ImmutableList.of(
+                MemoryModuleType.HOME,
+                MemoryModuleType.JOB_SITE,
+                MemoryModuleType.POTENTIAL_JOB_SITE,
+                MemoryModuleType.MEETING_POINT,
+                MemoryModuleType.NEAREST_LIVING_ENTITIES,
+                MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
+                MemoryModuleType.VISIBLE_VILLAGER_BABIES,
+                MemoryModuleType.NEAREST_PLAYERS,
+                MemoryModuleType.NEAREST_VISIBLE_PLAYER,
+                MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER,
+                MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM,
+                MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS,
+                MemoryModuleType.WALK_TARGET,
+                MemoryModuleType.LOOK_TARGET,
+                MemoryModuleType.INTERACTION_TARGET,
+                MemoryModuleType.BREED_TARGET,
+                MemoryModuleType.PATH,
+                MemoryModuleType.DOORS_TO_CLOSE,
+                MemoryModuleType.NEAREST_BED,
+                MemoryModuleType.HURT_BY,
+                MemoryModuleType.HURT_BY_ENTITY,
+                MemoryModuleType.NEAREST_HOSTILE,
+                MemoryModuleType.SECONDARY_JOB_SITE,
+                MemoryModuleType.HIDING_PLACE,
+                MemoryModuleType.HEARD_BELL_TIME,
+                MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE,
+                MemoryModuleType.LAST_SLEPT,
+                MemoryModuleType.LAST_WOKEN,
+                MemoryModuleType.LAST_WORKED_AT_POI,
+                MemoryModuleType.GOLEM_DETECTED_RECENTLY,
+
+                // Custom memory module types starts here
+                CustomMemoryModuleType.FENCE_GATES_TO_CLOSE
+        );
+        SENSOR_TYPES = ImmutableList.of(
+                SensorType.NEAREST_LIVING_ENTITIES,
+                SensorType.NEAREST_PLAYERS,
+                SensorType.NEAREST_ITEMS,
+                SensorType.NEAREST_BED,
+                SensorType.HURT_BY,
+                SensorType.VILLAGER_HOSTILES,
+                SensorType.VILLAGER_BABIES,
+                SensorType.SECONDARY_POIS,
+                SensorType.GOLEM_DETECTED);
     }
 
 }

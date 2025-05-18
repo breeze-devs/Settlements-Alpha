@@ -31,8 +31,8 @@ import javax.annotation.Nullable;
 @CustomLog
 public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior {
 
-    private static final int NAVIGATE_STOP_DISTANCE = 5;
-    private static final double INTERACTION_DISTANCE = 5.5;
+    private static final int NAVIGATE_STOP_DISTANCE = 3;
+    private static final double INTERACTION_DISTANCE = 4;
 
     @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
@@ -108,6 +108,7 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior {
 
         Holder<Potion> potionNeeded = this.nearbyFriendlyNeedsPotionCondition.getFriendlyNeedsPotionMap().get(this.targetToThrow).getPotion();
         this.potionToThrow = PotionContents.createItemStack(Items.SPLASH_POTION, potionNeeded);
+        villager.setHeldItem(potionToThrow);
     }
 
     @Override
@@ -120,24 +121,20 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior {
         Location location = Location.fromEntity(villager, true);
         SoundRegistry.THROW_POTION.playGlobally(location, SoundSource.NEUTRAL);
 
-        ThrownPotion potionEntity = new ThrownPotion(villager.level(), villager);
+        ThrownPotion potionEntity = new ThrownPotion(world, villager);
         potionEntity.setItem(potionToThrow);
         potionEntity.setXRot(potionEntity.getXRot() + 20.0F);
 
         Vector direction = villager.getLocation().getDirectionTo(Location.fromEntity(targetToThrow, true));
-        potionEntity.shoot(direction.getX(), direction.getY(), direction.getZ(), 1, 8.0F);
+        potionEntity.shoot(direction.getX(), direction.getY(), direction.getZ(), 1, 4.0F);
 
         villager.level().addFreshEntity(potionEntity);
-        log.behaviorStatus("Thrown potion at target");
-
+        villager.clearHeldItem();
         this.requestStop();
     }
 
     @Override
     protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
-        if (this.potionToThrow != null) {
-            villager.setHeldItem(potionToThrow);
-        }
     }
 
     @Override
@@ -152,8 +149,6 @@ public class ThrowPotionsBehavior extends AbstractInteractAtTargetBehavior {
 
     @Override
     public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        villager.clearHeldItem();
-
         this.targetToThrow = null;
         this.potionToThrow = null;
     }

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.models.conditions.IEntityCondition;
+import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.models.misc.ITickable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
@@ -13,13 +13,13 @@ public interface IBehavior<T extends Entity> {
     /**
      * List of preconditions that must be met for this behavior to start
      */
-    List<IEntityCondition<T>> getPreconditions();
+    List<ICondition<T>> getPreconditions();
 
     /**
      * List of conditions that must be met for this behavior to continue running
      * - this can be completely different from preconditions, and the behavior will not check preconditions once running
      */
-    List<IEntityCondition<T>> getContinueConditions();
+    List<ICondition<T>> getContinueConditions();
 
     /**
      * Cooldown for checking preconditions to prevent overloading the server

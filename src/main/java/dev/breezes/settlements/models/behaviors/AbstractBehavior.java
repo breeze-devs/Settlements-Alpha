@@ -2,7 +2,7 @@ package dev.breezes.settlements.models.behaviors;
 
 import dev.breezes.settlements.entities.ISettlementsBrainEntity;
 import dev.breezes.settlements.logging.ILogger;
-import dev.breezes.settlements.models.conditions.IEntityCondition;
+import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.models.misc.ITickable;
 import lombok.Getter;
 import net.minecraft.world.entity.Entity;
@@ -20,8 +20,8 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
     protected final ITickable preconditionCheckCooldown;
     protected final ITickable behaviorCoolDown;
 
-    protected final List<IEntityCondition<T>> preconditions;
-    protected final List<IEntityCondition<T>> continueConditions;
+    protected final List<ICondition<T>> preconditions;
+    protected final List<ICondition<T>> continueConditions;
 
     protected BehaviorStatus status;
     private boolean stopRequested;
@@ -65,7 +65,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         this.preconditionCheckCooldown.reset();
 
         // Loop through all preconditions and check if they are all met
-        for (IEntityCondition<T> precondition : this.preconditions) {
+        for (ICondition<T> precondition : this.preconditions) {
             if (!precondition.test(entity)) {
                 log.behaviorTrace("Precondition '%s' is not met", precondition.getClass().getSimpleName());
                 return false;
@@ -125,7 +125,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
     public abstract void tickBehavior(int delta, @Nonnull Level world, @Nonnull T entity);
 
     public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull T entity) {
-        for (IEntityCondition<T> continueCondition : this.continueConditions) {
+        for (ICondition<T> continueCondition : this.continueConditions) {
             if (!continueCondition.test(entity)) {
                 log.behaviorTrace("Continue condition '%s' is not met", continueCondition.getClass().getSimpleName());
                 return false;
