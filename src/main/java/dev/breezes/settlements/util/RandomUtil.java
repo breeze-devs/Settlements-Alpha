@@ -3,11 +3,7 @@ package dev.breezes.settlements.util;
 import net.minecraft.util.Mth;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class RandomUtil {
 
@@ -72,6 +68,21 @@ public class RandomUtil {
                 .limit(length)
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
+    }
+
+    /**
+     * Flips a coin with the given chance of heads
+     *
+     * @param chance the chance of heads, between 0 and 1
+     */
+    public static boolean chance(double chance) {
+        return RANDOM.nextDouble() < chance;
+    }
+
+    public static void chance(double chance, @Nonnull Runnable runnable) {
+        if (chance(chance)) {
+            runnable.run();
+        }
     }
 
 }

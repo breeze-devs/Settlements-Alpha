@@ -1,9 +1,7 @@
 package dev.breezes.settlements.models.behaviors.steps;
 
 import dev.breezes.settlements.models.behaviors.stages.ControlStages;
-import dev.breezes.settlements.models.behaviors.stages.SimpleStage;
 import dev.breezes.settlements.models.behaviors.stages.Stage;
-import dev.breezes.settlements.models.behaviors.stages.StagedStep;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import dev.breezes.settlements.models.misc.ITickable;
 import dev.breezes.settlements.util.Ticks;
@@ -11,7 +9,11 @@ import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Executes a series of behavior steps based on the elapsed ticks of a {@link ITickable}
@@ -79,7 +81,7 @@ public class TimeBasedStep extends AbstractStep {
         }
 
         // Execute periodic steps
-        long elapsed = this.tickable.getTicksElapsed();
+        long elapsed = this.tickable.getTicksElapsedRounded();
         for (Map.Entry<Integer, List<BehaviorStep>> entry : this.periodicSteps.entrySet()) {
             int interval = entry.getKey();
             if (elapsed % interval == 0) {
@@ -163,46 +165,6 @@ public class TimeBasedStep extends AbstractStep {
             return step;
         }
 
-    }
-
-    public static void main(String[] args) {
-        Stage timeStage = new SimpleStage("TimeStage");
-        TimeBasedStep.Builder timeStepBuilder = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(5).asTickable())
-                .onStart(context -> {
-                    log.behaviorStatus("Starting timed step");
-                    return Optional.empty();
-                })
-                .onEnd(context -> {
-                    log.behaviorStatus("Ending timed step");
-                    return Optional.empty();
-                });
-
-        // Note: keyframe #0 and #5 will not be executed
-        for (int i = 0; i <= 5; i++) {
-            int finalI = i;
-            timeStepBuilder.addKeyFrame(Ticks.seconds(finalI), context -> {
-                log.behaviorStatus("Executing key frame %d".formatted(finalI));
-                return Optional.empty();
-            });
-        }
-
-        StagedStep controlStep = StagedStep.builder()
-                .name("ControlStep")
-                .initialStage(timeStage)
-                .stageStepMap(Map.of(timeStage, timeStepBuilder.build()))
-                .nextStage(ControlStages.STEP_END)
-                .build();
-
-        BehaviorContext context = new BehaviorContext(null);
-        while (controlStep.getCurrentStage() != ControlStages.STEP_END) {
-            controlStep.tick(context);
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 }

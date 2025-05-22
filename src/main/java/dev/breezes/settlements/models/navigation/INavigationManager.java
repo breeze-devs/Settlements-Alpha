@@ -1,13 +1,12 @@
 package dev.breezes.settlements.models.navigation;
 
-import dev.breezes.settlements.entities.ISettlementsEntity;
 import dev.breezes.settlements.models.location.Location;
 import net.minecraft.core.GlobalPos;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
-public interface INavigationManager<T extends ISettlementsEntity> {
+public interface INavigationManager<T> {
 
     /**
      * Get the target position if currently navigating

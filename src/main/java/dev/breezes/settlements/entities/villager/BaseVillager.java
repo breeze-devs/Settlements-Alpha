@@ -3,10 +3,10 @@ package dev.breezes.settlements.entities.villager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.bubbles.BubbleManager;
 import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnimator;
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
-import dev.breezes.settlements.entities.villager.navigation.VillagerPathNavigation;
 import dev.breezes.settlements.models.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.models.brain.CustomMemoryModuleType;
 import dev.breezes.settlements.models.brain.IBrain;
@@ -57,17 +57,21 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     public final OneShotAnimator spinAnimator;
 
+    private final BubbleManager bubbleManager;
+
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
 
         this.settlementsBrain = null; // TODO: implement
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
-        VillagerPathNavigation navigation = new VillagerPathNavigation(this, this.level());
-        navigation.setCanOpenDoors(true);
-        navigation.setCanFloat(true);
-        this.navigation = navigation;
+//        VillagerPathNavigation navigation = new VillagerPathNavigation(this, this.level());
+//        navigation.setCanOpenDoors(true);
+//        navigation.setCanFloat(true);
+//        this.navigation = navigation;
 
         this.spinAnimator = new OneShotAnimator("SpinAnimator", this, List.of(BaseVillagerAnimation.SPIN));
+
+        this.bubbleManager = new BubbleManager();
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -93,7 +97,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         this.registerBrainGoals(this.getBrain());
     }
 
-    public boolean hasItemInInventory(Item item){
+    public boolean hasItemInInventory(Item item) {
         return this.getInventory().hasAnyMatching((itemStack) -> itemStack.is(item));
     }
 
@@ -173,18 +177,29 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     }
 
     @Override
+    public BubbleManager getBubbleManager() {
+        return this.bubbleManager;
+    }
+
+    @Override
+    public int getNetworkingId() {
+        return this.getId();
+    }
+
+    @Override
     protected Brain.Provider<Villager> brainProvider() {
         return Brain.provider(MEMORY_TYPES, SENSOR_TYPES);
     }
 
     @Override
-    public boolean wantsToPickUp(ItemStack item){
+    public boolean wantsToPickUp(ItemStack item) {
         boolean wantsToPickUp = super.wantsToPickUp(item);
-        switch (this.getVillagerData().getProfession().name()){
+        switch (this.getVillagerData().getProfession().name()) {
             case ("cleric") -> {
                 if (item.is(Items.NETHER_WART) && this.getInventory().canAddItem(item)) wantsToPickUp = true;
             }
-            default -> {}
+            default -> {
+            }
         }
         return wantsToPickUp;
     }

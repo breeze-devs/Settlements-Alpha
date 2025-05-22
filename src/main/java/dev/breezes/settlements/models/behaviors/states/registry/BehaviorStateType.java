@@ -12,6 +12,7 @@ public enum BehaviorStateType {
 
     TARGET("target", TargetState.class),
     ITEMS_TO_PICK_UP("items_to_pick_up", ItemState.class),
+    SPEECH_BUBBLE("speech_bubble", SpeechBubbleState.class),
     ;
 
     private final String name;

@@ -10,9 +10,9 @@ import javax.annotation.Nonnull;
  */
 public class RandomRangeTickable extends Tickable {
 
-    protected final long minStartingTicks;
+    protected final double minStartingTicks;
 
-    public RandomRangeTickable(long maxStartingValue, long minStartingValue) {
+    public RandomRangeTickable(double maxStartingValue, double minStartingValue) {
         super(maxStartingValue);
         this.minStartingTicks = minStartingValue;
 
@@ -33,7 +33,7 @@ public class RandomRangeTickable extends Tickable {
      */
     @Override
     public void reset() {
-        this.currentTicks = RandomUtil.RANDOM.nextLong(this.maxTicks, this.minStartingTicks + 1);
+        this.currentTicks = RandomUtil.RANDOM.nextDouble(this.maxTicks, this.minStartingTicks + 1);
     }
 
 }

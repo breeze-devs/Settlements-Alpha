@@ -6,8 +6,11 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface ISettlementsVillager extends ISettlementsBrainEntity {
+
+    UUID getUUID();
 
     // Held item management
     Optional<ItemStack> getHeldItem();

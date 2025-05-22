@@ -3,11 +3,7 @@ package dev.breezes.settlements.models.location;
 import dev.breezes.settlements.models.blocks.PhysicalBlock;
 import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.util.MathUtil;
-import lombok.AllArgsConstructor;
-import lombok.CustomLog;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -131,6 +127,26 @@ public class Location implements Cloneable {
 
     public double distance(@Nonnull Entity entity) {
         return Math.sqrt(this.distanceSquared(entity));
+    }
+
+    public int distanceManhattan(@Nonnull Location other) {
+        if (this.level != other.level) {
+            return Integer.MAX_VALUE;
+        }
+
+        return Math.abs(this.getBlockX() - other.getBlockX())
+                + Math.abs(this.getBlockY() - other.getBlockY())
+                + Math.abs(this.getBlockZ() - other.getBlockZ());
+    }
+
+    public int distanceManhattan(@Nonnull Entity entity) {
+        if (this.level != entity.level()) {
+            return Integer.MAX_VALUE;
+        }
+
+        return Math.abs(this.getBlockX() - entity.getBlockX())
+                + Math.abs(this.getBlockY() - entity.getBlockY())
+                + Math.abs(this.getBlockZ() - entity.getBlockZ());
     }
 
     /*
