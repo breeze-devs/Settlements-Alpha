@@ -184,7 +184,7 @@ public final class CustomBehaviorPackages {
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), customGoalWeight);
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSoulSandBehavior()), customGoalWeight);
         } else if (profession == VillagerProfession.FARMER) {
-//            customBehaviorWeightMap.put(new HarvestSugarcaneBehavior(), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSugarCaneBehavior()), customGoalWeight);
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
 //            customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.CHICKEN))), customGoalWeight);
