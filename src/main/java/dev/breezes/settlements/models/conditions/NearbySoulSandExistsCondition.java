@@ -18,6 +18,6 @@ public class NearbySoulSandExistsCondition<E extends BaseVillager> extends Nearb
 
     private static boolean isValidSoulSand(BlockPos blockPos, Level level){
         BlockState blockStateAbove = level.getBlockState(blockPos.above());
-        return blockStateAbove.isAir() || (blockStateAbove.getBlock().equals(Blocks.NETHER_WART) && blockStateAbove.getValue(AGE) == 3);
+        return blockStateAbove.isAir() || (blockStateAbove.is(Blocks.NETHER_WART) && blockStateAbove.getValue(AGE) == 3);
     }
 }

@@ -37,8 +37,8 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
 
     @Override
     public boolean test(@Nullable E entity) {
+        this.targets = new ArrayList<>();
         if (entity == null) {
-            this.targets = new ArrayList<>();
             return false;
         }
         BlockPos.MutableBlockPos mutableBlockPos = entity.blockPosition().mutable();
@@ -49,16 +49,16 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
                     mutableBlockPos.set(entity.getX() + x, entity.getY() + y, entity.getZ() + z);
                     if (targetBlockClass.isInstance(level.getBlockState(mutableBlockPos).getBlock()) && this.extraBlockCondition.test(mutableBlockPos, entity.level())){
                         targets.add(mutableBlockPos.immutable());
-                    } else targets.remove(mutableBlockPos);
+                    }
                 }
             }
         }
-        log.sensorStatus("Found " + targets.size() + " blocks nearby");
+        log.sensorStatus("Found " + targets.size() + " blocks of type " + targetBlockClass);
         return !targets.isEmpty();
     }
 
     public List<BlockPos> getTargets() {
-        return Optional.ofNullable(this.targets)
+        return Optional.of(this.targets)
                 .orElse(Collections.emptyList());
     }
 }

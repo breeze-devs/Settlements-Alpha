@@ -24,10 +24,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 @CustomLog
@@ -57,8 +55,6 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
             description = "Vertical range (in blocks) to scan for nearby soul sand",
             defaultValue = 1, min = 0, max = 3)
     private static int scanRangeVertical;
-
-    @Nullable
     private BlockPos netherWartPos;
     private int timeWorkedSoFar;
     private List<BlockPos> validSoulSandAroundVillager = Lists.newArrayList();
@@ -70,7 +66,7 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
               Ticks.seconds(preconditionCheckCooldownMax)),
               RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin),
               Ticks.seconds(behaviorCooldownMax)),
-              Tickable.of(Ticks.seconds(2)));
+              Tickable.of(Ticks.seconds(0)));
 
         this.nearbySoulSandExistsCondition = NearbySoulSandExistsCondition.builder()
                 .rangeHorizontal(scanRangeHorizontal)
@@ -81,24 +77,28 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
     }
 
     @Override
-    public void doStart(@NotNull Level level, @NotNull BaseVillager entity) {
+    public void doStart(@Nonnull Level level, @Nonnull BaseVillager villager) {
         this.validSoulSandAroundVillager = nearbySoulSandExistsCondition.getTargets();
-        this.netherWartPos = getValidAboveSoulSand(level);
-        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(this.netherWartPos));
+        this.netherWartPos = getRandomPosition(level);
+        while (level.getBlockState(netherWartPos).isAir() && !villager.hasItemInInventory(Items.NETHER_WART)){
+            validSoulSandAroundVillager.remove(netherWartPos);
+            if (validSoulSandAroundVillager.isEmpty()) requestStop();
+            netherWartPos = getRandomPosition(level);
+        }
     }
 
-    @Nullable
-    private BlockPos getValidAboveSoulSand(Level level) {
+    private BlockPos getRandomPosition(Level level) {
         return this.validSoulSandAroundVillager.get(level.getRandom().nextInt(this.validSoulSandAroundVillager.size())).above();
     }
 
     @Override
     protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(new BlockPosTracker(this.netherWartPos), 0.5F, 0));
+        villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(this.netherWartPos));
     }
 
     @Override
-    public void doStop(@NotNull Level level, @NotNull BaseVillager entity) {
+    public void doStop(@Nonnull Level level, @Nonnull BaseVillager entity) {
         entity.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
         entity.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         this.timeWorkedSoFar = 0;
@@ -106,10 +106,9 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
     }
 
     @Override
-    protected void interactWithTarget(int delta, @NotNull Level level, @NotNull BaseVillager villager) {
+    protected void interactWithTarget(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
         BlockState wartBlockState = level.getBlockState(this.netherWartPos);
         Block wartBlock = wartBlockState.getBlock();
-        log.behaviorStatus("Interacting with soul sand at {" + netherWartPos.below().toShortString() + "}");
         if (wartBlock instanceof NetherWartBlock) {
             level.destroyBlock(this.netherWartPos, true, villager);
         }
@@ -141,22 +140,22 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
     }
 
     @Override
-    protected void tickExtra(int delta, @NotNull Level level, @NotNull BaseVillager villager) {
+    protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
         this.timeWorkedSoFar++;
     }
 
     @Override
-    protected boolean hasTarget(@NotNull Level world, @NotNull BaseVillager villager) {
+    protected boolean hasTarget(@Nonnull Level world, @Nonnull BaseVillager villager) {
         return this.netherWartPos != null;
     }
 
     @Override
-    protected boolean isTargetInReach(@NotNull Level world, @NotNull BaseVillager villager) {
+    protected boolean isTargetInReach(@Nonnull Level world, @Nonnull BaseVillager villager) {
         return this.netherWartPos.closerToCenterThan(villager.position(), 1.0);
     }
 
     @Override
-    public boolean tickContinueConditions(int delta, @NotNull Level level, @NotNull BaseVillager entity){
+    public boolean tickContinueConditions(int delta, @Nonnull Level level, @Nonnull BaseVillager entity){
         return this.timeWorkedSoFar < 400;
     }
 }

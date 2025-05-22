@@ -17,7 +17,9 @@ import dev.breezes.settlements.models.navigation.VanillaMemoryNavigationManager;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.Brain;
@@ -27,6 +29,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.sensing.Sensor;
 import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
@@ -178,15 +181,61 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     }
 
     @Override
-    public boolean wantsToPickUp(ItemStack item){
-        boolean wantsToPickUp = super.wantsToPickUp(item);
+    protected void pickUpItem(ItemEntity itemEntity) {
+        ItemStack itemstack = itemEntity.getItem();
+        SimpleContainer simplecontainer = this.getInventory();
+        int stackSize = itemstack.getMaxStackSize();
+        if(itemstack.getCount() + simplecontainer.countItem(itemstack.getItem()) > stackSize) {
+            this.onItemPickup(itemEntity);
+            int amountToTake = stackSize - simplecontainer.countItem(itemstack.getItem());
+            simplecontainer.addItem(itemstack.copyWithCount(amountToTake));
+            int remainder = itemstack.getCount() - amountToTake;
+            System.out.println(remainder);
+            this.take(itemEntity, amountToTake);
+            itemstack.setCount(remainder);
+            itemEntity.setItem(itemstack);
+        }
+        else super.pickUpItem(itemEntity);
+    }
+
+    @Override
+    public boolean wantsToPickUp(ItemStack itemStack){
         switch (this.getVillagerData().getProfession().name()){
             case ("cleric") -> {
-                if (item.is(Items.NETHER_WART) && this.getInventory().canAddItem(item)) wantsToPickUp = true;
+                if (shouldAddItem(itemStack,
+                        Items.NETHER_WART,
+                        Items.GLISTERING_MELON_SLICE,
+                        Items.PUFFERFISH,
+                        Items.MAGMA_CREAM,
+                        Items.GHAST_TEAR))
+                    return true;
+            }
+            case ("farmer") -> {
+                if (shouldAddItem(itemStack,
+                        Items.SUGAR_CANE,
+                        Items.BONE_MEAL,
+                        Items.WHEAT,
+                        Items.WHEAT_SEEDS,
+                        Items.BEETROOT_SEEDS,
+                        Items.TORCHFLOWER_SEEDS,
+                        Items.PITCHER_POD))
+                    return true;
             }
             default -> {}
         }
-        return wantsToPickUp;
+        // this definitely could be more compatible with other mods if we used mixins
+        return shouldAddItem(itemStack, Items.BREAD, Items.POTATO, Items.CARROT, Items.BEETROOT);
+    }
+
+    private boolean shouldAddItem(ItemStack stackToAdd, Item... items){
+        for (Item item: items) {
+            if (stackToAdd.is(item) && this.getInventory().countItem(item) < 64 && this.getInventory().canAddItem(stackToAdd)) return true;
+        }
+        return false;
+    }
+
+    private boolean shouldAddItem(ItemStack stackToAdd, TagKey<Item> itemTag){
+        return stackToAdd.is(itemTag) && this.getInventory().countItem(stackToAdd.getItem()) < 64 && this.getInventory().canAddItem(stackToAdd);
     }
 
     static {
