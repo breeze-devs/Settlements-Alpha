@@ -21,7 +21,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import org.jetbrains.annotations.NotNull;
@@ -66,11 +67,11 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
 
     public HarvestSoulSandBehavior() {
         super(log,
-              RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin),
-              Ticks.seconds(preconditionCheckCooldownMax)),
-              RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin),
-              Ticks.seconds(behaviorCooldownMax)),
-              Tickable.of(Ticks.seconds(2)));
+                RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin),
+                        Ticks.seconds(preconditionCheckCooldownMax)),
+                RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin),
+                        Ticks.seconds(behaviorCooldownMax)),
+                Tickable.of(Ticks.seconds(2)));
 
         this.nearbySoulSandExistsCondition = NearbySoulSandExistsCondition.builder()
                 .rangeHorizontal(scanRangeHorizontal)
@@ -109,7 +110,7 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
     protected void interactWithTarget(int delta, @NotNull Level level, @NotNull BaseVillager villager) {
         BlockState wartBlockState = level.getBlockState(this.netherWartPos);
         Block wartBlock = wartBlockState.getBlock();
-        log.behaviorStatus("Interacting with soul sand at {" + netherWartPos.below().toShortString() + "}");
+        log.behaviorStatus("Interacting with soul sand at {}", netherWartPos.below().toShortString());
         if (wartBlock instanceof NetherWartBlock) {
             level.destroyBlock(this.netherWartPos, true, villager);
         }
@@ -156,7 +157,7 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
     }
 
     @Override
-    public boolean tickContinueConditions(int delta, @NotNull Level level, @NotNull BaseVillager entity){
+    public boolean tickContinueConditions(int delta, @NotNull Level level, @NotNull BaseVillager entity) {
         return this.timeWorkedSoFar < 400;
     }
 }

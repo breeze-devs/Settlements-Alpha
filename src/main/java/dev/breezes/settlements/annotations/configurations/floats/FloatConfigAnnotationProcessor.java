@@ -22,7 +22,7 @@ public class FloatConfigAnnotationProcessor implements ConfigAnnotationSubProces
 
     @Override
     public Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
-        log.debug("Found %d fields annotated with %s".formatted(fields.size(), this.getAnnotationClass().getSimpleName()));
+        log.debug("Found {} fields annotated with {}", fields.size(), this.getAnnotationClass().getSimpleName());
 
         Map<Field, ModConfigSpec.DoubleValue> configValues = new HashMap<>();
         for (Field field : fields.stream().sorted(Comparator.comparing(Field::getName)).toList()) {
@@ -34,7 +34,7 @@ public class FloatConfigAnnotationProcessor implements ConfigAnnotationSubProces
                     .defineInRange(annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
             configBuilder.pop();
 
-            log.debug("Built float config entry '%s:%s' with value '%f' [%f, %f]".formatted(className, annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max()));
+            log.debug("Built float config entry '{}:{}' with value '{}' [{}, {}]", className, annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
             configValues.put(field, configValue);
         }
 
@@ -42,7 +42,7 @@ public class FloatConfigAnnotationProcessor implements ConfigAnnotationSubProces
     }
 
     private void populateFloats(@Nonnull Map<Field, ModConfigSpec.DoubleValue> floatConfigValues) {
-        log.debug("Populating %d float fields from config".formatted(floatConfigValues.size()));
+        log.debug("Populating {} float fields from config", floatConfigValues.size());
 
         for (Map.Entry<Field, ModConfigSpec.DoubleValue> entry : floatConfigValues.entrySet()) {
             Field field = entry.getKey();
@@ -50,9 +50,9 @@ public class FloatConfigAnnotationProcessor implements ConfigAnnotationSubProces
             try {
                 field.setAccessible(true);
                 field.set(null, configValue.get().floatValue()); // instance is null for static fields
-                log.debug("Set field '%s.%s' to %f".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()));
+                log.debug("Set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get());
             } catch (Exception e) {
-                log.error("Failed to set field '%s.%s' to %f".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()), e);
+                log.error("Failed to set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get(), e);
             }
         }
     }

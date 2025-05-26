@@ -76,7 +76,7 @@ public class TimeBasedStep extends AbstractStep {
 
             // This return can be overridden by the onEnd step
             Optional<Stage> nextStage = this.onEnd.tick(context);
-            log.behaviorStatus("Next stage: %s".formatted(nextStage));
+            log.behaviorStatus("Next stage: {}", nextStage);
             return nextStage;
         }
 

@@ -31,7 +31,7 @@ public class OneShotAnimator extends BaseAnimator {
     }
 
     public void playOnce() {
-        log.debug("[%s] Playing one-shot animation", this.animatorName);
+        log.debug("[{}] Playing one-shot animation", this.animatorName);
         this.shouldAnimate = true;
     }
 

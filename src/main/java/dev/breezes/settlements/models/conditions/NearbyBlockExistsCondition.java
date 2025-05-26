@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @CustomLog
-public class NearbyBlockExistsCondition<E extends Entity, B extends Block> implements ICondition<E>{
+public class NearbyBlockExistsCondition<E extends Entity, B extends Block> implements ICondition<E> {
     private final double rangeHorizontal;
     private final double rangeVertical;
     private final Class<B> targetBlockClass;
@@ -23,6 +23,7 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
     private final IBlockCondition extraBlockCondition;
     @Nonnull
     private List<BlockPos> targets;
+
     public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical, @Nonnull Class<B> targetBlockClass, @Nullable IBlockCondition extraBlockCondition, int minimumTargetCount) {
         this.rangeHorizontal = rangeHorizontal;
         this.rangeVertical = rangeVertical;
@@ -47,13 +48,13 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
             for (double y = -this.rangeVertical; y <= this.rangeVertical; y++) {
                 for (double z = -this.rangeHorizontal; z <= this.rangeHorizontal; z++) {
                     mutableBlockPos.set(entity.getX() + x, entity.getY() + y, entity.getZ() + z);
-                    if (targetBlockClass.isInstance(level.getBlockState(mutableBlockPos).getBlock()) && this.extraBlockCondition.test(mutableBlockPos, entity.level())){
+                    if (targetBlockClass.isInstance(level.getBlockState(mutableBlockPos).getBlock()) && this.extraBlockCondition.test(mutableBlockPos, entity.level())) {
                         targets.add(mutableBlockPos.immutable());
                     } else targets.remove(mutableBlockPos);
                 }
             }
         }
-        log.sensorStatus("Found " + targets.size() + " blocks nearby");
+        log.sensorStatus("Found {} blocks nearby", targets.size());
         return !targets.isEmpty();
     }
 

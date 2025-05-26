@@ -76,7 +76,7 @@ public abstract class BaseAnimator {
             // Reset the stop flag if set
             if (this.stopTime > 0) {
                 this.stopTime = DO_NOT_STOP;
-                log.info("[%s] Reset delayed-stop flag @ %d ticks", this.animatorName, tickCount);
+                log.info("[{}] Reset delayed-stop flag @ {} ticks", this.animatorName, tickCount);
             }
         } else {
             // Stop animation if playing
@@ -123,7 +123,7 @@ public abstract class BaseAnimator {
             this.stopTime = (currentIterations + 1) * animationDuration;
         }
 
-        log.info("[%s] Set delayed-stop flag @ %d ticks", this.animatorName, tickCount);
+        log.info("[{}] Set delayed-stop flag @ {} ticks", this.animatorName, tickCount);
     }
 
     protected void start(int tickCount) {
@@ -137,7 +137,7 @@ public abstract class BaseAnimator {
         this.currentAnimationDefinition = this.randomAnimation();
         this.animationStates.get(this.currentAnimationDefinition).start(tickCount);
 
-        log.info("[%s] Started animation @ %d ticks", this.animatorName, tickCount);
+        log.info("[{}] Started animation @ {} ticks", this.animatorName, tickCount);
     }
 
     protected void stop(int tickCount) {
@@ -153,7 +153,7 @@ public abstract class BaseAnimator {
         }
 
         currentAnimationState.get().stop();
-        log.info("[%s] Stopped animation @ %d ticks", this.animatorName, tickCount);
+        log.info("[{}] Stopped animation @ {} ticks", this.animatorName, tickCount);
     }
 
     public boolean isAnimationPlaying() {
@@ -163,7 +163,7 @@ public abstract class BaseAnimator {
 
     private VillagerAnimationDefinition randomAnimation() {
         VillagerAnimationDefinition animation = RandomUtil.choice(this.animationStates.keySet().stream().toList());
-        log.info("Randomly selected animation: %s", animation.name());
+        log.info("Randomly selected animation: {}", animation.name());
         return animation;
     }
 

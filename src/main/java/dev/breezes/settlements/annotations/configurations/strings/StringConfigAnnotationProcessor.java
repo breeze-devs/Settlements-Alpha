@@ -22,7 +22,7 @@ public class StringConfigAnnotationProcessor implements ConfigAnnotationSubProce
 
     @Override
     public Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
-        log.debug("Found %d fields annotated with %s".formatted(fields.size(), this.getAnnotationClass().getSimpleName()));
+        log.debug("Found {} fields annotated with {}", fields.size(), this.getAnnotationClass().getSimpleName());
 
         Map<Field, ModConfigSpec.ConfigValue<String>> configValues = new HashMap<>();
         for (Field field : fields.stream().sorted(Comparator.comparing(Field::getName)).toList()) {
@@ -34,7 +34,7 @@ public class StringConfigAnnotationProcessor implements ConfigAnnotationSubProce
                     .define(annotation.identifier(), annotation.defaultValue());
             configBuilder.pop();
 
-            log.debug("Built string config entry '%s:%s' with value '%b'".formatted(className, annotation.identifier(), annotation.defaultValue()));
+            log.debug("Built string config entry '{}:{}' with value '{}'", className, annotation.identifier(), annotation.defaultValue());
             configValues.put(field, configValue);
         }
 
@@ -42,7 +42,7 @@ public class StringConfigAnnotationProcessor implements ConfigAnnotationSubProce
     }
 
     private void populateStrings(@Nonnull Map<Field, ModConfigSpec.ConfigValue<String>> stringConfigValues) {
-        log.debug("Populating %d string fields from config".formatted(stringConfigValues.size()));
+        log.debug("Populating {} string fields from config", stringConfigValues.size());
 
         for (Map.Entry<Field, ModConfigSpec.ConfigValue<String>> entry : stringConfigValues.entrySet()) {
             Field field = entry.getKey();
@@ -50,9 +50,9 @@ public class StringConfigAnnotationProcessor implements ConfigAnnotationSubProce
             try {
                 field.setAccessible(true);
                 field.set(null, configValue.get()); // instance is null for static fields
-                log.debug("Set field '%s.%s' to '%s'".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()));
+                log.debug("Set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get());
             } catch (Exception e) {
-                log.error("Failed to set field '%s.%s' to %b".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()), e);
+                log.error("Failed to set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get(), e);
             }
         }
     }

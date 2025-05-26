@@ -3,7 +3,11 @@ package dev.breezes.settlements.models.location;
 import dev.breezes.settlements.models.blocks.PhysicalBlock;
 import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.util.MathUtil;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.CustomLog;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -201,7 +205,7 @@ public class Location implements Cloneable {
      */
     public Optional<PhysicalBlock> getBlock() {
         if (this.level == null) {
-            log.warn("Attempted to get block from a location '%s' with no level", this.toString());
+            log.warn("Attempted to get block from a location '{}' with no level", this.toString());
             return Optional.empty();
         }
 
@@ -225,7 +229,7 @@ public class Location implements Cloneable {
 
     public void playSound(@Nonnull SoundEvent minecraftSound, float volume, float pitch, @Nonnull SoundSource soundSource) {
         if (this.level == null) {
-            log.error("Attempted to play sound from a location '%s' with no level", this.toString());
+            log.error("Attempted to play sound from a location '{}' with no level", this.toString());
             return;
         }
         this.level.playSound(null, this.x, this.y, this.z, minecraftSound, soundSource, volume, pitch);
@@ -233,7 +237,7 @@ public class Location implements Cloneable {
 
     public <T extends ParticleOptions> void displayParticles(@Nonnull T type, int count, double dx, double dy, double dz, double speed) {
         if (this.level == null || !(this.level instanceof ServerLevel serverLevel)) {
-            log.error("Attempted to spawn particles from a location '%s' with no server level", this.toString());
+            log.error("Attempted to spawn particles from a location '{}' with no server level", this.toString());
             return;
         }
         serverLevel.sendParticles(type, this.x, this.y, this.z, count, dx, dy, dz, speed);
@@ -244,7 +248,7 @@ public class Location implements Cloneable {
      */
     public Stream<Entity> getNearbyEntities(double radiusX, double radiusY, double radiusZ, @Nullable Entity except, ICondition<Entity> filter) {
         if (this.level == null) {
-            log.error("Attempted to get nearby entities from a location '%s' with no level", this.toString());
+            log.error("Attempted to get nearby entities from a location '{}' with no level", this.toString());
             return Stream.empty();
         }
 
@@ -276,7 +280,7 @@ public class Location implements Cloneable {
 
     public void spawnEntity(@Nonnull Entity entity) {
         if (this.level == null) {
-            log.error("Attempted to spawn entity at a location '%s' with no level", this.toString());
+            log.error("Attempted to spawn entity at a location '{}' with no level", this.toString());
             return;
         }
 
