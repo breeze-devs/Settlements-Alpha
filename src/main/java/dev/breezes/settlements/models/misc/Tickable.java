@@ -8,10 +8,10 @@ import javax.annotation.Nonnull;
 @AllArgsConstructor
 public class Tickable implements ITickable {
 
-    protected final long maxTicks;
-    protected long currentTicks;
+    protected final double maxTicks;
+    protected double currentTicks;
 
-    public Tickable(long maxTicks) {
+    public Tickable(double maxTicks) {
         this(maxTicks, maxTicks);
     }
 
@@ -20,13 +20,18 @@ public class Tickable implements ITickable {
     }
 
     @Override
-    public void tick(long delta) {
+    public void tick(double delta) {
         this.currentTicks -= delta;
     }
 
     @Override
-    public long getTicksElapsed() {
+    public double getTicksElapsed() {
         return this.maxTicks - this.currentTicks;
+    }
+
+    @Override
+    public long getTicksElapsedRounded() {
+        return Math.round(this.getTicksElapsed());
     }
 
     @Override
@@ -40,8 +45,13 @@ public class Tickable implements ITickable {
     }
 
     @Override
+    public void forceComplete() {
+        this.currentTicks = 0;
+    }
+
+    @Override
     public String getRemainingCooldownsAsPrettyString() {
-        long remainingTicks = Math.max(currentTicks, 0);
+        long remainingTicks = Math.round(Math.max(currentTicks, 0));
         long totalSeconds = remainingTicks / Ticks.TICKS_PER_SECOND;
         long minutes = totalSeconds / Ticks.SECONDS_PER_MINUTE;
         long seconds = totalSeconds % Ticks.SECONDS_PER_MINUTE;

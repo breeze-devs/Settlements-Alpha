@@ -154,7 +154,7 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
             log.behaviorWarn("Target is null");
             return;
         }
-        log.behaviorStatus("Feeding animal in behavior stage '%s': '%s'".formatted(this.behaviorState.toString(), target.toString()));
+        log.behaviorStatus("Feeding animal in behavior stage '{}': '{}'", this.behaviorState.toString(), target.toString());
 
         // Feed the animal
         target.setLeashedTo(villager, true);
@@ -251,7 +251,7 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
         Predicate<Entity> isBabyOfRightType = (targetEntity) -> targetEntity.getType() == type && ((Animal) targetEntity).isBaby();
         List<Entity> nearbyEntities = villager.level().getEntities(villager, scanBoundary, isBabyOfRightType);
         for (Entity nearbyEntity : nearbyEntities) {
-            log.behaviorStatus("Claiming baby animal '%s'".formatted(nearbyEntity.toString()));
+            log.behaviorStatus("Claiming baby animal '{}' as village-owned", nearbyEntity.toString());
             nearbyEntity.addTag(EntityTag.VILLAGE_OWNED_ANIMAL.getTag());
         }
     }

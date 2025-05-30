@@ -2,14 +2,16 @@ package dev.breezes.settlements.models.misc;
 
 public interface ITickable {
 
-    void tick(long delta);
+    void tick(double delta);
 
     /**
      * Get the number of ticks that have elapsed since the last reset
      */
-    long getTicksElapsed();
+    double getTicksElapsed();
 
-    default boolean tickAndCheck(long delta) {
+    long getTicksElapsedRounded();
+
+    default boolean tickAndCheck(double delta) {
         this.tick(delta);
         return this.isComplete();
     }
@@ -22,7 +24,7 @@ public interface ITickable {
         return result;
     }
 
-    default boolean tickCheckAndReset(long delta) {
+    default boolean tickCheckAndReset(double delta) {
         boolean result = this.tickAndCheck(delta);
         if (result) {
             this.reset();
@@ -33,6 +35,8 @@ public interface ITickable {
     void reset();
 
     boolean isComplete();
+
+    void forceComplete();
 
     String getRemainingCooldownsAsPrettyString();
 

@@ -104,7 +104,7 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
         Location targetLocation = Location.fromEntity(this.targetToRepair, false);
         SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(targetLocation, SoundSource.NEUTRAL);
         ParticleRegistry.repairIronGolem(targetLocation);
-        log.behaviorTrace("Repaired iron golem for %.2f HP, %d attempts remaining", healAmount, this.remainingRepairAttempts - 1);
+        log.behaviorTrace("Repaired iron golem for {} HP, {} attempts remaining", healAmount, this.remainingRepairAttempts - 1);
 
         ClientExecutor.runOnClient(() -> {
             ClientUtil.getClientSideVillager(villager)

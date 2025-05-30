@@ -22,7 +22,11 @@ import net.minecraft.world.item.alchemy.Potions;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Condition for clerics to find a friendly entity that's in need of a potion
@@ -68,7 +72,7 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
             if (entity.getType() == EntityType.PLAYER) {
                 int reputation = this.getReputation(villager, (Player) entity);
                 if (reputation < this.minimumReputation) {
-                    log.sensorTrace("Ignoring player '%s' with reputation '%d' below minimum reputation of '%d'", entity.getName(), reputation, this.minimumReputation);
+                    log.sensorTrace("Ignoring player '{}' with reputation '{}' below minimum reputation of {}", entity.getName(), reputation, this.minimumReputation);
                     return false;
                 }
             }
@@ -77,11 +81,11 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
             Optional<PotionType> potionType = this.needsPotion(villager, entity);
             potionType.ifPresent(type -> this.friendlyNeedsPotionMap.put(entity, type));
 
-            log.sensorTrace("Entity '%s' needs potion type: %s", entity.getName(), potionType.orElse(null));
+            log.sensorTrace("Entity '{}' needs potion type: {}", entity.getName(), potionType.orElse(null));
             return potionType.isPresent();
         });
 
-        log.sensorStatus("Found %d friendly entities that need a potion", this.friendlyNeedsPotionMap.size());
+        log.sensorStatus("Found {} friendly entities that need a potion", this.friendlyNeedsPotionMap.size());
         return !this.friendlyNeedsPotionMap.isEmpty();
     }
 

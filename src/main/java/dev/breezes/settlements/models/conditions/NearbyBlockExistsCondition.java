@@ -47,13 +47,13 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
             for (double y = -this.rangeVertical; y <= this.rangeVertical; y++) {
                 for (double z = -this.rangeHorizontal; z <= this.rangeHorizontal; z++) {
                     mutableBlockPos.set(entity.getX() + x, entity.getY() + y, entity.getZ() + z);
-                    if (targetBlockClass.isInstance(level.getBlockState(mutableBlockPos).getBlock()) && this.extraBlockCondition.test(mutableBlockPos, entity.level())){
+                    if (targetBlockClass.isInstance(level.getBlockState(mutableBlockPos).getBlock()) && this.extraBlockCondition.test(mutableBlockPos, entity.level())) {
                         targets.add(mutableBlockPos.immutable());
                     }
                 }
             }
         }
-        log.sensorStatus("Found " + targets.size() + " blocks of type " + targetBlockClass);
+        log.sensorStatus("Found {} blocks nearby", targets.size());
         return !targets.isEmpty();
     }
 

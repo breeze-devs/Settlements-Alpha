@@ -129,7 +129,7 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
             this.initialMatrix = this.getMatrix(0, -axisDirection * ANIMATION_OFFSET);
             this.finalMatrix = this.getMatrix(0, axisDirection * ANIMATION_OFFSET);
         } else {
-            log.error("Unexpected axis '%s' for stone-cutter block at location '%s'", axis, this.stoneCutter.getLocation(false));
+            log.error("Unexpected axis '{}' for stone-cutter block at location {}", axis, this.stoneCutter.getLocation(false));
             this.requestStop();
             return;
         }

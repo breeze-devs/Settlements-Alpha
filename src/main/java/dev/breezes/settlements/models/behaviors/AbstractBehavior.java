@@ -54,10 +54,10 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         // - but we still need to tick the precondition check cooldown
         boolean preconditionCheckCooldownComplete = this.preconditionCheckCooldown.tickAndCheck(delta);
         if (!this.behaviorCoolDown.tickAndCheck(delta)) {
-            log.behaviorTrace("Behavior is cooling down with %s remaining", this.behaviorCoolDown.getRemainingCooldownsAsPrettyString());
+            log.behaviorTrace("Behavior is cooling down with {} remaining", this.behaviorCoolDown.getRemainingCooldownsAsPrettyString());
             return false;
         } else if (!preconditionCheckCooldownComplete) {
-            log.behaviorTrace("Precondition check is cooling down, with %s remaining", this.preconditionCheckCooldown.getRemainingCooldownsAsPrettyString());
+            log.behaviorTrace("Precondition check is cooling down, with {} remaining", this.preconditionCheckCooldown.getRemainingCooldownsAsPrettyString());
             return false;
         }
 
@@ -67,7 +67,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         // Loop through all preconditions and check if they are all met
         for (ICondition<T> precondition : this.preconditions) {
             if (!precondition.test(entity)) {
-                log.behaviorTrace("Precondition '%s' is not met", precondition.getClass().getSimpleName());
+                log.behaviorTrace("Precondition '{}' is not met", precondition.getClass().getSimpleName());
                 return false;
             }
         }
@@ -106,7 +106,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             return;
         }
 
-        log.behaviorTrace("Ticking behavior with delta %d", delta);
+        log.behaviorTrace("Ticking behavior with delta {}", delta);
         try {
             this.tickBehavior(delta, world, entity);
         } catch (StopBehaviorException e) {
@@ -127,7 +127,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
     public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull T entity) {
         for (ICondition<T> continueCondition : this.continueConditions) {
             if (!continueCondition.test(entity)) {
-                log.behaviorTrace("Continue condition '%s' is not met", continueCondition.getClass().getSimpleName());
+                log.behaviorTrace("Continue condition '{}' is not met", continueCondition.getClass().getSimpleName());
                 return false;
             }
         }

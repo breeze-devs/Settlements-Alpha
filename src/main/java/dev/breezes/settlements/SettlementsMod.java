@@ -1,6 +1,7 @@
 package dev.breezes.settlements;
 
 import dev.breezes.settlements.annotations.configurations.ConfigAnnotationProcessor;
+import dev.breezes.settlements.packet.PacketRegistry;
 import dev.breezes.settlements.registry.CreativeTabRegistry;
 import dev.breezes.settlements.registry.EntityRegistry;
 import dev.breezes.settlements.registry.ItemRegistry;
@@ -24,6 +25,9 @@ public final class SettlementsMod {
 //        BlockRegistry.register(modEventBus);
         CreativeTabRegistry.register(modEventBus);
         EntityRegistry.register(modEventBus);
+
+        // Register our packet handlers
+        modEventBus.addListener(PacketRegistry::setupPackets);
 
         // Generate configuration files from annotations
         ConfigAnnotationProcessor.process();

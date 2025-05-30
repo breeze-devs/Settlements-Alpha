@@ -57,7 +57,7 @@ public class StagedStep extends AbstractStep {
     }
 
     protected Optional<Stage> onStart(@Nonnull BehaviorContext context) {
-        log.behaviorStatus("Starting %s (%s)".formatted(this.getName(), this.getUuid()));
+        log.behaviorStatus("Starting {} ({})", this.getName(), this.getUuid());
         if (this.onStart != null) {
             this.onStart.tick(context);
         }
@@ -86,7 +86,7 @@ public class StagedStep extends AbstractStep {
     }
 
     protected void onEnd(@Nonnull BehaviorContext context) {
-        log.behaviorStatus("Ending %s (%s)".formatted(this.getName(), this.getUuid()));
+        log.behaviorStatus("Ending {} ({})", this.getName(), this.getUuid());
         if (this.onEnd != null) {
             this.onEnd.tick(context);
         }
@@ -99,18 +99,17 @@ public class StagedStep extends AbstractStep {
     private void transitionStage(@Nonnull Stage stage) {
         // Special case: ending staged step
         if (stage == ControlStages.STEP_END) {
-            log.behaviorStatus("End requested for %s (%s)".formatted(this.getName(), this.getUuid()));
+            log.behaviorStatus("End requested for {} ({})", this.getName(), this.getUuid());
             this.currentStage = ControlStages.STEP_END;
             return;
         }
 
         if (!this.stageStepMap.containsKey(stage)) {
-            log.warn("Attempted to transition to an unknown stage: %s for %s (%s)".formatted(stage.toString(), this.getName(), this.getUuid()));
+            log.warn("Attempted to transition to an unknown stage: {} for {} ({})", stage.toString(), this.getName(), this.getUuid());
             throw new StopBehaviorException("Attempted to transition to an unknown stage: %s".formatted(stage.toString()));
         }
 
-        log.behaviorStatus("Transitioning from %s to %s stage for %s (%s)"
-                .formatted(this.currentStage.getName(), stage.getName(), this.getName(), this.getUuid()));
+        log.behaviorStatus("Transitioning from {} to {} stage for {} ({})", this.currentStage.getName(), stage.getName(), this.getName(), this.getUuid());
         this.currentStage = stage;
     }
 

@@ -22,7 +22,7 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
 
     @Override
     public Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
-        log.debug("Found %d fields annotated with %s".formatted(fields.size(), this.getAnnotationClass().getSimpleName()));
+        log.debug("Found {} fields annotated with {}", fields.size(), this.getAnnotationClass().getSimpleName());
 
         Map<Field, ModConfigSpec.IntValue> configValues = new HashMap<>();
         for (Field field : fields.stream().sorted(Comparator.comparing(Field::getName)).toList()) {
@@ -34,7 +34,7 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
                     .defineInRange(annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
             configBuilder.pop();
 
-            log.debug("Built integer config entry '%s:%s' with value '%d' [%d, %d]".formatted(className, annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max()));
+            log.debug("Built integer config entry '{}:{}' with value '{}' [{}, {}]", className, annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
             configValues.put(field, configValue);
         }
 
@@ -50,9 +50,9 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
             try {
                 field.setAccessible(true);
                 field.set(null, configValue.get()); // instance is null for static fields
-                log.debug("Set field '%s.%s' to %d".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()));
+                log.debug("Set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get());
             } catch (Exception e) {
-                log.error("Failed to set field '%s.%s' to %d".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get()), e);
+                log.error("Failed to set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get(), e);
             }
         }
     }

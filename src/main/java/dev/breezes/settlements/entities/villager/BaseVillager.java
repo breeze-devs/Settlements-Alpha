@@ -3,6 +3,7 @@ package dev.breezes.settlements.entities.villager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.bubbles.BubbleManager;
 import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnimator;
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
@@ -60,6 +61,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     public final OneShotAnimator spinAnimator;
 
+    private final BubbleManager bubbleManager;
+
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
 
@@ -71,6 +74,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         this.navigation = navigation;
 
         this.spinAnimator = new OneShotAnimator("SpinAnimator", this, List.of(BaseVillagerAnimation.SPIN));
+
+        this.bubbleManager = new BubbleManager();
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -96,7 +101,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         this.registerBrainGoals(this.getBrain());
     }
 
-    public boolean hasItemInInventory(Item item){
+    public boolean hasItemInInventory(Item item) {
         return this.getInventory().hasAnyMatching((itemStack) -> itemStack.is(item));
     }
 
@@ -173,6 +178,16 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     @Override
     public BaseVillager getMinecraftEntity() {
         return this;
+    }
+
+    @Override
+    public BubbleManager getBubbleManager() {
+        return this.bubbleManager;
+    }
+
+    @Override
+    public int getNetworkingId() {
+        return this.getId();
     }
 
     @Override

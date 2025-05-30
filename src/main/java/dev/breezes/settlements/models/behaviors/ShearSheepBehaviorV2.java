@@ -3,7 +3,13 @@ package dev.breezes.settlements.models.behaviors;
 import dev.breezes.settlements.annotations.configurations.integers.IntegerConfig;
 import dev.breezes.settlements.annotations.configurations.maps.MapConfig;
 import dev.breezes.settlements.annotations.configurations.maps.MapEntry;
+import dev.breezes.settlements.bubbles.packet.ClientBoundDisplayBubblePacket;
+import dev.breezes.settlements.bubbles.packet.ClientBoundRemoveBubblePacket;
+import dev.breezes.settlements.bubbles.packet.DisplayBubbleRequest;
+import dev.breezes.settlements.bubbles.packet.RemoveBubbleRequest;
+import dev.breezes.settlements.bubbles.registry.BubbleType;
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
+import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.behaviors.stages.ControlStages;
 import dev.breezes.settlements.models.behaviors.stages.SimpleStage;
@@ -11,6 +17,7 @@ import dev.breezes.settlements.models.behaviors.stages.Stage;
 import dev.breezes.settlements.models.behaviors.stages.StagedStep;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
+import dev.breezes.settlements.models.behaviors.states.registry.SpeechBubbleState;
 import dev.breezes.settlements.models.behaviors.states.registry.items.ItemState;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
@@ -35,6 +42,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -135,18 +144,52 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
         // Create steps
         this.controlStep = StagedStep.builder()
                 .name("ShearSheepBehaviorV2")
+                .onStart(context -> {
+                    log.behaviorStatus("Creating speech bubble");
+                    ISettlementsVillager villager = context.getInitiator();
+
+                    UUID bubbleId = UUID.randomUUID();
+                    context.setState(BehaviorStateType.SPEECH_BUBBLE, SpeechBubbleState.of(bubbleId));
+
+                    DisplayBubbleRequest request = DisplayBubbleRequest.builder()
+                            .entityId(villager.getNetworkingId())
+                            .bubbleType(BubbleType.SHEAR_SHEEP)
+                            .bubbleId(bubbleId)
+                            .visibilityBlocks(20)
+                            .lifetimeTicks(Ticks.seconds(60).getTicksAsInt()) // TODO: shorten this once packets are sent regularly
+                            .build();
+
+                    // Send the packet
+                    // TODO: we should send this packet regularly throughout the behavior (e.g. for players who teleported to nearby)
+                    PacketDistributor.sendToPlayersTrackingEntity(villager.getMinecraftEntity(), new ClientBoundDisplayBubblePacket(request));
+                    return Optional.empty();
+                })
                 .initialStage(SHEAR_SHEEP)
                 .stageStepMap(Map.of(
                         SHEAR_SHEEP, this.createShearSheepStep()
                 ))
                 .nextStage(ControlStages.STEP_END)
+                .onEnd(context -> {
+                    log.behaviorStatus("Removing speech bubble");
+                    context.getState(BehaviorStateType.SPEECH_BUBBLE, SpeechBubbleState.class)
+                            .map(SpeechBubbleState::getBubbleId)
+                            .ifPresent(uuid -> {
+                                ISettlementsVillager villager = context.getInitiator();
+                                RemoveBubbleRequest request = RemoveBubbleRequest.builder()
+                                        .entityId(villager.getNetworkingId())
+                                        .bubbleId(uuid)
+                                        .build();
+                                PacketDistributor.sendToPlayersTrackingEntity(villager.getMinecraftEntity(), new ClientBoundRemoveBubblePacket(request));
+                            });
+                    return Optional.empty();
+                })
                 .build();
     }
 
     private BehaviorStep createShearSheepStep() {
         TimeBasedStep shearStep = TimeBasedStep.builder()
                 .withTickable(Ticks.seconds(1).asTickable())
-                .onStart(ctx -> {
+                .onStart(context -> {
                     this.shearCount.decrementAndGet();
                     return Optional.empty();
                 })
