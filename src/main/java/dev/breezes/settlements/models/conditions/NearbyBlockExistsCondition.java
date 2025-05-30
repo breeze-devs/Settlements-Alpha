@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @CustomLog
-public class NearbyBlockExistsCondition<E extends Entity, B extends Block> implements ICondition<E> {
+public class NearbyBlockExistsCondition<E extends Entity, B extends Block> implements ICondition<E>{
     private final double rangeHorizontal;
     private final double rangeVertical;
     private final Class<B> targetBlockClass;
@@ -23,7 +23,6 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
     private final IBlockCondition extraBlockCondition;
     @Nonnull
     private List<BlockPos> targets;
-
     public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical, @Nonnull Class<B> targetBlockClass, @Nullable IBlockCondition extraBlockCondition, int minimumTargetCount) {
         this.rangeHorizontal = rangeHorizontal;
         this.rangeVertical = rangeVertical;
@@ -38,8 +37,8 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
 
     @Override
     public boolean test(@Nullable E entity) {
+        this.targets = new ArrayList<>();
         if (entity == null) {
-            this.targets = new ArrayList<>();
             return false;
         }
         BlockPos.MutableBlockPos mutableBlockPos = entity.blockPosition().mutable();
@@ -50,7 +49,7 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
                     mutableBlockPos.set(entity.getX() + x, entity.getY() + y, entity.getZ() + z);
                     if (targetBlockClass.isInstance(level.getBlockState(mutableBlockPos).getBlock()) && this.extraBlockCondition.test(mutableBlockPos, entity.level())) {
                         targets.add(mutableBlockPos.immutable());
-                    } else targets.remove(mutableBlockPos);
+                    }
                 }
             }
         }
@@ -59,7 +58,7 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
     }
 
     public List<BlockPos> getTargets() {
-        return Optional.ofNullable(this.targets)
+        return Optional.of(this.targets)
                 .orElse(Collections.emptyList());
     }
 }
