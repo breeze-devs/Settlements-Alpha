@@ -1,7 +1,8 @@
 package dev.breezes.settlements.models.behaviors;
 
 import com.google.common.collect.Lists;
-import dev.breezes.settlements.annotations.configurations.integers.IntegerConfig;
+import dev.breezes.settlements.configurations.annotations.ConfigurationType;
+import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbySoulSandExistsCondition;
@@ -21,7 +22,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 
@@ -30,28 +32,35 @@ import java.util.List;
 
 @CustomLog
 public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
-    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
+
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
             defaultValue = 10, min = 1)
     private static int preconditionCheckCooldownMin;
-    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
             defaultValue = 20, min = 1)
     private static int preconditionCheckCooldownMax;
-    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
             defaultValue = 60, min = 1)
     private static int behaviorCooldownMin;
-    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
             description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
             defaultValue = 240, min = 1)
     private static int behaviorCooldownMax;
 
-    @IntegerConfig(identifier = "scan_range_horizontal",
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = "scan_range_horizontal",
             description = "Horizontal range (in blocks) to scan for nearby soul sand",
             defaultValue = 4, min = 1, max = 16)
     private static int scanRangeHorizontal;
-    @IntegerConfig(identifier = "scan_range_vertical",
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = "scan_range_vertical",
             description = "Vertical range (in blocks) to scan for nearby soul sand",
             defaultValue = 1, min = 0, max = 3)
     private static int scanRangeVertical;
@@ -62,11 +71,11 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
 
     public HarvestSoulSandBehavior() {
         super(log,
-              RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin),
-              Ticks.seconds(preconditionCheckCooldownMax)),
-              RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin),
-              Ticks.seconds(behaviorCooldownMax)),
-              Tickable.of(Ticks.seconds(0)));
+                RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin),
+                        Ticks.seconds(preconditionCheckCooldownMax)),
+                RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin),
+                        Ticks.seconds(behaviorCooldownMax)),
+                Tickable.of(Ticks.seconds(0)));
 
         this.nearbySoulSandExistsCondition = NearbySoulSandExistsCondition.builder()
                 .rangeHorizontal(scanRangeHorizontal)
@@ -80,7 +89,7 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
     public void doStart(@Nonnull Level level, @Nonnull BaseVillager villager) {
         this.validSoulSandAroundVillager = nearbySoulSandExistsCondition.getTargets();
         this.netherWartPos = getRandomPosition(level);
-        while (level.getBlockState(netherWartPos).isAir() && !villager.hasItemInInventory(Items.NETHER_WART)){
+        while (level.getBlockState(netherWartPos).isAir() && !villager.hasItemInInventory(Items.NETHER_WART)) {
             validSoulSandAroundVillager.remove(netherWartPos);
             if (validSoulSandAroundVillager.isEmpty()) requestStop();
             netherWartPos = getRandomPosition(level);
@@ -155,7 +164,7 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
     }
 
     @Override
-    public boolean tickContinueConditions(int delta, @Nonnull Level level, @Nonnull BaseVillager entity){
+    public boolean tickContinueConditions(int delta, @Nonnull Level level, @Nonnull BaseVillager entity) {
         return this.timeWorkedSoFar < 400;
     }
 }

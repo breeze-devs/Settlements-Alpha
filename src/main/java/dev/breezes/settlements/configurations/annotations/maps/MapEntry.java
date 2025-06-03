@@ -1,4 +1,4 @@
-package dev.breezes.settlements.annotations.configurations.maps;
+package dev.breezes.settlements.configurations.annotations.maps;
 
 public @interface MapEntry {
 

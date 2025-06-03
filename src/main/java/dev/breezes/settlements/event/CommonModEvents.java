@@ -18,7 +18,7 @@ import java.util.List;
 public class CommonModEvents {
 
     // TODO: refactor this!!! ugly
-    public static List<Runnable> loadCompleteTasks = new ArrayList<>();
+    public static final List<Runnable> LOAD_COMPLETE_TASKS = new ArrayList<>();
 
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
@@ -40,7 +40,7 @@ public class CommonModEvents {
     @SubscribeEvent
     public static void onLoadComplete(@Nonnull FMLLoadCompleteEvent event) {
         log.debug("Running load complete tasks...");
-        loadCompleteTasks.forEach(Runnable::run);
+        LOAD_COMPLETE_TASKS.forEach(Runnable::run);
         log.debug("Load complete tasks complete");
     }
 

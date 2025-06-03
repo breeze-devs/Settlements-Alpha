@@ -1,4 +1,6 @@
-package dev.breezes.settlements.annotations.configurations.strings;
+package dev.breezes.settlements.configurations.annotations.booleans;
+
+import dev.breezes.settlements.configurations.annotations.ConfigurationType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,12 +9,14 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
-public @interface StringConfig {
+public @interface BooleanConfig {
+
+    ConfigurationType type();
 
     String identifier();
 
     String description();
 
-    String defaultValue();
+    boolean defaultValue();
 
 }

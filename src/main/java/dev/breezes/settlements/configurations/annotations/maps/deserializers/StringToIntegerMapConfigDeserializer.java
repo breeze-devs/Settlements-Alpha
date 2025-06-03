@@ -1,6 +1,6 @@
-package dev.breezes.settlements.annotations.configurations.maps.deserializers;
+package dev.breezes.settlements.configurations.annotations.maps.deserializers;
 
-import dev.breezes.settlements.annotations.configurations.maps.MapConfigDeserializationException;
+import dev.breezes.settlements.configurations.annotations.maps.MapConfigDeserializationException;
 
 import javax.annotation.Nonnull;
 

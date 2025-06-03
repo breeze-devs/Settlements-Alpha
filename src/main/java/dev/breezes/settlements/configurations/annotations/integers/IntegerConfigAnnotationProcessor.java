@@ -1,7 +1,9 @@
-package dev.breezes.settlements.annotations.configurations.integers;
+package dev.breezes.settlements.configurations.annotations.integers;
 
 import com.google.common.base.CaseFormat;
-import dev.breezes.settlements.annotations.configurations.ConfigAnnotationSubProcessor;
+import dev.breezes.settlements.configurations.annotations.ConfigAnnotationSubProcessor;
+import dev.breezes.settlements.configurations.annotations.ConfigurationAnnotationRegistry;
+import dev.breezes.settlements.configurations.annotations.ConfigurationType;
 import lombok.CustomLog;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -21,18 +23,20 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
     }
 
     @Override
-    public Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
+    public Runnable buildConfig(@Nonnull ConfigurationAnnotationRegistry registry, @Nonnull Set<Field> fields) {
         log.debug("Found {} fields annotated with {}", fields.size(), this.getAnnotationClass().getSimpleName());
 
         Map<Field, ModConfigSpec.IntValue> configValues = new HashMap<>();
         for (Field field : fields.stream().sorted(Comparator.comparing(Field::getName)).toList()) {
             IntegerConfig annotation = field.getAnnotation(IntegerConfig.class);
+            ConfigurationType type = annotation.type();
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
-            configBuilder.push(className);
-            ModConfigSpec.IntValue configValue = configBuilder.comment(annotation.description())
+            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath(className));
+            builder.push(className);
+            ModConfigSpec.IntValue configValue = builder.comment(annotation.description())
                     .defineInRange(annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
-            configBuilder.pop();
+            builder.pop();
 
             log.debug("Built integer config entry '{}:{}' with value '{}' [{}, {}]", className, annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
             configValues.put(field, configValue);

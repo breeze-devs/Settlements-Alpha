@@ -1,11 +1,13 @@
-package dev.breezes.settlements.annotations.configurations.maps;
+package dev.breezes.settlements.configurations.annotations.maps;
 
 import com.google.common.base.CaseFormat;
 import com.google.gson.Gson;
 import com.mojang.authlib.minecraft.client.ObjectMapper;
-import dev.breezes.settlements.annotations.configurations.ConfigAnnotationSubProcessor;
-import dev.breezes.settlements.annotations.configurations.maps.deserializers.MapConfigDeserializer;
-import dev.breezes.settlements.annotations.configurations.maps.deserializers.MapConfigDeserializers;
+import dev.breezes.settlements.configurations.annotations.ConfigAnnotationSubProcessor;
+import dev.breezes.settlements.configurations.annotations.ConfigurationAnnotationRegistry;
+import dev.breezes.settlements.configurations.annotations.ConfigurationType;
+import dev.breezes.settlements.configurations.annotations.maps.deserializers.MapConfigDeserializer;
+import dev.breezes.settlements.configurations.annotations.maps.deserializers.MapConfigDeserializers;
 import dev.breezes.settlements.util.crash.CrashUtil;
 import dev.breezes.settlements.util.crash.report.ConfigLoadingCrashReport;
 import lombok.CustomLog;
@@ -13,7 +15,12 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @CustomLog
 public class MapConfigAnnotationProcessor implements ConfigAnnotationSubProcessor<MapConfig> {
@@ -26,7 +33,7 @@ public class MapConfigAnnotationProcessor implements ConfigAnnotationSubProcesso
     }
 
     @Override
-    public Runnable buildConfig(@Nonnull ModConfigSpec.Builder configBuilder, @Nonnull Set<Field> fields) {
+    public Runnable buildConfig(@Nonnull ConfigurationAnnotationRegistry registry, @Nonnull Set<Field> fields) {
         log.debug("Found {} fields annotated with {}", fields.size(), this.getAnnotationClass().getSimpleName());
 
         List<ConfigEntry> configValues = new ArrayList<>();
@@ -38,11 +45,14 @@ public class MapConfigAnnotationProcessor implements ConfigAnnotationSubProcesso
             }
             String serializedMap = OBJECT_MAPPER.writeValueAsString(map).replace("\"", "'");
 
+            ConfigurationType type = annotation.type();
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
-            configBuilder.push(className);
-            ModConfigSpec.ConfigValue<String> configValue = configBuilder.comment(annotation.description())
+
+            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath(className));
+            builder.push(className);
+            ModConfigSpec.ConfigValue<String> configValue = builder.comment(annotation.description())
                     .define(annotation.identifier(), serializedMap);
-            configBuilder.pop();
+            builder.pop();
 
             log.debug("Built map config entry '{}:{}': {}", className, annotation.identifier(), serializedMap);
             configValues.add(new ConfigEntry(field, configValue, annotation.deserializer()));

@@ -1,13 +1,14 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.annotations.configurations.integers.IntegerConfig;
-import dev.breezes.settlements.annotations.configurations.maps.MapConfig;
-import dev.breezes.settlements.annotations.configurations.maps.MapEntry;
 import dev.breezes.settlements.bubbles.packet.ClientBoundDisplayBubblePacket;
 import dev.breezes.settlements.bubbles.packet.ClientBoundRemoveBubblePacket;
 import dev.breezes.settlements.bubbles.packet.DisplayBubbleRequest;
 import dev.breezes.settlements.bubbles.packet.RemoveBubbleRequest;
 import dev.breezes.settlements.bubbles.registry.BubbleType;
+import dev.breezes.settlements.configurations.annotations.ConfigurationType;
+import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
+import dev.breezes.settlements.configurations.annotations.maps.MapConfig;
+import dev.breezes.settlements.configurations.annotations.maps.MapEntry;
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.BaseVillager;
@@ -30,6 +31,7 @@ import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.models.conditions.NearbyShearableSheepExistsCondition;
 import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.misc.Expertise;
+import dev.breezes.settlements.models.misc.RandomRangeTickable;
 import dev.breezes.settlements.sounds.SoundRegistry;
 import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
@@ -57,33 +59,40 @@ import java.util.stream.Stream;
 @CustomLog
 public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
 
-    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
             defaultValue = 10, min = 1)
     private static int preconditionCheckCooldownMin;
-    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
             defaultValue = 20, min = 1)
     private static int preconditionCheckCooldownMax;
-    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
             defaultValue = 60, min = 1)
     private static int behaviorCooldownMin;
-    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
             description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
             defaultValue = 240, min = 1)
     private static int behaviorCooldownMax;
 
-    @IntegerConfig(identifier = "scan_range_horizontal",
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = "scan_range_horizontal",
             description = "Horizontal range (in blocks) to scan for nearby sheep to shear",
             defaultValue = 32, min = 5, max = 128)
     private static int scanRangeHorizontal;
-    @IntegerConfig(identifier = "scan_range_vertical",
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = "scan_range_vertical",
             description = "Vertical range (in blocks) to scan for nearby sheep to shear",
             defaultValue = 12, min = 1, max = 16)
     private static int scanRangeVertical;
 
-    @MapConfig(identifier = "expertise_shear_limit",
+    @MapConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = "expertise_shear_limit",
             description = "Map of expertise to the maximum number of sheep they can shear",
             deserializer = "StringToInteger",
             defaultValue = {
@@ -126,9 +135,8 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
     private BehaviorContext context;
 
     public ShearSheepBehaviorV2() {
-        super(log, Ticks.seconds(5).asTickable(), Ticks.seconds(5).asTickable());
-//        super(log, RandomRangeTickable.of(Ticks.of(preconditionCheckCooldownMin), Ticks.of(preconditionCheckCooldownMax)),
-//                RandomRangeTickable.of(Ticks.of(behaviorCooldownMin), Ticks.of(behaviorCooldownMax))));
+        super(log, RandomRangeTickable.of(Ticks.of(preconditionCheckCooldownMin), Ticks.of(preconditionCheckCooldownMax)),
+                RandomRangeTickable.of(Ticks.of(behaviorCooldownMin), Ticks.of(behaviorCooldownMax)));
 
         // Initialize variables
         this.shearCount = new AtomicInteger(0);

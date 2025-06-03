@@ -1,6 +1,6 @@
 package dev.breezes.settlements.client;
 
-import dev.breezes.settlements.configurations.GeneralConfig;
+import dev.breezes.settlements.configurations.annotations.GeneralConfig;
 
 import javax.annotation.Nonnull;
 

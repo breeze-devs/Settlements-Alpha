@@ -1,4 +1,6 @@
-package dev.breezes.settlements.annotations.configurations.floats;
+package dev.breezes.settlements.configurations.annotations.floats;
+
+import dev.breezes.settlements.configurations.annotations.ConfigurationType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,6 +10,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface FloatConfig {
+
+    ConfigurationType type();
 
     String identifier();
 

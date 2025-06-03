@@ -1,4 +1,6 @@
-package dev.breezes.settlements.annotations.configurations.integers;
+package dev.breezes.settlements.configurations.annotations.integers;
+
+import dev.breezes.settlements.configurations.annotations.ConfigurationType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,6 +10,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface IntegerConfig {
+
+    ConfigurationType type();
 
     String identifier();
 

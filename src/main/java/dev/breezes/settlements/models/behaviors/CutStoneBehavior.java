@@ -1,6 +1,7 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.annotations.configurations.integers.IntegerConfig;
+import dev.breezes.settlements.configurations.annotations.ConfigurationType;
+import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.entities.displays.models.TransformationMatrix;
@@ -49,19 +50,23 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
                     .build()
     );
 
-    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
             defaultValue = 10, min = 1)
     private static int preconditionCheckCooldownMin;
-    @IntegerConfig(identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
             description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
             defaultValue = 20, min = 1)
     private static int preconditionCheckCooldownMax;
-    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
             description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
             defaultValue = 20, min = 1)
     private static int behaviorCooldownMin;
-    @IntegerConfig(identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
+    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
             description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
             defaultValue = 60, min = 1)
     private static int behaviorCooldownMax;

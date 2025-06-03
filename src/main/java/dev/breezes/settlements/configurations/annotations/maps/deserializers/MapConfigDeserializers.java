@@ -1,4 +1,4 @@
-package dev.breezes.settlements.annotations.configurations.maps.deserializers;
+package dev.breezes.settlements.configurations.annotations.maps.deserializers;
 
 public class MapConfigDeserializers {
 
