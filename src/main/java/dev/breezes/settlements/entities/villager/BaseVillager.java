@@ -5,13 +5,12 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.bubbles.BubbleManager;
 import dev.breezes.settlements.entities.ISettlementsVillager;
-import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnimator;
-import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
-import dev.breezes.settlements.entities.villager.navigation.VillagerPathNavigation;
 import dev.breezes.settlements.models.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.models.brain.CustomMemoryModuleType;
+import dev.breezes.settlements.models.brain.DefaultBrain;
 import dev.breezes.settlements.models.brain.IBrain;
 import dev.breezes.settlements.models.location.Location;
+import dev.breezes.settlements.models.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.models.misc.Expertise;
 import dev.breezes.settlements.models.navigation.INavigationManager;
 import dev.breezes.settlements.models.navigation.VanillaMemoryNavigationManager;
@@ -41,7 +40,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -59,21 +57,19 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     private final IBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
 
-    public final OneShotAnimator spinAnimator;
-
     private final BubbleManager bubbleManager;
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
 
-        this.settlementsBrain = null; // TODO: implement
+        this.settlementsBrain = DefaultBrain.builder()
+                .build(); // TODO: implement
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
-        VillagerPathNavigation navigation = new VillagerPathNavigation(this, this.level());
-        navigation.setCanOpenDoors(true);
-        navigation.setCanFloat(true);
-        this.navigation = navigation;
 
-        this.spinAnimator = new OneShotAnimator("SpinAnimator", this, List.of(BaseVillagerAnimation.SPIN));
+//        VillagerPathNavigation navigation = new VillagerPathNavigation(this, this.level());
+//        navigation.setCanOpenDoors(true);
+//        navigation.setCanFloat(true);
+//        this.navigation = navigation;
 
         this.bubbleManager = new BubbleManager();
     }
@@ -88,9 +84,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     public void tick() {
         super.tick();
 
-        if (this.level().isClientSide()) {
-            this.spinAnimator.tickAnimations(this.tickCount);
-        }
+//        if (this.level().isClientSide()) {
+//            this.spinAnimator.tickAnimations(this.tickCount);
+//        }
     }
 
     @Override
@@ -111,7 +107,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     private void registerBrainGoals(Brain<Villager> brain) {
         VillagerProfession profession = this.getVillagerData().getProfession();
 
-        // Register activities & behaviors
+        // Register activities and behaviors
         brain.addActivity(Activity.CORE, CustomBehaviorPackages.getCorePackage(profession, 0.5F).behaviors());
         brain.addActivity(Activity.IDLE, CustomBehaviorPackages.getIdlePackage(profession, 0.5F).behaviors());
 
@@ -200,7 +196,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         ItemStack itemstack = itemEntity.getItem();
         SimpleContainer simplecontainer = this.getInventory();
         int stackSize = itemstack.getMaxStackSize();
-        if(itemstack.getCount() + simplecontainer.countItem(itemstack.getItem()) > stackSize) {
+        if (itemstack.getCount() + simplecontainer.countItem(itemstack.getItem()) > stackSize) {
             this.onItemPickup(itemEntity);
             int amountToTake = stackSize - simplecontainer.countItem(itemstack.getItem());
             simplecontainer.addItem(itemstack.copyWithCount(amountToTake));
@@ -209,13 +205,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
             this.take(itemEntity, amountToTake);
             itemstack.setCount(remainder);
             itemEntity.setItem(itemstack);
-        }
-        else super.pickUpItem(itemEntity);
+        } else super.pickUpItem(itemEntity);
     }
 
     @Override
-    public boolean wantsToPickUp(ItemStack itemStack){
-        switch (this.getVillagerData().getProfession().name()){
+    public boolean wantsToPickUp(ItemStack itemStack) {
+        switch (this.getVillagerData().getProfession().name()) {
             case ("cleric") -> {
                 if (shouldAddItem(itemStack,
                         Items.NETHER_WART,
@@ -236,20 +231,22 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
                         Items.PITCHER_POD))
                     return true;
             }
-            default -> {}
+            default -> {
+            }
         }
         // this definitely could be more compatible with other mods if we used mixins
         return shouldAddItem(itemStack, Items.BREAD, Items.POTATO, Items.CARROT, Items.BEETROOT);
     }
 
-    private boolean shouldAddItem(ItemStack stackToAdd, Item... items){
-        for (Item item: items) {
-            if (stackToAdd.is(item) && this.getInventory().countItem(item) < 64 && this.getInventory().canAddItem(stackToAdd)) return true;
+    private boolean shouldAddItem(ItemStack stackToAdd, Item... items) {
+        for (Item item : items) {
+            if (stackToAdd.is(item) && this.getInventory().countItem(item) < 64 && this.getInventory().canAddItem(stackToAdd))
+                return true;
         }
         return false;
     }
 
-    private boolean shouldAddItem(ItemStack stackToAdd, TagKey<Item> itemTag){
+    private boolean shouldAddItem(ItemStack stackToAdd, TagKey<Item> itemTag) {
         return stackToAdd.is(itemTag) && this.getInventory().countItem(stackToAdd.getItem()) < 64 && this.getInventory().canAddItem(stackToAdd);
     }
 
@@ -287,7 +284,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
                 MemoryModuleType.GOLEM_DETECTED_RECENTLY,
 
                 // Custom memory module types starts here
-                CustomMemoryModuleType.FENCE_GATES_TO_CLOSE
+                CustomMemoryModuleType.FENCE_GATES_TO_CLOSE,
+                MemoryTypeRegistry.NEAREST_HARVESTABLE_SUGARCANE.getModuleType(),
+                MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
+                MemoryTypeRegistry.OWNED_FARMLAND.getModuleType()
         );
         SENSOR_TYPES = ImmutableList.of(
                 SensorType.NEAREST_LIVING_ENTITIES,

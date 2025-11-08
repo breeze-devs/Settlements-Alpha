@@ -155,6 +155,10 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                 .onStart(context -> {
                     log.behaviorStatus("Creating speech bubble");
                     ISettlementsVillager villager = context.getInitiator();
+                    log.info("Loc1: {}", Location.fromEntity(villager.getMinecraftEntity(), false).serialize());
+                    log.info("Loc21: {}", Location.deserialize("minecraft:overworld,10.03,-60.0,5.34,0.0,323.92"));
+                    log.info("Loc31: {}", Location.deserialize("owouwu,10.03,-60.0,5.34,0.0,323.92"));
+                    log.info("Loc41: {}", Location.deserialize("minecraft:nether,10,-1,5,0,0"));
 
                     UUID bubbleId = UUID.randomUUID();
                     context.setState(BehaviorStateType.SPEECH_BUBBLE, SpeechBubbleState.of(bubbleId));

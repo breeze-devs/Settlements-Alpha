@@ -12,6 +12,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -19,9 +22,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -31,6 +36,8 @@ import java.util.stream.Stream;
 @ToString
 @CustomLog
 public class Location implements Cloneable {
+
+    private static final String EMPTY_LEVEL_ID = "empty";
 
     private double x;
     private double y;
@@ -85,9 +92,68 @@ public class Location implements Cloneable {
         }
     }
 
+    /**
+     * Deserializes a location from a string format
+     * <p>
+     * Format: level_id,x,y,z,pitch,yaw
+     * <p>
+     * Example: minecraft:overworld,10.03,-60.0,5.34,0.0,323.92
+     */
+    public static Location deserialize(@Nonnull String serialized) {
+        String[] parts = serialized.split(",");
+        if (parts.length < 6) {
+            throw new IllegalArgumentException("Invalid serialized location format: " + serialized);
+        }
+
+        String levelResourceLocation = parts[0];
+        double x = Double.parseDouble(parts[1]);
+        double y = Double.parseDouble(parts[2]);
+        double z = Double.parseDouble(parts[3]);
+        float pitch = parts[4].isEmpty() ? 0 : Float.parseFloat(parts[4]);
+        float yaw = parts[5].isEmpty() ? 0 : Float.parseFloat(parts[5]);
+
+        Location location = new Location(x, y, z, pitch, yaw, null);
+        if (EMPTY_LEVEL_ID.equals(levelResourceLocation)) {
+            // If the level ID is empty, we set the level to null
+            return location;
+        }
+
+        // Parse the level resource location and set the level if it exists
+        Optional.of(ResourceLocation.parse(levelResourceLocation))
+                .map(l -> ResourceKey.create(Registries.DIMENSION, l))
+                .flatMap(dimension -> Optional.ofNullable(ServerLifecycleHooks.getCurrentServer())
+                        .map(server -> server.getLevel(dimension)))
+                .ifPresent(location::setLevel);
+        return location;
+    }
+
     /*
      * Conversion methods
      */
+
+    /**
+     * Serializes this location to a string format
+     * <p>
+     * Format: level_id,x,y,z,pitch,yaw
+     * <p>
+     * Example: minecraft:overworld,10.03,-60.0,5.34,0.0,323.92
+     */
+    public String serialize() {
+        // Format: "level_id,x,y,z,pitch,yaw"
+        String levelResourceLocation = Optional.ofNullable(this.level)
+                .map(Level::dimension)
+                .map(ResourceKey::location)
+                .map(Objects::toString)
+                .orElse(EMPTY_LEVEL_ID);
+        return String.join(",",
+                levelResourceLocation,
+                String.valueOf(MathUtil.round(this.x, 2)),
+                String.valueOf(MathUtil.round(this.y, 2)),
+                String.valueOf(MathUtil.round(this.z, 2)),
+                String.valueOf(MathUtil.round(this.pitch, 1)),
+                String.valueOf(MathUtil.round(this.yaw, 1)));
+    }
+
     public BlockPos toBlockPos() {
         return new BlockPos(this.getBlockX(), this.getBlockY(), this.getBlockZ());
     }
@@ -288,4 +354,6 @@ public class Location implements Cloneable {
         this.level.addFreshEntity(entity);
     }
 
+
 }
+

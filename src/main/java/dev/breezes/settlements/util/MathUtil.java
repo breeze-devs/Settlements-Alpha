@@ -29,4 +29,12 @@ public class MathUtil {
         return value >= min && value <= max;
     }
 
+    public static double round(double value, int places) {
+        if (places < 0) {
+            throw new IllegalArgumentException("Decimal places must be non-negative");
+        }
+        double scale = Math.pow(10, places);
+        return Math.round(value * scale) / scale;
+    }
+
 }

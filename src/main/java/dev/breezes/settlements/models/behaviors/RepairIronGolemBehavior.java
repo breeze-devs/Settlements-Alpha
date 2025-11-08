@@ -1,7 +1,5 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.client.ClientExecutor;
-import dev.breezes.settlements.client.ClientUtil;
 import dev.breezes.settlements.configurations.annotations.ConfigurationType;
 import dev.breezes.settlements.configurations.annotations.doubles.DoubleConfig;
 import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
@@ -113,11 +111,6 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
         SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(targetLocation, SoundSource.NEUTRAL);
         ParticleRegistry.repairIronGolem(targetLocation);
         log.behaviorTrace("Repaired iron golem for {} HP, {} attempts remaining", healAmount, this.remainingRepairAttempts - 1);
-
-        ClientExecutor.runOnClient(() -> {
-            ClientUtil.getClientSideVillager(villager)
-                    .ifPresent(clientVillager -> clientVillager.getSpinAnimator().playOnce());
-        });
 
         if (--this.remainingRepairAttempts <= 0) {
             this.requestStop();

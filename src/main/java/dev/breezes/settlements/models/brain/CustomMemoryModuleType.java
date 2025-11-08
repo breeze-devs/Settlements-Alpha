@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 
 public class CustomMemoryModuleType<U> extends MemoryModuleType<U> {
+
     public static final MemoryModuleType<Set<GlobalPos>> FENCE_GATES_TO_CLOSE;
 
     //copied from parent class
@@ -21,6 +22,7 @@ public class CustomMemoryModuleType<U> extends MemoryModuleType<U> {
     private static <U> MemoryModuleType<U> register(String identifier) {
         return Registry.register(BuiltInRegistries.MEMORY_MODULE_TYPE, ResourceLocation.withDefaultNamespace(identifier), new MemoryModuleType<>(Optional.empty()));
     }
+
     public CustomMemoryModuleType(Optional<Codec<U>> uCodec) {
         super(uCodec);
     }
@@ -28,4 +30,5 @@ public class CustomMemoryModuleType<U> extends MemoryModuleType<U> {
     static {
         FENCE_GATES_TO_CLOSE = register("fence_gates_to_close");
     }
+
 }

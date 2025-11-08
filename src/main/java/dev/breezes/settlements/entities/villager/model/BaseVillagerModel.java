@@ -2,14 +2,17 @@ package dev.breezes.settlements.entities.villager.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.breezes.settlements.entities.villager.BaseVillager;
-import dev.breezes.settlements.entities.villager.animations.animator.OneShotAnimator;
 import dev.breezes.settlements.entities.villager.animations.definitions.BaseVillagerAnimation;
 import dev.breezes.settlements.util.ResourceLocationUtil;
 import lombok.CustomLog;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 
@@ -78,10 +81,10 @@ public class BaseVillagerModel<T extends BaseVillager> extends AbstractVillagerM
         this.animateWalk(BaseVillagerAnimation.WALK_1.definition(), limbSwing, limbSwingAmount, 1, 2);
 
         // Repair iron golem animation
-        OneShotAnimator spinAnimator = villager.getSpinAnimator();
-        if (spinAnimator.isAnimationPlaying()) {
-            this.animate(spinAnimator.getCurrentState().get(), spinAnimator.getCurrentDefinition().get(), ageInTicks, 1);
-        }
+//        OneShotAnimator spinAnimator = villager.getSpinAnimator();
+//        if (spinAnimator.isAnimationPlaying()) {
+//            this.animate(spinAnimator.getCurrentState().get(), spinAnimator.getCurrentDefinition().get(), ageInTicks, 1);
+//        }
     }
 
     @Override
