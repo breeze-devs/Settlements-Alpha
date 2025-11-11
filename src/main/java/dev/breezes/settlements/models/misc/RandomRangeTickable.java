@@ -33,7 +33,9 @@ public class RandomRangeTickable extends Tickable {
      */
     @Override
     public void reset() {
-        this.currentTicks = RandomUtil.RANDOM.nextDouble(this.maxTicks, this.minStartingTicks + 1);
+        double low = Math.min(this.minStartingTicks, this.maxTicks);
+        double high = Math.max(this.minStartingTicks, this.maxTicks);
+        this.currentTicks = RandomUtil.RANDOM.nextDouble(low, high + 1);
     }
 
 }

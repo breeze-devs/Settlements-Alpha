@@ -98,7 +98,7 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
 
     @Override
     protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(this.targetToRepair.position(), 0.5F, NAVIGATE_STOP_DISTANCE));
+        villager.getNavigationManager().walkTo(Location.fromEntity(this.targetToRepair, false), NAVIGATE_STOP_DISTANCE);
     }
 
     @Override
@@ -125,7 +125,9 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
 
     @Override
     protected boolean hasTarget(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return this.targetToRepair != null;
+        return this.targetToRepair != null
+                && this.targetToRepair.isAlive()
+                && this.targetToRepair.getHealth() < this.targetToRepair.getMaxHealth() * repairHpPercentage;
     }
 
     @Override
@@ -135,6 +137,7 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
 
     @Override
     public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        villager.getNavigationManager().stop();
         villager.clearHeldItem();
         this.targetToRepair = null;
     }

@@ -22,7 +22,7 @@ public class DefaultBehaviorAdapter extends Behavior<Villager> {
     private DefaultBehaviorAdapter(@Nonnull IBehavior<BaseVillager> wrappedBehavior, @Nonnull Ticks maxDuration) {
         super(Map.of(), 1, (int) maxDuration.getTicks());
         this.wrappedBehavior = wrappedBehavior;
-        this.previousGameTime = 0;
+        this.previousGameTime = -1;
     }
 
     public static DefaultBehaviorAdapter adapt(@Nonnull IBehavior<BaseVillager> wrappedBehavior) {
@@ -42,6 +42,7 @@ public class DefaultBehaviorAdapter extends Behavior<Villager> {
     @Override
     protected void start(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
         log.behaviorTrace("Starting behavior because parent behavior is starting");
+        this.previousGameTime = gameTime;
         this.wrappedBehavior.start(level, (BaseVillager) villager);
     }
 
@@ -79,7 +80,7 @@ public class DefaultBehaviorAdapter extends Behavior<Villager> {
 
         int delta = (int) (gameTime - this.previousGameTime);
         this.previousGameTime = gameTime;
-        return delta;
+        return Math.max(1, delta);
     }
 
 }
