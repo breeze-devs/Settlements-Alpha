@@ -3,6 +3,7 @@ package dev.breezes.settlements.event;
 import dev.breezes.settlements.registry.EntityRegistry;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.VillagerRenderer;
+import net.minecraft.client.renderer.entity.WolfRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -20,6 +21,7 @@ public class ClientModEvents {
     public static void onClientSetup(FMLClientSetupEvent event) {
         // TODO: replace with custom model when ready
         EntityRenderers.register(EntityRegistry.BASE_VILLAGER.get(), VillagerRenderer::new);
+        EntityRenderers.register(EntityRegistry.SETTLEMENTS_WOLF.get(), WolfRenderer::new);
 
         ModContainer container = ModLoadingContext.get().getActiveContainer();
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);

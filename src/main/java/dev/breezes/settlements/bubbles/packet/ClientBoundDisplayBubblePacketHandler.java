@@ -2,7 +2,7 @@ package dev.breezes.settlements.bubbles.packet;
 
 import dev.breezes.settlements.bubbles.BubblePriority;
 import dev.breezes.settlements.bubbles.registry.BubbleRegistry;
-import dev.breezes.settlements.entities.ISettlementsVillager;
+import dev.breezes.settlements.entities.villager.ISettlementsVillager;
 import dev.breezes.settlements.packet.ClientSidePacketHandler;
 import dev.breezes.settlements.util.EntityUtil;
 import lombok.CustomLog;

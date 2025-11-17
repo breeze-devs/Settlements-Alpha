@@ -1,6 +1,7 @@
 package dev.breezes.settlements.event;
 
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.entities.wolves.SettlementsWolf;
 import dev.breezes.settlements.registry.EntityRegistry;
 import lombok.CustomLog;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -22,7 +23,8 @@ public class CommonModEvents {
 
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
-        event.put(EntityRegistry.BASE_VILLAGER.get(), BaseVillager.createAttributes().build());
+        event.put(EntityRegistry.BASE_VILLAGER.get(), BaseVillager.createCustomAttributes());
+        event.put(EntityRegistry.SETTLEMENTS_WOLF.get(), SettlementsWolf.createAttributes().build());
     }
 
     @SubscribeEvent

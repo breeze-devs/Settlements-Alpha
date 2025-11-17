@@ -1,7 +1,6 @@
 package dev.breezes.settlements.models.navigation;
 
 import dev.breezes.settlements.models.location.Location;
-import net.minecraft.core.GlobalPos;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -11,7 +10,7 @@ public interface INavigationManager<T> {
     /**
      * Get the target position if currently navigating
      */
-    Optional<GlobalPos> getNavigationTarget();
+    Optional<Location> getNavigationTarget();
 
     boolean isNavigating();
 
@@ -32,7 +31,7 @@ public interface INavigationManager<T> {
     /**
      * Whether the position is reachable within the given maximum distance
      */
-    boolean isReachable(@Nonnull Location target, double distance);
+    boolean canReach(@Nonnull Location target, double distance);
 
     float getWalkSpeed();
 

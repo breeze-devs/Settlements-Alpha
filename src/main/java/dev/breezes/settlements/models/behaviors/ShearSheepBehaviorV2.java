@@ -10,7 +10,7 @@ import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig
 import dev.breezes.settlements.configurations.annotations.maps.MapConfig;
 import dev.breezes.settlements.configurations.annotations.maps.MapEntry;
 import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
-import dev.breezes.settlements.entities.ISettlementsVillager;
+import dev.breezes.settlements.entities.villager.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.behaviors.stages.ControlStages;
 import dev.breezes.settlements.models.behaviors.stages.SimpleStage;

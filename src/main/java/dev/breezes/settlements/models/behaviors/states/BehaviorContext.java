@@ -1,6 +1,6 @@
 package dev.breezes.settlements.models.behaviors.states;
 
-import dev.breezes.settlements.entities.ISettlementsVillager;
+import dev.breezes.settlements.entities.villager.ISettlementsVillager;
 import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
 import lombok.Getter;
 

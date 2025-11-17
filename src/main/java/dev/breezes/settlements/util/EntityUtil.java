@@ -1,6 +1,6 @@
 package dev.breezes.settlements.util;
 
-import dev.breezes.settlements.entities.ISettlementsVillager;
+import dev.breezes.settlements.entities.villager.ISettlementsVillager;
 import net.minecraft.world.entity.Entity;
 
 import javax.annotation.Nonnull;

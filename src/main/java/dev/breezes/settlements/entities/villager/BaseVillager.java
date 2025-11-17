@@ -4,12 +4,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.bubbles.BubbleManager;
-import dev.breezes.settlements.entities.ISettlementsVillager;
 import dev.breezes.settlements.models.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.models.brain.CustomMemoryModuleType;
 import dev.breezes.settlements.models.brain.DefaultBrain;
 import dev.breezes.settlements.models.brain.IBrain;
-import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.models.misc.Expertise;
 import dev.breezes.settlements.models.navigation.INavigationManager;
@@ -74,10 +72,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         this.bubbleManager = new BubbleManager();
     }
 
-    public static AttributeSupplier.Builder createAttributes() {
+    public static AttributeSupplier createCustomAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MOVEMENT_SPEED, DEFAULT_MOVEMENT_SPEED)
-                .add(Attributes.FOLLOW_RANGE, DEFAULT_FOLLOW_RANGE);
+                .add(Attributes.FOLLOW_RANGE, DEFAULT_FOLLOW_RANGE)
+                .build();
     }
 
     @Override
@@ -161,14 +160,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     public Expertise getExpertise() {
         return Expertise.fromLevel(this.getVillagerData().getLevel());
-    }
-
-    public Location getLocation(boolean useEyeHeight) {
-        return Location.fromEntity(this, useEyeHeight);
-    }
-
-    public Location getLocation() {
-        return Location.fromEntity(this, true);
     }
 
     @Override

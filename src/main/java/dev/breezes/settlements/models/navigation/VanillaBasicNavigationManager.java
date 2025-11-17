@@ -1,37 +1,31 @@
 package dev.breezes.settlements.models.navigation;
 
-import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.location.Location;
 import lombok.AllArgsConstructor;
-import net.minecraft.world.entity.ai.behavior.PositionTracker;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.PathfinderMob;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
 @AllArgsConstructor
-public class VanillaMemoryNavigationManager<T extends BaseVillager> implements INavigationManager<T> {
+public class VanillaBasicNavigationManager<T extends PathfinderMob> implements INavigationManager<T> {
 
-    private final T villager;
+    private final T entity;
 
     @Override
     public Optional<Location> getNavigationTarget() {
-        return villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
-                .map(WalkTarget::getTarget)
-                .map(PositionTracker::currentBlockPosition)
-                .map(blockPos -> Location.of(blockPos, villager.level()));
+        return Optional.ofNullable(this.entity.getNavigation().getTargetPos())
+                .map(blockPos -> Location.of(blockPos, this.entity.level()));
     }
 
     @Override
     public boolean isNavigating() {
-        return this.villager.getNavigation().isInProgress();
+        return entity.getNavigation().isInProgress();
     }
 
     @Override
     public void stop() {
-        villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-        villager.getNavigation().stop();
+        this.entity.getNavigation().stop();
     }
 
     @Override
@@ -39,7 +33,7 @@ public class VanillaMemoryNavigationManager<T extends BaseVillager> implements I
         if (!this.canReach(target, completionRange)) {
             return;
         }
-        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(target.toBlockPos(), speed, completionRange));
+        this.entity.getNavigation().moveTo(target.getX(), target.getY(), target.getZ(), speed);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.models.memory;
 
-import dev.breezes.settlements.entities.ISettlementsVillager;
+import dev.breezes.settlements.entities.villager.ISettlementsVillager;
 import dev.breezes.settlements.models.memory.temp.TMemoryFarmland;
 import dev.breezes.settlements.util.ResourceLocationUtil;
 import lombok.CustomLog;
