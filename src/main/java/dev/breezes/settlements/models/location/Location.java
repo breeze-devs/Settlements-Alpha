@@ -3,11 +3,7 @@ package dev.breezes.settlements.models.location;
 import dev.breezes.settlements.models.blocks.PhysicalBlock;
 import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.util.MathUtil;
-import lombok.AllArgsConstructor;
-import lombok.CustomLog;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -307,6 +303,10 @@ public class Location implements Cloneable {
             return;
         }
         serverLevel.sendParticles(type, this.x, this.y, this.z, count, dx, dy, dz, speed);
+    }
+
+    public void teleportEntityHere(@Nonnull Entity entity) {
+        entity.teleportTo(this.x, this.y, this.z);
     }
 
     /*

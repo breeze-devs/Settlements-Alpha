@@ -10,12 +10,17 @@ import dev.breezes.settlements.mixins.LevelMixin;
 import dev.breezes.settlements.mixins.WolfMixin;
 import dev.breezes.settlements.models.brain.DefaultBrain;
 import dev.breezes.settlements.models.brain.IBrain;
+import dev.breezes.settlements.models.exceptions.SpawnFailedException;
+import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.navigation.INavigationManager;
 import dev.breezes.settlements.models.navigation.VanillaBasicNavigationManager;
+import dev.breezes.settlements.registry.EntityRegistry;
 import lombok.CustomLog;
 import lombok.Getter;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -23,6 +28,7 @@ import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,6 +71,21 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 //        this.movementLocked = false;
     }
 
+    public static SettlementsWolf spawn(@Nonnull Location location) {
+        ServerLevel serverLevel = location.getLevel()
+                .filter(level -> level instanceof ServerLevel)
+                .map(level -> (ServerLevel) level)
+                .orElseThrow(() -> new SpawnFailedException("Failed to spawn SettlementsWolf at %s: level is not server level".formatted(location.toString())));
+
+        SettlementsWolf wolf = Optional.ofNullable(EntityRegistry.SETTLEMENTS_WOLF.get().create(serverLevel))
+                .orElseThrow(() -> new SpawnFailedException("Failed to spawn SettlementsWolf at %s".formatted(location.toString())));
+        location.teleportEntityHere(wolf);
+        wolf.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(location.toBlockPos()), MobSpawnType.REINFORCEMENT, null);
+        serverLevel.addFreshEntityWithPassengers(wolf);
+
+        return wolf;
+    }
+
     private void initGoals() {
         // Replace default standby & follow goals
         this.goalSelector.removeAllGoals((goal -> goal instanceof SitWhenOrderedToGoal || goal instanceof FollowOwnerGoal));
@@ -94,6 +115,9 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
                 .orElse(null);
     }
 
+    public void setCollarColor(@Nonnull DyeColor color) {
+        ((WolfMixin) this).invokeSetCollarColor(color);
+    }
 
     @Override
     public IBrain getSettlementsBrain() {
