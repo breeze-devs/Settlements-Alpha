@@ -4,8 +4,13 @@ repo_url: https://github.com/breeze-devs/Settlements-Alpha
 repo_name: breeze-devs/Settlements-Alpha
 edit_uri: edit/main/docs/
 
-nav:
-  - Home: index.md
+# nav:
+#   - Home: index.md
+#   - Archive: archive/
+
+watch:
+  - docs
+  - mkdocs.yml
 
 theme:
   name: material
