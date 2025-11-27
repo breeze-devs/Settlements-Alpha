@@ -38,34 +38,61 @@ public class ConfigAnnotationProcessor {
                 .getFile()
                 .getScanResult();
 
+        ConfigurationAnnotationRegistry registry = new ConfigurationAnnotationRegistry();
+        List<Runnable> tasks = new ArrayList<>();
+
+        // ===== PROCESS LEGACY FIELD-BASED CONFIGS =====
+        // TODO: deprecated - will be removed once all behaviors migrate to Records
+        log.info("Processing legacy field-based configurations...");
         List<ConfigAnnotationSubProcessor<?>> processors = List.of(
                 new BooleanConfigAnnotationProcessor(),
                 new DoubleConfigAnnotationProcessor(),
                 new FloatConfigAnnotationProcessor(),
                 new IntegerConfigAnnotationProcessor(),
                 new StringConfigAnnotationProcessor(),
-                new MapConfigAnnotationProcessor()
-        );
+                new MapConfigAnnotationProcessor());
 
-        List<Runnable> tasks = new ArrayList<>();
-        ConfigurationAnnotationRegistry registry = new ConfigurationAnnotationRegistry();
         for (ConfigAnnotationSubProcessor<?> processor : processors) {
             Set<Field> fields = scanner.getAnnotatedBy(processor.getAnnotationClass(), ElementType.FIELD)
                     .map(ConfigAnnotationProcessor::getFieldFromAnnotationData)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
+                    .filter(field -> !field.getDeclaringClass().isRecord()) // Exclude Record components from legacy
+                    // processors
                     .collect(Collectors.toSet());
-            tasks.add(processor.buildConfig(registry, fields));
+            if (!fields.isEmpty()) {
+                log.debug("- Found {} legacy @{} fields", fields.size(), processor.getAnnotationClass().getSimpleName());
+                tasks.add(processor.buildConfig(registry, fields));
+            }
         }
 
-        CommonModEvents.LOAD_COMPLETE_TASKS.addAll(tasks);
+        // ===== PROCESS NEW RECORD-BASED CONFIGS =====
+        log.info("Processing Record-based configurations...");
+        RecordConfigProcessor recordProcessor = new RecordConfigProcessor();
 
+        Set<Class<?>> behaviorConfigRecords = scanner.getAnnotatedBy(BehaviorConfig.class, ElementType.TYPE)
+                .map(ConfigAnnotationProcessor::getClassFromAnnotationData)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+
+        log.info("- Found {} @BehaviorConfig records", behaviorConfigRecords.size());
+        for (Class<?> recordClass : behaviorConfigRecords) {
+            Runnable task = recordProcessor.process(recordClass, registry);
+            tasks.add(task);
+        }
+
+        // ===== BUILD CONFIG SPECS AND REGISTER =====
         log.info("Compiling {} config files", registry.getFileBuilderMap().size());
         for (Map.Entry<String, ModConfigSpec.Builder> entry : registry.getFileBuilderMap().entrySet()) {
-            log.info("- {}", entry.getKey());
+            log.info("  - {}", entry.getKey());
             ModConfigSpec spec = entry.getValue().build();
             container.registerConfig(ModConfig.Type.COMMON, spec, entry.getKey());
         }
+
+        // Schedule post-load tasks (populate static fields and register factories)
+        CommonModEvents.LOAD_COMPLETE_TASKS.addAll(tasks);
+        log.info("Scheduled {} post-load configuration tasks", tasks.size());
     }
 
     private static Optional<Field> getFieldFromAnnotationData(@Nonnull ModFileScanData.AnnotationData annotationData) {
@@ -74,6 +101,16 @@ public class ConfigAnnotationProcessor {
                     .getDeclaredField(annotationData.memberName()));
         } catch (Exception e) {
             log.error("Failed to process annotation in class '{}' field '{}'", annotationData.clazz().getClassName(), annotationData.memberName(), e);
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<Class<?>> getClassFromAnnotationData(
+            @Nonnull ModFileScanData.AnnotationData annotationData) {
+        try {
+            return Optional.of(Class.forName(annotationData.clazz().getClassName()));
+        } catch (Exception e) {
+            log.error("Failed to load class '{}' for annotation processing", annotationData.clazz().getClassName(), e);
             return Optional.empty();
         }
     }

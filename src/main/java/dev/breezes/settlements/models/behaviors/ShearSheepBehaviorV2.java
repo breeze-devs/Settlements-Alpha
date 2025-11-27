@@ -5,13 +5,8 @@ import dev.breezes.settlements.bubbles.packet.ClientBoundRemoveBubblePacket;
 import dev.breezes.settlements.bubbles.packet.DisplayBubbleRequest;
 import dev.breezes.settlements.bubbles.packet.RemoveBubbleRequest;
 import dev.breezes.settlements.bubbles.registry.BubbleType;
-import dev.breezes.settlements.configurations.annotations.ConfigurationType;
-import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.configurations.annotations.maps.MapConfig;
-import dev.breezes.settlements.configurations.annotations.maps.MapEntry;
-import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
-import dev.breezes.settlements.entities.villager.ISettlementsVillager;
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.entities.villager.ISettlementsVillager;
 import dev.breezes.settlements.models.behaviors.stages.ControlStages;
 import dev.breezes.settlements.models.behaviors.stages.SimpleStage;
 import dev.breezes.settlements.models.behaviors.stages.Stage;
@@ -56,53 +51,11 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+/**
+ * Behavior that makes villagers shear nearby sheep
+ */
 @CustomLog
 public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
-
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 10, min = 1)
-    private static int preconditionCheckCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 20, min = 1)
-    private static int preconditionCheckCooldownMax;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 60, min = 1)
-    private static int behaviorCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 240, min = 1)
-    private static int behaviorCooldownMax;
-
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "scan_range_horizontal",
-            description = "Horizontal range (in blocks) to scan for nearby sheep to shear",
-            defaultValue = 32, min = 5, max = 128)
-    private static int scanRangeHorizontal;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "scan_range_vertical",
-            description = "Vertical range (in blocks) to scan for nearby sheep to shear",
-            defaultValue = 12, min = 1, max = 16)
-    private static int scanRangeVertical;
-
-    @MapConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "expertise_shear_limit",
-            description = "Map of expertise to the maximum number of sheep they can shear",
-            deserializer = "StringToInteger",
-            defaultValue = {
-                    @MapEntry(key = "novice", value = "2"),
-                    @MapEntry(key = "apprentice", value = "3"),
-                    @MapEntry(key = "journeyman", value = "5"),
-                    @MapEntry(key = "expert", value = "7"),
-                    @MapEntry(key = "master", value = "10")
-            })
-    private static Map<String, Integer> expertiseShearLimit;
 
     private static final Stage SHEAR_SHEEP = new SimpleStage("SHEAR_SHEEP");
 
@@ -125,27 +78,32 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
             Map.entry(DyeColor.BLACK, Items.BLACK_WOOL)
     );
 
+    private final ShearSheepConfig config;
+
     private final StagedStep controlStep;
-
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
-
     private final AtomicInteger shearCount;
 
     @Nullable
     private BehaviorContext context;
 
-    public ShearSheepBehaviorV2() {
-        super(log, RandomRangeTickable.of(Ticks.of(preconditionCheckCooldownMin), Ticks.of(preconditionCheckCooldownMax)),
-                RandomRangeTickable.of(Ticks.of(behaviorCooldownMin), Ticks.of(behaviorCooldownMax)));
+    public ShearSheepBehaviorV2(@Nonnull ShearSheepConfig config) {
+        super(log,
+                RandomRangeTickable.of(
+                        Ticks.of(config.preconditionCheckCooldownMin()),
+                        Ticks.of(config.preconditionCheckCooldownMax())),
+                RandomRangeTickable.of(
+                        Ticks.of(config.behaviorCooldownMin()),
+                        Ticks.of(config.behaviorCooldownMax())));
 
-        // Initialize variables
+        this.config = config;
         this.shearCount = new AtomicInteger(0);
         this.context = null;
 
         // Create behavior preconditions
         this.nearbyShearableSheepExistsCondition = NearbyShearableSheepExistsCondition.builder()
-                .rangeHorizontal(scanRangeHorizontal)
-                .rangeVertical(scanRangeVertical)
+                .rangeHorizontal(config.scanRangeHorizontal())
+                .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbyShearableSheepExistsCondition);
 
@@ -155,10 +113,6 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                 .onStart(context -> {
                     log.behaviorStatus("Creating speech bubble");
                     ISettlementsVillager villager = context.getInitiator();
-                    log.info("Loc1: {}", Location.fromEntity(villager.getMinecraftEntity(), false).serialize());
-                    log.info("Loc21: {}", Location.deserialize("minecraft:overworld,10.03,-60.0,5.34,0.0,323.92"));
-                    log.info("Loc31: {}", Location.deserialize("owouwu,10.03,-60.0,5.34,0.0,323.92"));
-                    log.info("Loc41: {}", Location.deserialize("minecraft:nether,10,-1,5,0,0"));
 
                     UUID bubbleId = UUID.randomUUID();
                     context.setState(BehaviorStateType.SPEECH_BUBBLE, SpeechBubbleState.of(bubbleId));
@@ -168,7 +122,8 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                             .bubbleType(BubbleType.SHEAR_SHEEP)
                             .bubbleId(bubbleId)
                             .visibilityBlocks(20)
-                            .lifetimeTicks(Ticks.seconds(60).getTicksAsInt()) // TODO: shorten this once packets are sent regularly
+                            // TODO: shorten this once packets are sent regularly
+                            .lifetimeTicks(Ticks.seconds(60).getTicksAsInt())
                             .build();
 
                     // Send the packet
@@ -274,7 +229,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
         this.context = new BehaviorContext(entity);
 
         Expertise expertise = context.getInitiator().getMinecraftEntity().getExpertise();
-        int limit = expertiseShearLimit.get(expertise.getConfigName());
+        int limit = config.expertiseShearLimit().get(expertise.getConfigName());
         this.shearCount.set(limit);
         log.behaviorStatus("Villager is '{}' level, maximum shear count is {}", expertise.toString(), limit);
 

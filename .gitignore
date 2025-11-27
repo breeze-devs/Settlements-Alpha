@@ -26,6 +26,9 @@ run-data
 
 repo
 
+# Python
+.venv/
+
 # Generated files
 src/generated/
 run/

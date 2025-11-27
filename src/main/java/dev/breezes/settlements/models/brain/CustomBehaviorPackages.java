@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.configurations.ConfigFactory;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.entities.villager.navigation.OpenFenceGates;
 import dev.breezes.settlements.models.behaviors.BaseVillagerBehavior;
@@ -16,6 +17,7 @@ import dev.breezes.settlements.models.behaviors.HarvestSugarCaneBehavior;
 import dev.breezes.settlements.models.behaviors.IBehavior;
 import dev.breezes.settlements.models.behaviors.RepairIronGolemBehavior;
 import dev.breezes.settlements.models.behaviors.ShearSheepBehaviorV2;
+import dev.breezes.settlements.models.behaviors.ShearSheepConfig;
 import dev.breezes.settlements.models.behaviors.TameWolfBehaviorV2;
 import dev.breezes.settlements.models.behaviors.ThrowPotionsBehavior;
 import net.minecraft.server.level.ServerLevel;
@@ -216,7 +218,7 @@ public final class CustomBehaviorPackages {
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new CutStoneBehavior()), customGoalWeight);
         } else if (profession == VillagerProfession.SHEPHERD) {
 //            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ShearSheepBehaviorV2()), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ShearSheepBehaviorV2(ConfigFactory.create(ShearSheepConfig.class))), customGoalWeight);
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new TameWolfBehaviorV2()), customGoalWeight);
 //            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.SHEEP))), customGoalWeight);
         } else if (profession == VillagerProfession.TOOLSMITH) {

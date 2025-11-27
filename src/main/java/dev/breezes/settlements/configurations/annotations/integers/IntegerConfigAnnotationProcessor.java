@@ -1,3 +1,4 @@
+// TODO: deprecated - will be replaced by RecordConfigProcessor for Record-based configs
 package dev.breezes.settlements.configurations.annotations.integers;
 
 import com.google.common.base.CaseFormat;
