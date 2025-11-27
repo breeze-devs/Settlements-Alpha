@@ -1,0 +1,54 @@
+site_name: Settlements
+site_description: A Minecraft mod that enhances village-related experiences
+repo_url: https://github.com/breeze-devs/Settlements-Alpha
+repo_name: breeze-devs/Settlements-Alpha
+edit_uri: edit/main/docs/
+
+nav:
+  - Home: index.md
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+  - attr_list
+  - md_in_html
+  - sane_lists
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/breeze-devs/Settlements-Alpha
