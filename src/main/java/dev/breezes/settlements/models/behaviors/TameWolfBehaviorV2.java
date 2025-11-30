@@ -1,10 +1,5 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.configurations.annotations.ConfigurationType;
-import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.configurations.annotations.maps.MapConfig;
-import dev.breezes.settlements.configurations.annotations.maps.MapEntry;
-import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.entities.wolves.SettlementsWolf;
 import dev.breezes.settlements.models.behaviors.stages.ControlStages;
@@ -47,57 +42,12 @@ import java.util.stream.Stream;
 @CustomLog
 public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
 
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 10, min = 1)
-    private static int preconditionCheckCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 20, min = 1)
-    private static int preconditionCheckCooldownMax;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 60, min = 1)
-    private static int behaviorCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 240, min = 1)
-    private static int behaviorCooldownMax;
-
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "scan_range_horizontal",
-            description = "Horizontal range (in blocks) to scan for nearby wolves to tame",
-            defaultValue = 32, min = 5, max = 128)
-    private static int scanRangeHorizontal;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "scan_range_vertical",
-            description = "Vertical range (in blocks) to scan for nearby wolves to tame",
-            defaultValue = 12, min = 1, max = 16)
-    private static int scanRangeVertical;
-
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
 
-
-    @MapConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "expertise_wolf_limit",
-            description = "Map of expertise to the maximum number of wolves a villager can own",
-            deserializer = "StringToInteger",
-            defaultValue = {
-                    @MapEntry(key = "novice", value = "1"),
-                    @MapEntry(key = "apprentice", value = "1"),
-                    @MapEntry(key = "journeyman", value = "2"),
-                    @MapEntry(key = "expert", value = "2"),
-                    @MapEntry(key = "master", value = "3")
-            })
-    private static Map<String, Integer> expertiseWolfLimit;
-
     private static final Stage TAME_WOLF = new SimpleStage("TAME_WOLF");
 
+    private final TameWolfConfig config;
     private final StagedStep controlStep;
 
     private final NearbyEntityExistsCondition<BaseVillager, Wolf> nearbyUntamedWolfExistsCondition;
@@ -107,19 +57,20 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
     @Nullable
     private BehaviorContext context;
 
-    public TameWolfBehaviorV2() {
+    public TameWolfBehaviorV2(TameWolfConfig config) {
         super(log,
-                RandomRangeTickable.of(Ticks.of(preconditionCheckCooldownMin), Ticks.of(preconditionCheckCooldownMax)),
-                RandomRangeTickable.of(Ticks.of(behaviorCooldownMin), Ticks.of(behaviorCooldownMax))
-        );
+                RandomRangeTickable.of(Ticks.of(config.preconditionCheckCooldownMin()),
+                        Ticks.of(config.preconditionCheckCooldownMax())),
+                RandomRangeTickable.of(Ticks.of(config.behaviorCooldownMin()), Ticks.of(config.behaviorCooldownMax())));
+        this.config = config;
 
         this.context = null;
         this.attemptsRemaining = 0;
 
         // Preconditions: at least one untamed wolf nearby
         this.nearbyUntamedWolfExistsCondition = new NearbyEntityExistsCondition<>(
-                scanRangeHorizontal,
-                scanRangeVertical,
+                config.scanRangeHorizontal(),
+                config.scanRangeVertical(),
                 EntityType.WOLF,
                 wolf -> wolf != null && !wolf.isTame(),
                 1
@@ -225,7 +176,7 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
 
         // Enforce wolf ownership limit per expertise
         Expertise expertise = entity.getExpertise();
-        int limit = expertiseWolfLimit.getOrDefault(expertise.getConfigName(), 1);
+        int limit = this.config.expertiseWolfLimit().getOrDefault(expertise.getConfigName(), 1);
 
         // TODO: this logic should be replaced by memory-based systems and a direct level entity get if alive
         int owned = entity.level().getEntitiesOfClass(Wolf.class,

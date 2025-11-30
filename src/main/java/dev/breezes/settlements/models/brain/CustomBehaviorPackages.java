@@ -9,17 +9,25 @@ import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.entities.villager.navigation.OpenFenceGates;
 import dev.breezes.settlements.models.behaviors.BaseVillagerBehavior;
 import dev.breezes.settlements.models.behaviors.BlastOreBehavior;
+import dev.breezes.settlements.models.behaviors.BlastOreConfig;
 import dev.breezes.settlements.models.behaviors.BreedAnimalsBehavior;
+import dev.breezes.settlements.models.behaviors.BreedAnimalsConfig;
 import dev.breezes.settlements.models.behaviors.CutStoneBehavior;
+import dev.breezes.settlements.models.behaviors.CutStoneConfig;
 import dev.breezes.settlements.models.behaviors.DefaultBehaviorAdapter;
 import dev.breezes.settlements.models.behaviors.HarvestSoulSandBehavior;
+import dev.breezes.settlements.models.behaviors.HarvestSoulSandConfig;
 import dev.breezes.settlements.models.behaviors.HarvestSugarCaneBehavior;
+import dev.breezes.settlements.models.behaviors.HarvestSugarCaneConfig;
 import dev.breezes.settlements.models.behaviors.IBehavior;
 import dev.breezes.settlements.models.behaviors.RepairIronGolemBehavior;
+import dev.breezes.settlements.models.behaviors.RepairIronGolemConfig;
 import dev.breezes.settlements.models.behaviors.ShearSheepBehaviorV2;
 import dev.breezes.settlements.models.behaviors.ShearSheepConfig;
 import dev.breezes.settlements.models.behaviors.TameWolfBehaviorV2;
+import dev.breezes.settlements.models.behaviors.TameWolfConfig;
 import dev.breezes.settlements.models.behaviors.ThrowPotionsBehavior;
+import dev.breezes.settlements.models.behaviors.ThrowPotionsConfig;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
@@ -179,52 +187,54 @@ public final class CustomBehaviorPackages {
         if (profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT) {
             // Unreachable code, because villager does not have job site
         } else if (profession == VillagerProfession.ARMORER) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior()), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BlastOreBehavior()), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class))), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BlastOreBehavior(ConfigFactory.create(BlastOreConfig.class))), customGoalWeight);
         } else if (profession == VillagerProfession.BUTCHER) {
-//            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.PIG))), customGoalWeight);
-//            customBehaviorWeightMap.put(new ButcherAnimalsBehavior(Map.of(
-//                    EntityType.COW, 3,
-//                    EntityType.SHEEP, 5,
-//                    EntityType.CHICKEN, 3,
-//                    EntityType.PIG, 2,
-//                    EntityType.RABBIT, 2
-//            )), customGoalWeight);
+            // customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.PIG))), customGoalWeight);
+            // customBehaviorWeightMap.put(new ButcherAnimalsBehavior(Map.of(
+            // EntityType.COW, 3,
+            // EntityType.SHEEP, 5,
+            // EntityType.CHICKEN, 3,
+            // EntityType.PIG, 2,
+            // EntityType.RABBIT, 2
+            // )), customGoalWeight);
         } else if (profession == VillagerProfession.CARTOGRAPHER) {
             // TODO: add behavior
         } else if (profession == VillagerProfession.CLERIC) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSoulSandBehavior()), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class))), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSoulSandBehavior(ConfigFactory.create(HarvestSoulSandConfig.class))), customGoalWeight);
         } else if (profession == VillagerProfession.FARMER) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSugarCaneBehavior()), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new TameWolfBehaviorV2()), customGoalWeight);
-//            customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.CHICKEN))), customGoalWeight);
-//            customBehaviorWeightMap.put(new MakeCakeBehavior(), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSugarCaneBehavior(ConfigFactory.create(HarvestSugarCaneConfig.class))), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new TameWolfBehaviorV2(ConfigFactory.create(TameWolfConfig.class))), customGoalWeight);
+            // customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.CHICKEN))), customGoalWeight);
+            // customBehaviorWeightMap.put(new MakeCakeBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.FISHERMAN) {
-//            customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
-//            customBehaviorWeightMap.put(new FishingBehavior(), customGoalWeight);
+            // customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
+            // customBehaviorWeightMap.put(new FishingBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.FLETCHER) {
-//            customBehaviorWeightMap.put(new CollectArrowsBehavior(), customGoalWeight);
-//            customBehaviorWeightMap.put(new MakeTippedArrowsBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.CHICKEN))), customGoalWeight);
+            // customBehaviorWeightMap.put(new CollectArrowsBehavior(), customGoalWeight);
+            // customBehaviorWeightMap.put(new MakeTippedArrowsBehavior(),
+            // customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.CHICKEN))), customGoalWeight);
         } else if (profession == VillagerProfession.LEATHERWORKER) {
-//            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.COW))), customGoalWeight);
+            // customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.COW))), customGoalWeight);
         } else if (profession == VillagerProfession.LIBRARIAN) {
-//            customBehaviorWeightMap.put(new EnchantItemBehavior(), customGoalWeight);
+            // customBehaviorWeightMap.put(new EnchantItemBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.MASON) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new CutStoneBehavior()), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new CutStoneBehavior(ConfigFactory.create(CutStoneConfig.class))), customGoalWeight);
         } else if (profession == VillagerProfession.SHEPHERD) {
-//            customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
+            // customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
             customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ShearSheepBehaviorV2(ConfigFactory.create(ShearSheepConfig.class))), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new TameWolfBehaviorV2()), customGoalWeight);
-//            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(Set.of(EntityType.SHEEP))), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new TameWolfBehaviorV2(ConfigFactory.create(TameWolfConfig.class))), customGoalWeight);
+            // customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new
+            // BreedAnimalsBehavior(Set.of(EntityType.SHEEP))), customGoalWeight);
         } else if (profession == VillagerProfession.TOOLSMITH) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior()), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class))), customGoalWeight);
         } else if (profession == VillagerProfession.WEAPONSMITH) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior()), customGoalWeight);
+            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class))), customGoalWeight);
         }
 
         // Add custom behaviors
@@ -298,19 +308,22 @@ public final class CustomBehaviorPackages {
         }
 
         // Tame wolf behavior
-        if (profession == VillagerProfession.SHEPHERD || profession == VillagerProfession.FARMER || profession == VillagerProfession.LEATHERWORKER
+        if (profession == VillagerProfession.SHEPHERD
+                || profession == VillagerProfession.FARMER
+                || profession == VillagerProfession.LEATHERWORKER
                 || profession == VillagerProfession.BUTCHER) {
 //            addChoiceBehavior(new TameWolfBehavior(), customMeetChoiceBehaviors, 1, customBehaviors);
         }
 
         // Tame cat behavior
-        if (profession == VillagerProfession.FARMER || profession == VillagerProfession.FISHERMAN) {
+        if (profession == VillagerProfession.FARMER
+                || profession == VillagerProfession.FISHERMAN) {
 //            addChoiceBehavior(new TameCatBehavior(), customMeetChoiceBehaviors, 1, customBehaviors);
         }
 
         // Throw healing potion behavior
         if (profession == VillagerProfession.CLERIC) {
-            addChoiceBehavior(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), customMeetChoiceBehaviors, 10);
+            addChoiceBehavior(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class))), customMeetChoiceBehaviors, 10);
         }
 
         // Nitwit behaviors
@@ -318,7 +331,6 @@ public final class CustomBehaviorPackages {
 //            addChoiceBehavior(new RingBellBehavior(), customMeetChoiceBehaviors, 1, customBehaviors);
 //            addChoiceBehavior(new LaunchFireworkBehavior(), customMeetChoiceBehaviors, 1, customBehaviors);
         }
-
 
         // Default behaviors
         ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> behaviors = ImmutableList.of(
@@ -401,7 +413,7 @@ public final class CustomBehaviorPackages {
 //        }
 
         if (profession == VillagerProfession.CLERIC) {
-            addChoiceBehavior(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior()), idleChoiceBehaviors, 10);
+            addChoiceBehavior(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class))), idleChoiceBehaviors, 10);
         }
 
         // Add choice behaviors to Minecraft behaviors

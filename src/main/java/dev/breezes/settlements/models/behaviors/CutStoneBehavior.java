@@ -1,8 +1,5 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.configurations.annotations.ConfigurationType;
-import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.entities.villager.BaseVillager;
@@ -50,27 +47,7 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
                     .build()
     );
 
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 10, min = 1)
-    private static int preconditionCheckCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 20, min = 1)
-    private static int preconditionCheckCooldownMax;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 20, min = 1)
-    private static int behaviorCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 60, min = 1)
-    private static int behaviorCooldownMax;
-
+    private final CutStoneConfig config;
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     private final ITickable animationTickable;
 
@@ -92,11 +69,14 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
     @Nullable
     private TransformationMatrix finalMatrix;
 
-    public CutStoneBehavior() {
+    public CutStoneBehavior(CutStoneConfig config) {
         super(log,
-                RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin), Ticks.seconds(preconditionCheckCooldownMax)),
-                RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin), Ticks.seconds(behaviorCooldownMax)),
+                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
+                        Ticks.seconds(config.preconditionCheckCooldownMax())),
+                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
+                        Ticks.seconds(config.behaviorCooldownMax())),
                 Tickable.of(Ticks.one()));
+        this.config = config;
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER));

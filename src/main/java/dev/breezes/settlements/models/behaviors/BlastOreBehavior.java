@@ -1,9 +1,6 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.configurations.annotations.ConfigurationType;
 import dev.breezes.settlements.configurations.annotations.GeneralConfig;
-import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.models.blocks.BlockFlag;
@@ -60,28 +57,7 @@ public class BlastOreBehavior extends AbstractInteractAtTargetBehavior {
                     .build()
     );
 
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 10, min = 1)
-    private static int preconditionCheckCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 20, min = 1)
-    private static int preconditionCheckCooldownMax;
-
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 30, min = 1)
-    private static int behaviorCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 90, min = 1)
-    private static int behaviorCooldownMax;
-
+    private final BlastOreConfig config;
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     private final ITickable itemInteractionTickable;
     private final ITickable blastingTickable;
@@ -93,11 +69,14 @@ public class BlastOreBehavior extends AbstractInteractAtTargetBehavior {
     @Nullable
     private BlastOreRecipe currentRecipe;
 
-    public BlastOreBehavior() {
+    public BlastOreBehavior(BlastOreConfig config) {
         super(log,
-                RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin), Ticks.seconds(preconditionCheckCooldownMax)),
-                RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin), Ticks.seconds(behaviorCooldownMax)),
+                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
+                        Ticks.seconds(config.preconditionCheckCooldownMax())),
+                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
+                        Ticks.seconds(config.behaviorCooldownMax())),
                 Tickable.of(Ticks.one()));
+        this.config = config;
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));
@@ -178,7 +157,8 @@ public class BlastOreBehavior extends AbstractInteractAtTargetBehavior {
 
     @Override
     protected boolean isTargetInReach(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return Location.fromEntity(villager, false).distanceSquared(this.blastFurnace.getLocation(false)) < INTERACTION_DISTANCE * INTERACTION_DISTANCE;
+        return Location.fromEntity(villager, false)
+                .distanceSquared(this.blastFurnace.getLocation(false)) < INTERACTION_DISTANCE * INTERACTION_DISTANCE;
     }
 
     @Override

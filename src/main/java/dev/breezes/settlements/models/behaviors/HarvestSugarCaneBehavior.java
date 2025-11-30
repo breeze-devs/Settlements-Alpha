@@ -1,9 +1,6 @@
 package dev.breezes.settlements.models.behaviors;
 
 import com.google.common.collect.Lists;
-import dev.breezes.settlements.configurations.annotations.ConfigurationType;
-import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.models.conditions.NearbySugarCaneExistsCondition;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
@@ -22,53 +19,24 @@ import java.util.List;
 @CustomLog
 public class HarvestSugarCaneBehavior extends AbstractInteractAtTargetBehavior {
 
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 10, min = 1)
-    private static int preconditionCheckCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 20, min = 1)
-    private static int preconditionCheckCooldownMax;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 60, min = 1)
-    private static int behaviorCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 240, min = 1)
-    private static int behaviorCooldownMax;
-
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "scan_range_horizontal",
-            description = "Horizontal range (in blocks) to scan for nearby sugar cane",
-            defaultValue = 4, min = 1, max = 16)
-    private static int scanRangeHorizontal;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "scan_range_vertical",
-            description = "Vertical range (in blocks) to scan for nearby sugar cane",
-            defaultValue = 2, min = 0, max = 3)
-    private static int scanRangeVertical;
+    private final HarvestSugarCaneConfig config;
     private BlockPos sugarCanePos;
     private int timeWorkedSoFar;
     private List<BlockPos> validSugarCaneAroundVillager = Lists.newArrayList();
     private final NearbySugarCaneExistsCondition<BaseVillager> nearbySugarCaneExistsCondition;
 
-    public HarvestSugarCaneBehavior() {
+    public HarvestSugarCaneBehavior(HarvestSugarCaneConfig config) {
         super(log,
-                RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin),
-                        Ticks.seconds(preconditionCheckCooldownMax)),
-                RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin),
-                        Ticks.seconds(behaviorCooldownMax)),
+                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
+                        Ticks.seconds(config.preconditionCheckCooldownMax())),
+                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
+                        Ticks.seconds(config.behaviorCooldownMax())),
                 Tickable.of(Ticks.seconds(0)));
+        this.config = config;
 
         this.nearbySugarCaneExistsCondition = NearbySugarCaneExistsCondition.builder()
-                .rangeHorizontal(scanRangeHorizontal)
-                .rangeVertical(scanRangeVertical)
+                .rangeHorizontal(config.scanRangeHorizontal())
+                .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbySugarCaneExistsCondition);
         this.sugarCanePos = null;

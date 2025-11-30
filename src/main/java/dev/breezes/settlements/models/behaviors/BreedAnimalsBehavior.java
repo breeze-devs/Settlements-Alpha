@@ -58,37 +58,7 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
     private static final int NAVIGATE_STOP_DISTANCE = 1;
     private static final double INTERACTION_DISTANCE = 2D;
 
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 30, min = 1)
-    private static int preconditionCheckCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 60, min = 1)
-    private static int preconditionCheckCooldownMax;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-            defaultValue = 120, min = 1)
-    private static int behaviorCooldownMin;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
-            description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-            defaultValue = 300, min = 1)
-    private static int behaviorCooldownMax;
-
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "scan_range_horizontal",
-            description = "Horizontal range (in blocks) to scan for animals to breed",
-            defaultValue = 32, min = 5, max = 128)
-    private static int scanRangeHorizontal;
-    @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-            identifier = "scan_range_vertical",
-            description = "Vertical range (in blocks) to scan for animals to breed",
-            defaultValue = 16, min = 1, max = 16)
-    private static int scanRangeVertical;
+    private final BreedAnimalsConfig config;
 
     private final NearbyBreedableAnimalPairExistsCondition<BaseVillager> nearbyBreedableAnimalPairExistsCondition;
     private final ITickable waitForBreedingTickable;
@@ -102,14 +72,17 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
     @Nullable
     private Animal breedTarget2;
 
-    public BreedAnimalsBehavior(Set<EntityType<? extends Animal>> breedableAnimalTypes) {
+    public BreedAnimalsBehavior(BreedAnimalsConfig config, Set<EntityType<? extends Animal>> breedableAnimalTypes) {
         super(log,
-                RandomRangeTickable.of(Ticks.seconds(preconditionCheckCooldownMin), Ticks.seconds(preconditionCheckCooldownMax)),
-                RandomRangeTickable.of(Ticks.seconds(behaviorCooldownMin), Ticks.seconds(behaviorCooldownMax)),
+                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
+                        Ticks.seconds(config.preconditionCheckCooldownMax())),
+                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
+                        Ticks.seconds(config.behaviorCooldownMax())),
                 Tickable.of(Ticks.one()));
+        this.config = config;
 
         // Create behavior preconditions
-        this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(scanRangeHorizontal, scanRangeVertical, breedableAnimalTypes);
+        this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical(), breedableAnimalTypes);
         this.preconditions.add(this.nearbyBreedableAnimalPairExistsCondition);
         this.waitForBreedingTickable = Tickable.of(Ticks.seconds(3));
 
