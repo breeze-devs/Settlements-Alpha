@@ -1,12 +1,12 @@
 package dev.breezes.settlements.models.behaviors.steps.concrete;
 
 import dev.breezes.settlements.entities.villager.ISettlementsVillager;
-import dev.breezes.settlements.models.behaviors.stages.Stage;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
 import dev.breezes.settlements.models.behaviors.steps.AbstractStep;
+import dev.breezes.settlements.models.behaviors.steps.StepResult;
 import dev.breezes.settlements.models.location.Location;
 import lombok.Builder;
 
@@ -26,25 +26,25 @@ public class NavigateToTargetStep extends AbstractStep {
     }
 
     @Override
-    public Optional<Stage> tick(@Nonnull BehaviorContext context) {
+    public StepResult tick(@Nonnull BehaviorContext context) {
         ISettlementsVillager initiator = context.getInitiator();
 
         // TODO: Don't navigate if already navigating
         // TODO: this is causing the villager to run back to the workstation due to vanilla logic
         // TODO: re-enable this check after fixing the issue
 //        if (initiator.getNavigationManager().isNavigating()) {
-//            return Optional.empty();
+//            return StepResult.noOp();
 //        }
 
         Optional<Location> target = context.getState(BehaviorStateType.TARGET, TargetState.class)
                 .flatMap(TargetState::getFirst)
                 .map(Targetable::getLocation);
         if (target.isEmpty()) {
-            return Optional.empty();
+            return StepResult.noOp();
         }
 
         initiator.getNavigationManager().navigateTo(target.get(), this.speed, this.completionDistance);
-        return Optional.empty();
+        return StepResult.noOp();
     }
 
 }

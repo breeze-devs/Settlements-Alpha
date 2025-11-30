@@ -1,7 +1,5 @@
 package dev.breezes.settlements.models.behaviors.steps;
 
-import dev.breezes.settlements.models.behaviors.stages.ControlStages;
-import dev.breezes.settlements.models.behaviors.stages.Stage;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import dev.breezes.settlements.models.misc.ITickable;
 import dev.breezes.settlements.util.Ticks;
@@ -13,12 +11,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Executes a series of behavior steps based on the elapsed ticks of a {@link ITickable}
  * <p>
- * If a keyframe is exactly the start or end of the tickable, it will not be executed. Use the onStart and onEnd steps for that.
+ * If a keyframe is exactly the start or end of the tickable, it will not be executed.
+ * Use the onStart and onEnd steps for that.
  */
 @CustomLog
 public class TimeBasedStep extends AbstractStep {
@@ -61,22 +59,30 @@ public class TimeBasedStep extends AbstractStep {
     }
 
     @Override
-    public Optional<Stage> tick(@Nonnull BehaviorContext context) {
+    public StepResult tick(@Nonnull BehaviorContext context) {
         if (this.onStart != null && this.tickable.getTicksElapsed() == 0) {
-            this.onStart.tick(context);
+            StepResult result = this.onStart.tick(context);
+            if (!(result instanceof StepResult.NoOp)) {
+                return result;
+            }
         }
 
         boolean completed = this.tickable.tickCheckAndReset(1);
         if (completed) {
-            // By default, we return the STEP_END stage
+            // By default, we return complete when timer runs out
             if (this.onEnd == null) {
-                log.behaviorStatus("No onEnd step, returning STEP_END");
-                return Optional.of(ControlStages.STEP_END);
+                log.behaviorStatus("No onEnd step, returning complete");
+                return StepResult.complete();
             }
 
             // This return can be overridden by the onEnd step
-            Optional<Stage> nextStage = this.onEnd.tick(context);
+            StepResult nextStage = this.onEnd.tick(context);
             log.behaviorStatus("Next stage: {}", nextStage);
+
+            // If onEnd returns NoOp, we still want to signal completion
+            if (nextStage instanceof StepResult.NoOp) {
+                return StepResult.complete();
+            }
             return nextStage;
         }
 
@@ -85,13 +91,19 @@ public class TimeBasedStep extends AbstractStep {
         for (Map.Entry<Integer, List<BehaviorStep>> entry : this.periodicSteps.entrySet()) {
             int interval = entry.getKey();
             if (elapsed % interval == 0) {
-                entry.getValue().forEach(step -> step.tick(context));
+                for (BehaviorStep step : entry.getValue()) {
+                    StepResult result = step.tick(context);
+                    // Break out of the execution if any result is not NoOp
+                    if (!(result instanceof StepResult.NoOp)) {
+                        return result;
+                    }
+                }
             }
         }
 
         // Execute keyframes
         if (!this.keyFrames.containsKey(elapsed)) {
-            return Optional.empty();
+            return StepResult.noOp();
         }
 
         BehaviorStep step = this.keyFrames.get(elapsed);
@@ -153,7 +165,6 @@ public class TimeBasedStep extends AbstractStep {
             this.onEnd = step;
             return this;
         }
-
 
         public TimeBasedStep build() {
             if (this.tickable == null) {

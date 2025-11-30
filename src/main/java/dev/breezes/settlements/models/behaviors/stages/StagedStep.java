@@ -4,6 +4,8 @@ import dev.breezes.settlements.models.behaviors.StopBehaviorException;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import dev.breezes.settlements.models.behaviors.steps.AbstractStep;
 import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
+import dev.breezes.settlements.models.behaviors.steps.StageKey;
+import dev.breezes.settlements.models.behaviors.steps.StepResult;
 import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -12,16 +14,19 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-
 
 @CustomLog
 public class StagedStep extends AbstractStep {
 
-    private final Map<Stage, BehaviorStep> stageStepMap;
-    private final Stage startingStage;
-    private final Stage initialActionStage;
-    private final Stage nextStage;
+    private enum InternalStage implements StageKey {
+        START,
+        END;
+    }
+
+    private final Map<StageKey, BehaviorStep> stageStepMap;
+    private final StageKey startingStage;
+    private final StageKey initialActionStage;
+    private final StageKey nextStage; // Stage to transition to after this StagedStep completes
 
     @Nullable
     private final BehaviorStep onStart;
@@ -29,13 +34,13 @@ public class StagedStep extends AbstractStep {
     private final BehaviorStep onEnd;
 
     @Getter
-    private Stage currentStage;
+    private StageKey currentStage;
 
     @Builder
     private StagedStep(@Nonnull String name,
-                       @Nonnull Map<Stage, BehaviorStep> stageStepMap,
-                       @Nonnull Stage initialStage,
-                       @Nonnull Stage nextStage,
+                       @Nonnull Map<StageKey, BehaviorStep> stageStepMap,
+                       @Nonnull StageKey initialStage,
+                       @Nonnull StageKey nextStage,
                        @Nullable BehaviorStep onStart,
                        @Nullable BehaviorStep onEnd) {
         super("StagedStep[%s]".formatted(name));
@@ -47,7 +52,8 @@ public class StagedStep extends AbstractStep {
         this.initialActionStage = initialStage;
         this.nextStage = nextStage;
 
-        this.startingStage = ControlStages.newStepStartStage();
+        this.startingStage = InternalStage.START;
+        // Map START to onStart wrapper
         this.stageStepMap.put(this.startingStage, this::onStart);
 
         this.currentStage = this.startingStage;
@@ -56,33 +62,43 @@ public class StagedStep extends AbstractStep {
         this.onEnd = onEnd;
     }
 
-    protected Optional<Stage> onStart(@Nonnull BehaviorContext context) {
+    protected StepResult onStart(@Nonnull BehaviorContext context) {
         log.behaviorStatus("Starting {} ({})", this.getName(), this.getUuid());
         if (this.onStart != null) {
             this.onStart.tick(context);
         }
-        return Optional.of(this.initialActionStage);
+        return StepResult.transition(this.initialActionStage);
     }
 
-    public Optional<Stage> tick(@Nonnull BehaviorContext context) {
+    @Override
+    public StepResult tick(@Nonnull BehaviorContext context) {
         BehaviorStep step = this.stageStepMap.get(this.currentStage);
-        Optional<Stage> nextStage = step.tick(context);
+        if (step == null) {
+            log.error("Missing step for stage: {} in {} ({})", this.currentStage.name(), this.getName(), this.getUuid());
+            return StepResult.abort("MISSING_STEP", new IllegalStateException("Missing step for stage: " + this.currentStage.name()));
+        }
 
-        // Case 1: the inner step is not yet complete
-        if (nextStage.isEmpty()) {
-            return Optional.empty();
-        }
-        // Case 2: the inner step is complete and a fall-through is requested
-        else if (nextStage.get() == ControlStages.STEP_END) {
-            this.transitionStage(ControlStages.STEP_END);
+        StepResult result = step.tick(context);
+
+        if (result instanceof StepResult.NoOp) {
+            return StepResult.noOp();
+        } else if (result instanceof StepResult.Transition(StageKey key)) {
+            this.transitionStage(key);
+            return StepResult.noOp();
+        } else if (result instanceof StepResult.Complete) {
+            // Inner step complete, treat as transition to END
+            this.transitionStage(InternalStage.END);
             this.onEnd(context);
-            return Optional.of(this.nextStage);
+            // After onEnd, we are done with this StagedStep, so we transition to the *next* stage defined for the parent
+            return StepResult.transition(this.nextStage);
+        } else if (result instanceof StepResult.Fail fail) {
+            // Bubble up the failure to the parent step
+            return result;
+        } else if (result instanceof StepResult.Abort) {
+            return result;
         }
-        // Case 3: the inner step is complete and a specific stage is requested
-        else {
-            this.transitionStage(nextStage.get());
-            return Optional.empty();
-        }
+
+        return StepResult.noOp();
     }
 
     protected void onEnd(@Nonnull BehaviorContext context) {
@@ -96,20 +112,19 @@ public class StagedStep extends AbstractStep {
         this.currentStage = this.startingStage;
     }
 
-    private void transitionStage(@Nonnull Stage stage) {
-        // Special case: ending staged step
-        if (stage == ControlStages.STEP_END) {
+    private void transitionStage(@Nonnull StageKey stage) {
+        if (stage == InternalStage.END) {
             log.behaviorStatus("End requested for {} ({})", this.getName(), this.getUuid());
-            this.currentStage = ControlStages.STEP_END;
+            this.currentStage = InternalStage.END;
             return;
         }
 
         if (!this.stageStepMap.containsKey(stage)) {
-            log.warn("Attempted to transition to an unknown stage: {} for {} ({})", stage.toString(), this.getName(), this.getUuid());
-            throw new StopBehaviorException("Attempted to transition to an unknown stage: %s".formatted(stage.toString()));
+            log.warn("Attempted to transition to an unknown stage: {} for {} ({})", stage.name(), this.getName(), this.getUuid());
+            throw new StopBehaviorException("Attempted to transition to an unknown stage: %s".formatted(stage.name()));
         }
 
-        log.behaviorStatus("Transitioning from {} to {} stage for {} ({})", this.currentStage.getName(), stage.getName(), this.getName(), this.getUuid());
+        log.behaviorStatus("Transitioning from {} to {} stage for {} ({})", this.currentStage.name(), stage.name(), this.getName(), this.getUuid());
         this.currentStage = stage;
     }
 

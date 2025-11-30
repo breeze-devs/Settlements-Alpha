@@ -1,12 +1,9 @@
 package dev.breezes.settlements.models.behaviors.steps;
 
-import dev.breezes.settlements.models.behaviors.stages.ControlStages;
-import dev.breezes.settlements.models.behaviors.stages.Stage;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import lombok.Getter;
 
 import javax.annotation.Nonnull;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -25,12 +22,8 @@ public abstract class AbstractStep implements BehaviorStep {
     }
 
     /**
-     * Executes step logic for one tick and returning the next stage if the step is complete
-     *
-     * @return The {@link Stage} to transition to, or empty if the step is not complete
-     * <p>
-     * A step can return the {@link ControlStages#STEP_END} stage to signal that the step is complete
+     * Executes step logic for one tick and returning the result
      */
-    public abstract Optional<Stage> tick(@Nonnull BehaviorContext context);
+    public abstract StepResult tick(@Nonnull BehaviorContext context);
 
 }

@@ -7,9 +7,6 @@ import dev.breezes.settlements.bubbles.packet.RemoveBubbleRequest;
 import dev.breezes.settlements.bubbles.registry.BubbleType;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.entities.villager.ISettlementsVillager;
-import dev.breezes.settlements.models.behaviors.stages.ControlStages;
-import dev.breezes.settlements.models.behaviors.stages.SimpleStage;
-import dev.breezes.settlements.models.behaviors.stages.Stage;
 import dev.breezes.settlements.models.behaviors.stages.StagedStep;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
@@ -19,6 +16,8 @@ import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetSt
 import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetableType;
 import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
+import dev.breezes.settlements.models.behaviors.steps.StageKey;
+import dev.breezes.settlements.models.behaviors.steps.StepResult;
 import dev.breezes.settlements.models.behaviors.steps.TimeBasedStep;
 import dev.breezes.settlements.models.behaviors.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.models.behaviors.steps.concrete.StayCloseStep;
@@ -57,8 +56,6 @@ import java.util.stream.Stream;
 @CustomLog
 public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
 
-    private static final Stage SHEAR_SHEEP = new SimpleStage("SHEAR_SHEEP");
-
     private static final Map<DyeColor, ItemLike> WOOL_COLOR_MAP = Map.ofEntries(
             Map.entry(DyeColor.WHITE, Items.WHITE_WOOL),
             Map.entry(DyeColor.ORANGE, Items.ORANGE_WOOL),
@@ -75,8 +72,12 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
             Map.entry(DyeColor.BROWN, Items.BROWN_WOOL),
             Map.entry(DyeColor.GREEN, Items.GREEN_WOOL),
             Map.entry(DyeColor.RED, Items.RED_WOOL),
-            Map.entry(DyeColor.BLACK, Items.BLACK_WOOL)
-    );
+            Map.entry(DyeColor.BLACK, Items.BLACK_WOOL));
+
+    private enum ShearStage implements StageKey {
+        SHEAR_SHEEP,
+        END;
+    }
 
     private final ShearSheepConfig config;
 
@@ -129,13 +130,13 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                     // Send the packet
                     // TODO: we should send this packet regularly throughout the behavior (e.g. for players who teleported to nearby)
                     PacketDistributor.sendToPlayersTrackingEntity(villager.getMinecraftEntity(), new ClientBoundDisplayBubblePacket(request));
-                    return Optional.empty();
+                    return StepResult.noOp();
                 })
-                .initialStage(SHEAR_SHEEP)
+                .initialStage(ShearStage.SHEAR_SHEEP)
                 .stageStepMap(Map.of(
-                        SHEAR_SHEEP, this.createShearSheepStep()
+                        ShearStage.SHEAR_SHEEP, this.createShearSheepStep()
                 ))
-                .nextStage(ControlStages.STEP_END)
+                .nextStage(ShearStage.END)
                 .onEnd(context -> {
                     log.behaviorStatus("Removing speech bubble");
                     context.getState(BehaviorStateType.SPEECH_BUBBLE, SpeechBubbleState.class)
@@ -148,7 +149,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                                         .build();
                                 PacketDistributor.sendToPlayersTrackingEntity(villager.getMinecraftEntity(), new ClientBoundRemoveBubblePacket(request));
                             });
-                    return Optional.empty();
+                    return StepResult.noOp();
                 })
                 .build();
     }
@@ -158,16 +159,16 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                 .withTickable(Ticks.seconds(1).asTickable())
                 .onStart(context -> {
                     this.shearCount.decrementAndGet();
-                    return Optional.empty();
+                    return StepResult.noOp();
                 })
                 .everyTick(context -> {
                     context.getInitiator().setHeldItem(Items.SHEARS.getDefaultInstance());
-                    return Optional.empty();
+                    return StepResult.noOp();
                 })
                 .addKeyFrame(Ticks.seconds(0.5), context -> {
                     Optional<Sheep> sheepOptional = this.getTargetSheep(context);
                     if (sheepOptional.isEmpty()) {
-                        return Optional.of(ControlStages.STEP_END);
+                        return StepResult.complete();
                     }
                     Sheep sheep = sheepOptional.get();
 
@@ -192,7 +193,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                         woolItems.add(woolItem);
                     }
                     context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(woolItems));
-                    return Optional.empty();
+                    return StepResult.noOp();
                 })
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
@@ -210,10 +211,10 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                         context.setState(BehaviorStateType.TARGET, TargetState.of(nearbySheep));
 
                         log.behaviorStatus("Found {} nearby sheep to shear, remaining {}", nearbySheep.size(), this.shearCount.get());
-                        return Optional.of(SHEAR_SHEEP);
+                        return StepResult.transition(ShearStage.SHEAR_SHEEP);
                     }
 
-                    return Optional.of(ControlStages.STEP_END);
+                    return StepResult.complete();
                 })
                 .build();
 
@@ -241,15 +242,14 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
 
     @Override
     public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
-        if (controlStep.getCurrentStage() == ControlStages.STEP_END) {
-            throw new StopBehaviorException("Behavior has ended");
-        }
-
         if (this.context == null) {
             throw new StopBehaviorException("Behavior context is null");
         }
 
-        this.controlStep.tick(this.context);
+        StepResult result = this.controlStep.tick(this.context);
+        if (result instanceof StepResult.Transition(StageKey key) && key == ShearStage.END) {
+            throw new StopBehaviorException("Behavior has ended");
+        }
     }
 
     @Override

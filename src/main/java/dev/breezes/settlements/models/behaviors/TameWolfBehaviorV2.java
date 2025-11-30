@@ -2,9 +2,6 @@ package dev.breezes.settlements.models.behaviors;
 
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.entities.wolves.SettlementsWolf;
-import dev.breezes.settlements.models.behaviors.stages.ControlStages;
-import dev.breezes.settlements.models.behaviors.stages.SimpleStage;
-import dev.breezes.settlements.models.behaviors.stages.Stage;
 import dev.breezes.settlements.models.behaviors.stages.StagedStep;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
@@ -12,6 +9,8 @@ import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetSt
 import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetableType;
 import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
+import dev.breezes.settlements.models.behaviors.steps.StageKey;
+import dev.breezes.settlements.models.behaviors.steps.StepResult;
 import dev.breezes.settlements.models.behaviors.steps.TimeBasedStep;
 import dev.breezes.settlements.models.behaviors.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.models.behaviors.steps.concrete.StayCloseStep;
@@ -45,7 +44,10 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
 
-    private static final Stage TAME_WOLF = new SimpleStage("TAME_WOLF");
+    private enum TameStage implements StageKey {
+        TAME_WOLF,
+        END;
+    }
 
     private final TameWolfConfig config;
     private final StagedStep controlStep;
@@ -67,7 +69,7 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
         this.context = null;
         this.attemptsRemaining = 0;
 
-        // Preconditions: at least one untamed wolf nearby
+        // Precondition: at least one untamed wolf nearby
         this.nearbyUntamedWolfExistsCondition = new NearbyEntityExistsCondition<>(
                 config.scanRangeHorizontal(),
                 config.scanRangeVertical(),
@@ -77,15 +79,35 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
         );
         this.preconditions.add(this.nearbyUntamedWolfExistsCondition);
 
+        // Precondition: ownership below per-expertise limit
+        // TODO: we should move this somewhere else
+        ICondition<BaseVillager> ownershipBelowLimitCondition = villager -> {
+            Expertise expertise = villager.getExpertise();
+            int limit = this.config.expertiseWolfLimit().getOrDefault(expertise.getConfigName(), 1);
+
+            // TODO: this logic should be replaced by memory-based systems and a direct level entity get if alive
+            int owned = villager.level().getEntitiesOfClass(Wolf.class,
+                            villager.getBoundingBox().inflate(48, 16, 48),
+                            wolf -> wolf.isTame() && ownerMatches(villager, wolf))
+                    .size();
+
+            if (owned >= limit) {
+                log.behaviorStatus("Owned wolves {} >= limit {}, aborting tame (precondition)", owned, limit);
+                return false;
+            }
+            return true;
+        };
+        this.preconditions.add(ownershipBelowLimitCondition);
+
         // Steps controller
         this.controlStep = StagedStep.builder()
                 .name("TameWolfBehaviorV2")
-                .initialStage(TAME_WOLF)
+                .initialStage(TameStage.TAME_WOLF)
                 .stageStepMap(Map.of(
-                        TAME_WOLF, this.createTameWolfStep()
+                        TameStage.TAME_WOLF, this.createTameWolfStep()
                 ))
-                .nextStage(ControlStages.STEP_END)
-                .onEnd(ctx -> Optional.empty())
+                .nextStage(TameStage.END)
+                .onEnd(ctx -> StepResult.noOp())
                 .build();
     }
 
@@ -95,22 +117,22 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
                 .onStart(ctx -> {
                     // Consume one attempt when we start the action window
                     this.attemptsRemaining = Math.max(0, this.attemptsRemaining - 1);
-                    return Optional.empty();
+                    return StepResult.noOp();
                 })
                 .everyTick(ctx -> {
                     ctx.getInitiator().setHeldItem(Items.BONE.getDefaultInstance());
-                    return Optional.empty();
+                    return StepResult.noOp();
                 })
                 .addKeyFrame(Ticks.seconds(0.5), ctx -> {
                     Optional<Wolf> wolfOptional = this.getTargetWolf(ctx);
                     if (wolfOptional.isEmpty()) {
-                        return Optional.of(ControlStages.STEP_END);
+                        return StepResult.complete();
                     }
                     Wolf wolf = wolfOptional.get();
 
                     // If already tamed somehow, end
                     if (wolf.isTame()) {
-                        return Optional.of(ControlStages.STEP_END);
+                        return StepResult.complete();
                     }
 
                     // Try to tame
@@ -136,7 +158,7 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
                         log.behaviorStatus("Successfully tamed wolf {}", settlementsWolf.getUUID());
 
                         // Stop the behavior after success
-                        return Optional.of(ControlStages.STEP_END);
+                        return StepResult.complete();
                     } else {
                         // Failure effects
                         Location wolfLoc = Location.fromEntity(wolf, false);
@@ -145,7 +167,7 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
                     }
 
                     log.behaviorStatus("Failed to tame wolf");
-                    return Optional.empty();
+                    return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
                     // Clear held item
@@ -155,11 +177,11 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
                     if (this.attemptsRemaining > 0) {
                         Optional<Wolf> target = this.getTargetWolf(ctx);
                         if (target.isPresent() && target.get().isAlive() && !target.get().isTame()) {
-                            return Optional.of(TAME_WOLF);
+                            return StepResult.transition(TameStage.TAME_WOLF);
                         }
                     }
 
-                    return Optional.of(ControlStages.STEP_END);
+                    return StepResult.complete();
                 })
                 .build();
 
@@ -205,13 +227,14 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
 
     @Override
     public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
-        if (this.controlStep.getCurrentStage() == ControlStages.STEP_END) {
-            throw new StopBehaviorException("Behavior has ended");
-        }
         if (this.context == null) {
             throw new StopBehaviorException("Behavior context is null");
         }
-        this.controlStep.tick(this.context);
+
+        StepResult result = this.controlStep.tick(this.context);
+        if (result instanceof StepResult.Transition(StageKey key) && key == TameStage.END) {
+            throw new StopBehaviorException("Behavior has ended");
+        }
     }
 
     @Override
