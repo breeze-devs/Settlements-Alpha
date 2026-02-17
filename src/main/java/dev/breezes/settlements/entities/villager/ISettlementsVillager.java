@@ -3,8 +3,11 @@ package dev.breezes.settlements.entities.villager;
 import dev.breezes.settlements.entities.ISettlementsBrainEntity;
 import dev.breezes.settlements.models.navigation.INavigationManager;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.item.ItemStack;
+
+import dev.breezes.settlements.inventory.VillagerInventory;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -14,6 +17,11 @@ import java.util.UUID;
 public interface ISettlementsVillager extends ISettlementsBrainEntity {
 
     UUID getUUID();
+
+    // Inventory
+    VillagerInventory getSettlementsInventory();
+
+    void pickUp(ItemEntity itemEntity);
 
     // Held item management
     Optional<ItemStack> getHeldItem();
@@ -37,8 +45,7 @@ public interface ISettlementsVillager extends ISettlementsBrainEntity {
                 Witch.class,
                 Evoker.class,
                 Illusioner.class,
-                Ravager.class
-        );
+                Ravager.class);
     }
 
 }

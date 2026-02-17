@@ -201,7 +201,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
                     // Pick up wool items
                     context.getState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.class)
                             .ifPresent(itemState -> itemState.getItems()
-                                    .forEach(itemEntity -> context.getInitiator().getMinecraftEntity().take(itemEntity, 999)));
+                                    .forEach(itemEntity -> context.getInitiator().pickUp(itemEntity)));
 
                     // Determine if there are more sheep to shear
                     if (this.shearCount.get() > 0 && this.nearbyShearableSheepExistsCondition.test(context.getInitiator().getMinecraftEntity())) {

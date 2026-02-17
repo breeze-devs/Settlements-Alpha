@@ -4,6 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.bubbles.BubbleManager;
+import dev.breezes.settlements.genetics.GeneticsProfile;
+import dev.breezes.settlements.inventory.GeneticInventoryProvider;
+import dev.breezes.settlements.inventory.VillagerInventory;
 import dev.breezes.settlements.models.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.models.brain.CustomMemoryModuleType;
 import dev.breezes.settlements.models.brain.DefaultBrain;
@@ -14,10 +17,9 @@ import dev.breezes.settlements.models.navigation.INavigationManager;
 import dev.breezes.settlements.models.navigation.VanillaMemoryNavigationManager;
 import lombok.CustomLog;
 import lombok.Getter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.Brain;
@@ -52,23 +54,32 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     private static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES;
     private static final ImmutableList<SensorType<? extends Sensor<? super Villager>>> SENSOR_TYPES;
 
+    private final GeneticsProfile genetics;
     private final IBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
+    private VillagerInventory settlementsInventory;
 
     private final BubbleManager bubbleManager;
+
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
 
+        this.genetics = new GeneticsProfile();
+
+        // TODO: implement brain
         this.settlementsBrain = DefaultBrain.builder()
-                .build(); // TODO: implement
+                .build();
+
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
+        // VillagerPathNavigation navigation = new VillagerPathNavigation(this,
+        // this.level());
+        // navigation.setCanOpenDoors(true);
+        // navigation.setCanFloat(true);
+        // this.navigation = navigation;
 
-//        VillagerPathNavigation navigation = new VillagerPathNavigation(this, this.level());
-//        navigation.setCanOpenDoors(true);
-//        navigation.setCanFloat(true);
-//        this.navigation = navigation;
-
+        // Initialize custom inventory
+        this.settlementsInventory = new GeneticInventoryProvider().provideDefault();
         this.bubbleManager = new BubbleManager();
     }
 
@@ -80,12 +91,37 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     }
 
     @Override
+    public void addAdditionalSaveData(@Nonnull CompoundTag nbtTag) {
+        super.addAdditionalSaveData(nbtTag);
+
+        log.debug("Saving villager genetic profile");
+        this.genetics.save(nbtTag);
+
+        this.settlementsInventory.writeInventoryToTag(nbtTag, this.registryAccess());
+    }
+
+    @Override
+    public void load(@Nonnull CompoundTag nbtTag) {
+        super.load(nbtTag);
+//        if (nbtTag.contains("SettlementsName")) {
+//            this.settlementName = nbtTag.getString("SettlementsName");
+//        }
+
+        log.debug("Loading villager genetic profile");
+        this.genetics.load(nbtTag);
+
+        log.debug("Loading villager inventory");
+        this.settlementsInventory = new GeneticInventoryProvider().provide(this.genetics);
+        this.settlementsInventory.readInventoryFromTag(nbtTag, this.registryAccess());
+    }
+
+    @Override
     public void tick() {
         super.tick();
 
-//        if (this.level().isClientSide()) {
-//            this.spinAnimator.tickAnimations(this.tickCount);
-//        }
+        // if (this.level().isClientSide()) {
+        //     this.spinAnimator.tickAnimations(this.tickCount);
+        // }
     }
 
     @Override
@@ -94,10 +130,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         brain.stopAll(level, this);
         this.brain = brain.copyWithoutBehaviors();
         this.registerBrainGoals(this.getBrain());
-    }
-
-    public boolean hasItemInInventory(Item item) {
-        return this.getInventory().hasAnyMatching((itemStack) -> itemStack.is(item));
     }
 
     /**
@@ -184,19 +216,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     @Override
     protected void pickUpItem(ItemEntity itemEntity) {
-        ItemStack itemstack = itemEntity.getItem();
-        SimpleContainer simplecontainer = this.getInventory();
-        int stackSize = itemstack.getMaxStackSize();
-        if (itemstack.getCount() + simplecontainer.countItem(itemstack.getItem()) > stackSize) {
-            this.onItemPickup(itemEntity);
-            int amountToTake = stackSize - simplecontainer.countItem(itemstack.getItem());
-            simplecontainer.addItem(itemstack.copyWithCount(amountToTake));
-            int remainder = itemstack.getCount() - amountToTake;
-            System.out.println(remainder);
-            this.take(itemEntity, amountToTake);
-            itemstack.setCount(remainder);
-            itemEntity.setItem(itemstack);
-        } else super.pickUpItem(itemEntity);
+        this.pickUp(itemEntity);
     }
 
     @Override
@@ -222,6 +242,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
                         Items.PITCHER_POD))
                     return true;
             }
+            case ("shepherd") -> {
+                if (shouldAddItem(itemStack,
+                        Items.BLACK_WOOL,
+                        Items.WHITE_WOOL))
+                    return true;
+            }
             default -> {
             }
         }
@@ -230,15 +256,40 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     }
 
     private boolean shouldAddItem(ItemStack stackToAdd, Item... items) {
+        VillagerInventory inventory = this.getSettlementsInventory();
         for (Item item : items) {
-            if (stackToAdd.is(item) && this.getInventory().countItem(item) < 64 && this.getInventory().canAddItem(stackToAdd))
+            if (stackToAdd.is(item) && inventory.countItem(item) < 64 && inventory.canAddItem(stackToAdd)) {
                 return true;
+            }
         }
         return false;
     }
 
-    private boolean shouldAddItem(ItemStack stackToAdd, TagKey<Item> itemTag) {
-        return stackToAdd.is(itemTag) && this.getInventory().countItem(stackToAdd.getItem()) < 64 && this.getInventory().canAddItem(stackToAdd);
+    public boolean hasItemInInventory(Item item) {
+        return this.getSettlementsInventory().containsItem(item);
+    }
+
+    @Override
+    public void pickUp(ItemEntity itemEntity) {
+        ItemStack itemstack = itemEntity.getItem();
+        if (itemstack.isEmpty()) {
+            return;
+        }
+
+        VillagerInventory inventory = this.getSettlementsInventory();
+        Optional<ItemStack> leftover = inventory.addItem(itemstack);
+        int leftoverCount = leftover.map(ItemStack::getCount).orElse(0);
+        int takenCount = itemstack.getCount() - leftoverCount;
+
+        if (takenCount <= 0) {
+            return;
+        }
+
+        log.info("Picking up {}", itemEntity.getItem());
+        this.onItemPickup(itemEntity);
+        this.take(itemEntity, takenCount);
+        itemstack.setCount(leftoverCount);
+        itemEntity.setItem(itemstack);
     }
 
     static {
@@ -278,8 +329,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
                 CustomMemoryModuleType.FENCE_GATES_TO_CLOSE,
                 MemoryTypeRegistry.NEAREST_HARVESTABLE_SUGARCANE.getModuleType(),
                 MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
-                MemoryTypeRegistry.OWNED_FARMLAND.getModuleType()
-        );
+                MemoryTypeRegistry.OWNED_FARMLAND.getModuleType());
+
         SENSOR_TYPES = ImmutableList.of(
                 SensorType.NEAREST_LIVING_ENTITIES,
                 SensorType.NEAREST_PLAYERS,

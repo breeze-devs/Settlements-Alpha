@@ -10,7 +10,6 @@ import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -56,11 +55,17 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
     @Override
     public void doStart(@Nonnull Level level, @Nonnull BaseVillager villager) {
         this.validSoulSandAroundVillager = nearbySoulSandExistsCondition.getTargets();
+        if (this.validSoulSandAroundVillager.isEmpty()) {
+            requestStop();
+            return;
+        }
+
         this.netherWartPos = getRandomPosition(level);
         while (level.getBlockState(netherWartPos).isAir() && !villager.hasItemInInventory(Items.NETHER_WART)) {
             validSoulSandAroundVillager.remove(netherWartPos);
             if (validSoulSandAroundVillager.isEmpty()) {
                 requestStop();
+                return;
             }
             netherWartPos = getRandomPosition(level);
         }
@@ -94,25 +99,13 @@ public class HarvestSoulSandBehavior extends AbstractInteractAtTargetBehavior {
 
         // plant the nether wart if the villager has one on its inventory
         if (villager.hasItemInInventory(Items.NETHER_WART)) {
-            SimpleContainer simplecontainer = villager.getInventory();
-
-            for (int i = 0; i < simplecontainer.getContainerSize(); ++i) {
-                ItemStack itemstack;
-                itemstack = simplecontainer.getItem(i);
-                if (!itemstack.isEmpty() && itemstack.is(Items.NETHER_WART)) {
-                    Item wartItem = itemstack.getItem();
-                    if (wartItem instanceof BlockItem wartBlockItem) {
-                        BlockState defaultWartState = wartBlockItem.getBlock().defaultBlockState();
-                        level.setBlockAndUpdate(this.netherWartPos, defaultWartState);
-                        level.gameEvent(GameEvent.BLOCK_PLACE, this.netherWartPos, GameEvent.Context.of(villager, defaultWartState));
-                        level.playSound(null, this.netherWartPos.getX(), this.netherWartPos.getY(), this.netherWartPos.getZ(), SoundEvents.NETHER_WART_PLANTED, SoundSource.BLOCKS, 1.0F, 1.0F);
-                        itemstack.shrink(1);
-                        if (itemstack.isEmpty()) {
-                            simplecontainer.setItem(i, ItemStack.EMPTY);
-                        }
-                        break;
-                    }
-                }
+            ItemStack netherWart = Items.NETHER_WART.getDefaultInstance();
+            Item wartItem = netherWart.getItem();
+            if (wartItem instanceof BlockItem wartBlockItem && villager.getSettlementsInventory().consume(Items.NETHER_WART, 1) == 1) {
+                BlockState defaultWartState = wartBlockItem.getBlock().defaultBlockState();
+                level.setBlockAndUpdate(this.netherWartPos, defaultWartState);
+                level.gameEvent(GameEvent.BLOCK_PLACE, this.netherWartPos, GameEvent.Context.of(villager, defaultWartState));
+                level.playSound(null, this.netherWartPos.getX(), this.netherWartPos.getY(), this.netherWartPos.getZ(), SoundEvents.NETHER_WART_PLANTED, SoundSource.BLOCKS, 1.0F, 1.0F);
             }
         }
         requestStop();
