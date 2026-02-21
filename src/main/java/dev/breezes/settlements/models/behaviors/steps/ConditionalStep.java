@@ -26,4 +26,10 @@ public class ConditionalStep implements BehaviorStep {
         }
     }
 
+    @Override
+    public void reset() {
+        this.trueStep.reset();
+        this.falseStep.reset();
+    }
+
 }

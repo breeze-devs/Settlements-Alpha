@@ -11,6 +11,10 @@ public interface BehaviorStep {
 
     StepResult tick(@Nonnull BehaviorContext context);
 
+    default void reset() {
+        // no-op by default
+    }
+
     // boolean canContinue(@Nonnull BehaviorContext context)
 
 }

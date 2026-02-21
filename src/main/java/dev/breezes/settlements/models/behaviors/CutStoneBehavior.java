@@ -3,12 +3,22 @@ package dev.breezes.settlements.models.behaviors;
 import dev.breezes.settlements.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.models.behaviors.stages.StagedStep;
+import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
+import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
+import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
+import dev.breezes.settlements.models.behaviors.steps.SequencedStep;
+import dev.breezes.settlements.models.behaviors.steps.StageKey;
+import dev.breezes.settlements.models.behaviors.steps.StepResult;
+import dev.breezes.settlements.models.behaviors.steps.TimeBasedStep;
+import dev.breezes.settlements.models.behaviors.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.models.behaviors.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.models.blocks.PhysicalBlock;
 import dev.breezes.settlements.models.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.models.location.Location;
-import dev.breezes.settlements.models.misc.ITickable;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
-import dev.breezes.settlements.models.misc.Tickable;
 import dev.breezes.settlements.particles.ParticleRegistry;
 import dev.breezes.settlements.sounds.SoundRegistry;
 import dev.breezes.settlements.util.RandomUtil;
@@ -18,8 +28,6 @@ import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SlabBlock;
@@ -30,12 +38,12 @@ import net.minecraft.world.level.block.state.properties.SlabType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 @CustomLog
-public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
+public class CutStoneBehavior extends BaseVillagerStagedBehavior {
 
-    private static final int NAVIGATE_STOP_DISTANCE = 1;
-    private static final double INTERACTION_DISTANCE = 2.0;
+    private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
     private static final double ANIMATION_OFFSET = 0.6;
     private static final Ticks ANIMATION_HALF_DURATION = Ticks.seconds(1.5);
@@ -47,12 +55,14 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
                     .build()
     );
 
-    private final CutStoneConfig config;
-    private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
-    private final ITickable animationTickable;
+    private enum CutStage implements StageKey {
+        CUT_STONE,
+        END;
+    }
 
-    @Nonnull
-    private BehaviorState behaviorState;
+    private final CutStoneConfig config;
+    private final StagedStep controlStep;
+    private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     @Nullable
     private PhysicalBlock stoneCutter;
 
@@ -69,23 +79,22 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
     @Nullable
     private TransformationMatrix finalMatrix;
 
+    @Nullable
+    private BehaviorContext context;
+
     public CutStoneBehavior(CutStoneConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())),
-                Tickable.of(Ticks.one()));
+                        Ticks.seconds(config.behaviorCooldownMax())));
         this.config = config;
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER));
         this.preconditions.add(this.jobSiteBlockExistsCondition);
 
-        this.animationTickable = Tickable.of(ANIMATION_HALF_DURATION);
-
         // Initialize variables
-        this.behaviorState = BehaviorState.STANDBY;
         this.stoneCutter = null;
         this.currentRecipe = null;
         this.initialBlockDisplay = null;
@@ -93,14 +102,29 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
         this.initialMatrix = null;
         this.intermediateMatrix = this.getMatrix(0, 0);
         this.finalMatrix = null;
+        this.context = null;
+
+        this.controlStep = StagedStep.builder()
+                .name("CutStoneBehavior")
+                .initialStage(CutStage.CUT_STONE)
+                .stageStepMap(Map.of(
+                        CutStage.CUT_STONE, this.createCutStep()
+                ))
+                .nextStage(CutStage.END)
+                .onEnd(ctx -> StepResult.noOp())
+                .build();
     }
 
     @Override
     public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        this.animationTickable.reset();
-        this.behaviorState = BehaviorState.SETUP;
+        if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
+            this.requestStop();
+            return;
+        }
 
+        this.context = new BehaviorContext(entity);
         this.stoneCutter = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
+        this.context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.stoneCutter)));
 
         this.currentRecipe = RandomUtil.choice(RECIPES);
         Direction direction = this.stoneCutter.getBlockState().getValue(StonecutterBlock.FACING);
@@ -124,69 +148,115 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
     }
 
     @Override
-    protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(this.stoneCutter.getLocation(false).toBlockPos(),
-                0.5F, NAVIGATE_STOP_DISTANCE));
-    }
-
-    @Override
-    protected void interactWithTarget(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
-        Location location = this.stoneCutter.getLocation(true).add(0, 0.5, 0, false);
-        switch (this.behaviorState) {
-            case SETUP -> {
-                this.initialBlockDisplay.spawn(location);
-                this.initialBlockDisplay.setTransformation(this.intermediateMatrix, ANIMATION_HALF_DURATION);
-                this.behaviorState = BehaviorState.INITIAL_CUT;
-            }
-            case INITIAL_CUT -> {
-                ParticleRegistry.cutBlock(location, this.currentRecipe.getInput());
-                if (this.animationTickable.tickCheckAndReset(1)) {
-                    this.behaviorState = BehaviorState.TRANSITION;
-                }
-            }
-            case TRANSITION -> {
-                this.initialBlockDisplay.remove();
-                this.finalBlockDisplay.spawn(location);
-                this.finalBlockDisplay.setTransformation(this.finalMatrix, ANIMATION_HALF_DURATION);
-                this.behaviorState = BehaviorState.FINAL_CUT;
-            }
-            case FINAL_CUT -> {
-                ParticleRegistry.cutBlock(location, this.currentRecipe.getOutput());
-                if (this.animationTickable.tickCheckAndReset(1)) {
-                    this.requestStop();
-                }
-            }
+    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.context == null) {
+            throw new StopBehaviorException("Behavior context is null");
         }
-        SoundRegistry.STONE_CUTTER_WORKING.playGlobally(location, SoundSource.BLOCKS);
-    }
+        if (this.stoneCutter == null || !this.stoneCutter.is(Blocks.STONECUTTER)) {
+            throw new StopBehaviorException("Stonecutter target is invalid");
+        }
 
-    @Override
-    protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
-        // Do nothing
-    }
-
-    @Override
-    protected boolean hasTarget(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return this.stoneCutter != null && this.stoneCutter.is(Blocks.STONECUTTER);
-    }
-
-    @Override
-    protected boolean isTargetInReach(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return Location.fromEntity(villager, false).distanceSquared(this.stoneCutter.getLocation(false)) < INTERACTION_DISTANCE * INTERACTION_DISTANCE;
+        StepResult result = this.controlStep.tick(this.context);
+        this.handleStepResult(result, CutStage.END, "CutStoneBehavior");
     }
 
     @Override
     public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        this.initialBlockDisplay.remove();
-        this.finalBlockDisplay.remove();
+        villager.getNavigationManager().stop();
 
-        this.animationTickable.reset();
-        this.behaviorState = BehaviorState.STANDBY;
+        if (this.initialBlockDisplay != null) {
+            this.initialBlockDisplay.remove();
+        }
+        if (this.finalBlockDisplay != null) {
+            this.finalBlockDisplay.remove();
+        }
+
         this.stoneCutter = null;
+        this.currentRecipe = null;
         this.initialBlockDisplay = null;
         this.finalBlockDisplay = null;
         this.initialMatrix = null;
         this.finalMatrix = null;
+        this.context = null;
+        this.controlStep.reset();
+    }
+
+    private BehaviorStep createCutStep() {
+        TimeBasedStep setup = TimeBasedStep.builder()
+                .withTickable(Ticks.one().asTickable())
+                .onEnd(ctx -> {
+                    if (this.stoneCutter == null || this.initialBlockDisplay == null) {
+                        return StepResult.complete();
+                    }
+
+                    Location location = this.stoneCutter.getLocation(true).add(0, 0.5, 0, false);
+                    this.initialBlockDisplay.spawn(location);
+                    this.initialBlockDisplay.setTransformation(this.intermediateMatrix, ANIMATION_HALF_DURATION);
+                    SoundRegistry.STONE_CUTTER_WORKING.playGlobally(location, SoundSource.BLOCKS);
+                    return StepResult.noOp();
+                })
+                .build();
+
+        TimeBasedStep initialCut = TimeBasedStep.builder()
+                .withTickable(ANIMATION_HALF_DURATION.asTickable())
+                .everyTick(ctx -> {
+                    if (this.stoneCutter == null || this.currentRecipe == null) {
+                        return StepResult.complete();
+                    }
+
+                    Location location = this.stoneCutter.getLocation(true).add(0, 0.5, 0, false);
+                    ParticleRegistry.cutBlock(location, this.currentRecipe.getInput());
+                    SoundRegistry.STONE_CUTTER_WORKING.playGlobally(location, SoundSource.BLOCKS);
+                    return StepResult.noOp();
+                })
+                .build();
+
+        TimeBasedStep transition = TimeBasedStep.builder()
+                .withTickable(Ticks.one().asTickable())
+                .onEnd(ctx -> {
+                    if (this.stoneCutter == null || this.finalBlockDisplay == null || this.finalMatrix == null) {
+                        return StepResult.complete();
+                    }
+
+                    if (this.initialBlockDisplay != null) {
+                        this.initialBlockDisplay.remove();
+                    }
+
+                    Location location = this.stoneCutter.getLocation(true).add(0, 0.5, 0, false);
+                    this.finalBlockDisplay.spawn(location);
+                    this.finalBlockDisplay.setTransformation(this.finalMatrix, ANIMATION_HALF_DURATION);
+                    SoundRegistry.STONE_CUTTER_WORKING.playGlobally(location, SoundSource.BLOCKS);
+                    return StepResult.noOp();
+                })
+                .build();
+
+        TimeBasedStep finalCut = TimeBasedStep.builder()
+                .withTickable(ANIMATION_HALF_DURATION.asTickable())
+                .everyTick(ctx -> {
+                    if (this.stoneCutter == null || this.currentRecipe == null) {
+                        return StepResult.complete();
+                    }
+
+                    Location location = this.stoneCutter.getLocation(true).add(0, 0.5, 0, false);
+                    ParticleRegistry.cutBlock(location, this.currentRecipe.getOutput());
+                    SoundRegistry.STONE_CUTTER_WORKING.playGlobally(location, SoundSource.BLOCKS);
+                    return StepResult.noOp();
+                })
+                .onEnd(ctx -> StepResult.complete())
+                .build();
+
+        SequencedStep sequence = new SequencedStep("CutStoneBehavior.sequence", List.of(
+                setup,
+                initialCut,
+                transition,
+                finalCut
+        ));
+
+        return StayCloseStep.builder()
+                .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
+                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .actionStep(sequence)
+                .build();
     }
 
     private TransformationMatrix getMatrix(double dx, double dz) {
@@ -204,35 +274,6 @@ public class CutStoneBehavior extends AbstractInteractAtTargetBehavior {
         private final BlockState input;
         private final BlockState output;
         // TODO: when implementing inventory, we can add counts here
-
-    }
-
-    private enum BehaviorState {
-
-        /**
-         * Behavior not started
-         */
-        STANDBY,
-
-        /**
-         * Setting up the behavior
-         */
-        SETUP,
-
-        /**
-         * Displaying the initial cut (input block display)
-         */
-        INITIAL_CUT,
-
-        /**
-         * Swapping the input block display with the output block display
-         */
-        TRANSITION,
-
-        /**
-         * Displaying the final cut (output block display)
-         */
-        FINAL_CUT;
 
     }
 

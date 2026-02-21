@@ -6,6 +6,8 @@ import dev.breezes.settlements.models.behaviors.steps.AbstractStep;
 import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
 import dev.breezes.settlements.models.behaviors.steps.StageKey;
 import dev.breezes.settlements.models.behaviors.steps.StepResult;
+import dev.breezes.settlements.util.crash.CrashUtil;
+import dev.breezes.settlements.util.crash.report.BehaviorConfigurationCrashReport;
 import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -13,15 +15,11 @@ import lombok.Getter;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 @CustomLog
 public class StagedStep extends AbstractStep {
-
-    private enum InternalStage implements StageKey {
-        START,
-        END;
-    }
 
     private final Map<StageKey, BehaviorStep> stageStepMap;
     private final StageKey startingStage;
@@ -45,10 +43,12 @@ public class StagedStep extends AbstractStep {
                        @Nullable BehaviorStep onEnd) {
         super("StagedStep[%s]".formatted(name));
         if (stageStepMap.isEmpty()) {
-            throw new IllegalArgumentException("Staged step must have at least one stage");
+            crashInvalidConfiguration("Staged step must have at least one stage");
         }
 
         this.stageStepMap = new HashMap<>(stageStepMap);
+        this.validate(this.stageStepMap, onStart, onEnd);
+
         this.initialActionStage = initialStage;
         this.nextStage = nextStage;
 
@@ -65,7 +65,10 @@ public class StagedStep extends AbstractStep {
     protected StepResult onStart(@Nonnull BehaviorContext context) {
         log.behaviorStatus("Starting {} ({})", this.getName(), this.getUuid());
         if (this.onStart != null) {
-            this.onStart.tick(context);
+            StepResult result = this.onStart.tick(context);
+            if (!(result instanceof StepResult.NoOp)) {
+                return result;
+            }
         }
         return StepResult.transition(this.initialActionStage);
     }
@@ -86,12 +89,12 @@ public class StagedStep extends AbstractStep {
             this.transitionStage(key);
             return StepResult.noOp();
         } else if (result instanceof StepResult.Complete) {
-            // Inner step complete, treat as transition to END
+            // Inner step completes, treat as transition to END
             this.transitionStage(InternalStage.END);
             this.onEnd(context);
             // After onEnd, we are done with this StagedStep, so we transition to the *next* stage defined for the parent
             return StepResult.transition(this.nextStage);
-        } else if (result instanceof StepResult.Fail fail) {
+        } else if (result instanceof StepResult.Fail) {
             // Bubble up the failure to the parent step
             return result;
         } else if (result instanceof StepResult.Abort) {
@@ -110,6 +113,52 @@ public class StagedStep extends AbstractStep {
 
     public void reset() {
         this.currentStage = this.startingStage;
+
+        if (this.onStart != null) {
+            this.onStart.reset();
+        }
+        if (this.onEnd != null) {
+            this.onEnd.reset();
+        }
+
+        for (BehaviorStep step : this.stageStepMap.values()) {
+            step.reset();
+        }
+    }
+
+    private void validate(@Nonnull Map<StageKey, BehaviorStep> stageStepMap,
+                          @Nullable BehaviorStep onStart,
+                          @Nullable BehaviorStep onEnd) {
+        Map<BehaviorStep, StageKey> seenByIdentity = new IdentityHashMap<>();
+        for (Map.Entry<StageKey, BehaviorStep> entry : stageStepMap.entrySet()) {
+            StageKey stage = entry.getKey();
+            BehaviorStep step = entry.getValue();
+            if (step == null) {
+                crashInvalidConfiguration("Stage '%s' has a null step".formatted(stage.name()));
+            }
+
+            StageKey previousStage = seenByIdentity.put(step, stage);
+            if (previousStage != null) {
+                crashInvalidConfiguration("Each stage must have a unique step instance. Duplicate instance used by stages '%s' and '%s'"
+                        .formatted(previousStage.name(), stage.name()));
+            }
+        }
+
+        if (onStart != null && seenByIdentity.containsKey(onStart)) {
+            crashInvalidConfiguration("onStart step instance must be unique and not reused by stage '%s'"
+                    .formatted(seenByIdentity.get(onStart).name()));
+        }
+        if (onEnd != null && seenByIdentity.containsKey(onEnd)) {
+            crashInvalidConfiguration("onEnd step instance must be unique and not reused by stage '%s'"
+                    .formatted(seenByIdentity.get(onEnd).name()));
+        }
+        if (onStart != null && onStart == onEnd) {
+            crashInvalidConfiguration("onStart and onEnd must be different step instances");
+        }
+    }
+
+    private static void crashInvalidConfiguration(@Nonnull String message) throws IllegalArgumentException {
+        CrashUtil.crash(new BehaviorConfigurationCrashReport(new IllegalArgumentException(message)));
     }
 
     private void transitionStage(@Nonnull StageKey stage) {
@@ -126,6 +175,11 @@ public class StagedStep extends AbstractStep {
 
         log.behaviorStatus("Transitioning from {} to {} stage for {} ({})", this.currentStage.name(), stage.name(), this.getName(), this.getUuid());
         this.currentStage = stage;
+    }
+
+    private enum InternalStage implements StageKey {
+        START,
+        END;
     }
 
 }

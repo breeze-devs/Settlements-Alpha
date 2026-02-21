@@ -13,15 +13,14 @@ import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateTyp
 import dev.breezes.settlements.models.behaviors.states.registry.SpeechBubbleState;
 import dev.breezes.settlements.models.behaviors.states.registry.items.ItemState;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetQueries;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
-import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetableType;
 import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
 import dev.breezes.settlements.models.behaviors.steps.StageKey;
 import dev.breezes.settlements.models.behaviors.steps.StepResult;
 import dev.breezes.settlements.models.behaviors.steps.TimeBasedStep;
 import dev.breezes.settlements.models.behaviors.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.models.behaviors.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.models.conditions.ICondition;
 import dev.breezes.settlements.models.conditions.NearbyShearableSheepExistsCondition;
 import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.misc.Expertise;
@@ -48,13 +47,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 /**
  * Behavior that makes villagers shear nearby sheep
  */
 @CustomLog
-public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
+public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
 
     private static final Map<DyeColor, ItemLike> WOOL_COLOR_MAP = Map.ofEntries(
             Map.entry(DyeColor.WHITE, Items.WHITE_WOOL),
@@ -247,9 +245,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
         }
 
         StepResult result = this.controlStep.tick(this.context);
-        if (result instanceof StepResult.Transition(StageKey key) && key == ShearStage.END) {
-            throw new StopBehaviorException("Behavior has ended");
-        }
+        this.handleStepResult(result, ShearStage.END, "ShearSheepBehaviorV2");
     }
 
     @Override
@@ -259,15 +255,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerBehavior {
     }
 
     private Optional<Sheep> getTargetSheep(@Nonnull BehaviorContext context) {
-        ICondition<Targetable> isSheepPredicate = (target) -> target != null
-                && target.getType() == TargetableType.ENTITY
-                && target.getAsEntity().getType() == EntityType.SHEEP;
-
-        return context.getState(BehaviorStateType.TARGET, TargetState.class)
-                .map(targetState -> targetState.match(isSheepPredicate))
-                .flatMap(Stream::findFirst)
-                .map(Targetable::getAsEntity)
-                .map(Sheep.class::cast);
+        return TargetQueries.firstEntity(context, EntityType.SHEEP, Sheep.class);
     }
 
 }

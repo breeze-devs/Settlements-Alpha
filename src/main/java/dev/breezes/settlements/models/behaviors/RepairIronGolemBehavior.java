@@ -1,19 +1,26 @@
 package dev.breezes.settlements.models.behaviors;
 
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.models.behaviors.stages.StagedStep;
+import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
+import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
+import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
+import dev.breezes.settlements.models.behaviors.steps.StageKey;
+import dev.breezes.settlements.models.behaviors.steps.StepResult;
+import dev.breezes.settlements.models.behaviors.steps.TimeBasedStep;
+import dev.breezes.settlements.models.behaviors.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.models.behaviors.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.models.conditions.NearbyDamagedIronGolemExistsCondition;
 import dev.breezes.settlements.models.location.Location;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
-import dev.breezes.settlements.models.misc.Tickable;
 import dev.breezes.settlements.particles.ParticleRegistry;
 import dev.breezes.settlements.sounds.SoundRegistry;
-import dev.breezes.settlements.util.DistanceUtils;
 import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
 import lombok.CustomLog;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -21,27 +28,37 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
-public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
+public class RepairIronGolemBehavior extends BaseVillagerStagedBehavior {
 
-    private static final int NAVIGATE_STOP_DISTANCE = 1;
-    private static final double INTERACTION_DISTANCE = 2.0;
+    private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
+
+    private enum RepairStage implements StageKey {
+        REPAIR_GOLEM,
+        END;
+    }
 
     private final RepairIronGolemConfig config;
+    private final StagedStep controlStep;
     private final NearbyDamagedIronGolemExistsCondition<BaseVillager> nearbyDamagedIronGolemExistsCondition;
 
     @Nullable
     private IronGolem targetToRepair;
     private int remainingRepairAttempts;
 
+    @Nullable
+    private BehaviorContext context;
+
     public RepairIronGolemBehavior(RepairIronGolemConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())),
-                Tickable.of(Ticks.seconds(2))); // repair every 2 seconds; TODO: this should be based on the animation duration
+                        Ticks.seconds(config.behaviorCooldownMax())));
         this.config = config;
 
         // Create behavior preconditions
@@ -50,50 +67,93 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
 
         // Initialize variables
         this.targetToRepair = null;
+        this.remainingRepairAttempts = 0;
+        this.context = null;
+
+        this.controlStep = StagedStep.builder()
+                .name("RepairIronGolemBehavior")
+                .initialStage(RepairStage.REPAIR_GOLEM)
+                .stageStepMap(Map.of(
+                        RepairStage.REPAIR_GOLEM, this.createRepairStep()
+                ))
+                .nextStage(RepairStage.END)
+                .onEnd(ctx -> StepResult.noOp())
+                .build();
+    }
+
+    private BehaviorStep createRepairStep() {
+        TimeBasedStep repairTick = TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(2).asTickable())
+                .everyTick(ctx -> {
+                    ctx.getInitiator().setHeldItem(new ItemStack(Items.IRON_INGOT));
+                    return StepResult.noOp();
+                })
+                .onEnd(ctx -> {
+                    if (this.targetToRepair == null || !this.targetToRepair.isAlive()) {
+                        return StepResult.complete();
+                    }
+
+                    double healAmount = RandomUtil.randomDouble(3, 8);
+                    this.targetToRepair.heal((float) healAmount);
+
+                    Location targetLocation = Location.fromEntity(this.targetToRepair, false);
+                    SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(targetLocation, SoundSource.NEUTRAL);
+                    ParticleRegistry.repairIronGolem(targetLocation);
+                    log.behaviorTrace("Repaired iron golem for {} HP, {} attempts remaining", healAmount, this.remainingRepairAttempts - 1);
+
+                    if (--this.remainingRepairAttempts <= 0) {
+                        return StepResult.complete();
+                    }
+                    return StepResult.transition(RepairStage.REPAIR_GOLEM);
+                })
+                .build();
+
+        return StayCloseStep.builder()
+                .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
+                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .actionStep(repairTick)
+                .build();
     }
 
     @Override
     public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        this.targetToRepair = this.nearbyDamagedIronGolemExistsCondition.getTargets().get(0);
-        this.remainingRepairAttempts = RandomUtil.randomInt(1, 3, true); // TODO: this could be based on inventory, e.g. iron ingot count
-    }
+        this.context = new BehaviorContext(entity);
 
-    @Override
-    protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        villager.getNavigationManager().walkTo(Location.fromEntity(this.targetToRepair, false), NAVIGATE_STOP_DISTANCE);
-    }
-
-    @Override
-    protected void interactWithTarget(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
-        // TODO: play animation, particles, and sounds
-        double healAmount = RandomUtil.randomDouble(3, 8); // TODO: calculate based on villager profession & expertise
-        this.targetToRepair.heal((float) healAmount);
-
-        Location targetLocation = Location.fromEntity(this.targetToRepair, false);
-        SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(targetLocation, SoundSource.NEUTRAL);
-        ParticleRegistry.repairIronGolem(targetLocation);
-        log.behaviorTrace("Repaired iron golem for {} HP, {} attempts remaining", healAmount, this.remainingRepairAttempts - 1);
-
-        if (--this.remainingRepairAttempts <= 0) {
+        List<IronGolem> targets = this.nearbyDamagedIronGolemExistsCondition.getTargets();
+        if (targets.isEmpty()) {
             this.requestStop();
+            return;
         }
+
+        this.targetToRepair = targets.getFirst();
+        this.remainingRepairAttempts = RandomUtil.randomInt(1, 3, true); // TODO: this could be based on inventory, e.g. iron ingot count
+
+        this.context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToRepair))));
     }
 
     @Override
-    protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
-        villager.setHeldItem(new ItemStack(Items.IRON_INGOT));
-    }
+    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.context == null) {
+            throw new StopBehaviorException("Behavior context is null");
+        }
 
-    @Override
-    protected boolean hasTarget(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return this.targetToRepair != null
-                && this.targetToRepair.isAlive()
-                && this.targetToRepair.getHealth() < this.targetToRepair.getMaxHealth() * this.config.repairHpPercentage();
-    }
+        Optional<IronGolem> target = this.context.getState(BehaviorStateType.TARGET, TargetState.class)
+                .flatMap(TargetState::getFirst)
+                .map(Targetable::getAsEntity)
+                .filter(IronGolem.class::isInstance)
+                .map(IronGolem.class::cast);
+        if (target.isEmpty()) {
+            throw new StopBehaviorException("No iron golem target found");
+        }
+        this.targetToRepair = target.get();
 
-    @Override
-    protected boolean isTargetInReach(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return DistanceUtils.isWithinDistance(villager.position(), this.targetToRepair.position(), INTERACTION_DISTANCE);
+        if (!this.targetToRepair.isAlive()
+                || this.targetToRepair.getHealth() >= this.targetToRepair.getMaxHealth() * this.config.repairHpPercentage()) {
+            throw new StopBehaviorException("Target is no longer repairable");
+        }
+
+        StepResult result = this.controlStep.tick(this.context);
+        this.handleStepResult(result, RepairStage.END, "RepairIronGolemBehavior");
     }
 
     @Override
@@ -101,6 +161,9 @@ public class RepairIronGolemBehavior extends AbstractInteractAtTargetBehavior {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         this.targetToRepair = null;
+        this.remainingRepairAttempts = 0;
+        this.context = null;
+        this.controlStep.reset();
     }
 
 }

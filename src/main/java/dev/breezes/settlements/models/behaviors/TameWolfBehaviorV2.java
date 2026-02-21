@@ -5,9 +5,9 @@ import dev.breezes.settlements.entities.wolves.SettlementsWolf;
 import dev.breezes.settlements.models.behaviors.stages.StagedStep;
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
 import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetQueries;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
 import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
-import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetableType;
 import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
 import dev.breezes.settlements.models.behaviors.steps.StageKey;
 import dev.breezes.settlements.models.behaviors.steps.StepResult;
@@ -36,10 +36,9 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @CustomLog
-public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
+public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
 
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
@@ -232,9 +231,7 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
         }
 
         StepResult result = this.controlStep.tick(this.context);
-        if (result instanceof StepResult.Transition(StageKey key) && key == TameStage.END) {
-            throw new StopBehaviorException("Behavior has ended");
-        }
+        this.handleStepResult(result, TameStage.END, "TameWolfBehaviorV2");
     }
 
     @Override
@@ -245,15 +242,7 @@ public class TameWolfBehaviorV2 extends BaseVillagerBehavior {
     }
 
     private Optional<Wolf> getTargetWolf(@Nonnull BehaviorContext context) {
-        ICondition<Targetable> isWolfPredicate = (target) -> target != null
-                && target.getType() == TargetableType.ENTITY
-                && target.getAsEntity().getType() == EntityType.WOLF;
-
-        return context.getState(BehaviorStateType.TARGET, TargetState.class)
-                .map(targetState -> targetState.match(isWolfPredicate))
-                .flatMap(Stream::findFirst)
-                .map(Targetable::getAsEntity)
-                .map(Wolf.class::cast);
+        return TargetQueries.firstEntity(context, EntityType.WOLF, Wolf.class);
     }
 
     private static boolean ownerMatches(@Nonnull BaseVillager villager, @Nonnull Wolf wolf) {

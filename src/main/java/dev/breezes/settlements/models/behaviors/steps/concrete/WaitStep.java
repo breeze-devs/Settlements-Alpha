@@ -25,11 +25,16 @@ public class WaitStep extends AbstractStep {
     }
 
     @Override
-    public StepResult tick(BehaviorContext context) {
+    public StepResult tick(@Nonnull BehaviorContext context) {
         if (waitTime.tickCheckAndReset(1)) {
             return StepResult.transition(nextStage);
         }
         return StepResult.noOp();
+    }
+
+    @Override
+    public void reset() {
+        this.waitTime.reset();
     }
 
 }

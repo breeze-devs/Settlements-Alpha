@@ -1,26 +1,29 @@
 package dev.breezes.settlements.models.behaviors;
 
-import dev.breezes.settlements.configurations.annotations.ConfigurationType;
-import dev.breezes.settlements.configurations.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.configurations.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.entities.villager.BaseVillager;
+import dev.breezes.settlements.models.behaviors.stages.StagedStep;
+import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
+import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
+import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
+import dev.breezes.settlements.models.behaviors.steps.StageKey;
+import dev.breezes.settlements.models.behaviors.steps.StepResult;
+import dev.breezes.settlements.models.behaviors.steps.TimeBasedStep;
+import dev.breezes.settlements.models.behaviors.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.models.behaviors.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.models.conditions.NearbyBreedableAnimalPairExistsCondition;
 import dev.breezes.settlements.models.location.Location;
-import dev.breezes.settlements.models.misc.ITickable;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
-import dev.breezes.settlements.models.misc.Tickable;
 import dev.breezes.settlements.particles.ParticleRegistry;
 import dev.breezes.settlements.sounds.SoundRegistry;
 import dev.breezes.settlements.tags.EntityTag;
-import dev.breezes.settlements.util.DistanceUtils;
 import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
 import lombok.CustomLog;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -34,9 +37,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 @CustomLog
-public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
+public class BreedAnimalsBehavior extends BaseVillagerStagedBehavior {
 
     private static final ItemStack WHEAT = new ItemStack(Items.WHEAT);
     private static final ItemStack CARROT = new ItemStack(Items.CARROT);
@@ -55,16 +59,18 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
             EntityType.RABBIT, new ItemStack[]{CARROT}
     );
 
-    private static final int NAVIGATE_STOP_DISTANCE = 1;
-    private static final double INTERACTION_DISTANCE = 2D;
+    private enum BreedStage implements StageKey {
+        FEED_FIRST,
+        FEED_SECOND,
+        WAITING_FOR_BREEDING,
+        END;
+    }
 
-    private final BreedAnimalsConfig config;
+    private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
+    private final StagedStep controlStep;
     private final NearbyBreedableAnimalPairExistsCondition<BaseVillager> nearbyBreedableAnimalPairExistsCondition;
-    private final ITickable waitForBreedingTickable;
 
-    @Nonnull
-    private BehaviorState behaviorState;
     @Nullable
     private ItemStack heldItem;
     @Nullable
@@ -72,29 +78,52 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
     @Nullable
     private Animal breedTarget2;
 
+    @Nullable
+    private BehaviorContext context;
+
     public BreedAnimalsBehavior(BreedAnimalsConfig config, Set<EntityType<? extends Animal>> breedableAnimalTypes) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())),
-                Tickable.of(Ticks.one()));
-        this.config = config;
+                        Ticks.seconds(config.behaviorCooldownMax())));
 
         // Create behavior preconditions
-        this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical(), breedableAnimalTypes);
+        this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(
+                config.scanRangeHorizontal(),
+                config.scanRangeVertical(),
+                breedableAnimalTypes);
         this.preconditions.add(this.nearbyBreedableAnimalPairExistsCondition);
-        this.waitForBreedingTickable = Tickable.of(Ticks.seconds(3));
 
         // Initialize variables
-        this.behaviorState = BehaviorState.STANDBY;
         this.heldItem = null;
         this.breedTarget1 = null;
         this.breedTarget2 = null;
+        this.context = null;
+
+        this.controlStep = StagedStep.builder()
+                .name("BreedAnimalsBehavior")
+                .initialStage(BreedStage.FEED_FIRST)
+                .stageStepMap(Map.of(
+                        BreedStage.FEED_FIRST, this.createFeedTargetStep(
+                                "first",
+                                BreedStage.FEED_SECOND,
+                                () -> this.breedTarget1),
+                        BreedStage.FEED_SECOND, this.createFeedTargetStep(
+                                "second",
+                                BreedStage.WAITING_FOR_BREEDING,
+                                () -> this.breedTarget2),
+                        BreedStage.WAITING_FOR_BREEDING, this.createWaitingStep()
+                ))
+                .nextStage(BreedStage.END)
+                .onEnd(ctx -> StepResult.noOp())
+                .build();
     }
 
     @Override
     public void doStart(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        this.context = new BehaviorContext(villager);
+
         Optional<NearbyBreedableAnimalPairExistsCondition.BreedablePair<?>> breedablePair = this.nearbyBreedableAnimalPairExistsCondition.getBreedablePair();
         if (breedablePair.isEmpty()) {
             log.warn("No breedable pair found, stopping behavior");
@@ -102,113 +131,41 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
             return;
         }
 
-        this.behaviorState = BehaviorState.FEEDING_FIRST;
         this.breedTarget1 = breedablePair.get().getFirst();
         this.breedTarget2 = breedablePair.get().getSecond();
-        this.waitForBreedingTickable.reset();
 
-        // Set held item
         ItemStack[] breedItems = BREED_ITEMS.get(this.breedTarget1.getType());
-        this.heldItem = RandomUtil.choice(breedItems);
-    }
-
-    @Override
-    protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        Animal target = this.behaviorState == BehaviorState.FEEDING_FIRST ? this.breedTarget1 : this.breedTarget2;
-        if (target == null) {
-            log.behaviorWarn("Target is null");
+        if (breedItems == null || breedItems.length == 0) {
+            log.warn("No configured breeding item for type '{}', stopping behavior", this.breedTarget1.getType());
+            this.requestStop();
             return;
         }
 
-        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(target.position(), 0.5F, NAVIGATE_STOP_DISTANCE));
+        this.heldItem = RandomUtil.choice(breedItems).copy();
+        this.context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.breedTarget1)));
     }
 
     @Override
-    protected void interactWithTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.behaviorState == BehaviorState.WAITING_FOR_BREEDING) {
-            return;
+    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.context == null) {
+            throw new StopBehaviorException("Behavior context is null");
+        }
+        if (this.breedTarget1 == null || this.breedTarget2 == null) {
+            throw new StopBehaviorException("Breed targets are null");
         }
 
-        Animal target = this.getCurrentTarget();
-        if (target == null) {
-            log.behaviorWarn("Target is null");
-            return;
-        }
-        log.behaviorStatus("Feeding animal in behavior stage '{}': '{}'", this.behaviorState.toString(), target.toString());
-
-        // Feed the animal
-        target.setLeashedTo(villager, true);
-
-        // Display effects
-        Location targetLocation = Location.fromEntity(target, false);
-        ParticleRegistry.breedHearts(targetLocation);
-        ParticleRegistry.breedItemConsume(targetLocation, this.heldItem);
-        SoundRegistry.FEED_ANIMAL.playGlobally(targetLocation, SoundSource.NEUTRAL);
-
-        // Update behavior state
-        if (this.behaviorState == BehaviorState.FEEDING_FIRST) {
-            log.behaviorStatus("Fed first animal");
-            this.behaviorState = BehaviorState.FEEDING_SECOND;
-        } else {
-            log.behaviorStatus("Fed second animal");
-            this.behaviorState = BehaviorState.WAITING_FOR_BREEDING;
-
-            this.breedTarget1.setInLove(null);
-            this.breedTarget2.setInLove(null);
-            villager.clearHeldItem();
-        }
-    }
-
-    @Override
-    protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
-        if (this.behaviorState == BehaviorState.FEEDING_FIRST || this.behaviorState == BehaviorState.FEEDING_SECOND) {
-            // Set held item
-            if (this.heldItem == null) {
-                log.behaviorWarn("Held item is null");
-                return;
-            }
-            villager.setHeldItem(this.heldItem);
-        } else if (this.behaviorState == BehaviorState.WAITING_FOR_BREEDING) {
-            if (this.breedTarget1.getNavigation().isDone()) {
-                this.breedTarget1.getNavigation().moveTo(this.breedTarget2, 1.0D);
-            }
-            if (this.breedTarget2.getNavigation().isDone()) {
-                this.breedTarget2.getNavigation().moveTo(this.breedTarget1, 1.0D);
-            }
-
-            if (villager.getNavigationManager().isNavigating()) {
-                villager.getNavigationManager().stop();
-            }
-
-            if (this.waitForBreedingTickable.tickAndCheck(delta)) {
-                this.requestStop();
-            }
-        }
-    }
-
-    @Override
-    protected boolean hasTarget(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return this.breedTarget1 != null && this.breedTarget2 != null;
-    }
-
-    @Override
-    protected boolean isTargetInReach(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        Animal target = this.getCurrentTarget();
-        if (target == null) {
-            return false;
-        }
-        return DistanceUtils.isWithinDistance(villager.position(), target.position(), INTERACTION_DISTANCE);
-    }
-
-    @Nullable
-    private Animal getCurrentTarget() {
-        return this.behaviorState == BehaviorState.FEEDING_FIRST ? this.breedTarget1 : this.breedTarget2;
+        StepResult result = this.controlStep.tick(this.context);
+        this.handleStepResult(result, BreedStage.END, "BreedAnimalsBehavior");
     }
 
     @Override
     public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        // Scan for baby animals nearby to tag as village-owned
-        this.claimNearbyBabyAnimals(villager, this.breedTarget1.getType());
+        villager.getNavigationManager().stop();
+        villager.clearHeldItem();
+
+        if (this.breedTarget1 != null) {
+            this.claimNearbyBabyAnimals(villager, this.breedTarget1.getType());
+        }
 
         // Stop breeding for both animals
         for (Animal target : new Animal[]{this.breedTarget1, this.breedTarget2}) {
@@ -219,45 +176,107 @@ public class BreedAnimalsBehavior extends AbstractInteractAtTargetBehavior {
             target.setAge(6000); // reset breeding cooldown
         }
 
-        this.waitForBreedingTickable.reset();
-        this.behaviorState = BehaviorState.STANDBY;
         this.heldItem = null;
         this.breedTarget1 = null;
         this.breedTarget2 = null;
+        this.context = null;
+        this.controlStep.reset();
+    }
+
+    private BehaviorStep createFeedTargetStep(@Nonnull String label,
+                                              @Nonnull BreedStage nextStage,
+                                              @Nonnull Supplier<Animal> targetSupplier) {
+        TimeBasedStep feedStep = TimeBasedStep.builder()
+                .withTickable(Ticks.one().asTickable())
+                .onStart(ctx -> {
+                    Animal target = targetSupplier.get();
+                    if (target == null || this.heldItem == null) {
+                        return StepResult.complete();
+                    }
+
+                    ctx.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(target)));
+                    ctx.getInitiator().setHeldItem(this.heldItem);
+                    return StepResult.noOp();
+                })
+                .onEnd(ctx -> {
+                    Animal target = targetSupplier.get();
+                    StepResult result = this.feedAnimal(ctx.getInitiator().getMinecraftEntity(), target, label);
+                    if (!(result instanceof StepResult.NoOp)) {
+                        return result;
+                    }
+
+                    target.setInLove(null);
+
+                    return StepResult.transition(nextStage);
+                })
+                .build();
+
+        return StayCloseStep.builder()
+                .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
+                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .actionStep(feedStep)
+                .build();
+    }
+
+    private BehaviorStep createWaitingStep() {
+        return TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(3).asTickable())
+                .onStart(ctx -> {
+                    ctx.getInitiator().clearHeldItem();
+                    return StepResult.noOp();
+                })
+                .everyTick(ctx -> {
+                    if (this.breedTarget1 == null || this.breedTarget2 == null) {
+                        return StepResult.complete();
+                    }
+
+                    if (this.breedTarget1.getNavigation().isDone()) {
+                        this.breedTarget1.getNavigation().moveTo(this.breedTarget2, 1.0D);
+                    }
+                    if (this.breedTarget2.getNavigation().isDone()) {
+                        this.breedTarget2.getNavigation().moveTo(this.breedTarget1, 1.0D);
+                    }
+
+                    if (ctx.getInitiator().getNavigationManager().isNavigating()) {
+                        ctx.getInitiator().getNavigationManager().stop();
+                    }
+
+                    return StepResult.noOp();
+                })
+                .onEnd(ctx -> StepResult.complete())
+                .build();
+    }
+
+    private StepResult feedAnimal(@Nonnull BaseVillager villager,
+                                  @Nullable Animal target,
+                                  @Nonnull String label) {
+        if (target == null || this.heldItem == null) {
+            return StepResult.complete();
+        }
+
+        log.behaviorStatus("Feeding {} animal: '{}'", label, target);
+
+        // Feed the animal
+        target.setLeashedTo(villager, true);
+
+        // Display effects
+        Location targetLocation = Location.fromEntity(target, false);
+        ParticleRegistry.breedHearts(targetLocation);
+        ParticleRegistry.breedItemConsume(targetLocation, this.heldItem);
+        SoundRegistry.FEED_ANIMAL.playGlobally(targetLocation, SoundSource.NEUTRAL);
+
+        log.behaviorStatus("Fed {} animal", label);
+        return StepResult.noOp();
     }
 
     private void claimNearbyBabyAnimals(@Nonnull BaseVillager villager, @Nonnull EntityType<?> type) {
         AABB scanBoundary = villager.getBoundingBox().inflate(6, 6, 6);
-        Predicate<Entity> isBabyOfRightType = (targetEntity) -> targetEntity.getType() == type && ((Animal) targetEntity).isBaby();
+        Predicate<Entity> isBabyOfRightType = targetEntity -> targetEntity.getType() == type && ((Animal) targetEntity).isBaby();
         List<Entity> nearbyEntities = villager.level().getEntities(villager, scanBoundary, isBabyOfRightType);
         for (Entity nearbyEntity : nearbyEntities) {
-            log.behaviorStatus("Claiming baby animal '{}' as village-owned", nearbyEntity.toString());
+            log.behaviorStatus("Claiming baby animal '{}' as village-owned", nearbyEntity);
             nearbyEntity.addTag(EntityTag.VILLAGE_OWNED_ANIMAL.getTag());
         }
-    }
-
-    private enum BehaviorState {
-
-        /**
-         * Not actively breeding
-         */
-        STANDBY,
-
-        /**
-         * Feeding the first animal
-         */
-        FEEDING_FIRST,
-
-        /**
-         * Feeding the second animal
-         */
-        FEEDING_SECOND,
-
-        /**
-         * Idle time to wait until breeding completes
-         */
-        WAITING_FOR_BREEDING;
-
     }
 
 }

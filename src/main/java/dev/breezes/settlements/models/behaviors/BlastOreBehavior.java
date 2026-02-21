@@ -3,13 +3,23 @@ package dev.breezes.settlements.models.behaviors;
 import dev.breezes.settlements.configurations.annotations.GeneralConfig;
 import dev.breezes.settlements.entities.villager.BaseVillager;
 import dev.breezes.settlements.mixins.BaseContainerBlockEntityMixin;
+import dev.breezes.settlements.models.behaviors.stages.StagedStep;
+import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
+import dev.breezes.settlements.models.behaviors.states.registry.BehaviorStateType;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.TargetState;
+import dev.breezes.settlements.models.behaviors.states.registry.targets.Targetable;
+import dev.breezes.settlements.models.behaviors.steps.BehaviorStep;
+import dev.breezes.settlements.models.behaviors.steps.SequencedStep;
+import dev.breezes.settlements.models.behaviors.steps.StageKey;
+import dev.breezes.settlements.models.behaviors.steps.StepResult;
+import dev.breezes.settlements.models.behaviors.steps.TimeBasedStep;
+import dev.breezes.settlements.models.behaviors.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.models.behaviors.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.models.blocks.BlockFlag;
 import dev.breezes.settlements.models.blocks.PhysicalBlock;
 import dev.breezes.settlements.models.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.models.location.Location;
-import dev.breezes.settlements.models.misc.ITickable;
 import dev.breezes.settlements.models.misc.RandomRangeTickable;
-import dev.breezes.settlements.models.misc.Tickable;
 import dev.breezes.settlements.sounds.SoundRegistry;
 import dev.breezes.settlements.util.RandomUtil;
 import dev.breezes.settlements.util.Ticks;
@@ -32,12 +42,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 @CustomLog
-public class BlastOreBehavior extends AbstractInteractAtTargetBehavior {
+public class BlastOreBehavior extends BaseVillagerStagedBehavior {
 
-    private static final int NAVIGATE_STOP_DISTANCE = 1;
-    private static final double INTERACTION_DISTANCE = 2.0;
+    private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
     private static final Ticks ITEM_INTERACTION_DURATION = Ticks.seconds(1);
     private static final Ticks BLASTING_DURATION = Ticks.seconds(8);
@@ -57,25 +67,30 @@ public class BlastOreBehavior extends AbstractInteractAtTargetBehavior {
                     .build()
     );
 
-    private final BlastOreConfig config;
-    private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
-    private final ITickable itemInteractionTickable;
-    private final ITickable blastingTickable;
+    private enum BlastStage implements StageKey {
+        BLAST_ORE,
+        END;
+    }
 
-    @Nonnull
-    private BehaviorState behaviorState;
+
+    private final BlastOreConfig config;
+    private final StagedStep controlStep;
+    private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
+
     @Nullable
     private PhysicalBlock blastFurnace;
     @Nullable
     private BlastOreRecipe currentRecipe;
+
+    @Nullable
+    private BehaviorContext context;
 
     public BlastOreBehavior(BlastOreConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())),
-                Tickable.of(Ticks.one()));
+                        Ticks.seconds(config.behaviorCooldownMax())));
         this.config = config;
 
         // Create behavior preconditions
@@ -83,97 +98,129 @@ public class BlastOreBehavior extends AbstractInteractAtTargetBehavior {
         // TODO: we perhaps should check whether the furnace is currently in use?
         this.preconditions.add(this.jobSiteBlockExistsCondition);
 
-        this.itemInteractionTickable = Tickable.of(ITEM_INTERACTION_DURATION);
-        this.blastingTickable = Tickable.of(BLASTING_DURATION);
-
         // Initialize variables
-        this.behaviorState = BehaviorState.STANDBY;
         this.blastFurnace = null;
         this.currentRecipe = null;
+        this.context = null;
+
+        this.controlStep = StagedStep.builder()
+                .name("BlastOreBehavior")
+                .initialStage(BlastStage.BLAST_ORE)
+                .stageStepMap(Map.of(
+                        BlastStage.BLAST_ORE, this.createBlastStep()
+                ))
+                .nextStage(BlastStage.END)
+                .onEnd(ctx -> StepResult.noOp())
+                .build();
     }
 
     @Override
     public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        this.itemInteractionTickable.reset();
-        this.blastingTickable.reset();
-        this.behaviorState = BehaviorState.SETUP;
+        this.context = new BehaviorContext(entity);
 
+        if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
+            this.requestStop();
+            return;
+        }
         this.blastFurnace = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
         this.currentRecipe = RandomUtil.choice(RECIPES);
+
+        this.context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.blastFurnace)));
 
         this.setFurnaceLockState(true);
     }
 
     @Override
-    protected void navigateToTarget(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        villager.getNavigationManager().walkTo(this.blastFurnace.getLocation(false), NAVIGATE_STOP_DISTANCE);
-    }
-
-    @Override
-    protected void interactWithTarget(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
-        Location location = this.blastFurnace.getLocation(true).add(0, 0.5, 0, false);
-        switch (this.behaviorState) {
-            case SETUP -> {
-                villager.setHeldItem(this.currentRecipe.getInput().getDefaultInstance());
-                this.behaviorState = BehaviorState.PUT_IN_FURNACE;
-            }
-            case PUT_IN_FURNACE -> {
-                if (this.itemInteractionTickable.tickCheckAndReset(1)) {
-                    villager.clearHeldItem();
-                    this.setFurnaceLitState(true);
-                    location.displayParticles(ParticleTypes.LAVA, 5, 0.3, 0.3, 0.3, 0.1);
-
-                    SoundRegistry.ITEM_POP_IN.playGlobally(location, SoundSource.BLOCKS);
-                    this.behaviorState = BehaviorState.BLASTING;
-                }
-            }
-            case BLASTING -> {
-                if (this.blastingTickable.tickCheckAndReset(1)) {
-                    this.setFurnaceLitState(false);
-
-                    villager.setHeldItem(this.currentRecipe.getOutput().getDefaultInstance());
-                    SoundRegistry.ITEM_POP_OUT.playGlobally(location, SoundSource.BLOCKS);
-                    this.behaviorState = BehaviorState.TAKE_FROM_FURNACE;
-                }
-            }
-            case TAKE_FROM_FURNACE -> {
-                if (this.itemInteractionTickable.tickCheckAndReset(1)) {
-                    villager.clearHeldItem();
-                    this.requestStop();
-                }
-            }
+    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.context == null) {
+            throw new StopBehaviorException("Behavior context is null");
         }
-    }
+        if (this.blastFurnace == null || !this.blastFurnace.is(Blocks.BLAST_FURNACE)) {
+            throw new StopBehaviorException("Blast furnace target is invalid");
+        }
 
-    @Override
-    protected void tickExtra(int delta, @Nonnull Level level, @Nonnull BaseVillager villager) {
         villager.getLookControl().setLookAt(this.blastFurnace.getLocation(false).toVec3());
-    }
 
-    @Override
-    protected boolean hasTarget(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return this.blastFurnace != null && this.blastFurnace.is(Blocks.BLAST_FURNACE);
-    }
-
-    @Override
-    protected boolean isTargetInReach(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        return Location.fromEntity(villager, false)
-                .distanceSquared(this.blastFurnace.getLocation(false)) < INTERACTION_DISTANCE * INTERACTION_DISTANCE;
+        StepResult result = this.controlStep.tick(this.context);
+        this.handleStepResult(result, BlastStage.END, "BlastOreBehavior");
     }
 
     @Override
     public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        villager.getNavigationManager().stop();
+        villager.clearHeldItem();
         this.setFurnaceLockState(false);
 
-        this.itemInteractionTickable.reset();
-        this.blastingTickable.reset();
-
-        this.behaviorState = BehaviorState.STANDBY;
         this.blastFurnace = null;
         this.currentRecipe = null;
+        this.context = null;
+        this.controlStep.reset();
+    }
+
+    private BehaviorStep createBlastStep() {
+        TimeBasedStep setup = TimeBasedStep.builder()
+                .withTickable(ITEM_INTERACTION_DURATION.asTickable())
+                .onStart(ctx -> {
+                    if (this.currentRecipe == null || this.blastFurnace == null) {
+                        return StepResult.complete();
+                    }
+                    ctx.getInitiator().setHeldItem(this.currentRecipe.getInput().getDefaultInstance());
+                    return StepResult.noOp();
+                })
+                .onEnd(ctx -> {
+                    if (this.blastFurnace == null) {
+                        return StepResult.complete();
+                    }
+
+                    ctx.getInitiator().clearHeldItem();
+                    this.setFurnaceLitState(true);
+                    Location location = this.blastFurnace.getLocation(true).add(0, 0.5, 0, false);
+                    location.displayParticles(ParticleTypes.LAVA, 5, 0.3, 0.3, 0.3, 0.1);
+                    SoundRegistry.ITEM_POP_IN.playGlobally(location, SoundSource.BLOCKS);
+                    return StepResult.noOp();
+                })
+                .build();
+
+        TimeBasedStep blasting = TimeBasedStep.builder()
+                .withTickable(BLASTING_DURATION.asTickable())
+                .onEnd(ctx -> {
+                    if (this.blastFurnace == null || this.currentRecipe == null) {
+                        return StepResult.complete();
+                    }
+
+                    this.setFurnaceLitState(false);
+                    ctx.getInitiator().setHeldItem(this.currentRecipe.getOutput().getDefaultInstance());
+                    SoundRegistry.ITEM_POP_OUT.playGlobally(this.blastFurnace.getLocation(true).add(0, 0.5, 0, false), SoundSource.BLOCKS);
+                    return StepResult.noOp();
+                })
+                .build();
+
+        TimeBasedStep takeOut = TimeBasedStep.builder()
+                .withTickable(ITEM_INTERACTION_DURATION.asTickable())
+                .onEnd(ctx -> {
+                    ctx.getInitiator().clearHeldItem();
+                    return StepResult.complete();
+                })
+                .build();
+
+        SequencedStep sequence = new SequencedStep("BlastOreBehavior.sequence", List.of(
+                setup,
+                blasting,
+                takeOut
+        ));
+
+        return StayCloseStep.builder()
+                .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
+                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .actionStep(sequence)
+                .build();
     }
 
     private void setFurnaceLitState(boolean lit) {
+        if (this.blastFurnace == null) {
+            return;
+        }
+
         Level level = this.blastFurnace.getLevel();
         BlockPos pos = this.blastFurnace.getLocation(false).toBlockPos();
 
@@ -190,6 +237,10 @@ public class BlastOreBehavior extends AbstractInteractAtTargetBehavior {
     }
 
     private void setFurnaceLockState(boolean locked) {
+        if (this.blastFurnace == null) {
+            return;
+        }
+
         BlockEntity blockEntity = this.blastFurnace.getLevel().getBlockEntity(this.blastFurnace.getLocation(false).toBlockPos());
         if (blockEntity == null) {
             log.error("BlockEntity is null");
@@ -207,35 +258,6 @@ public class BlastOreBehavior extends AbstractInteractAtTargetBehavior {
         private final Item input;
         private final Item output;
         // TODO: when implementing inventory, we can add counts here
-
-    }
-
-    private enum BehaviorState {
-
-        /**
-         * Behavior not started
-         */
-        STANDBY,
-
-        /**
-         * Setting up the behavior
-         */
-        SETUP,
-
-        /**
-         * Putting the input block into the furnace
-         */
-        PUT_IN_FURNACE,
-
-        /**
-         * Blasting the ore
-         */
-        BLASTING,
-
-        /**
-         * Taking the output block from the furnace
-         */
-        TAKE_FROM_FURNACE;
 
     }
 

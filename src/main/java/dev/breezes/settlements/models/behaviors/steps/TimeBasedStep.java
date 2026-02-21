@@ -110,6 +110,21 @@ public class TimeBasedStep extends AbstractStep {
         return step.tick(context);
     }
 
+    @Override
+    public void reset() {
+        this.tickable.reset();
+
+        if (this.onStart != null) {
+            this.onStart.reset();
+        }
+        if (this.onEnd != null) {
+            this.onEnd.reset();
+        }
+
+        this.periodicSteps.values().forEach(steps -> steps.forEach(BehaviorStep::reset));
+        this.keyFrames.values().forEach(BehaviorStep::reset);
+    }
+
     public static Builder builder() {
         return new Builder();
     }
