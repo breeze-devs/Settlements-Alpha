@@ -40,7 +40,6 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Behavior that makes villagers shear nearby sheep
  */
 @CustomLog
-public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
+public class ShearSheepBehaviorV2 extends StateMachineBehavior {
 
     private static final Map<DyeColor, ItemLike> WOOL_COLOR_MAP = Map.ofEntries(
             Map.entry(DyeColor.WHITE, Items.WHITE_WOOL),
@@ -79,12 +78,8 @@ public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
 
     private final ShearSheepConfig config;
 
-    private final StagedStep controlStep;
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
     private final AtomicInteger shearCount;
-
-    @Nullable
-    private BehaviorContext context;
 
     public ShearSheepBehaviorV2(@Nonnull ShearSheepConfig config) {
         super(log,
@@ -97,7 +92,6 @@ public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
 
         this.config = config;
         this.shearCount = new AtomicInteger(0);
-        this.context = null;
 
         // Create behavior preconditions
         this.nearbyShearableSheepExistsCondition = NearbyShearableSheepExistsCondition.builder()
@@ -106,8 +100,12 @@ public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
                 .build();
         this.preconditions.add(this.nearbyShearableSheepExistsCondition);
 
-        // Create steps
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), ShearStage.END);
+
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("ShearSheepBehaviorV2")
                 .onStart(context -> {
                     log.behaviorStatus("Creating speech bubble");
@@ -131,9 +129,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
                     return StepResult.noOp();
                 })
                 .initialStage(ShearStage.SHEAR_SHEEP)
-                .stageStepMap(Map.of(
-                        ShearStage.SHEAR_SHEEP, this.createShearSheepStep()
-                ))
+                .stageStepMap(Map.of(ShearStage.SHEAR_SHEEP, this.createShearSheepStep()))
                 .nextStage(ShearStage.END)
                 .onEnd(context -> {
                     log.behaviorStatus("Removing speech bubble");
@@ -186,8 +182,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
                         woolItem.setDeltaMovement(woolItem.getDeltaMovement().add(
                                 RandomUtil.randomDouble(-0.05F, 0.05F),
                                 RandomUtil.randomDouble(0F, 0.05F),
-                                RandomUtil.randomDouble(-0.05F, 0.05F)
-                        ));
+                                RandomUtil.randomDouble(-0.05F, 0.05F)));
                         woolItems.add(woolItem);
                     }
                     context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(woolItems));
@@ -224,8 +219,9 @@ public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
     }
 
     @Override
-    public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        this.context = new BehaviorContext(entity);
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
 
         Expertise expertise = context.getInitiator().getMinecraftEntity().getExpertise();
         int limit = config.expertiseShearLimit().get(expertise.getConfigName());
@@ -235,23 +231,7 @@ public class ShearSheepBehaviorV2 extends BaseVillagerStagedBehavior {
         List<Targetable> targets = this.nearbyShearableSheepExistsCondition.getTargets().stream()
                 .map(Targetable::fromEntity)
                 .toList();
-        this.context.setState(BehaviorStateType.TARGET, TargetState.of(targets));
-    }
-
-    @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, ShearStage.END, "ShearSheepBehaviorV2");
-    }
-
-    @Override
-    public void doStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        this.context = null;
-        this.controlStep.reset();
+        context.setState(BehaviorStateType.TARGET, TargetState.of(targets));
     }
 
     private Optional<Sheep> getTargetSheep(@Nonnull BehaviorContext context) {

@@ -1,13 +1,15 @@
 package dev.breezes.settlements.models.behaviors.steps;
 
 import dev.breezes.settlements.models.behaviors.states.BehaviorContext;
+import dev.breezes.settlements.util.crash.CrashUtil;
+import dev.breezes.settlements.util.crash.report.BehaviorConfigurationCrashReport;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -31,15 +33,11 @@ public class SequencedStep extends AbstractStep {
         super("SequencedStep[%s]".formatted(name));
 
         if (steps.isEmpty()) {
-            throw new IllegalArgumentException("SequencedStep requires at least one step");
+            crashInvalidConfiguration("SequencedStep requires at least one step");
         }
 
-        this.steps = new ArrayList<>(steps.stream()
-                .filter(Objects::nonNull)
-                .toList());
-        if (this.steps.isEmpty()) {
-            throw new IllegalArgumentException("SequencedStep requires at least one non-null step");
-        }
+        this.steps = new ArrayList<>(steps);
+        this.validate(this.steps);
 
         this.currentStepIndex = 0;
     }
@@ -75,11 +73,32 @@ public class SequencedStep extends AbstractStep {
 
         Set<BehaviorStep> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         for (BehaviorStep step : this.steps) {
-            if (step == null || !visited.add(step)) {
+            if (!visited.add(step)) {
                 continue;
             }
             step.reset();
         }
+    }
+
+    private void validate(@Nonnull List<BehaviorStep> steps) {
+        Map<BehaviorStep, Integer> seenByIdentity = new IdentityHashMap<>();
+        for (int i = 0; i < steps.size(); i++) {
+            BehaviorStep step = steps.get(i);
+            if (step == null) {
+                crashInvalidConfiguration("SequencedStep contains a null child step at index '%s'".formatted(i));
+            }
+
+            Integer previousIndex = seenByIdentity.put(step, i);
+            if (previousIndex != null) {
+                crashInvalidConfiguration(
+                        "Each sequence position must use a unique step instance. Duplicate instance used at indices '%s' and '%s'"
+                                .formatted(previousIndex, i));
+            }
+        }
+    }
+
+    private static void crashInvalidConfiguration(@Nonnull String message) throws IllegalArgumentException {
+        CrashUtil.crash(new BehaviorConfigurationCrashReport(new IllegalArgumentException(message)));
     }
 
 }

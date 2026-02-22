@@ -37,15 +37,12 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class HarvestSoulSandBehavior extends BaseVillagerStagedBehavior {
+public class HarvestSoulSandBehavior extends StateMachineBehavior {
 
     private enum HarvestStage implements StageKey {
         HARVEST_SOUL_SAND,
         END;
     }
-
-    private final HarvestSoulSandConfig config;
-    private final StagedStep controlStep;
 
     @Nullable
     private BlockPos netherWartPos;
@@ -53,16 +50,12 @@ public class HarvestSoulSandBehavior extends BaseVillagerStagedBehavior {
     private List<BlockPos> validSoulSandAroundVillager;
     private final NearbySoulSandExistsCondition<BaseVillager> nearbySoulSandExistsCondition;
 
-    @Nullable
-    private BehaviorContext context;
-
     public HarvestSoulSandBehavior(HarvestSoulSandConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
-        this.config = config;
 
         this.nearbySoulSandExistsCondition = NearbySoulSandExistsCondition.builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
@@ -73,14 +66,15 @@ public class HarvestSoulSandBehavior extends BaseVillagerStagedBehavior {
         this.netherWartPos = null;
         this.timeWorkedSoFar = 0;
         this.validSoulSandAroundVillager = new ArrayList<>();
-        this.context = null;
 
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("HarvestSoulSandBehavior")
                 .initialStage(HarvestStage.HARVEST_SOUL_SAND)
-                .stageStepMap(Map.of(
-                        HarvestStage.HARVEST_SOUL_SAND, this.createHarvestStep()
-                ))
+                .stageStepMap(Map.of(HarvestStage.HARVEST_SOUL_SAND, this.createHarvestStep()))
                 .nextStage(HarvestStage.END)
                 .onEnd(ctx -> StepResult.noOp())
                 .build();
@@ -111,7 +105,8 @@ public class HarvestSoulSandBehavior extends BaseVillagerStagedBehavior {
                             BlockState defaultWartState = wartBlockItem.getBlock().defaultBlockState();
                             level.setBlockAndUpdate(this.netherWartPos, defaultWartState);
                             level.gameEvent(GameEvent.BLOCK_PLACE, this.netherWartPos, GameEvent.Context.of(villager, defaultWartState));
-                            level.playSound(null, this.netherWartPos.getX(), this.netherWartPos.getY(), this.netherWartPos.getZ(), SoundEvents.NETHER_WART_PLANTED, SoundSource.BLOCKS, 1.0F, 1.0F);
+                            level.playSound(null, this.netherWartPos.getX(), this.netherWartPos.getY(), this.netherWartPos.getZ(),
+                                    SoundEvents.NETHER_WART_PLANTED, SoundSource.BLOCKS, 1.0F, 1.0F);
                         }
                     }
 
@@ -121,8 +116,9 @@ public class HarvestSoulSandBehavior extends BaseVillagerStagedBehavior {
     }
 
     @Override
-    public void doStart(@Nonnull Level level, @Nonnull BaseVillager villager) {
-        this.context = new BehaviorContext(villager);
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
         this.timeWorkedSoFar = 0;
 
         this.validSoulSandAroundVillager = new ArrayList<>(this.nearbySoulSandExistsCondition.getTargets());
@@ -131,49 +127,39 @@ public class HarvestSoulSandBehavior extends BaseVillagerStagedBehavior {
             return;
         }
 
-        this.netherWartPos = this.getRandomPosition(level);
-        while (level.getBlockState(this.netherWartPos).isAir() && !villager.hasItemInInventory(Items.NETHER_WART)) {
+        this.netherWartPos = this.getRandomPosition(world);
+        while (world.getBlockState(this.netherWartPos).isAir() && !entity.hasItemInInventory(Items.NETHER_WART)) {
             this.validSoulSandAroundVillager.remove(this.netherWartPos);
             if (this.validSoulSandAroundVillager.isEmpty()) {
                 this.requestStop();
                 return;
             }
-            this.netherWartPos = this.getRandomPosition(level);
+            this.netherWartPos = this.getRandomPosition(world);
         }
 
-        this.context.setState(
-                BehaviorStateType.TARGET,
-                TargetState.of(Targetable.fromBlock(PhysicalBlock.of(Location.of(this.netherWartPos, level), level.getBlockState(this.netherWartPos))))
-        );
+        context.setState(BehaviorStateType.TARGET,
+                TargetState.of(Targetable.fromBlock(PhysicalBlock.of(Location.of(this.netherWartPos, world), world.getBlockState(this.netherWartPos)))));
     }
 
-    private BlockPos getRandomPosition(Level level) {
-        return this.validSoulSandAroundVillager.get(level.getRandom().nextInt(this.validSoulSandAroundVillager.size())).above();
+    private BlockPos getRandomPosition(Level world) {
+        return this.validSoulSandAroundVillager.get(world.getRandom().nextInt(this.validSoulSandAroundVillager.size())).above();
     }
 
     @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-
-        this.timeWorkedSoFar += delta;
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, HarvestStage.END, "HarvestSoulSandBehavior");
-    }
-
-    @Override
-    public void doStop(@Nonnull Level level, @Nonnull BaseVillager entity) {
+    protected void onBehaviorStop(@Nonnull Level world,
+                                  @Nonnull BaseVillager entity) {
         entity.getNavigationManager().stop();
         this.timeWorkedSoFar = 0;
         this.netherWartPos = null;
         this.validSoulSandAroundVillager = new ArrayList<>();
-        this.context = null;
-        this.controlStep.reset();
     }
 
     @Override
-    public boolean tickContinueConditions(int delta, @Nonnull Level level, @Nonnull BaseVillager entity) {
-        return super.tickContinueConditions(delta, level, entity) && this.timeWorkedSoFar < 400;
+    public boolean tickContinueConditions(int delta,
+                                          @Nonnull Level world,
+                                          @Nonnull BaseVillager entity) {
+        this.timeWorkedSoFar += delta;
+        return super.tickContinueConditions(delta, world, entity) && this.timeWorkedSoFar < 400;
     }
+
 }

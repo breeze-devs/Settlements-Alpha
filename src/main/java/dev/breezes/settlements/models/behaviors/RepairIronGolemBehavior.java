@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class RepairIronGolemBehavior extends BaseVillagerStagedBehavior {
+public class RepairIronGolemBehavior extends StateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
@@ -43,15 +43,11 @@ public class RepairIronGolemBehavior extends BaseVillagerStagedBehavior {
     }
 
     private final RepairIronGolemConfig config;
-    private final StagedStep controlStep;
     private final NearbyDamagedIronGolemExistsCondition<BaseVillager> nearbyDamagedIronGolemExistsCondition;
 
     @Nullable
     private IronGolem targetToRepair;
     private int remainingRepairAttempts;
-
-    @Nullable
-    private BehaviorContext context;
 
     public RepairIronGolemBehavior(RepairIronGolemConfig config) {
         super(log,
@@ -68,14 +64,15 @@ public class RepairIronGolemBehavior extends BaseVillagerStagedBehavior {
         // Initialize variables
         this.targetToRepair = null;
         this.remainingRepairAttempts = 0;
-        this.context = null;
 
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), RepairStage.END);
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("RepairIronGolemBehavior")
                 .initialStage(RepairStage.REPAIR_GOLEM)
-                .stageStepMap(Map.of(
-                        RepairStage.REPAIR_GOLEM, this.createRepairStep()
-                ))
+                .stageStepMap(Map.of(RepairStage.REPAIR_GOLEM, this.createRepairStep()))
                 .nextStage(RepairStage.END)
                 .onEnd(ctx -> StepResult.noOp())
                 .build();
@@ -116,9 +113,9 @@ public class RepairIronGolemBehavior extends BaseVillagerStagedBehavior {
     }
 
     @Override
-    public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        this.context = new BehaviorContext(entity);
-
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
         List<IronGolem> targets = this.nearbyDamagedIronGolemExistsCondition.getTargets();
         if (targets.isEmpty()) {
             this.requestStop();
@@ -127,43 +124,25 @@ public class RepairIronGolemBehavior extends BaseVillagerStagedBehavior {
 
         this.targetToRepair = targets.getFirst();
         this.remainingRepairAttempts = RandomUtil.randomInt(1, 3, true); // TODO: this could be based on inventory, e.g. iron ingot count
-
-        this.context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToRepair))));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToRepair))));
     }
 
     @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-
-        Optional<IronGolem> target = this.context.getState(BehaviorStateType.TARGET, TargetState.class)
-                .flatMap(TargetState::getFirst)
-                .map(Targetable::getAsEntity)
-                .filter(IronGolem.class::isInstance)
-                .map(IronGolem.class::cast);
-        if (target.isEmpty()) {
-            throw new StopBehaviorException("No iron golem target found");
-        }
-        this.targetToRepair = target.get();
-
-        if (!this.targetToRepair.isAlive()
-                || this.targetToRepair.getHealth() >= this.targetToRepair.getMaxHealth() * this.config.repairHpPercentage()) {
-            throw new StopBehaviorException("Target is no longer repairable");
-        }
-
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, RepairStage.END, "RepairIronGolemBehavior");
+    protected boolean preTickGuard(int delta,
+                                   @Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
+        return this.targetToRepair != null
+                && this.targetToRepair.isAlive()
+                && this.targetToRepair.getHealth() < this.targetToRepair.getMaxHealth() * this.config.repairHpPercentage();
     }
 
     @Override
-    public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         this.targetToRepair = null;
         this.remainingRepairAttempts = 0;
-        this.context = null;
-        this.controlStep.reset();
     }
 
 }

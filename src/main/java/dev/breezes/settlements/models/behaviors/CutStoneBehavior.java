@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class CutStoneBehavior extends BaseVillagerStagedBehavior {
+public class CutStoneBehavior extends StateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
@@ -60,8 +60,6 @@ public class CutStoneBehavior extends BaseVillagerStagedBehavior {
         END;
     }
 
-    private final CutStoneConfig config;
-    private final StagedStep controlStep;
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     @Nullable
     private PhysicalBlock stoneCutter;
@@ -79,16 +77,12 @@ public class CutStoneBehavior extends BaseVillagerStagedBehavior {
     @Nullable
     private TransformationMatrix finalMatrix;
 
-    @Nullable
-    private BehaviorContext context;
-
     public CutStoneBehavior(CutStoneConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
-        this.config = config;
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER));
@@ -102,29 +96,31 @@ public class CutStoneBehavior extends BaseVillagerStagedBehavior {
         this.initialMatrix = null;
         this.intermediateMatrix = this.getMatrix(0, 0);
         this.finalMatrix = null;
-        this.context = null;
 
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), CutStage.END);
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("CutStoneBehavior")
                 .initialStage(CutStage.CUT_STONE)
-                .stageStepMap(Map.of(
-                        CutStage.CUT_STONE, this.createCutStep()
-                ))
+                .stageStepMap(Map.of(CutStage.CUT_STONE, this.createCutStep()))
                 .nextStage(CutStage.END)
                 .onEnd(ctx -> StepResult.noOp())
                 .build();
     }
 
     @Override
-    public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
             this.requestStop();
             return;
         }
 
-        this.context = new BehaviorContext(entity);
         this.stoneCutter = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
-        this.context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.stoneCutter)));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.stoneCutter)));
 
         this.currentRecipe = RandomUtil.choice(RECIPES);
         Direction direction = this.stoneCutter.getBlockState().getValue(StonecutterBlock.FACING);
@@ -148,20 +144,15 @@ public class CutStoneBehavior extends BaseVillagerStagedBehavior {
     }
 
     @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-        if (this.stoneCutter == null || !this.stoneCutter.is(Blocks.STONECUTTER)) {
-            throw new StopBehaviorException("Stonecutter target is invalid");
-        }
-
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, CutStage.END, "CutStoneBehavior");
+    protected boolean preTickGuard(int delta,
+                                   @Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
+        return this.stoneCutter != null && this.stoneCutter.is(Blocks.STONECUTTER);
     }
 
     @Override
-    public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
 
         if (this.initialBlockDisplay != null) {
@@ -177,8 +168,6 @@ public class CutStoneBehavior extends BaseVillagerStagedBehavior {
         this.finalBlockDisplay = null;
         this.initialMatrix = null;
         this.finalMatrix = null;
-        this.context = null;
-        this.controlStep.reset();
     }
 
     private BehaviorStep createCutStep() {
@@ -245,12 +234,8 @@ public class CutStoneBehavior extends BaseVillagerStagedBehavior {
                 .onEnd(ctx -> StepResult.complete())
                 .build();
 
-        SequencedStep sequence = new SequencedStep("CutStoneBehavior.sequence", List.of(
-                setup,
-                initialCut,
-                transition,
-                finalCut
-        ));
+        SequencedStep sequence = new SequencedStep("CutStoneBehavior.sequence",
+                List.of(setup, initialCut, transition, finalCut));
 
         return StayCloseStep.builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)

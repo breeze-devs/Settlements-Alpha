@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class BlastOreBehavior extends BaseVillagerStagedBehavior {
+public class BlastOreBehavior extends StateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
@@ -64,17 +64,13 @@ public class BlastOreBehavior extends BaseVillagerStagedBehavior {
             BlastOreRecipe.builder()
                     .input(Items.RAW_COPPER)
                     .output(Items.COPPER_INGOT)
-                    .build()
-    );
+                    .build());
 
     private enum BlastStage implements StageKey {
         BLAST_ORE,
         END;
     }
 
-
-    private final BlastOreConfig config;
-    private final StagedStep controlStep;
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
 
     @Nullable
@@ -82,16 +78,12 @@ public class BlastOreBehavior extends BaseVillagerStagedBehavior {
     @Nullable
     private BlastOreRecipe currentRecipe;
 
-    @Nullable
-    private BehaviorContext context;
-
     public BlastOreBehavior(BlastOreConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
-        this.config = config;
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));
@@ -101,9 +93,12 @@ public class BlastOreBehavior extends BaseVillagerStagedBehavior {
         // Initialize variables
         this.blastFurnace = null;
         this.currentRecipe = null;
-        this.context = null;
 
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), BlastStage.END);
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("BlastOreBehavior")
                 .initialStage(BlastStage.BLAST_ORE)
                 .stageStepMap(Map.of(
@@ -115,8 +110,8 @@ public class BlastOreBehavior extends BaseVillagerStagedBehavior {
     }
 
     @Override
-    public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        this.context = new BehaviorContext(entity);
+    protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
 
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
             this.requestStop();
@@ -125,36 +120,35 @@ public class BlastOreBehavior extends BaseVillagerStagedBehavior {
         this.blastFurnace = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
         this.currentRecipe = RandomUtil.choice(RECIPES);
 
-        this.context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.blastFurnace)));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.blastFurnace)));
 
         this.setFurnaceLockState(true);
     }
 
     @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-        if (this.blastFurnace == null || !this.blastFurnace.is(Blocks.BLAST_FURNACE)) {
-            throw new StopBehaviorException("Blast furnace target is invalid");
-        }
-
-        villager.getLookControl().setLookAt(this.blastFurnace.getLocation(false).toVec3());
-
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, BlastStage.END, "BlastOreBehavior");
+    protected boolean preTickGuard(int delta,
+                                   @Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
+        return this.blastFurnace != null && this.blastFurnace.is(Blocks.BLAST_FURNACE);
     }
 
     @Override
-    public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+    public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
+        if (this.blastFurnace != null) {
+            entity.getLookControl().setLookAt(this.blastFurnace.getLocation(false).toVec3());
+        }
+        return super.tickContinueConditions(delta, world, entity);
+    }
+
+    @Override
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         this.setFurnaceLockState(false);
 
         this.blastFurnace = null;
         this.currentRecipe = null;
-        this.context = null;
-        this.controlStep.reset();
     }
 
     private BehaviorStep createBlastStep() {
@@ -203,16 +197,10 @@ public class BlastOreBehavior extends BaseVillagerStagedBehavior {
                 })
                 .build();
 
-        SequencedStep sequence = new SequencedStep("BlastOreBehavior.sequence", List.of(
-                setup,
-                blasting,
-                takeOut
-        ));
-
         return StayCloseStep.builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
                 .navigateStep(new NavigateToTargetStep(0.5f, 1))
-                .actionStep(sequence)
+                .actionStep(new SequencedStep("BlastOreBehavior.sequence", List.of(setup, blasting, takeOut)))
                 .build();
     }
 

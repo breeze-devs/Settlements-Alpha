@@ -40,7 +40,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 @CustomLog
-public class BreedAnimalsBehavior extends BaseVillagerStagedBehavior {
+public class BreedAnimalsBehavior extends StateMachineBehavior {
 
     private static final ItemStack WHEAT = new ItemStack(Items.WHEAT);
     private static final ItemStack CARROT = new ItemStack(Items.CARROT);
@@ -68,7 +68,6 @@ public class BreedAnimalsBehavior extends BaseVillagerStagedBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
-    private final StagedStep controlStep;
     private final NearbyBreedableAnimalPairExistsCondition<BaseVillager> nearbyBreedableAnimalPairExistsCondition;
 
     @Nullable
@@ -77,9 +76,6 @@ public class BreedAnimalsBehavior extends BaseVillagerStagedBehavior {
     private Animal breedTarget1;
     @Nullable
     private Animal breedTarget2;
-
-    @Nullable
-    private BehaviorContext context;
 
     public BreedAnimalsBehavior(BreedAnimalsConfig config, Set<EntityType<? extends Animal>> breedableAnimalTypes) {
         super(log,
@@ -99,9 +95,12 @@ public class BreedAnimalsBehavior extends BaseVillagerStagedBehavior {
         this.heldItem = null;
         this.breedTarget1 = null;
         this.breedTarget2 = null;
-        this.context = null;
 
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), BreedStage.END);
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("BreedAnimalsBehavior")
                 .initialStage(BreedStage.FEED_FIRST)
                 .stageStepMap(Map.of(
@@ -113,18 +112,18 @@ public class BreedAnimalsBehavior extends BaseVillagerStagedBehavior {
                                 "second",
                                 BreedStage.WAITING_FOR_BREEDING,
                                 () -> this.breedTarget2),
-                        BreedStage.WAITING_FOR_BREEDING, this.createWaitingStep()
-                ))
+                        BreedStage.WAITING_FOR_BREEDING, this.createWaitingStep()))
                 .nextStage(BreedStage.END)
                 .onEnd(ctx -> StepResult.noOp())
                 .build();
     }
 
     @Override
-    public void doStart(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        this.context = new BehaviorContext(villager);
-
-        Optional<NearbyBreedableAnimalPairExistsCondition.BreedablePair<?>> breedablePair = this.nearbyBreedableAnimalPairExistsCondition.getBreedablePair();
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager villager,
+                                   @Nonnull BehaviorContext context) {
+        Optional<NearbyBreedableAnimalPairExistsCondition.BreedablePair<?>> breedablePair =
+                this.nearbyBreedableAnimalPairExistsCondition.getBreedablePair();
         if (breedablePair.isEmpty()) {
             log.warn("No breedable pair found, stopping behavior");
             this.requestStop();
@@ -142,24 +141,22 @@ public class BreedAnimalsBehavior extends BaseVillagerStagedBehavior {
         }
 
         this.heldItem = RandomUtil.choice(breedItems).copy();
-        this.context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.breedTarget1)));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.breedTarget1)));
     }
 
     @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-        if (this.breedTarget1 == null || this.breedTarget2 == null) {
-            throw new StopBehaviorException("Breed targets are null");
-        }
-
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, BreedStage.END, "BreedAnimalsBehavior");
+    protected boolean preTickGuard(int delta,
+                                   @Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
+        return this.breedTarget1 != null
+                && this.breedTarget2 != null
+                && this.breedTarget1.isAlive()
+                && this.breedTarget2.isAlive();
     }
 
     @Override
-    public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
 
@@ -179,8 +176,6 @@ public class BreedAnimalsBehavior extends BaseVillagerStagedBehavior {
         this.heldItem = null;
         this.breedTarget1 = null;
         this.breedTarget2 = null;
-        this.context = null;
-        this.controlStep.reset();
     }
 
     private BehaviorStep createFeedTargetStep(@Nonnull String label,

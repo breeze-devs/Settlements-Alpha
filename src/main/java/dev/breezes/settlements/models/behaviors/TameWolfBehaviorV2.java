@@ -32,13 +32,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
+public class TameWolfBehaviorV2 extends StateMachineBehavior {
 
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
@@ -49,14 +48,10 @@ public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
     }
 
     private final TameWolfConfig config;
-    private final StagedStep controlStep;
 
     private final NearbyEntityExistsCondition<BaseVillager, Wolf> nearbyUntamedWolfExistsCondition;
 
     private int attemptsRemaining;
-
-    @Nullable
-    private BehaviorContext context;
 
     public TameWolfBehaviorV2(TameWolfConfig config) {
         super(log,
@@ -65,7 +60,6 @@ public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
                 RandomRangeTickable.of(Ticks.of(config.behaviorCooldownMin()), Ticks.of(config.behaviorCooldownMax())));
         this.config = config;
 
-        this.context = null;
         this.attemptsRemaining = 0;
 
         // Precondition: at least one untamed wolf nearby
@@ -74,8 +68,7 @@ public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
                 config.scanRangeVertical(),
                 EntityType.WOLF,
                 wolf -> wolf != null && !wolf.isTame(),
-                1
-        );
+                1);
         this.preconditions.add(this.nearbyUntamedWolfExistsCondition);
 
         // Precondition: ownership below per-expertise limit
@@ -98,13 +91,15 @@ public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
         };
         this.preconditions.add(ownershipBelowLimitCondition);
 
-        // Steps controller
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), TameStage.END);
+
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("TameWolfBehaviorV2")
                 .initialStage(TameStage.TAME_WOLF)
-                .stageStepMap(Map.of(
-                        TameStage.TAME_WOLF, this.createTameWolfStep()
-                ))
+                .stageStepMap(Map.of(TameStage.TAME_WOLF, this.createTameWolfStep()))
                 .nextStage(TameStage.END)
                 .onEnd(ctx -> StepResult.noOp())
                 .build();
@@ -164,8 +159,6 @@ public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
                         wolfLoc.displayParticles(ParticleTypes.SMOKE, 6, 0.35, 0.5, 0.35, 0.01);
                         log.behaviorStatus("Failed to tame wolf");
                     }
-
-                    log.behaviorStatus("Failed to tame wolf");
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
@@ -192,8 +185,9 @@ public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
     }
 
     @Override
-    public void doStart(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        this.context = new BehaviorContext(entity);
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
 
         // Enforce wolf ownership limit per expertise
         Expertise expertise = entity.getExpertise();
@@ -220,25 +214,13 @@ public class TameWolfBehaviorV2 extends BaseVillagerStagedBehavior {
             this.requestStop();
             return;
         }
-        this.context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenWolf.get()))));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenWolf.get()))));
         this.attemptsRemaining = MAX_TAME_ATTEMPTS;
     }
 
     @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, TameStage.END, "TameWolfBehaviorV2");
-    }
-
-    @Override
-    public void doStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
         entity.clearHeldItem();
-        this.context = null;
-        this.controlStep.reset();
     }
 
     private Optional<Wolf> getTargetWolf(@Nonnull BehaviorContext context) {

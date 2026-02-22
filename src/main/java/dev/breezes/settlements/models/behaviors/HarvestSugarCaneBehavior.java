@@ -27,15 +27,12 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class HarvestSugarCaneBehavior extends BaseVillagerStagedBehavior {
+public class HarvestSugarCaneBehavior extends StateMachineBehavior {
 
     private enum HarvestStage implements StageKey {
         HARVEST_SUGAR_CANE,
         END;
     }
-
-    private final HarvestSugarCaneConfig config;
-    private final StagedStep controlStep;
 
     @Nullable
     private BlockPos sugarCanePos;
@@ -43,16 +40,12 @@ public class HarvestSugarCaneBehavior extends BaseVillagerStagedBehavior {
     private List<BlockPos> validSugarCaneAroundVillager;
     private final NearbySugarCaneExistsCondition<BaseVillager> nearbySugarCaneExistsCondition;
 
-    @Nullable
-    private BehaviorContext context;
-
     public HarvestSugarCaneBehavior(HarvestSugarCaneConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
-        this.config = config;
 
         this.nearbySugarCaneExistsCondition = NearbySugarCaneExistsCondition.builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
@@ -63,14 +56,15 @@ public class HarvestSugarCaneBehavior extends BaseVillagerStagedBehavior {
         this.sugarCanePos = null;
         this.timeWorkedSoFar = 0;
         this.validSugarCaneAroundVillager = new ArrayList<>();
-        this.context = null;
 
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("HarvestSugarCaneBehavior")
                 .initialStage(HarvestStage.HARVEST_SUGAR_CANE)
-                .stageStepMap(Map.of(
-                        HarvestStage.HARVEST_SUGAR_CANE, this.createHarvestStep()
-                ))
+                .stageStepMap(Map.of(HarvestStage.HARVEST_SUGAR_CANE, this.createHarvestStep()))
                 .nextStage(HarvestStage.END)
                 .onEnd(ctx -> StepResult.noOp())
                 .build();
@@ -93,8 +87,9 @@ public class HarvestSugarCaneBehavior extends BaseVillagerStagedBehavior {
     }
 
     @Override
-    public void doStart(@Nonnull Level level, @Nonnull BaseVillager villager) {
-        this.context = new BehaviorContext(villager);
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
         this.timeWorkedSoFar = 0;
 
         this.validSugarCaneAroundVillager = new ArrayList<>(this.nearbySugarCaneExistsCondition.getTargets());
@@ -103,40 +98,28 @@ public class HarvestSugarCaneBehavior extends BaseVillagerStagedBehavior {
             return;
         }
 
-        this.sugarCanePos = getRandomPosition(level);
-        this.context.setState(
-                BehaviorStateType.TARGET,
-                TargetState.of(Targetable.fromBlock(PhysicalBlock.of(Location.of(this.sugarCanePos, level), level.getBlockState(this.sugarCanePos))))
-        );
+        this.sugarCanePos = getRandomPosition(world);
+        context.setState(BehaviorStateType.TARGET,
+                TargetState.of(Targetable.fromBlock(PhysicalBlock.of(Location.of(this.sugarCanePos, world), world.getBlockState(this.sugarCanePos)))));
     }
 
-    private BlockPos getRandomPosition(Level level) {
-        return this.validSugarCaneAroundVillager.get(level.getRandom().nextInt(this.validSugarCaneAroundVillager.size()));
-    }
-
-    @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-
-        this.timeWorkedSoFar += delta;
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, HarvestStage.END, "HarvestSugarCaneBehavior");
+    private BlockPos getRandomPosition(Level world) {
+        return this.validSugarCaneAroundVillager
+                .get(world.getRandom().nextInt(this.validSugarCaneAroundVillager.size()));
     }
 
     @Override
-    public void doStop(@Nonnull Level level, @Nonnull BaseVillager entity) {
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
         entity.getNavigationManager().stop();
         this.timeWorkedSoFar = 0;
         this.sugarCanePos = null;
         this.validSugarCaneAroundVillager = new ArrayList<>();
-        this.context = null;
-        this.controlStep.reset();
     }
 
     @Override
     public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
+        this.timeWorkedSoFar += delta;
         return super.tickContinueConditions(delta, world, entity) && this.timeWorkedSoFar < 400;
     }
+
 }

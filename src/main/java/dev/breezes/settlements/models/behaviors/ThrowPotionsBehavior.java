@@ -33,10 +33,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @CustomLog
-public class ThrowPotionsBehavior extends BaseVillagerStagedBehavior {
+public class ThrowPotionsBehavior extends StateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 4;
 
@@ -45,8 +44,6 @@ public class ThrowPotionsBehavior extends BaseVillagerStagedBehavior {
         END;
     }
 
-    private final ThrowPotionsConfig config;
-    private final StagedStep controlStep;
     private final NearbyFriendlyNeedsPotionCondition<BaseVillager> nearbyFriendlyNeedsPotionCondition;
 
     @Nullable
@@ -54,16 +51,12 @@ public class ThrowPotionsBehavior extends BaseVillagerStagedBehavior {
     @Nullable
     private ItemStack potionToThrow;
 
-    @Nullable
-    private BehaviorContext context;
-
     public ThrowPotionsBehavior(ThrowPotionsConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
-        this.config = config;
 
         // Preconditions to this behavior
         this.nearbyFriendlyNeedsPotionCondition = new NearbyFriendlyNeedsPotionCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical(), config.minimumPlayerReputation());
@@ -72,14 +65,15 @@ public class ThrowPotionsBehavior extends BaseVillagerStagedBehavior {
         // Initialize variables
         this.targetToThrow = null;
         this.potionToThrow = null;
-        this.context = null;
 
-        this.controlStep = StagedStep.builder()
+        this.initializeStateMachine(this.createControlStep(), ThrowStage.END);
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
                 .name("ThrowPotionsBehavior")
                 .initialStage(ThrowStage.THROW_POTION)
-                .stageStepMap(Map.of(
-                        ThrowStage.THROW_POTION, this.createThrowStep()
-                ))
+                .stageStepMap(Map.of(ThrowStage.THROW_POTION, this.createThrowStep()))
                 .nextStage(ThrowStage.END)
                 .onEnd(ctx -> StepResult.noOp())
                 .build();
@@ -114,8 +108,10 @@ public class ThrowPotionsBehavior extends BaseVillagerStagedBehavior {
                 .build();
     }
 
-    public void doStart(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        this.context = new BehaviorContext(villager);
+    @Override
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager villager,
+                                   @Nonnull BehaviorContext context) {
 
         double currentHpPercentage = Double.MAX_VALUE;
         for (Entity entity : this.nearbyFriendlyNeedsPotionCondition.getFriendlyNeedsPotionMap().keySet()) {
@@ -138,38 +134,24 @@ public class ThrowPotionsBehavior extends BaseVillagerStagedBehavior {
         Holder<Potion> potionNeeded = this.nearbyFriendlyNeedsPotionCondition.getFriendlyNeedsPotionMap().get(this.targetToThrow).getPotion();
         this.potionToThrow = PotionContents.createItemStack(Items.SPLASH_POTION, potionNeeded);
 
-        this.context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToThrow))));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToThrow))));
         villager.setHeldItem(this.potionToThrow);
     }
 
     @Override
-    public void tickBehavior(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.context == null) {
-            throw new StopBehaviorException("Behavior context is null");
-        }
-
-        Optional<LivingEntity> target = this.context.getState(BehaviorStateType.TARGET, TargetState.class)
-                .flatMap(TargetState::getFirst)
-                .map(Targetable::getAsEntity)
-                .filter(LivingEntity.class::isInstance)
-                .map(LivingEntity.class::cast);
-        if (target.isEmpty()) {
-            throw new StopBehaviorException("No potion target found");
-        }
-        this.targetToThrow = target.get();
-
-        StepResult result = this.controlStep.tick(this.context);
-        this.handleStepResult(result, ThrowStage.END, "ThrowPotionsBehavior");
+    protected boolean preTickGuard(int delta,
+                                   @Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
+        return this.targetToThrow != null && this.targetToThrow.isAlive();
     }
 
     @Override
-    public void doStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         this.targetToThrow = null;
         this.potionToThrow = null;
-        this.context = null;
-        this.controlStep.reset();
     }
 
 }
