@@ -1,10 +1,10 @@
 package dev.breezes.settlements;
 
-import dev.breezes.settlements.configurations.annotations.ConfigAnnotationProcessor;
-import dev.breezes.settlements.packet.PacketRegistry;
-import dev.breezes.settlements.registry.CreativeTabRegistry;
-import dev.breezes.settlements.registry.EntityRegistry;
-import dev.breezes.settlements.registry.ItemRegistry;
+import dev.breezes.settlements.infrastructure.config.annotations.ConfigAnnotationProcessor;
+import dev.breezes.settlements.infrastructure.network.packet.PacketRegistry;
+import dev.breezes.settlements.bootstrap.registry.tabs.CreativeTabRegistry;
+import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModLoadingContext;

@@ -1,0 +1,35 @@
+package dev.breezes.settlements.application.ai.behavior.workflow.steps;
+
+import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import lombok.AllArgsConstructor;
+
+import javax.annotation.Nonnull;
+
+/**
+ * Represents a step that executes different paths based on a condition
+ */
+@AllArgsConstructor
+public class ConditionalStep implements BehaviorStep {
+
+    private final ICondition<BehaviorContext> condition;
+
+    private final BehaviorStep trueStep;
+    private final BehaviorStep falseStep;
+
+    @Override
+    public StepResult tick(@Nonnull BehaviorContext stateHolder) {
+        if (this.condition.test(stateHolder)) {
+            return this.trueStep.tick(stateHolder);
+        } else {
+            return this.falseStep.tick(stateHolder);
+        }
+    }
+
+    @Override
+    public void reset() {
+        this.trueStep.reset();
+        this.falseStep.reset();
+    }
+
+}
