@@ -27,5 +27,15 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build
-        run: ./gradlew build --no-daemon --stacktrace
+      - name: UnitTest
+        run: ./gradlew test --no-daemon --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-reports
+          path: |
+            build/reports/tests/test
+            build/test-results/test
+          if-no-files-found: warn
