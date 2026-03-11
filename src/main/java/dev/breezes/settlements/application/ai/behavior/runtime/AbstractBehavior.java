@@ -3,16 +3,18 @@ package dev.breezes.settlements.application.ai.behavior.runtime;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
-import dev.breezes.settlements.shared.logging.ILogger;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.time.ITickable;
+import dev.breezes.settlements.shared.logging.ILogger;
 import lombok.Getter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntity> implements IBehavior<T> {
@@ -27,6 +29,8 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
 
     protected BehaviorStatus status;
     private boolean stopRequested;
+    @Getter
+    private final Map<Class<?>, Boolean> latestPreconditionEvaluationResults;
 
     protected AbstractBehavior(@Nonnull ILogger log,
                                @Nonnull ITickable preconditionCheckCooldown,
@@ -38,6 +42,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         // These fields should be initialized in the constructor of the subclass
         this.preconditions = new ArrayList<>();
         this.continueConditions = new ArrayList<>();
+        this.latestPreconditionEvaluationResults = new LinkedHashMap<>();
 
         this.status = BehaviorStatus.STOPPED;
         this.stopRequested = false;
@@ -65,17 +70,28 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
 
         // Reset precondition check cooldown
         this.preconditionCheckCooldown.reset();
+        this.latestPreconditionEvaluationResults.clear();
+
+        if (this.preconditions.isEmpty()) {
+            log.behaviorTrace("No preconditions configured");
+            return true;
+        }
 
         // Loop through all preconditions and check if they are all met
+        boolean allPassed = true;
         for (ICondition<T> precondition : this.preconditions) {
-            if (!precondition.test(entity)) {
+            boolean passed = precondition.test(entity);
+            this.latestPreconditionEvaluationResults.put(precondition.getClass(), passed);
+            if (!passed) {
                 log.behaviorTrace("Precondition '{}' is not met", precondition.getClass().getSimpleName());
-                return false;
+                allPassed = false;
             }
         }
 
-        log.behaviorTrace("All preconditions are met");
-        return true;
+        if (allPassed) {
+            log.behaviorTrace("All preconditions are met");
+        }
+        return allPassed;
     }
 
     @Override

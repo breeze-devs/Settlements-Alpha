@@ -1,20 +1,13 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.ClientBoundDisplayBubblePacket;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.ClientBoundRemoveBubblePacket;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.DisplayBubbleRequest;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.RemoveBubbleRequest;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.registry.BubbleType;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.SpeechBubbleState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.items.ItemState;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
@@ -22,14 +15,24 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
-import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.domain.entities.Expertise;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.shared.util.RandomUtil;
+import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
+import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.ClientBoundDisplayBubblePacket;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.ClientBoundRemoveBubblePacket;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.DisplayBubbleRequest;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.RemoveBubbleRequest;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.registry.BubbleType;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
+import lombok.Getter;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Sheep;
@@ -78,6 +81,8 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
     }
 
     private final ShearSheepConfig config;
+    @Getter
+    private final BehaviorDescriptor behaviorDescriptor;
 
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
     private final AtomicInteger shearCount;
@@ -92,6 +97,11 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                         Ticks.of(config.behaviorCooldownMax())));
 
         this.config = config;
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.behavior.shear_sheep")
+                .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
+                .displaySuffix(null)
+                .build();
         this.shearCount = new AtomicInteger(0);
 
         // Create behavior preconditions

@@ -1,15 +1,16 @@
 package dev.breezes.settlements.infrastructure.config.annotations;
 
+import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.bootstrap.event.CommonModEvents;
 import dev.breezes.settlements.infrastructure.config.annotations.booleans.BooleanConfigAnnotationProcessor;
 import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfigAnnotationProcessor;
 import dev.breezes.settlements.infrastructure.config.annotations.floats.FloatConfigAnnotationProcessor;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfigAnnotationProcessor;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.MapConfigAnnotationProcessor;
 import dev.breezes.settlements.infrastructure.config.annotations.strings.StringConfigAnnotationProcessor;
-import dev.breezes.settlements.bootstrap.event.CommonModEvents;
 import lombok.CustomLog;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforgespi.language.ModFileScanData;
@@ -27,13 +28,15 @@ import java.util.stream.Collectors;
 @CustomLog
 public class ConfigAnnotationProcessor {
 
-    public static void process(@Nonnull ModContainer container) {
+    public static void process() {
         log.info("Processing mod config annotations");
 
+        ModContainer container = ModList.get()
+                .getModContainerById(SettlementsMod.MOD_ID)
+                .orElseThrow();
+
         // Scan the package for fields annotated with the specified annotations
-        ModFileScanData scanner = ModLoadingContext.get()
-                .getActiveContainer()
-                .getModInfo()
+        ModFileScanData scanner = container.getModInfo()
                 .getOwningFile()
                 .getFile()
                 .getScanResult();

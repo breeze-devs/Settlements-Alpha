@@ -1,7 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.support;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -12,14 +11,18 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
+import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFriendlyNeedsPotionCondition;
+import dev.breezes.settlements.domain.time.RandomRangeTickable;
+import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.world.location.Vector;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
-import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
+import lombok.Getter;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -46,6 +49,8 @@ public class ThrowPotionsBehavior extends StateMachineBehavior {
     }
 
     private final NearbyFriendlyNeedsPotionCondition<BaseVillager> nearbyFriendlyNeedsPotionCondition;
+    @Getter
+    private final BehaviorDescriptor behaviorDescriptor;
 
     @Nullable
     private LivingEntity targetToThrow;
@@ -58,6 +63,11 @@ public class ThrowPotionsBehavior extends StateMachineBehavior {
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.behavior.throw_potions")
+                .iconItemId(ResourceLocation.withDefaultNamespace("splash_potion"))
+                .displaySuffix(null)
+                .build();
 
         // Preconditions to this behavior
         this.nearbyFriendlyNeedsPotionCondition = new NearbyFriendlyNeedsPotionCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical(), config.minimumPlayerReputation());

@@ -4,30 +4,30 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
-import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.navigation.OpenFenceGates;
-import dev.breezes.settlements.application.ai.behavior.runtime.BaseVillagerBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.BlastOreBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
-import dev.breezes.settlements.infrastructure.minecraft.behavior.adapter.DefaultBehaviorAdapter;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
-import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepBehaviorV2;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfBehaviorV2;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.BlastOreBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.BlastOreConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
+import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.adapter.DefaultBehaviorAdapter;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.navigation.OpenFenceGates;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
@@ -35,7 +35,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.behavior.AcquirePoi;
 import net.minecraft.world.entity.ai.behavior.AssignProfessionFromJobSite;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.CelebrateVillagersSurvivedRaid;
 import net.minecraft.world.entity.ai.behavior.DoNothing;
@@ -96,11 +95,11 @@ import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.raid.Raid;
+import net.minecraft.world.entity.schedule.Activity;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -145,7 +144,7 @@ public final class CustomBehaviorPackages {
         ));
 
         // Add custom behaviors
-        List<IBehavior<BaseVillager>> customBehaviors = new ArrayList<>();
+        List<BehaviorBinding> customBehaviors = new ArrayList<>();
 
         // Eat meals behavior
 //        addBehavior(new EatAtMealTimeBehavior(), coreBehaviors, 4, customBehaviors);
@@ -165,6 +164,7 @@ public final class CustomBehaviorPackages {
      */
     public static BehaviorContainer getWorkPackage(VillagerProfession profession, float speed) {
         ArrayList<Pair<? extends BehaviorControl<? super Villager>, Integer>> workChoiceBehaviors = new ArrayList<>();
+        List<BehaviorBinding> trackedCustomBehaviors = new ArrayList<>();
 
         // Add default behaviors
         workChoiceBehaviors.addAll(List.of(
@@ -180,18 +180,19 @@ public final class CustomBehaviorPackages {
          * Assign custom work behaviors based on profession
          */
 
-        // Map of { behavior => weight of behavior }
-        Map<Behavior<Villager>, Integer> customBehaviorWeightMap = new HashMap<>();
         int customGoalWeight = 10;
 
         if (profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT) {
             // Unreachable code, because villager does not have job site
         } else if (profession == VillagerProfession.ARMORER) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class))), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BlastOreBehavior(ConfigFactory.create(BlastOreConfig.class))), customGoalWeight);
+            addTrackedChoiceBehavior(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
+            addTrackedChoiceBehavior(new BlastOreBehavior(ConfigFactory.create(BlastOreConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.BUTCHER) {
             // customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.PIG))), customGoalWeight);
+            addTrackedChoiceBehavior(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.PIG)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             // customBehaviorWeightMap.put(new ButcherAnimalsBehavior(Map.of(
             // EntityType.COW, 3,
             // EntityType.SHEEP, 5,
@@ -202,13 +203,18 @@ public final class CustomBehaviorPackages {
         } else if (profession == VillagerProfession.CARTOGRAPHER) {
             // TODO: add behavior
         } else if (profession == VillagerProfession.CLERIC) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class))), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSoulSandBehavior(ConfigFactory.create(HarvestSoulSandConfig.class))), customGoalWeight);
+            addTrackedChoiceBehavior(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
+            addTrackedChoiceBehavior(new HarvestSoulSandBehavior(ConfigFactory.create(HarvestSoulSandConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.FARMER) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new HarvestSugarCaneBehavior(ConfigFactory.create(HarvestSugarCaneConfig.class))), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new TameWolfBehaviorV2(ConfigFactory.create(TameWolfConfig.class))), customGoalWeight);
+            addTrackedChoiceBehavior(new HarvestSugarCaneBehavior(ConfigFactory.create(HarvestSugarCaneConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
+            addTrackedChoiceBehavior(new TameWolfBehaviorV2(ConfigFactory.create(TameWolfConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             // customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.CHICKEN))), customGoalWeight);
+            addTrackedChoiceBehavior(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.CHICKEN)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             // customBehaviorWeightMap.put(new MakeCakeBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.FISHERMAN) {
             // customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
@@ -217,29 +223,31 @@ public final class CustomBehaviorPackages {
             // customBehaviorWeightMap.put(new CollectArrowsBehavior(), customGoalWeight);
             // customBehaviorWeightMap.put(new MakeTippedArrowsBehavior(),
             // customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.CHICKEN))), customGoalWeight);
+            addTrackedChoiceBehavior(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.CHICKEN)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.LEATHERWORKER) {
             // customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.COW))), customGoalWeight);
+            addTrackedChoiceBehavior(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.COW)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.LIBRARIAN) {
             // customBehaviorWeightMap.put(new EnchantItemBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.MASON) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new CutStoneBehavior(ConfigFactory.create(CutStoneConfig.class))), customGoalWeight);
+            addTrackedChoiceBehavior(new CutStoneBehavior(ConfigFactory.create(CutStoneConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.SHEPHERD) {
             // customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new ShearSheepBehaviorV2(ConfigFactory.create(ShearSheepConfig.class))), customGoalWeight);
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new TameWolfBehaviorV2(ConfigFactory.create(TameWolfConfig.class))), customGoalWeight);
+            addTrackedChoiceBehavior(new ShearSheepBehaviorV2(ConfigFactory.create(ShearSheepConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
+            addTrackedChoiceBehavior(new TameWolfBehaviorV2(ConfigFactory.create(TameWolfConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             // customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new
             // BreedAnimalsBehavior(Set.of(EntityType.SHEEP))), customGoalWeight);
         } else if (profession == VillagerProfession.TOOLSMITH) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class))), customGoalWeight);
+            addTrackedChoiceBehavior(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.WEAPONSMITH) {
-            customBehaviorWeightMap.put(DefaultBehaviorAdapter.adapt(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class))), customGoalWeight);
-        }
-
-        // Add custom behaviors
-        for (Map.Entry<Behavior<Villager>, Integer> entry : customBehaviorWeightMap.entrySet()) {
-            addChoiceBehavior(entry.getKey(), workChoiceBehaviors, entry.getValue());
+            addTrackedChoiceBehavior(new RepairIronGolemBehavior(ConfigFactory.create(RepairIronGolemConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         }
 
         ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> behaviors = ImmutableList.of(
@@ -252,7 +260,7 @@ public final class CustomBehaviorPackages {
                 Pair.of(99, UpdateActivityFromSchedule.create())
         );
 
-        return new BehaviorContainer(behaviors, new ArrayList<>());
+        return new BehaviorContainer(behaviors, trackedCustomBehaviors);
     }
 
     /**
@@ -298,6 +306,7 @@ public final class CustomBehaviorPackages {
 
     public static BehaviorContainer getMeetPackage(VillagerProfession profession, float speed) {
         ArrayList<Pair<? extends BehaviorControl<? super Villager>, Integer>> customMeetChoiceBehaviors = new ArrayList<>();
+        List<BehaviorBinding> trackedCustomBehaviors = new ArrayList<>();
 
         // Internal trade behavior (higher weight)
 //        addChoiceBehavior(new TradeItemsBehavior(), customMeetChoiceBehaviors, 5, customBehaviors);
@@ -323,7 +332,8 @@ public final class CustomBehaviorPackages {
 
         // Throw healing potion behavior
         if (profession == VillagerProfession.CLERIC) {
-            addChoiceBehavior(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class))), customMeetChoiceBehaviors, 10);
+            addTrackedChoiceBehavior(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class)),
+                    customMeetChoiceBehaviors, 10, trackedCustomBehaviors, Activity.MEET);
         }
 
         // Nitwit behaviors
@@ -350,12 +360,12 @@ public final class CustomBehaviorPackages {
                 Pair.of(99, UpdateActivityFromSchedule.create())
         );
 
-        return new BehaviorContainer(behaviors, new ArrayList<>());
+        return new BehaviorContainer(behaviors, trackedCustomBehaviors);
     }
 
     public static BehaviorContainer getIdlePackage(VillagerProfession profession, float speed) {
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> idleBehaviors = new ArrayList<>();
-        List<BaseVillagerBehavior> customBehaviors = new ArrayList<>();
+        List<BehaviorBinding> trackedCustomBehaviors = new ArrayList<>();
 
         idleBehaviors.addAll(List.of(
                 getFullLookBehavior(),
@@ -413,13 +423,14 @@ public final class CustomBehaviorPackages {
 //        }
 
         if (profession == VillagerProfession.CLERIC) {
-            addChoiceBehavior(DefaultBehaviorAdapter.adapt(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class))), idleChoiceBehaviors, 10);
+            addTrackedChoiceBehavior(new ThrowPotionsBehavior(ConfigFactory.create(ThrowPotionsConfig.class)),
+                    idleChoiceBehaviors, 10, trackedCustomBehaviors, Activity.IDLE);
         }
 
         // Add choice behaviors to Minecraft behaviors
         idleBehaviors.add(Pair.of(2, new RunOne<>(idleChoiceBehaviors)));
 
-        return new BehaviorContainer(ImmutableList.copyOf(idleBehaviors), new ArrayList<>());
+        return new BehaviorContainer(ImmutableList.copyOf(idleBehaviors), trackedCustomBehaviors);
     }
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getPanicPackage(VillagerProfession profession, float speed) {
@@ -515,24 +526,23 @@ public final class CustomBehaviorPackages {
     /*
      * Utility methods
      */
-    private static void addBehavior(Behavior<Villager> behavior,
-                                    List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> minecraftBehaviors, int weight) {
-        minecraftBehaviors.add(Pair.of(weight, behavior));
-    }
-
-    private static void addChoiceBehavior(Behavior<Villager> behavior,
-                                          List<Pair<? extends BehaviorControl<? super Villager>, Integer>> choiceBehaviors, int weight) {
-        choiceBehaviors.add(Pair.of(behavior, weight));
+    private static void addTrackedChoiceBehavior(@Nonnull IBehavior<BaseVillager> behavior,
+                                                 @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> choiceBehaviors,
+                                                 int weight,
+                                                 @Nonnull List<BehaviorBinding> trackedBehaviors,
+                                                 @Nonnull Activity registeredActivity) {
+        choiceBehaviors.add(Pair.of(DefaultBehaviorAdapter.adapt(behavior), weight));
+        trackedBehaviors.add(new BehaviorBinding(behavior, weight, -1, Set.of(registeredActivity)));
     }
 
     /**
      * Record used as return data structure
      *
-     * @param behaviors       minecraft behaviors to be registered
-     * @param customBehaviors custom behaviors (must be same instance)
+     * @param behaviors       behaviors to be registered
+     * @param customBehaviors custom behaviors (must be the same instance)
      */
     public record BehaviorContainer(ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> behaviors,
-                                    List<IBehavior<BaseVillager>> customBehaviors) {
+                                    List<BehaviorBinding> customBehaviors) {
     }
 
 }

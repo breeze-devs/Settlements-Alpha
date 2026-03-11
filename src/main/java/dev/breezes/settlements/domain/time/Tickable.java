@@ -34,6 +34,11 @@ public class Tickable implements ITickable {
     }
 
     @Override
+    public long getTicksRemainingRounded() {
+        return Math.round(Math.max(this.currentTicks, 0));
+    }
+
+    @Override
     public void reset() {
         this.currentTicks = this.maxTicks;
     }

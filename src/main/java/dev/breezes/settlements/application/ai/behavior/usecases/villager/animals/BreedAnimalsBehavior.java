@@ -1,7 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -13,15 +12,19 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
-import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
 import dev.breezes.settlements.domain.tags.EntityTag;
-import dev.breezes.settlements.shared.util.RandomUtil;
+import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
+import lombok.Getter;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -39,6 +42,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @CustomLog
 public class BreedAnimalsBehavior extends StateMachineBehavior {
@@ -70,6 +74,8 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
     private final NearbyBreedableAnimalPairExistsCondition<BaseVillager> nearbyBreedableAnimalPairExistsCondition;
+    @Getter
+    private final BehaviorDescriptor behaviorDescriptor;
 
     @Nullable
     private ItemStack heldItem;
@@ -84,6 +90,11 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.behavior.breed_animals")
+                .iconItemId(ResourceLocation.withDefaultNamespace("wheat"))
+                .displaySuffix(buildBreedableTypesDisplaySuffix(breedableAnimalTypes).orElse(null))
+                .build();
 
         // Create behavior preconditions
         this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(
@@ -273,6 +284,16 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
             log.behaviorStatus("Claiming baby animal '{}' as village-owned", nearbyEntity);
             nearbyEntity.addTag(EntityTag.VILLAGE_OWNED_ANIMAL.getTag());
         }
+    }
+
+    private static Optional<String> buildBreedableTypesDisplaySuffix(@Nonnull Set<EntityType<? extends Animal>> breedableAnimalTypes) {
+        String suffix = breedableAnimalTypes.stream()
+                .map(entityType -> entityType.getDescription().getString())
+                .filter(name -> !name.isBlank())
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(", "));
+        return suffix.isBlank() ? Optional.empty() : Optional.of(suffix);
     }
 
 }

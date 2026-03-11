@@ -1,8 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -15,15 +13,20 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
-import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
-import dev.breezes.settlements.shared.util.RandomUtil;
 import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
+import lombok.Getter;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
@@ -49,6 +52,8 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
     }
 
     private final TameWolfConfig config;
+    @Getter
+    private final BehaviorDescriptor behaviorDescriptor;
 
     private final NearbyEntityExistsCondition<BaseVillager, Wolf> nearbyUntamedWolfExistsCondition;
 
@@ -60,6 +65,11 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
                         Ticks.of(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.of(config.behaviorCooldownMin()), Ticks.of(config.behaviorCooldownMax())));
         this.config = config;
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.behavior.tame_wolf")
+                .iconItemId(ResourceLocation.withDefaultNamespace("bone"))
+                .displaySuffix(null)
+                .build();
 
         this.attemptsRemaining = 0;
 

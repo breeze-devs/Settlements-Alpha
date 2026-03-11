@@ -1,9 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -16,19 +13,24 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
+import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
+import dev.breezes.settlements.domain.time.RandomRangeTickable;
+import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
-import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
-import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.infrastructure.minecraft.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.shared.util.RandomUtil;
-import dev.breezes.settlements.domain.time.Ticks;
 import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.LockCode;
 import net.minecraft.world.item.Item;
@@ -73,6 +75,8 @@ public class BlastOreBehavior extends StateMachineBehavior {
     }
 
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
+    @Getter
+    private final BehaviorDescriptor behaviorDescriptor;
 
     @Nullable
     private PhysicalBlock blastFurnace;
@@ -85,6 +89,11 @@ public class BlastOreBehavior extends StateMachineBehavior {
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.behavior.blast_ore")
+                .iconItemId(ResourceLocation.withDefaultNamespace("blast_furnace"))
+                .displaySuffix(null)
+                .build();
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));

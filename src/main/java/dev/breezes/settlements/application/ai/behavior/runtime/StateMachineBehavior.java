@@ -1,21 +1,26 @@
 package dev.breezes.settlements.application.ai.behavior.runtime;
 
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.shared.logging.ILogger;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.application.ui.behavior.model.PreconditionSummary;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorRuntimeInformation;
+import dev.breezes.settlements.application.ui.behavior.snapshot.IBehaviorInfoProvider;
 import dev.breezes.settlements.domain.time.ITickable;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.logging.ILogger;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.BehaviorConfigurationCrashReport;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
-public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager> {
+public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager> implements IBehaviorInfoProvider {
 
     @Nullable
     private StagedStep controlStep;
@@ -40,6 +45,16 @@ public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager
         }
         this.controlStep = Objects.requireNonNull(controlStep);
         this.expectedEndStage = Objects.requireNonNull(expectedEndStage);
+    }
+
+    @Nonnull
+    @Override
+    public BehaviorRuntimeInformation getBehaviorRuntimeInformation(@Nonnull BaseVillager villager) {
+        return BehaviorRuntimeInformation.builder()
+                .currentStageLabel(this.getCurrentStageLabel().orElse("Unknown"))
+                .cooldownRemainingTicks(Math.toIntExact(Math.min(Integer.MAX_VALUE, this.getBehaviorCoolDown().getTicksRemainingRounded())))
+                .preconditionSummary(this.cachedPreconditionSummary())
+                .build();
     }
 
     @Override
@@ -87,6 +102,39 @@ public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager
     protected void onBehaviorStop(@Nonnull Level world,
                                   @Nonnull BaseVillager entity) {
         // Empty by default, optionally overrideable by concrete behaviors
+    }
+
+    protected Optional<String> getCurrentStageLabel() {
+        if (this.controlStep == null || this.controlStep.getCurrentStage() == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(this.controlStep.getCurrentStage().name());
+    }
+
+    /**
+     * Returns precondition status with LAST-KNOWN semantics.
+     *
+     * This uses cached results from the behavior precondition evaluation cycle
+     * (see {@link AbstractBehavior#tickPreconditions(int, Level, Entity)} behavior flow),
+     * so it is not guaranteed to represent a just-in-time recomputation at the
+     * exact snapshot tick.
+     */
+    protected PreconditionSummary cachedPreconditionSummary() {
+        if (this.getPreconditions().isEmpty()) {
+            return PreconditionSummary.UNKNOWN;
+        }
+
+        Map<Class<?>, Boolean> cached = this.getLatestPreconditionEvaluationResults();
+        if (cached.isEmpty()) {
+            return PreconditionSummary.UNKNOWN;
+        }
+
+        for (Boolean passed : cached.values()) {
+            if (!Boolean.TRUE.equals(passed)) {
+                return PreconditionSummary.FAIL;
+            }
+        }
+        return PreconditionSummary.PASS;
     }
 
     protected boolean preTickGuard(int delta,

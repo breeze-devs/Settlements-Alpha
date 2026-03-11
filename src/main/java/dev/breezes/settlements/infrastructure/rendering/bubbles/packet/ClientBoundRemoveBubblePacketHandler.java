@@ -1,6 +1,7 @@
 package dev.breezes.settlements.infrastructure.rendering.bubbles.packet;
 
-import dev.breezes.settlements.infrastructure.network.packet.ClientSidePacketHandler;
+import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandler;
+import dev.breezes.settlements.infrastructure.network.core.annotations.HandleClientPacket;
 import dev.breezes.settlements.shared.util.EntityUtil;
 import lombok.CustomLog;
 import net.minecraft.world.entity.player.Player;
@@ -11,6 +12,7 @@ import javax.annotation.Nonnull;
 import java.util.Optional;
 
 @CustomLog
+@HandleClientPacket(ClientBoundRemoveBubblePacket.class)
 public class ClientBoundRemoveBubblePacketHandler implements ClientSidePacketHandler<ClientBoundRemoveBubblePacket> {
 
     @Override

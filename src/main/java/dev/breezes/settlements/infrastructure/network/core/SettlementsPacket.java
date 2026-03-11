@@ -1,4 +1,4 @@
-package dev.breezes.settlements.infrastructure.network.packet;
+package dev.breezes.settlements.infrastructure.network.core;
 
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 

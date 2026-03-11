@@ -2,7 +2,7 @@ package dev.breezes.settlements.infrastructure.rendering.bubbles.packet;
 
 import com.google.gson.Gson;
 import com.mojang.authlib.minecraft.client.ObjectMapper;
-import dev.breezes.settlements.infrastructure.network.packet.ClientBoundPacket;
+import dev.breezes.settlements.infrastructure.network.core.ClientBoundPacket;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;

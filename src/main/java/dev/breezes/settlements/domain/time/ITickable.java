@@ -11,6 +11,10 @@ public interface ITickable {
 
     long getTicksElapsedRounded();
 
+    default long getTicksRemainingRounded() {
+        return 0L;
+    }
+
     default boolean tickAndCheck(double delta) {
         this.tick(delta);
         return this.isComplete();

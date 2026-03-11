@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -27,6 +28,7 @@ import dev.breezes.settlements.domain.time.Ticks;
 import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
@@ -61,6 +63,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
         END;
     }
 
+    private final BehaviorDescriptor behaviorDescriptor;
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     @Nullable
     private PhysicalBlock stoneCutter;
@@ -84,6 +87,11 @@ public class CutStoneBehavior extends StateMachineBehavior {
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.behavior.cut_stone")
+                .iconItemId(ResourceLocation.withDefaultNamespace("stonecutter"))
+                .displaySuffix(null)
+                .build();
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER));
@@ -99,6 +107,11 @@ public class CutStoneBehavior extends StateMachineBehavior {
         this.finalMatrix = null;
 
         this.initializeStateMachine(this.createControlStep(), CutStage.END);
+    }
+
+    @Override
+    public BehaviorDescriptor getBehaviorDescriptor() {
+        return this.behaviorDescriptor;
     }
 
     protected StagedStep createControlStep() {

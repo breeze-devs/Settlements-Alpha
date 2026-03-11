@@ -25,5 +25,31 @@
 
     "block.settlements.cat_mint": "Cat Mint",
 
-    "creative_tab.settlements": "Settlements"
+    "creative_tab.settlements": "Settlements",
+
+    "ui.settlements.behavior.title": "BEHAVIOR CONTROLLER",
+    "ui.settlements.behavior.villager": "Villager: %s",
+    "ui.settlements.behavior.schedule": "Schedule: %s",
+    "ui.settlements.behavior.stage": "Stage: %s",
+    "ui.settlements.behavior.stage_na": "N/A",
+    "ui.settlements.behavior.cooldown": "⏳ %s",
+    "ui.settlements.behavior.enable_all": "ENABLE ALL",
+    "ui.settlements.behavior.enable_all_stub": "ENABLE ALL is not implemented in P0 Phase A",
+    "ui.settlements.behavior.back": "BACK",
+    "ui.settlements.behavior.connection_stale": "Connection lost: Behavior data unavailable",
+    "ui.settlements.behavior.unavailable": "Behavior data unavailable",
+    "ui.settlements.behavior.debug.no_villager_in_range": "No villager found in range",
+
+    "ui.settlements.behavior.behavior.harvest_sugar_cane": "Harvest Sugar Cane",
+    "ui.settlements.behavior.behavior.shear_sheep": "Shear Sheep",
+    "ui.settlements.behavior.behavior.repair_iron_golem": "Repair Iron Golem",
+    "ui.settlements.behavior.behavior.throw_potions": "Throw Potions",
+    "ui.settlements.behavior.behavior.breed_animals": "Breed Animals",
+    "ui.settlements.behavior.behavior.blast_ore": "Blast Ore",
+    "ui.settlements.behavior.behavior.cut_stone": "Cut Stone",
+    "ui.settlements.behavior.behavior.harvest_soul_sand": "Harvest Soul Sand",
+    "ui.settlements.behavior.behavior.tame_wolf": "Tame Wolf",
+
+    "key.categories.settlements.debug": "Settlements Debug",
+    "key.settlements.open_behavior_controller_debug": "Open Behavior Controller (Debug)"
 }

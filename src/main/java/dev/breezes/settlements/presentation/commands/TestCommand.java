@@ -3,12 +3,13 @@ package dev.breezes.settlements.presentation.commands;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import dev.breezes.settlements.infrastructure.minecraft.entities.displays.TransformedBlockDisplay;
-import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
-import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.displays.TransformedBlockDisplay;
+import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models.TransformationMatrix;
+import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.component.DataComponents;
@@ -17,17 +18,15 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -45,18 +44,9 @@ public class TestCommand {
             return Command.SINGLE_SUCCESS;
         }
 
-        // Raytrace to find villager
-        double reach = 15.0;
-        Vec3 eyePos = player.getEyePosition();
-        Vec3 lookVec = player.getViewVector(1.0F);
-        Vec3 endPos = eyePos.add(lookVec.scale(reach));
-        AABB aabb = player.getBoundingBox().expandTowards(lookVec.scale(reach))
-                .inflate(1.0D);
+        Optional<EntityHitResult> hitResult = VillagerRaycastUtil.raycastVillagerTarget(player, 15.0);
 
-        EntityHitResult hitResult = ProjectileUtil.getEntityHitResult(player, eyePos, endPos, aabb,
-                entity -> entity instanceof ISettlementsVillager, reach * reach);
-
-        if (hitResult == null || !(hitResult.getEntity() instanceof ISettlementsVillager villager)) {
+        if (hitResult.isEmpty() || !(hitResult.get().getEntity() instanceof ISettlementsVillager villager)) {
             player.displayClientMessage(Component.literal("No villager found in range"), true);
             return Command.SINGLE_SUCCESS;
         }

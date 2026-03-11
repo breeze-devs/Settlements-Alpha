@@ -3,6 +3,7 @@ package dev.breezes.settlements.infrastructure.minecraft.entities.villager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
@@ -41,6 +42,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -61,6 +64,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     private VillagerInventory settlementsInventory;
 
     private final BubbleManager bubbleManager;
+    private volatile List<BehaviorBinding> trackedCustomBehaviors;
 
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
@@ -82,6 +86,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         // Initialize custom inventory
         this.settlementsInventory = new GeneticInventoryProvider().provideDefault();
         this.bubbleManager = new BubbleManager();
+        this.trackedCustomBehaviors = List.of();
     }
 
     public static AttributeSupplier createCustomAttributes() {
@@ -138,25 +143,38 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
      */
     private void registerBrainGoals(Brain<Villager> brain) {
         VillagerProfession profession = this.getVillagerData().getProfession();
+        List<BehaviorBinding> trackedBehaviors = new ArrayList<>();
+        int nextUiBehaviorIndex = 0;
 
         // Register activities and behaviors
-        brain.addActivity(Activity.CORE, CustomBehaviorPackages.getCorePackage(profession, 0.5F).behaviors());
-        brain.addActivity(Activity.IDLE, CustomBehaviorPackages.getIdlePackage(profession, 0.5F).behaviors());
+        CustomBehaviorPackages.BehaviorContainer corePackage = CustomBehaviorPackages.getCorePackage(profession, 0.5F);
+        brain.addActivity(Activity.CORE, corePackage.behaviors());
+        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, corePackage.customBehaviors(), nextUiBehaviorIndex);
+
+        CustomBehaviorPackages.BehaviorContainer idlePackage = CustomBehaviorPackages.getIdlePackage(profession, 0.5F);
+        brain.addActivity(Activity.IDLE, idlePackage.behaviors());
+        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, idlePackage.customBehaviors(), nextUiBehaviorIndex);
+
 
         if (this.isBaby()) {
             // If baby, register PLAY activities
             brain.addActivity(Activity.PLAY, CustomBehaviorPackages.getPlayPackage(0.5F));
         } else {
             // Otherwise, register WORK activities if job site is present
-            brain.addActivityWithConditions(Activity.WORK, CustomBehaviorPackages.getWorkPackage(profession, 0.5F).behaviors(),
+            CustomBehaviorPackages.BehaviorContainer workPackage = CustomBehaviorPackages.getWorkPackage(profession, 0.5F);
+            brain.addActivityWithConditions(Activity.WORK, workPackage.behaviors(),
                     ImmutableSet.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)));
+            nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, workPackage.customBehaviors(), nextUiBehaviorIndex);
         }
 
         // Register meet activities if meeting point is present
-        brain.addActivityWithConditions(Activity.MEET, CustomBehaviorPackages.getMeetPackage(profession, 0.5F).behaviors(),
+        CustomBehaviorPackages.BehaviorContainer meetPackage = CustomBehaviorPackages.getMeetPackage(profession, 0.5F);
+        brain.addActivityWithConditions(Activity.MEET, meetPackage.behaviors(),
                 Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
+        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, meetPackage.customBehaviors(), nextUiBehaviorIndex);
 
         // Register other activities
+        // TODO: if needed, add as tracked behaviors
         brain.addActivity(Activity.REST, CustomBehaviorPackages.getRestPackage(profession, 0.5F));
         brain.addActivity(Activity.PANIC, CustomBehaviorPackages.getPanicPackage(profession, 0.5F));
         brain.addActivity(Activity.PRE_RAID, CustomBehaviorPackages.getPreRaidPackage(profession, 0.5F));
@@ -175,6 +193,19 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         brain.setDefaultActivity(Activity.IDLE);
         brain.setActiveActivityIfPossible(Activity.IDLE);
         brain.updateActivityFromSchedule(this.level().getDayTime(), this.level().getGameTime());
+
+        log.info("Registered {} custom behaviors", nextUiBehaviorIndex);
+        this.trackedCustomBehaviors = trackedBehaviors;
+    }
+
+    private static int trackBehaviors(@Nonnull List<BehaviorBinding> trackedBehaviors,
+                                      @Nonnull List<BehaviorBinding> sourceBindings,
+                                      int nextUiBehaviorIndex) {
+        int nextIndex = nextUiBehaviorIndex;
+        for (BehaviorBinding binding : sourceBindings) {
+            trackedBehaviors.add(binding.copyWithIndex(nextIndex++));
+        }
+        return nextIndex;
     }
 
     @Override

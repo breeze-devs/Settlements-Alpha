@@ -1,14 +1,15 @@
 package dev.breezes.settlements;
 
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigAnnotationProcessor;
-import dev.breezes.settlements.infrastructure.network.packet.PacketRegistry;
+import dev.breezes.settlements.infrastructure.network.core.PacketRegistry;
 import dev.breezes.settlements.bootstrap.registry.tabs.CreativeTabRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
+
+import javax.annotation.Nonnull;
 
 @Mod(SettlementsMod.MOD_ID)
 public final class SettlementsMod {
@@ -25,14 +26,15 @@ public final class SettlementsMod {
         CreativeTabRegistry.register(modEventBus);
         EntityRegistry.register(modEventBus);
 
-        // Register our packet handlers
-        modEventBus.addListener(PacketRegistry::setupPackets);
+        processAnnotations(modEventBus);
+    }
 
-        // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
-        ModContainer container = ModLoadingContext.get().getActiveContainer();
-
+    private void processAnnotations(@Nonnull IEventBus modEventBus) {
         // Generate configuration files from annotations
-        ConfigAnnotationProcessor.process(container);
+        ConfigAnnotationProcessor.process();
+
+        // Bind packet handlers from annotations
+        modEventBus.addListener(PacketRegistry::bindPacketHandlers);
     }
 
 }

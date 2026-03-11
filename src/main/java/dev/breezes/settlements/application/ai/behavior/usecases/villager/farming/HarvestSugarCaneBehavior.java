@@ -1,7 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -12,13 +11,17 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.NearbySugarCaneExistsCondition;
-import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
@@ -38,6 +41,8 @@ public class HarvestSugarCaneBehavior extends StateMachineBehavior {
     @Nullable
     private BlockPos sugarCanePos;
     private int timeWorkedSoFar;
+    @Getter
+    private final BehaviorDescriptor behaviorDescriptor;
     private List<BlockPos> validSugarCaneAroundVillager;
     private final NearbySugarCaneExistsCondition<BaseVillager> nearbySugarCaneExistsCondition;
 
@@ -47,6 +52,11 @@ public class HarvestSugarCaneBehavior extends StateMachineBehavior {
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.behavior.harvest_sugar_cane")
+                .iconItemId(ResourceLocation.withDefaultNamespace("sugar_cane"))
+                .displaySuffix(null)
+                .build();
 
         this.nearbySugarCaneExistsCondition = NearbySugarCaneExistsCondition.builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
