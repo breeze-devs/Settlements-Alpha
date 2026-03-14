@@ -47,29 +47,24 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class BlastOreBehavior extends StateMachineBehavior {
+public class SmokeMeatBehavior extends StateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
     private static final Ticks ITEM_INTERACTION_DURATION = Ticks.seconds(1);
-    private static final Ticks BLASTING_DURATION = Ticks.seconds(8);
+    private static final Ticks SMOKING_DURATION = Ticks.seconds(6);
 
-    private static final List<BlastOreRecipe> RECIPES = List.of(
-            BlastOreRecipe.builder()
-                    .input(Items.RAW_IRON)
-                    .output(Items.IRON_INGOT)
-                    .build(),
-            BlastOreRecipe.builder()
-                    .input(Items.RAW_GOLD)
-                    .output(Items.GOLD_INGOT)
-                    .build(),
-            BlastOreRecipe.builder()
-                    .input(Items.RAW_COPPER)
-                    .output(Items.COPPER_INGOT)
-                    .build());
+    private static final List<SmokeMeatRecipe> RECIPES = List.of(
+            SmokeMeatRecipe.builder().input(Items.BEEF).output(Items.COOKED_BEEF).build(),
+            SmokeMeatRecipe.builder().input(Items.PORKCHOP).output(Items.COOKED_PORKCHOP).build(),
+            SmokeMeatRecipe.builder().input(Items.CHICKEN).output(Items.COOKED_CHICKEN).build(),
+            SmokeMeatRecipe.builder().input(Items.MUTTON).output(Items.COOKED_MUTTON).build(),
+            SmokeMeatRecipe.builder().input(Items.RABBIT).output(Items.COOKED_RABBIT).build(),
+            SmokeMeatRecipe.builder().input(Items.COD).output(Items.COOKED_COD).build(),
+            SmokeMeatRecipe.builder().input(Items.SALMON).output(Items.COOKED_SALMON).build());
 
-    private enum BlastStage implements StageKey {
-        BLAST_ORE,
+    private enum SmokeStage implements StageKey {
+        SMOKE_MEAT,
         END;
     }
 
@@ -78,60 +73,59 @@ public class BlastOreBehavior extends StateMachineBehavior {
     private final BehaviorDescriptor behaviorDescriptor;
 
     @Nullable
-    private PhysicalBlock blastFurnace;
+    private PhysicalBlock smoker;
     @Nullable
-    private BlastOreRecipe currentRecipe;
+    private SmokeMeatRecipe currentRecipe;
 
-    public BlastOreBehavior(BlastOreConfig config) {
+    public SmokeMeatBehavior(SmokeMeatConfig config) {
         super(log,
                 RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
                         Ticks.seconds(config.preconditionCheckCooldownMax())),
                 RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
                         Ticks.seconds(config.behaviorCooldownMax())));
         this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.blast_ore")
-                .iconItemId(ResourceLocation.withDefaultNamespace("blast_furnace"))
+                .displayNameKey("ui.settlements.behavior.behavior.smoke_meat")
+                .iconItemId(ResourceLocation.withDefaultNamespace("smoker"))
                 .displaySuffix(null)
                 .build();
 
         // Create behavior preconditions
-        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));
-        // TODO: we perhaps should check whether the furnace is currently in use?
+        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.SMOKER));
         this.preconditions.add(this.jobSiteBlockExistsCondition);
 
         // Initialize variables
-        this.blastFurnace = null;
+        this.smoker = null;
         this.currentRecipe = null;
 
-        this.initializeStateMachine(this.createControlStep(), BlastStage.END);
+        this.initializeStateMachine(this.createControlStep(), SmokeStage.END);
     }
 
     protected StagedStep createControlStep() {
         return StagedStep.builder()
-                .name("BlastOreBehavior")
-                .initialStage(BlastStage.BLAST_ORE)
+                .name("SmokeMeatBehavior")
+                .initialStage(SmokeStage.SMOKE_MEAT)
                 .stageStepMap(Map.of(
-                        BlastStage.BLAST_ORE, this.createBlastStep()
+                        SmokeStage.SMOKE_MEAT, this.createSmokeStep()
                 ))
-                .nextStage(BlastStage.END)
+                .nextStage(SmokeStage.END)
                 .onEnd(ctx -> StepResult.noOp())
                 .build();
     }
 
     @Override
-    protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager entity,
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext context) {
-
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
             this.requestStop();
             return;
         }
-        this.blastFurnace = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
+
+        this.smoker = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
         this.currentRecipe = RandomUtil.choice(RECIPES);
+        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.smoker)));
 
-        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.blastFurnace)));
-
-        this.setFurnaceLockState(true);
+        this.setSmokerLockState(true);
     }
 
     @Override
@@ -139,13 +133,13 @@ public class BlastOreBehavior extends StateMachineBehavior {
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext context) {
-        return this.blastFurnace != null && this.blastFurnace.is(Blocks.BLAST_FURNACE);
+        return this.smoker != null && this.smoker.is(Blocks.SMOKER);
     }
 
     @Override
     public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
-        if (this.blastFurnace != null) {
-            entity.getLookControl().setLookAt(this.blastFurnace.getLocation(false).toVec3());
+        if (this.smoker != null) {
+            entity.getLookControl().setLookAt(this.smoker.getLocation(false).toVec3());
         }
         return super.tickContinueConditions(delta, world, entity);
     }
@@ -153,48 +147,49 @@ public class BlastOreBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
-        this.setFurnaceLitState(false);
+        this.setSmokerLitState(false);
         villager.clearHeldItem();
-        this.setFurnaceLockState(false);
+        this.setSmokerLockState(false);
 
-        this.blastFurnace = null;
+        this.smoker = null;
         this.currentRecipe = null;
     }
 
-    private BehaviorStep createBlastStep() {
+    private BehaviorStep createSmokeStep() {
         TimeBasedStep setup = TimeBasedStep.builder()
                 .withTickable(ITEM_INTERACTION_DURATION.asTickable())
                 .onStart(ctx -> {
-                    if (this.currentRecipe == null || this.blastFurnace == null) {
+                    if (this.currentRecipe == null || this.smoker == null) {
                         return StepResult.complete();
                     }
+
                     ctx.getInitiator().setHeldItem(this.currentRecipe.getInput().getDefaultInstance());
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
-                    if (this.blastFurnace == null) {
+                    if (this.smoker == null) {
                         return StepResult.complete();
                     }
 
                     ctx.getInitiator().clearHeldItem();
-                    this.setFurnaceLitState(true);
-                    Location location = this.blastFurnace.getLocation(true).add(0, 0.5, 0, false);
-                    location.displayParticles(ParticleTypes.LAVA, 5, 0.3, 0.3, 0.3, 0.1);
+                    this.setSmokerLitState(true);
+                    Location location = this.smoker.getLocation(true).add(0, 0.5, 0, false);
+                    location.displayParticles(ParticleTypes.SMOKE, 6, 0.3, 0.3, 0.3, 0.02);
                     SoundRegistry.ITEM_POP_IN.playGlobally(location, SoundSource.BLOCKS);
                     return StepResult.noOp();
                 })
                 .build();
 
-        TimeBasedStep blasting = TimeBasedStep.builder()
-                .withTickable(BLASTING_DURATION.asTickable())
+        TimeBasedStep smoking = TimeBasedStep.builder()
+                .withTickable(SMOKING_DURATION.asTickable())
                 .onEnd(ctx -> {
-                    if (this.blastFurnace == null || this.currentRecipe == null) {
+                    if (this.smoker == null || this.currentRecipe == null) {
                         return StepResult.complete();
                     }
 
-                    this.setFurnaceLitState(false);
+                    this.setSmokerLitState(false);
                     ctx.getInitiator().setHeldItem(this.currentRecipe.getOutput().getDefaultInstance());
-                    SoundRegistry.ITEM_POP_OUT.playGlobally(this.blastFurnace.getLocation(true).add(0, 0.5, 0, false), SoundSource.BLOCKS);
+                    SoundRegistry.ITEM_POP_OUT.playGlobally(this.smoker.getLocation(true).add(0, 0.5, 0, false), SoundSource.BLOCKS);
                     return StepResult.noOp();
                 })
                 .build();
@@ -210,44 +205,44 @@ public class BlastOreBehavior extends StateMachineBehavior {
         return StayCloseStep.builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
                 .navigateStep(new NavigateToTargetStep(0.5f, 1))
-                .actionStep(new SequencedStep("BlastOreBehavior.sequence", List.of(setup, blasting, takeOut)))
+                .actionStep(new SequencedStep("SmokeMeatBehavior.sequence", List.of(setup, smoking, takeOut)))
                 .build();
     }
 
-    private void setFurnaceLitState(boolean lit) {
-        if (this.blastFurnace == null) {
+    private void setSmokerLitState(boolean lit) {
+        if (this.smoker == null) {
             return;
         }
 
-        Level level = this.blastFurnace.getLevel();
-        BlockPos pos = this.blastFurnace.getLocation(false).toBlockPos();
+        Level level = this.smoker.getLevel();
+        BlockPos pos = this.smoker.getLocation(false).toBlockPos();
 
         BlockState currentState = level.getBlockState(pos);
-        if (!currentState.is(Blocks.BLAST_FURNACE)) {
-            log.behaviorTrace("Skipping furnace lit state update at {} because block is no longer a blast furnace", pos);
+        if (!currentState.is(Blocks.SMOKER)) {
+            log.behaviorTrace("Skipping smoker lit state update at {} because block is no longer a smoker", pos);
             return;
         }
         if (!currentState.hasProperty(AbstractFurnaceBlock.LIT)) {
-            log.behaviorTrace("Skipping furnace lit state update at {} because block state has no LIT property", pos);
+            log.behaviorTrace("Skipping smoker lit state update at {} because block state has no LIT property", pos);
             return;
         }
         if (currentState.getValue(AbstractFurnaceBlock.LIT) == lit) {
             return;
         }
 
-        log.behaviorTrace("Setting furnace lit state to {}", lit);
+        log.behaviorTrace("Setting smoker lit state to {}", lit);
         BlockState newState = currentState.setValue(AbstractFurnaceBlock.LIT, lit);
         level.setBlock(pos, newState, BlockFlag.of(BlockFlag.SEND_BLOCK_UPDATE, BlockFlag.SEND_CLIENT_UPDATE));
     }
 
-    private void setFurnaceLockState(boolean locked) {
-        if (this.blastFurnace == null) {
+    private void setSmokerLockState(boolean locked) {
+        if (this.smoker == null) {
             return;
         }
 
-        BlockEntity blockEntity = this.blastFurnace.getLevel().getBlockEntity(this.blastFurnace.getLocation(false).toBlockPos());
+        BlockEntity blockEntity = this.smoker.getLevel().getBlockEntity(this.smoker.getLocation(false).toBlockPos());
         if (!(blockEntity instanceof BaseContainerBlockEntityMixin lockableContainer)) {
-            log.behaviorTrace("Skipping furnace lock state update because block entity is not lockable");
+            log.behaviorTrace("Skipping smoker lock state update because block entity is not lockable");
             return;
         }
 
@@ -257,7 +252,7 @@ public class BlastOreBehavior extends StateMachineBehavior {
 
     @Builder
     @Getter
-    private static class BlastOreRecipe {
+    private static class SmokeMeatRecipe {
 
         private final Item input;
         private final Item output;
