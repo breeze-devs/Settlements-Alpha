@@ -14,8 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFriendlyNeedsPotionCondition;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.world.location.Vector;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -58,11 +56,8 @@ public class ThrowPotionsBehavior extends StateMachineBehavior {
     private ItemStack potionToThrow;
 
     public ThrowPotionsBehavior(ThrowPotionsConfig config) {
-        super(log,
-                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
-                        Ticks.seconds(config.preconditionCheckCooldownMax())),
-                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())));
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.throw_potions")
                 .iconItemId(ResourceLocation.withDefaultNamespace("splash_potion"))

@@ -20,7 +20,6 @@ import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -88,13 +87,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
     private final AtomicInteger shearCount;
 
     public ShearSheepBehaviorV2(@Nonnull ShearSheepConfig config) {
-        super(log,
-                RandomRangeTickable.of(
-                        Ticks.of(config.preconditionCheckCooldownMin()),
-                        Ticks.of(config.preconditionCheckCooldownMax())),
-                RandomRangeTickable.of(
-                        Ticks.of(config.behaviorCooldownMin()),
-                        Ticks.of(config.behaviorCooldownMax())));
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
 
         this.config = config;
         this.behaviorDescriptor = BehaviorDescriptor.builder()

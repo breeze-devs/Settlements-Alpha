@@ -1,5 +1,8 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.timing.BehaviorTimingConfig;
+import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
+import dev.breezes.settlements.application.config.validation.BehaviorCooldownValidator;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
@@ -22,30 +25,30 @@ public record ShearSheepConfig(
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "precondition_check_cooldown_min",
-                description = "Minimum cooldown (in ticks) between precondition checks. Lower values make villagers check more frequently for sheep to shear.",
+                identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
+                description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
                 defaultValue = 10,
                 min = 1)
         int preconditionCheckCooldownMin,
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "precondition_check_cooldown_max",
-                description = "Maximum cooldown (in ticks) between precondition checks. Higher values make villagers check less frequently.",
+                identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
+                description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
                 defaultValue = 20, min = 1)
         int preconditionCheckCooldownMax,
 
         @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-                identifier = "behavior_cooldown_min",
-                description = "Minimum cooldown (in ticks) before the behavior can run again after completion.",
+                identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
+                description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
                 defaultValue = 60,
                 min = 1)
         int behaviorCooldownMin,
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "behavior_cooldown_max",
-                description = "Maximum cooldown (in ticks) before the behavior can run again after completion.",
+                identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
+                description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
                 defaultValue = 240,
                 min = 1)
         int behaviorCooldownMax,
@@ -80,19 +83,11 @@ public record ShearSheepConfig(
                         @MapEntry(key = "expert", value = "7"),
                         @MapEntry(key = "master", value = "10")
                 })
-        Map<String, Integer> expertiseShearLimit) {
+        Map<String, Integer> expertiseShearLimit) implements BehaviorTimingConfig {
 
-    /**
-     * Validation constructor (optional but recommended).
-     * Records can have a compact constructor for validation.
-     */
     public ShearSheepConfig {
-        if (preconditionCheckCooldownMin > preconditionCheckCooldownMax) {
-            throw new IllegalArgumentException("preconditionCheckCooldownMin cannot be greater than preconditionCheckCooldownMax");
-        }
-        if (behaviorCooldownMin > behaviorCooldownMax) {
-            throw new IllegalArgumentException("behaviorCooldownMin cannot be greater than behaviorCooldownMax");
-        }
+        BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
+                behaviorCooldownMin, behaviorCooldownMax);
     }
 
 }

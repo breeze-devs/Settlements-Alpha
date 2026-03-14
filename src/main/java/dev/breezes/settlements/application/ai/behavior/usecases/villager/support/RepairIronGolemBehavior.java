@@ -16,7 +16,6 @@ import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescript
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyDamagedIronGolemExistsCondition;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -55,11 +54,8 @@ public class RepairIronGolemBehavior extends StateMachineBehavior {
     private int remainingRepairAttempts;
 
     public RepairIronGolemBehavior(RepairIronGolemConfig config) {
-        super(log,
-                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
-                        Ticks.seconds(config.preconditionCheckCooldownMax())),
-                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())));
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+
         this.config = config;
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.repair_iron_golem")

@@ -1,9 +1,11 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.timing.BehaviorTimingConfig;
+import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
+import dev.breezes.settlements.application.config.validation.BehaviorCooldownValidator;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
 
 @BehaviorConfig(name = "harvest_sugar_cane", type = ConfigurationType.BEHAVIOR)
 public record HarvestSugarCaneConfig(
@@ -56,15 +58,11 @@ public record HarvestSugarCaneConfig(
                 min = 0,
                 max = 3)
         int scanRangeVertical
-) {
+) implements BehaviorTimingConfig {
 
     public HarvestSugarCaneConfig {
-        if (preconditionCheckCooldownMin > preconditionCheckCooldownMax) {
-            throw new IllegalArgumentException("preconditionCheckCooldownMin cannot be greater than preconditionCheckCooldownMax");
-        }
-        if (behaviorCooldownMin > behaviorCooldownMax) {
-            throw new IllegalArgumentException("behaviorCooldownMin cannot be greater than behaviorCooldownMax");
-        }
+        BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
+                behaviorCooldownMin, behaviorCooldownMax);
     }
 
 }

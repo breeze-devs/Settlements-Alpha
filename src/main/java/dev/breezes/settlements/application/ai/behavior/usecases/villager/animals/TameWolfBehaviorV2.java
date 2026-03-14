@@ -17,7 +17,6 @@ import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescript
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -60,10 +59,8 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
     private int attemptsRemaining;
 
     public TameWolfBehaviorV2(TameWolfConfig config) {
-        super(log,
-                RandomRangeTickable.of(Ticks.of(config.preconditionCheckCooldownMin()),
-                        Ticks.of(config.preconditionCheckCooldownMax())),
-                RandomRangeTickable.of(Ticks.of(config.behaviorCooldownMin()), Ticks.of(config.behaviorCooldownMax())));
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+
         this.config = config;
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.tame_wolf")

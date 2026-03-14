@@ -1,9 +1,11 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.support;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.timing.BehaviorTimingConfig;
+import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
+import dev.breezes.settlements.application.config.validation.BehaviorCooldownValidator;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
 
 @BehaviorConfig(name = "throw_potions", type = ConfigurationType.BEHAVIOR)
 public record ThrowPotionsConfig(
@@ -65,15 +67,11 @@ public record ThrowPotionsConfig(
                 min = 1,
                 max = 16)
         int scanRangeVertical
-) {
+) implements BehaviorTimingConfig {
 
     public ThrowPotionsConfig {
-        if (preconditionCheckCooldownMin > preconditionCheckCooldownMax) {
-            throw new IllegalArgumentException("preconditionCheckCooldownMin cannot be greater than preconditionCheckCooldownMax");
-        }
-        if (behaviorCooldownMin > behaviorCooldownMax) {
-            throw new IllegalArgumentException("behaviorCooldownMin cannot be greater than behaviorCooldownMax");
-        }
+        BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
+                behaviorCooldownMin, behaviorCooldownMax);
     }
 
 }

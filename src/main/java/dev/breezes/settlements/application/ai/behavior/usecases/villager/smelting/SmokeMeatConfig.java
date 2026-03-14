@@ -1,6 +1,8 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.timing.BehaviorTimingConfig;
 import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
+import dev.breezes.settlements.application.config.validation.BehaviorCooldownValidator;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
@@ -38,15 +40,11 @@ public record SmokeMeatConfig(
                 defaultValue = 90,
                 min = 1)
         int behaviorCooldownMax
-) {
+) implements BehaviorTimingConfig {
 
     public SmokeMeatConfig {
-        if (preconditionCheckCooldownMin > preconditionCheckCooldownMax) {
-            throw new IllegalArgumentException("preconditionCheckCooldownMin cannot be greater than preconditionCheckCooldownMax");
-        }
-        if (behaviorCooldownMin > behaviorCooldownMax) {
-            throw new IllegalArgumentException("behaviorCooldownMin cannot be greater than behaviorCooldownMax");
-        }
+        BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
+                behaviorCooldownMin, behaviorCooldownMax);
     }
 
 }

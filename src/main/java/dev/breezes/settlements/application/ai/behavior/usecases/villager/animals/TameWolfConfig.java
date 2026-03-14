@@ -1,11 +1,13 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.timing.BehaviorTimingConfig;
+import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
+import dev.breezes.settlements.application.config.validation.BehaviorCooldownValidator;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.MapConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.MapEntry;
-import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
 
 import java.util.Map;
 
@@ -74,15 +76,11 @@ public record TameWolfConfig(
                         @MapEntry(key = "master", value = "3")
                 })
         Map<String, Integer> expertiseWolfLimit
-) {
+) implements BehaviorTimingConfig {
 
     public TameWolfConfig {
-        if (preconditionCheckCooldownMin > preconditionCheckCooldownMax) {
-            throw new IllegalArgumentException("preconditionCheckCooldownMin cannot be greater than preconditionCheckCooldownMax");
-        }
-        if (behaviorCooldownMin > behaviorCooldownMax) {
-            throw new IllegalArgumentException("behaviorCooldownMin cannot be greater than behaviorCooldownMax");
-        }
+        BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
+                behaviorCooldownMin, behaviorCooldownMax);
     }
 
 }

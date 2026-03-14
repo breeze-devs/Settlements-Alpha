@@ -17,7 +17,6 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
 import dev.breezes.settlements.domain.tags.EntityTag;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -85,11 +84,8 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
     private Animal breedTarget2;
 
     public BreedAnimalsBehavior(BreedAnimalsConfig config, Set<EntityType<? extends Animal>> breedableAnimalTypes) {
-        super(log,
-                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
-                        Ticks.seconds(config.preconditionCheckCooldownMax())),
-                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())));
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.breed_animals")
                 .iconItemId(ResourceLocation.withDefaultNamespace("wheat"))

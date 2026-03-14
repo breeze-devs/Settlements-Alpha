@@ -16,7 +16,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
@@ -78,11 +77,8 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
     private SmokeMeatRecipe currentRecipe;
 
     public SmokeMeatBehavior(SmokeMeatConfig config) {
-        super(log,
-                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
-                        Ticks.seconds(config.preconditionCheckCooldownMax())),
-                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())));
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.smoke_meat")
                 .iconItemId(ResourceLocation.withDefaultNamespace("smoker"))

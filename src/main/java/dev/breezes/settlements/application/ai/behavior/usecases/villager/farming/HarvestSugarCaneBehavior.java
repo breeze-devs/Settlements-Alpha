@@ -13,8 +13,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.NearbySugarCaneExistsCondition;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -47,11 +45,8 @@ public class HarvestSugarCaneBehavior extends StateMachineBehavior {
     private final NearbySugarCaneExistsCondition<BaseVillager> nearbySugarCaneExistsCondition;
 
     public HarvestSugarCaneBehavior(HarvestSugarCaneConfig config) {
-        super(log,
-                RandomRangeTickable.of(Ticks.seconds(config.preconditionCheckCooldownMin()),
-                        Ticks.seconds(config.preconditionCheckCooldownMax())),
-                RandomRangeTickable.of(Ticks.seconds(config.behaviorCooldownMin()),
-                        Ticks.seconds(config.behaviorCooldownMax())));
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.harvest_sugar_cane")
                 .iconItemId(ResourceLocation.withDefaultNamespace("sugar_cane"))
