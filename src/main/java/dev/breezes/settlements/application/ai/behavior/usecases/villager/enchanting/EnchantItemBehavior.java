@@ -49,7 +49,7 @@ public class EnchantItemBehavior extends StateMachineBehavior {
 
     private enum EnchantStage implements StageKey {
         ENCHANT_ITEM,
-        END;
+        END
     }
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
@@ -58,7 +58,7 @@ public class EnchantItemBehavior extends StateMachineBehavior {
     private final EnchantItemConfig config;
     @Getter
     private final BehaviorDescriptor behaviorDescriptor;
-    private final NearbyBlockExistsCondition<BaseVillager, EnchantingTableBlock> nearbyEnchantingTableCondition;
+    private final NearbyBlockExistsCondition<BaseVillager> nearbyEnchantingTableCondition;
     private final EnchantmentEngine enchantmentEngine;
 
     @Nullable
@@ -78,7 +78,7 @@ public class EnchantItemBehavior extends StateMachineBehavior {
         this.nearbyEnchantingTableCondition = new NearbyBlockExistsCondition<>(
                 config.scanRangeHorizontal(),
                 config.scanRangeVertical(),
-                EnchantingTableBlock.class,
+                Blocks.ENCHANTING_TABLE,
                 null,
                 1);
         this.preconditions.add(this::hasEnchantableNonEnchantedItem);

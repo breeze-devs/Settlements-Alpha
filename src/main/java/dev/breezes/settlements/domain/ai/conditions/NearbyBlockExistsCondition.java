@@ -2,6 +2,7 @@ package dev.breezes.settlements.domain.ai.conditions;
 
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -13,11 +14,12 @@ import java.util.Collections;
 import java.util.List;
 
 @CustomLog
-public class NearbyBlockExistsCondition<E extends Entity, B extends Block> implements ICondition<E> {
+public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<E> {
 
     private final double rangeHorizontal;
     private final double rangeVertical;
-    private final Class<B> targetBlockClass;
+    private Block targetBlock;
+    private TagKey<Block> targetTag;
     private final int minimumTargetCount;
 
     // IBlockCondition allows testing both itself and neighbors
@@ -26,10 +28,23 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
     @Nonnull
     private List<BlockPos> targets;
 
-    public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical, @Nonnull Class<B> targetBlockClass, @Nullable IBlockCondition extraBlockCondition, int minimumTargetCount) {
+    public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical, @Nonnull Block targetBlock, @Nullable IBlockCondition extraBlockCondition, int minimumTargetCount) {
         this.rangeHorizontal = rangeHorizontal;
         this.rangeVertical = rangeVertical;
-        this.targetBlockClass = targetBlockClass;
+        this.targetBlock = targetBlock;
+        this.extraBlockCondition = extraBlockCondition == null ? (blockPos, level) -> true : extraBlockCondition;
+        this.minimumTargetCount = minimumTargetCount;
+        this.targets = new ArrayList<>();
+
+        if (minimumTargetCount < 1) {
+            throw new IllegalArgumentException("Minimum target count must be at least 1");
+        }
+    }
+
+    public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical, @Nonnull TagKey<Block> targetBlocks, @Nullable IBlockCondition extraBlockCondition, int minimumTargetCount) {
+        this.rangeHorizontal = rangeHorizontal;
+        this.rangeVertical = rangeVertical;
+        this.targetTag = targetBlocks;
         this.extraBlockCondition = extraBlockCondition == null ? (blockPos, level) -> true : extraBlockCondition;
         this.minimumTargetCount = minimumTargetCount;
         this.targets = new ArrayList<>();
@@ -51,7 +66,7 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
             for (double y = -this.rangeVertical; y <= this.rangeVertical; y++) {
                 for (double z = -this.rangeHorizontal; z <= this.rangeHorizontal; z++) {
                     mutableBlockPos.set(entity.getX() + x, entity.getY() + y, entity.getZ() + z);
-                    if (targetBlockClass.isInstance(level.getBlockState(mutableBlockPos).getBlock()) && this.extraBlockCondition.test(mutableBlockPos, entity.level())) {
+                    if ((level.getBlockState(mutableBlockPos).is(targetBlock) || level.getBlockState(mutableBlockPos).is(targetTag)) && this.extraBlockCondition.test(mutableBlockPos, entity.level())) {
                         targets.add(mutableBlockPos.immutable());
                         if (this.targets.size() >= this.minimumTargetCount) {
                             log.sensorStatus("Found at least {} blocks nearby", this.minimumTargetCount);

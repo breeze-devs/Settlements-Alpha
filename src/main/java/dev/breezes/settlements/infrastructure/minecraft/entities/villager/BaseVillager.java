@@ -23,6 +23,8 @@ import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -42,6 +44,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.common.Tags;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -280,17 +283,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
                 if (shouldAddItem(itemStack,
                         Items.SUGAR_CANE,
                         Items.BONE_MEAL,
-                        Items.WHEAT,
-                        Items.WHEAT_SEEDS,
-                        Items.BEETROOT_SEEDS,
-                        Items.TORCHFLOWER_SEEDS,
-                        Items.PITCHER_POD))
+                        Items.WHEAT ))
                     return true;
+                if (shouldAddItem(itemStack, Tags.Items.SEEDS)) return true;
             }
             case ("shepherd") -> {
                 if (shouldAddItem(itemStack,
-                        Items.BLACK_WOOL,
-                        Items.WHITE_WOOL))
+                        ItemTags.WOOL))
                     return true;
             }
             default -> {
@@ -303,11 +302,16 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     private boolean shouldAddItem(ItemStack stackToAdd, Item... items) {
         VillagerInventory inventory = this.getSettlementsInventory();
         for (Item item : items) {
-            if (stackToAdd.is(item) && inventory.countItem(item) < 64 && inventory.canAddItem(stackToAdd)) {
+            if (stackToAdd.is(item) && inventory.countItem(stackToAdd.getItem()) < 64 && inventory.canAddItem(stackToAdd)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private boolean shouldAddItem(ItemStack stackToAdd, TagKey<Item> tag){
+        VillagerInventory inventory = this.getSettlementsInventory();
+        return stackToAdd.is(tag) && inventory.countItem(stackToAdd.getItem()) < 64 && inventory.canAddItem(stackToAdd);
     }
 
     public boolean hasItemInInventory(Item item) {

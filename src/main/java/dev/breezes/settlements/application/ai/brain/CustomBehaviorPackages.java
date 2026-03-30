@@ -22,10 +22,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.craftin
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.*;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;
@@ -248,7 +245,9 @@ public final class CustomBehaviorPackages {
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.MASON) {
             addTrackedChoiceBehavior(new CutStoneBehavior(ConfigFactory.create(CutStoneConfig.class)),
-                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
+                workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
+            addTrackedChoiceBehavior(new HarvestOreBehavior(ConfigFactory.create(HarvestOreConfig.class)),
+                workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.SHEPHERD) {
             // customBehaviorWeightMap.put(new TameWolfBehavior(), customGoalWeight);
             addTrackedChoiceBehavior(new ShearSheepBehaviorV2(ConfigFactory.create(ShearSheepConfig.class)),
