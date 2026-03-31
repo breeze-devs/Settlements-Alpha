@@ -45,7 +45,7 @@ public record HarvestOreConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "scan_range_horizontal",
                 description = "Horizontal range (in blocks) to scan for nearby ores",
-                defaultValue = 4,
+                defaultValue = 10,
                 min = 1,
                 max = 16)
         int scanRangeHorizontal,

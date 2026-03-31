@@ -22,7 +22,12 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.craftin
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.*;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;

@@ -33,6 +33,7 @@
   "ui.settlements.behavior.unavailable": "Behavior data unavailable",
   "ui.settlements.behavior.debug.no_villager_in_range": "No villager found in range",
   "ui.settlements.behavior.behavior.harvest_sugar_cane": "Harvest Sugar Cane",
+  "ui.settlements.behavior.behavior.harvest_ore": "Harvest Ore",
   "ui.settlements.behavior.behavior.shear_sheep": "Shear Sheep",
   "ui.settlements.behavior.behavior.milk_cow": "Milk Cow",
   "ui.settlements.behavior.behavior.repair_iron_golem": "Repair Iron Golem",

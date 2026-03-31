@@ -52,7 +52,7 @@ public class HarvestOreBehavior  extends StateMachineBehavior {
 
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.harvest_ore")
-                .iconItemId(ResourceLocation.withDefaultNamespace("ore"))
+                .iconItemId(ResourceLocation.withDefaultNamespace("emerald_ore"))
                 .displaySuffix(null)
                 .build();
 
@@ -71,11 +71,10 @@ public class HarvestOreBehavior  extends StateMachineBehavior {
 
     protected StagedStep createControlStep() {
         return StagedStep.builder()
-                .name("HarvestSugarCaneBehavior")
+                .name("HarvestOreBehavior")
                 .initialStage(HarvestOreBehavior.HarvestStage.HARVEST_ORE)
                 .stageStepMap(Map.of(HarvestOreBehavior.HarvestStage.HARVEST_ORE, this.createHarvestStep()))
                 .nextStage(HarvestOreBehavior.HarvestStage.END)
-                .onEnd(ctx -> StepResult.noOp())
                 .build();
     }
 
