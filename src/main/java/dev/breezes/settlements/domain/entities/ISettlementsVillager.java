@@ -1,5 +1,7 @@
 package dev.breezes.settlements.domain.entities;
 
+import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
+import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
@@ -37,6 +39,18 @@ public interface ISettlementsVillager extends ISettlementsBrainEntity {
 
     // Bubble runtime state (server authoritative)
     VillagerBubbleState getBubbleState();
+
+    /**
+     * Behaviors express bubble intent through the entity boundary so they stay
+     * unaware of the bubble orchestration service and its transport concerns.
+     */
+    void upsertBubble(@Nonnull BubbleChannel channel, @Nonnull String ownerKey, @Nonnull BubbleMessage message);
+
+    /**
+     * Bubble removal follows the same entity boundary to keep server-side
+     * bubble policy and packet publication out of behavior code.
+     */
+    void removeBubbleByOwner(@Nonnull BubbleChannel channel, @Nonnull String ownerKey);
 
     @Override
     BaseVillager getMinecraftEntity();

@@ -63,6 +63,7 @@ public class BehaviorControllerScreen extends LayoutScreen {
 
     @Getter
     private final long sessionId;
+    private final BehaviorControllerClientState behaviorControllerClientState;
     private BehaviorControllerSnapshot snapshot;
     @Nullable
     private Component unavailableMessage;
@@ -71,9 +72,12 @@ public class BehaviorControllerScreen extends LayoutScreen {
     @Nullable
     private ScrollableList behaviorList;
 
-    public BehaviorControllerScreen(long sessionId, @Nonnull BehaviorControllerSnapshot snapshot) {
+    public BehaviorControllerScreen(long sessionId,
+                                    @Nonnull BehaviorControllerSnapshot snapshot,
+                                    @Nonnull BehaviorControllerClientState behaviorControllerClientState) {
         super(Component.translatable(TITLE_KEY));
         this.sessionId = sessionId;
+        this.behaviorControllerClientState = behaviorControllerClientState;
         this.snapshot = snapshot;
         this.unavailableMessage = null;
         this.rowIconCache = new HashMap<>();
@@ -132,14 +136,14 @@ public class BehaviorControllerScreen extends LayoutScreen {
     @Override
     public void tick() {
         super.tick();
-        BehaviorControllerClientState.tickHeartbeatIfNeeded(this.sessionId);
+        this.behaviorControllerClientState.tickHeartbeatIfNeeded(this.sessionId);
     }
 
     @Override
     public void removed() {
         if (this.sessionId > 0) {
             PacketDistributor.sendToServer(new ServerBoundCloseBehaviorControllerPacket(this.sessionId));
-            BehaviorControllerClientState.clearSession(this.sessionId);
+            this.behaviorControllerClientState.clearSession(this.sessionId);
         }
         super.removed();
     }
@@ -231,8 +235,8 @@ public class BehaviorControllerScreen extends LayoutScreen {
 
     private UIElement buildStaleConnectionWarning() {
         return Elements.custom(SizeConstraint.FILL, SizeConstraint.fixed(10), (graphics, bounds, mouseX, mouseY, partialTick) -> {
-            boolean snapshotStale = BehaviorControllerClientState.isSnapshotUpdateStale(this.sessionId);
-            boolean heartbeatAckStale = BehaviorControllerClientState.isHeartbeatAckStale(this.sessionId);
+            boolean snapshotStale = this.behaviorControllerClientState.isSnapshotUpdateStale(this.sessionId);
+            boolean heartbeatAckStale = this.behaviorControllerClientState.isHeartbeatAckStale(this.sessionId);
             if (!snapshotStale && !heartbeatAckStale) {
                 return;
             }
@@ -285,9 +289,9 @@ public class BehaviorControllerScreen extends LayoutScreen {
         String scheduleValue = row.registeredSchedules().isEmpty()
                 ? SchedulePhase.UNKNOWN.name()
                 : row.registeredSchedules().stream()
-                .map(SchedulePhase::name)
-                .reduce((left, right) -> left + ", " + right)
-                .orElse(SchedulePhase.UNKNOWN.name());
+                  .map(SchedulePhase::name)
+                  .reduce((left, right) -> left + ", " + right)
+                  .orElse(SchedulePhase.UNKNOWN.name());
         return Component.translatable(SCHEDULE_LINE_KEY, scheduleValue);
     }
 

@@ -29,7 +29,7 @@ class HistoryEventDataManagerTest {
     private static final TraitId LUMBER = TraitId.of("settlements:settlement_traits/lumber");
     private static final TraitId DEFENSE = TraitId.of("settlements:settlement_traits/defense");
 
-    private final HistoryEventDataManager manager = HistoryEventDataManager.getInstance();
+    private final HistoryEventDataManager manager = new HistoryEventDataManager();
 
     @BeforeEach
     void setUp() throws IOException {

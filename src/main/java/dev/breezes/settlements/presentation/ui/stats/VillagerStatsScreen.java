@@ -75,6 +75,7 @@ public class VillagerStatsScreen extends LayoutScreen {
 
     @Getter
     private final long sessionId;
+    private final VillagerStatsClientState villagerStatsClientState;
     private VillagerStatsSnapshot statsSnapshot;
     @Nullable
     private VillagerInventorySnapshot inventorySnapshot;
@@ -102,10 +103,13 @@ public class VillagerStatsScreen extends LayoutScreen {
     private Component cachedWorkText;
     private int cachedWorkTextColor;
 
-    public VillagerStatsScreen(long sessionId, @Nonnull VillagerStatsSnapshot statsSnapshot) {
+    public VillagerStatsScreen(long sessionId,
+                               @Nonnull VillagerStatsSnapshot statsSnapshot,
+                               @Nonnull VillagerStatsClientState villagerStatsClientState) {
         super(Component.translatable(TITLE_KEY));
 
         this.sessionId = sessionId;
+        this.villagerStatsClientState = villagerStatsClientState;
         this.statsSnapshot = statsSnapshot;
         this.inventorySnapshot = null;
         this.unavailableMessage = null;
@@ -147,7 +151,7 @@ public class VillagerStatsScreen extends LayoutScreen {
     public void tick() {
         super.tick();
 
-        VillagerStatsClientState.tickHeartbeatIfNeeded(this.sessionId);
+        this.villagerStatsClientState.tickHeartbeatIfNeeded(this.sessionId);
     }
 
     @Override
@@ -159,7 +163,7 @@ public class VillagerStatsScreen extends LayoutScreen {
     public void removed() {
         if (this.sessionId > 0) {
             PacketDistributor.sendToServer(new ServerBoundCloseVillagerStatsPacket(this.sessionId));
-            VillagerStatsClientState.clearSession(this.sessionId);
+            this.villagerStatsClientState.clearSession(this.sessionId);
         }
 
         super.removed();
@@ -477,8 +481,8 @@ public class VillagerStatsScreen extends LayoutScreen {
         Component disconnectedStatus = Component.translatable(CONNECTION_DISCONNECTED_KEY);
 
         return Elements.custom(SizeConstraint.WRAP, SizeConstraint.fixed(12), (graphics, bounds, mouseX, mouseY, partialTick) -> {
-            boolean stale = VillagerStatsClientState.isSnapshotUpdateStale(this.sessionId)
-                    || VillagerStatsClientState.isHeartbeatAckStale(this.sessionId);
+            boolean stale = this.villagerStatsClientState.isSnapshotUpdateStale(this.sessionId)
+                    || this.villagerStatsClientState.isHeartbeatAckStale(this.sessionId);
 
             int labelWidth = this.font.width(connectionLabel);
             graphics.drawString(this.font, connectionLabel, bounds.x(), bounds.y(), theme.textColor(), false);

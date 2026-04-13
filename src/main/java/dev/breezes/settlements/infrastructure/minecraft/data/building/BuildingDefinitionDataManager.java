@@ -18,6 +18,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -35,21 +36,17 @@ public class BuildingDefinitionDataManager extends SimpleJsonResourceReloadListe
     private static final String DIRECTORY_PATH = "settlements/buildings/definitions";
 
     private static final Gson GSON = new GsonBuilder().create();
-    private static final BuildingDefinitionDataManager INSTANCE = new BuildingDefinitionDataManager();
 
-    private volatile List<BuildingDefinition> rawDefinitions = List.of();
-    private volatile List<BuildingDefinition> definitions = List.of();
-    private volatile List<BuildingDefinition> constrained = List.of();
-    private volatile List<BuildingDefinition> unconstrained = List.of();
-    private volatile Map<TraitId, List<BuildingDefinition>> forTraitMap = Map.of();
-    private volatile Map<String, BuildingDefinition> byId = Map.of();
+    private List<BuildingDefinition> rawDefinitions = List.of();
+    private List<BuildingDefinition> definitions = List.of();
+    private List<BuildingDefinition> constrained = List.of();
+    private List<BuildingDefinition> unconstrained = List.of();
+    private Map<TraitId, List<BuildingDefinition>> forTraitMap = Map.of();
+    private Map<String, BuildingDefinition> byId = Map.of();
 
-    private BuildingDefinitionDataManager() {
+    @Inject
+    public BuildingDefinitionDataManager() {
         super(GSON, DIRECTORY_PATH);
-    }
-
-    public static BuildingDefinitionDataManager getInstance() {
-        return INSTANCE;
     }
 
     @Override

@@ -12,6 +12,7 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -24,18 +25,14 @@ public class FishCatchDataManager extends SimpleJsonResourceReloadListener {
     private static final String DIRECTORY_PATH = "settlements/fishing/catches";
 
     private static final Gson GSON = new GsonBuilder().create();
-    private static final FishCatchDataManager INSTANCE = new FishCatchDataManager();
 
-    private volatile List<FishCatchEntry> catches = List.of();
-    private volatile double[] cumulativeWeights = new double[0];
-    private volatile double totalWeight = 0.0;
+    private List<FishCatchEntry> catches = List.of();
+    private double[] cumulativeWeights = new double[0];
+    private double totalWeight = 0.0;
 
-    private FishCatchDataManager() {
+    @Inject
+    public FishCatchDataManager() {
         super(GSON, DIRECTORY_PATH);
-    }
-
-    public static FishCatchDataManager getInstance() {
-        return INSTANCE;
     }
 
     @Override

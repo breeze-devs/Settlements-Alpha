@@ -7,6 +7,7 @@ import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
@@ -14,16 +15,10 @@ import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.survey.SurveyBounds;
 import dev.breezes.settlements.domain.generation.model.survey.TerrainGrid;
-import dev.breezes.settlements.domain.generation.pipeline.GenerationPipeline;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.generation.debug.GenerationResultSerializer;
-import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.TerrainGridFactory;
@@ -138,15 +133,7 @@ public class TestCommand {
         SurveyBounds bounds = buildSurveyBounds(x, z, requestedScale);
         TerrainGrid terrainGrid = TerrainGridFactory.fromServerLevel(level, bounds, GENERATION_SAMPLE_INTERVAL);
 
-        GenerationPipeline pipeline = new GenerationPipeline(
-                BiomeSurveyDataManager.getInstance(),
-                TraitScorerDataManager.getInstance(),
-                BuildingDefinitionDataManager.getInstance(),
-                HistoryEventDataManager.getInstance(),
-                TraitDefinitionDataManager.getInstance()
-        );
-
-        GenerationResult result = pipeline.generate(terrainGrid, bounds, seed);
+        GenerationResult result = SettlementsDagger.component().generationPipeline().generate(terrainGrid, bounds, seed);
 
         try {
             Path outputFile = buildGenerationOutputPath();

@@ -1,15 +1,18 @@
 package dev.breezes.settlements.application.ui.stats.session;
 
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsUnavailablePacket;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
 import lombok.CustomLog;
+import lombok.NoArgsConstructor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -18,19 +21,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @ServerSide
+@ServerScope
+@NoArgsConstructor(onConstructor_ = @Inject)
 @CustomLog
 public final class VillagerStatsSessionService {
 
     private static final long HEARTBEAT_TIMEOUT_TICKS = 120L;
     private static final String UNAVAILABLE_CLEANUP_REASON_KEY = "ui.settlements.stats.unavailable";
-    private static final VillagerStatsSessionService INSTANCE = new VillagerStatsSessionService();
 
     private final AtomicLong sessionIdGenerator = new AtomicLong(2000L);
     private final ConcurrentHashMap<UUID, VillagerStatsSession> sessionsByPlayer = new ConcurrentHashMap<>();
-
-    public static VillagerStatsSessionService getInstance() {
-        return INSTANCE;
-    }
 
     public VillagerStatsSession startOrReplaceSession(@Nonnull ServerPlayer player,
                                                       int villagerEntityId,

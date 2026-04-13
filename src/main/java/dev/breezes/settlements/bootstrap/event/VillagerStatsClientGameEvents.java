@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundCloseVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundOpenVillagerStatsPacket;
 import dev.breezes.settlements.presentation.ui.keybindings.SettlementsKeyMappings;
@@ -34,10 +35,12 @@ public final class VillagerStatsClientGameEvents {
             return;
         }
 
+        VillagerStatsClientState villagerStatsClientState = SettlementsDagger.client().villagerStatsClientState();
+
         // If the stats screen was closed unexpectedly but the session state was not cleared, clean it up
-        if (VillagerStatsClientState.hasActiveSession() && !(minecraft.screen instanceof VillagerStatsScreen)) {
-            long sessionId = VillagerStatsClientState.activeSessionId();
-            VillagerStatsClientState.forceClearSession();
+        if (villagerStatsClientState.hasActiveSession() && !(minecraft.screen instanceof VillagerStatsScreen)) {
+            long sessionId = villagerStatsClientState.activeSessionId();
+            villagerStatsClientState.forceClearSession();
             PacketDistributor.sendToServer(new ServerBoundCloseVillagerStatsPacket(sessionId));
         }
 

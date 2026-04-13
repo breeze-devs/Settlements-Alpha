@@ -24,7 +24,6 @@ import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -65,7 +64,8 @@ public class EnchantItemBehavior extends StateMachineBehavior {
     private BlockPos enchantingTablePos;
     private int targetSlot;
 
-    public EnchantItemBehavior(@Nonnull EnchantItemConfig config) {
+    public EnchantItemBehavior(@Nonnull EnchantItemConfig config,
+                               @Nonnull EnchantmentEngine enchantmentEngine) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
 
         this.config = config;
@@ -83,7 +83,7 @@ public class EnchantItemBehavior extends StateMachineBehavior {
                 1);
         this.preconditions.add(this::hasEnchantableNonEnchantedItem);
         this.preconditions.add(this.nearbyEnchantingTableCondition);
-        this.enchantmentEngine = new EnchantmentEngine(EnchantmentCostDataManager.getInstance());
+        this.enchantmentEngine = enchantmentEngine;
 
         this.enchantingTablePos = null;
         this.targetSlot = -1;

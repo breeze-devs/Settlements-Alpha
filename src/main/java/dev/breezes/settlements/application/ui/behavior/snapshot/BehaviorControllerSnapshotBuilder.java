@@ -3,23 +3,24 @@ package dev.breezes.settlements.application.ui.behavior.snapshot;
 import dev.breezes.settlements.application.ui.behavior.model.BehaviorControllerSnapshot;
 import dev.breezes.settlements.application.ui.behavior.model.BehaviorRowSnapshot;
 import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import net.minecraft.world.entity.schedule.Activity;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@ServerScope
+@NoArgsConstructor(onConstructor_ = @Inject)
 public final class BehaviorControllerSnapshotBuilder {
 
-    private static final BehaviorControllerSnapshotBuilder INSTANCE = new BehaviorControllerSnapshotBuilder();
     private static final Comparator<BehaviorRowSnapshot> BEHAVIOR_COMPARATOR =
             Comparator.comparingInt(BehaviorRowSnapshot::priority)
                     .reversed()
@@ -34,10 +35,6 @@ public final class BehaviorControllerSnapshotBuilder {
             SchedulePhase.REST,
             SchedulePhase.UNKNOWN
     );
-
-    public static BehaviorControllerSnapshotBuilder getInstance() {
-        return INSTANCE;
-    }
 
     public BehaviorControllerSnapshot build(@Nonnull BaseVillager villager, long gameTime) {
         List<BehaviorRowSnapshot> rows = new ArrayList<>();

@@ -1,7 +1,7 @@
 package dev.breezes.settlements.infrastructure.network.core;
 
 import dev.breezes.settlements.SettlementsMod;
-import dev.breezes.settlements.infrastructure.network.core.registry.PacketHandlerAnnotationProcessor;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundBehaviorControllerSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundBehaviorControllerUnavailablePacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundHeartbeatAckBehaviorControllerPacket;
@@ -29,9 +29,6 @@ import javax.annotation.Nonnull;
 public class PacketRegistry {
 
     public static void bindPacketHandlers(@Nonnull RegisterPayloadHandlersEvent event) {
-        // Initialize packet & handler bindings
-        PacketHandlerAnnotationProcessor.initialize();
-
         // Register with Minecraft registrar
         PayloadRegistrar registrar = event.registrar(SettlementsMod.MOD_ID).optional();
 
@@ -62,13 +59,21 @@ public class PacketRegistry {
     private static <T extends ClientBoundPacket> void registerClient(@Nonnull PayloadRegistrar registrar,
                                                                      @Nonnull CustomPacketPayload.Type<T> packetId,
                                                                      @Nonnull StreamCodec<FriendlyByteBuf, T> codec) {
-        registrar.playToClient(packetId, codec, ClientSidePacketReceiver.getInstance()::onReceivePacket);
+        // NeoForge captures this callback during mod setup, but the client receiver only becomes
+        // available after the Dagger client subcomponent is built. Resolving it lazily keeps the
+        // lifecycle edge explicit and avoids forcing earlier component initialization.
+        registrar.playToClient(packetId, codec,
+                (packet, context) -> SettlementsDagger.client().clientSidePacketReceiver().onReceivePacket(packet, context));
     }
 
     private static <T extends ServerBoundPacket> void registerServer(@Nonnull PayloadRegistrar registrar,
                                                                      @Nonnull CustomPacketPayload.Type<T> packetId,
                                                                      @Nonnull StreamCodec<FriendlyByteBuf, T> codec) {
-        registrar.playToServer(packetId, codec, ServerSidePacketReceiver.getInstance()::onReceivePacket);
+        // NeoForge captures this callback during mod setup, but the server receiver only becomes
+        // available after the Dagger server subcomponent is built. Resolving it lazily keeps the
+        // lifecycle edge explicit and avoids forcing earlier component initialization.
+        registrar.playToServer(packetId, codec,
+                (packet, context) -> SettlementsDagger.serverOrThrow().serverSidePacketReceiver().onReceivePacket(packet, context));
     }
 
 }

@@ -1,0 +1,1277 @@
+﻿+---main
+|   +---java
+|   |   \---dev
+|   |       \---breezes
+|   |           \---settlements
+|   |               |   package-info.java
+|   |               |   SettlementsMod.java
+|   |               |   
+|   |               +---application
+|   |               |   +---ai
+|   |               |   |   +---behavior
+|   |               |   |   |   +---runtime
+|   |               |   |   |   |   |   AbstractBehavior.java
+|   |               |   |   |   |   |   BaseVillagerBehavior.java
+|   |               |   |   |   |   |   StateMachineBehavior.java
+|   |               |   |   |   |   |   StopBehaviorException.java
+|   |               |   |   |   |   |   
+|   |               |   |   |   |   \---timing
+|   |               |   |   |   |           BehaviorTimingConfig.java
+|   |               |   |   |   |           
+|   |               |   |   |   +---usecases
+|   |               |   |   |   |   \---villager
+|   |               |   |   |   |       +---animals
+|   |               |   |   |   |       |   |   BreedAnimalsBehavior.java
+|   |               |   |   |   |       |   |   BreedAnimalsConfig.java
+|   |               |   |   |   |       |   |   ShearSheepBehaviorV2.java
+|   |               |   |   |   |       |   |   ShearSheepConfig.java
+|   |               |   |   |   |       |   |   TameCatBehavior.java
+|   |               |   |   |   |       |   |   TameCatConfig.java
+|   |               |   |   |   |       |   |   TameWolfBehaviorV2.java
+|   |               |   |   |   |       |   |   TameWolfConfig.java
+|   |               |   |   |   |       |   |   
+|   |               |   |   |   |       |   +---butchering
+|   |               |   |   |   |       |   |       ButcheringDropHandler.java
+|   |               |   |   |   |       |   |       ButcherLivestockBehavior.java
+|   |               |   |   |   |       |   |       ButcherLivestockConfig.java
+|   |               |   |   |   |       |   |       
+|   |               |   |   |   |       |   \---milking
+|   |               |   |   |   |       |           MilkCowBehavior.java
+|   |               |   |   |   |       |           MilkCowConfig.java
+|   |               |   |   |   |       |           
+|   |               |   |   |   |       +---cooking
+|   |               |   |   |   |       |   \---smokemeat
+|   |               |   |   |   |       |           SmokeMeatBehavior.java
+|   |               |   |   |   |       |           SmokeMeatConfig.java
+|   |               |   |   |   |       |           SmokeMeatRecipe.java
+|   |               |   |   |   |       |           SmokeRecipeAvailableCondition.java
+|   |               |   |   |   |       |           
+|   |               |   |   |   |       +---crafting
+|   |               |   |   |   |       |       CutStoneBehavior.java
+|   |               |   |   |   |       |       CutStoneConfig.java
+|   |               |   |   |   |       |       
+|   |               |   |   |   |       +---enchanting
+|   |               |   |   |   |       |       EnchantItemBehavior.java
+|   |               |   |   |   |       |       EnchantItemConfig.java
+|   |               |   |   |   |       |       
+|   |               |   |   |   |       +---farming
+|   |               |   |   |   |       |       HarvestOreBehavior.java
+|   |               |   |   |   |       |       HarvestOreConfig.java
+|   |               |   |   |   |       |       HarvestSoulSandBehavior.java
+|   |               |   |   |   |       |       HarvestSoulSandConfig.java
+|   |               |   |   |   |       |       HarvestSugarCaneBehavior.java
+|   |               |   |   |   |       |       HarvestSugarCaneConfig.java
+|   |               |   |   |   |       |       
+|   |               |   |   |   |       +---fishing
+|   |               |   |   |   |       |       FishingBehavior.java
+|   |               |   |   |   |       |       FishingConfig.java
+|   |               |   |   |   |       |       
+|   |               |   |   |   |       +---smelting
+|   |               |   |   |   |       |   \---blastore
+|   |               |   |   |   |       |           BlastOreBehavior.java
+|   |               |   |   |   |       |           BlastOreConfig.java
+|   |               |   |   |   |       |           BlastOreRecipe.java
+|   |               |   |   |   |       |           BlastRecipeAvailableCondition.java
+|   |               |   |   |   |       |           
+|   |               |   |   |   |       \---support
+|   |               |   |   |   |               RepairIronGolemBehavior.java
+|   |               |   |   |   |               RepairIronGolemConfig.java
+|   |               |   |   |   |               ThrowPotionsBehavior.java
+|   |               |   |   |   |               ThrowPotionsConfig.java
+|   |               |   |   |   |               
+|   |               |   |   |   \---workflow
+|   |               |   |   |       +---staged
+|   |               |   |   |       |       StagedStep.java
+|   |               |   |   |       |       
+|   |               |   |   |       +---state
+|   |               |   |   |       |   |   BehaviorContext.java
+|   |               |   |   |       |   |   BehaviorState.java
+|   |               |   |   |       |   |   
+|   |               |   |   |       |   \---registry
+|   |               |   |   |       |       |   BehaviorStateType.java
+|   |               |   |   |       |       |   
+|   |               |   |   |       |       +---items
+|   |               |   |   |       |       |       ItemState.java
+|   |               |   |   |       |       |       
+|   |               |   |   |       |       \---targets
+|   |               |   |   |       |               Targetable.java
+|   |               |   |   |       |               TargetableBlock.java
+|   |               |   |   |       |               TargetableEntity.java
+|   |               |   |   |       |               TargetableType.java
+|   |               |   |   |       |               TargetQueries.java
+|   |               |   |   |       |               TargetState.java
+|   |               |   |   |       |               
+|   |               |   |   |       \---steps
+|   |               |   |   |           |   AbstractStep.java
+|   |               |   |   |           |   BehaviorStep.java
+|   |               |   |   |           |   ConditionalStep.java
+|   |               |   |   |           |   SequencedStep.java
+|   |               |   |   |           |   StageKey.java
+|   |               |   |   |           |   StepResult.java
+|   |               |   |   |           |   TimeBasedStep.java
+|   |               |   |   |           |   
+|   |               |   |   |           \---concrete
+|   |               |   |   |                   NavigateToTargetStep.java
+|   |               |   |   |                   StayCloseStep.java
+|   |               |   |   |                   WaitStep.java
+|   |               |   |   |                   
+|   |               |   |   +---brain
+|   |               |   |   |       DefaultBrain.java
+|   |               |   |   |       VanillaBehaviorPackages.java
+|   |               |   |   |       
+|   |               |   |   \---sensors
+|   |               |   |           AbstractSensor.java
+|   |               |   |           NearestSugarcaneSensor.java
+|   |               |   |           
+|   |               |   +---config
+|   |               |   |   +---constants
+|   |               |   |   |       BehaviorConfigConstants.java
+|   |               |   |   |       
+|   |               |   |   \---validation
+|   |               |   |           BehaviorCooldownValidator.java
+|   |               |   |           
+|   |               |   +---enchanting
+|   |               |   |   \---engine
+|   |               |   |           EnchantmentEngine.java
+|   |               |   |           PoolFilter.java
+|   |               |   |           PoolWeightResolver.java
+|   |               |   |           PowerBudgetCalculator.java
+|   |               |   |           SelectionEngine.java
+|   |               |   |           
+|   |               |   \---ui
+|   |               |       |   .gitkeep
+|   |               |       |   
+|   |               |       +---behavior
+|   |               |       |   +---model
+|   |               |       |   |       BehaviorControllerSnapshot.java
+|   |               |       |   |       BehaviorRowSnapshot.java
+|   |               |       |   |       PreconditionSummary.java
+|   |               |       |   |       SchedulePhase.java
+|   |               |       |   |       
+|   |               |       |   +---session
+|   |               |       |   |       BehaviorControllerSession.java
+|   |               |       |   |       BehaviorControllerSessionService.java
+|   |               |       |   |       
+|   |               |       |   \---snapshot
+|   |               |       |           BehaviorBinding.java
+|   |               |       |           BehaviorControllerSnapshotBuilder.java
+|   |               |       |           BehaviorDescriptor.java
+|   |               |       |           BehaviorRuntimeInformation.java
+|   |               |       |           IBehaviorInfoProvider.java
+|   |               |       |           
+|   |               |       +---bubble
+|   |               |       |       BubbleChannel.java
+|   |               |       |       BubbleCommand.java
+|   |               |       |       BubbleEntry.java
+|   |               |       |       BubbleEntrySnapshot.java
+|   |               |       |       BubbleKind.java
+|   |               |       |       BubbleMessage.java
+|   |               |       |       ChannelPolicy.java
+|   |               |       |       VillagerBubbleService.java
+|   |               |       |       VillagerBubbleState.java
+|   |               |       |       
+|   |               |       \---stats
+|   |               |           +---model
+|   |               |           |       VillagerInventorySnapshot.java
+|   |               |           |       VillagerStatsSnapshot.java
+|   |               |           |       
+|   |               |           +---session
+|   |               |           |       VillagerStatsSession.java
+|   |               |           |       VillagerStatsSessionService.java
+|   |               |           |       
+|   |               |           \---snapshot
+|   |               |                   VillagerStatsSnapshotBuilder.java
+|   |               |                   
+|   |               +---bootstrap
+|   |               |   +---event
+|   |               |   |       BehaviorControllerClientGameEvents.java
+|   |               |   |       BehaviorControllerServerEvents.java
+|   |               |   |       ClientModEvents.java
+|   |               |   |       CommonModEvents.java
+|   |               |   |       DataReloadEvents.java
+|   |               |   |       GenerationDataValidationReloadListener.java
+|   |               |   |       ServerLifecycleEvents.java
+|   |               |   |       SettlementsKeyMappingEvents.java
+|   |               |   |       SettlementTemplateReloadListener.java
+|   |               |   |       VillagerStatsClientGameEvents.java
+|   |               |   |       VillagerStatsServerEvents.java
+|   |               |   |       
+|   |               |   \---registry
+|   |               |       +---blocks
+|   |               |       +---components
+|   |               |       |       DataComponentRegistry.java
+|   |               |       |       
+|   |               |       +---entities
+|   |               |       |       EntityRegistry.java
+|   |               |       |       
+|   |               |       +---items
+|   |               |       |       ItemRegistry.java
+|   |               |       |       
+|   |               |       +---particles
+|   |               |       |       ParticleRegistry.java
+|   |               |       |       
+|   |               |       +---sounds
+|   |               |       |       SoundRegistry.java
+|   |               |       |       
+|   |               |       +---structures
+|   |               |       |       StructureRegistry.java
+|   |               |       |       
+|   |               |       \---tabs
+|   |               |               CreativeTabRegistry.java
+|   |               |               
+|   |               +---di
+|   |               |   |   ClientComponent.java
+|   |               |   |   ClientScope.java
+|   |               |   |   ServerComponent.java
+|   |               |   |   ServerScope.java
+|   |               |   |   SettlementsComponent.java
+|   |               |   |   SettlementsDagger.java
+|   |               |   |   
+|   |               |   +---behavior
+|   |               |   |       BehaviorPackageResolver.java
+|   |               |   |       BehaviorRegistration.java
+|   |               |   |       
+|   |               |   \---modules
+|   |               |       |   ConfigModule.java
+|   |               |       |   DataManagerModule.java
+|   |               |       |   GenerationModule.java
+|   |               |       |   
+|   |               |       +---client
+|   |               |       |       ClientNetworkModule.java
+|   |               |       |       ClientStateModule.java
+|   |               |       |       
+|   |               |       \---server
+|   |               |               BehaviorModule.java
+|   |               |               BubbleModule.java
+|   |               |               ServerNetworkModule.java
+|   |               |               SessionModule.java
+|   |               |               SnapshotModule.java
+|   |               |               
+|   |               +---domain
+|   |               |   +---ai
+|   |               |   |   +---behavior
+|   |               |   |   |   +---contracts
+|   |               |   |   |   |       IBehavior.java
+|   |               |   |   |   |       IBehaviorCooldown.java
+|   |               |   |   |   |       
+|   |               |   |   |   \---model
+|   |               |   |   |           BehaviorDefinition.java
+|   |               |   |   |           BehaviorStatus.java
+|   |               |   |   |           
+|   |               |   |   +---brain
+|   |               |   |   |       IBrain.java
+|   |               |   |   |       ISettlementsBrainEntity.java
+|   |               |   |   |       
+|   |               |   |   +---conditions
+|   |               |   |   |       GameRuleBooleanCondition.java
+|   |               |   |   |       IBlockCondition.java
+|   |               |   |   |       ICondition.java
+|   |               |   |   |       IEntityCondition.java
+|   |               |   |   |       ItemStackCheckCondition.java
+|   |               |   |   |       JobSiteBlockExistsCondition.java
+|   |               |   |   |       MemoryPresentCondition.java
+|   |               |   |   |       NearbyBlockExistsCondition.java
+|   |               |   |   |       NearbyBreedableAnimalPairExistsCondition.java
+|   |               |   |   |       NearbyButcherableLivestockExistsCondition.java
+|   |               |   |   |       NearbyDamagedIronGolemExistsCondition.java
+|   |               |   |   |       NearbyEntityExistsCondition.java
+|   |               |   |   |       NearbyFriendlyNeedsPotionCondition.java
+|   |               |   |   |       NearbyItemExistsCondition.java
+|   |               |   |   |       NearbyMilkableCowExistsCondition.java
+|   |               |   |   |       NearbyOreExistsCondition.java
+|   |               |   |   |       NearbyShearableSheepExistsCondition.java
+|   |               |   |   |       NearbySoulSandExistsCondition.java
+|   |               |   |   |       NearbySugarCaneExistsCondition.java
+|   |               |   |   |       NearbyWaterExistsCondition.java
+|   |               |   |   |       
+|   |               |   |   +---memory
+|   |               |   |   |   |   MemorySerializer.java
+|   |               |   |   |   |   MemoryType.java
+|   |               |   |   |   |   MemoryTypeRegistry.java
+|   |               |   |   |   |   
+|   |               |   |   |   \---entry
+|   |               |   |   |           IMemoryEntry.java
+|   |               |   |   |           MemoryEntry.java
+|   |               |   |   |           
+|   |               |   |   +---navigation
+|   |               |   |   |       INavigationManager.java
+|   |               |   |   |       
+|   |               |   |   +---schedule
+|   |               |   |   |   |   ActivityCategory.java
+|   |               |   |   |   |   ISchedule.java
+|   |               |   |   |   |   IScheduleProvider.java
+|   |               |   |   |   |   
+|   |               |   |   |   \---routines
+|   |               |   |   |           IRoutine.java
+|   |               |   |   |           IRoutineBehaviorProvider.java
+|   |               |   |   |           
+|   |               |   |   \---sensors
+|   |               |   |       |   INearbyEntitySensor.java
+|   |               |   |       |   INearbySensor.java
+|   |               |   |       |   ISensor.java
+|   |               |   |       |   
+|   |               |   |       \---result
+|   |               |   |               EmptySenseResultEntry.java
+|   |               |   |               ISenseResult.java
+|   |               |   |               ISenseResultEntry.java
+|   |               |   |               SenseResultEntry.java
+|   |               |   |               
+|   |               |   +---common
+|   |               |   |       BiomeId.java
+|   |               |   |       
+|   |               |   +---enchanting
+|   |               |   |       EnchantingExpertiseDefinition.java
+|   |               |   |       EnchantmentCostData.java
+|   |               |   |       SpecializationProfile.java
+|   |               |   |       
+|   |               |   +---entities
+|   |               |   |       Expertise.java
+|   |               |   |       ISettlementsVillager.java
+|   |               |   |       SettlementsEntity.java
+|   |               |   |       VillagerProfessionKey.java
+|   |               |   |       
+|   |               |   +---exceptions
+|   |               |   |       SpawnFailedException.java
+|   |               |   |       
+|   |               |   +---fishing
+|   |               |   |       FishCatchEntry.java
+|   |               |   |       
+|   |               |   +---generation
+|   |               |   |   +---building
+|   |               |   |   |       BuildingManifestCalculator.java
+|   |               |   |   |       BuildingRegistry.java
+|   |               |   |   |       TemplateResolutionContext.java
+|   |               |   |   |       TemplateResolver.java
+|   |               |   |   |       
+|   |               |   |   +---history
+|   |               |   |   |       EventPreconditions.java
+|   |               |   |   |       HistoryEventDefinition.java
+|   |               |   |   |       HistoryEventEngine.java
+|   |               |   |   |       HistoryEventRegistry.java
+|   |               |   |   |       HistoryEventResult.java
+|   |               |   |   |       VisualMarkerSet.java
+|   |               |   |   |       
+|   |               |   |   +---layout
+|   |               |   |   |       BuildingPlacer.java
+|   |               |   |   |       ConstrainedPlacer.java
+|   |               |   |   |       HubPlacer.java
+|   |               |   |   |       LayoutResult.java
+|   |               |   |   |       LayoutSupport.java
+|   |               |   |   |       LocalResourceScanner.java
+|   |               |   |   |       PlacementContext.java
+|   |               |   |   |       PlacementGrid.java
+|   |               |   |   |       PlacementPhaseResult.java
+|   |               |   |   |       PlacementResult.java
+|   |               |   |   |       PlacementValidator.java
+|   |               |   |   |       RandomSearchPlacer.java
+|   |               |   |   |       RoadInfillPlacer.java
+|   |               |   |   |       RoadNetworkGenerator.java
+|   |               |   |   |       SettlementLayoutEngine.java
+|   |               |   |   |       
+|   |               |   |   +---model
+|   |               |   |   |   |   GenerationResult.java
+|   |               |   |   |   |   IntRange.java
+|   |               |   |   |   |   
+|   |               |   |   |   +---building
+|   |               |   |   |   |       BuildingAssignment.java
+|   |               |   |   |   |       BuildingDefinition.java
+|   |               |   |   |   |       BuildingManifest.java
+|   |               |   |   |   |       DisplayInfo.java
+|   |               |   |   |   |       FootprintConstraint.java
+|   |               |   |   |   |       GlobalAffinity.java
+|   |               |   |   |   |       ProximityAffinity.java
+|   |               |   |   |   |       ResolvedTemplate.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---geometry
+|   |               |   |   |   |       BlockPosition.java
+|   |               |   |   |   |       BoundingRegion.java
+|   |               |   |   |   |       Direction.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---layout
+|   |               |   |   |   |       Plot.java
+|   |               |   |   |   |       RoadSegment.java
+|   |               |   |   |   |       RoadType.java
+|   |               |   |   |   |       ZoneTier.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---profile
+|   |               |   |   |   |       DefenseLevel.java
+|   |               |   |   |   |       ScaleTier.java
+|   |               |   |   |   |       SettlementProfile.java
+|   |               |   |   |   |       TraitDefinition.java
+|   |               |   |   |   |       TraitId.java
+|   |               |   |   |   |       TraitSlot.java
+|   |               |   |   |   |       
+|   |               |   |   |   \---survey
+|   |               |   |   |           ElevationStats.java
+|   |               |   |   |           ResourceTag.java
+|   |               |   |   |           SiteReport.java
+|   |               |   |   |           SurveyBounds.java
+|   |               |   |   |           TerrainGrid.java
+|   |               |   |   |           TerrainSample.java
+|   |               |   |   |           WaterFeatureType.java
+|   |               |   |   |           
+|   |               |   |   +---pipeline
+|   |               |   |   |       GenerationPipeline.java
+|   |               |   |   |       
+|   |               |   |   +---sampling
+|   |               |   |   |       SamplingEngine.java
+|   |               |   |   |       
+|   |               |   |   +---scoring
+|   |               |   |   |       ConfiguredTraitScorer.java
+|   |               |   |   |       ScoreEngine.java
+|   |               |   |   |       TraitScorer.java
+|   |               |   |   |       TraitScorerConfig.java
+|   |               |   |   |       TraitScorerRegistry.java
+|   |               |   |   |       
+|   |               |   |   +---survey
+|   |               |   |   |       BiomeSurveyData.java
+|   |               |   |   |       BiomeSurveyLookup.java
+|   |               |   |   |       SurveyEngine.java
+|   |               |   |   |       
+|   |               |   |   \---trait
+|   |               |   |           TraitRegistry.java
+|   |               |   |           
+|   |               |   +---genetics
+|   |               |   |       Gene.java
+|   |               |   |       GeneticsProfile.java
+|   |               |   |       GeneType.java
+|   |               |   |       
+|   |               |   +---inventory
+|   |               |   |       GeneticInventoryProvider.java
+|   |               |   |       VillagerInventory.java
+|   |               |   |       
+|   |               |   +---skills
+|   |               |   |   |   FishermanSkills.java
+|   |               |   |   |   SkillType.java
+|   |               |   |   |   
+|   |               |   |   \---shepherds
+|   |               |   |           ShepherdSkills.java
+|   |               |   |           
+|   |               |   +---tags
+|   |               |   |       EntityTag.java
+|   |               |   |       
+|   |               |   +---time
+|   |               |   |       ITickable.java
+|   |               |   |       RandomRangeTickable.java
+|   |               |   |       Tickable.java
+|   |               |   |       Ticks.java
+|   |               |   |       TimeOfDay.java
+|   |               |   |       
+|   |               |   \---world
+|   |               |       +---blocks
+|   |               |       |       BlockFlag.java
+|   |               |       |       PhysicalBlock.java
+|   |               |       |       
+|   |               |       \---location
+|   |               |               Location.java
+|   |               |               Vector.java
+|   |               |               
+|   |               +---genetics
+|   |               +---infrastructure
+|   |               |   +---audio
+|   |               |   |       ChainedPlayable.java
+|   |               |   |       IPlayable.java
+|   |               |   |       SoundEventPlayable.java
+|   |               |   |       
+|   |               |   +---config
+|   |               |   |   +---annotations
+|   |               |   |   |   |   BehaviorConfig.java
+|   |               |   |   |   |   ConfigAnnotationProcessor.java
+|   |               |   |   |   |   ConfigAnnotationSubProcessor.java
+|   |               |   |   |   |   ConfigurationAnnotationRegistry.java
+|   |               |   |   |   |   ConfigurationType.java
+|   |               |   |   |   |   GeneralConfig.java
+|   |               |   |   |   |   RecordConfigProcessor.java
+|   |               |   |   |   |   
+|   |               |   |   |   +---booleans
+|   |               |   |   |   |       BooleanConfig.java
+|   |               |   |   |   |       BooleanConfigAnnotationProcessor.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---doubles
+|   |               |   |   |   |       DoubleConfig.java
+|   |               |   |   |   |       DoubleConfigAnnotationProcessor.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---floats
+|   |               |   |   |   |       FloatConfig.java
+|   |               |   |   |   |       FloatConfigAnnotationProcessor.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---integers
+|   |               |   |   |   |       IntegerConfig.java
+|   |               |   |   |   |       IntegerConfigAnnotationProcessor.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---maps
+|   |               |   |   |   |   |   ConfigLoadingException.java
+|   |               |   |   |   |   |   MapConfig.java
+|   |               |   |   |   |   |   MapConfigAnnotationProcessor.java
+|   |               |   |   |   |   |   MapConfigDeserializationException.java
+|   |               |   |   |   |   |   MapEntry.java
+|   |               |   |   |   |   |   
+|   |               |   |   |   |   \---deserializers
+|   |               |   |   |   |           MapConfigDeserializer.java
+|   |               |   |   |   |           MapConfigDeserializers.java
+|   |               |   |   |   |           StringToDoubleMapConfigDeserializer.java
+|   |               |   |   |   |           StringToIntegerMapConfigDeserializer.java
+|   |               |   |   |   |           StringToStringMapConfigDeserializer.java
+|   |               |   |   |   |           
+|   |               |   |   |   \---strings
+|   |               |   |   |           StringConfig.java
+|   |               |   |   |           StringConfigAnnotationProcessor.java
+|   |               |   |   |           
+|   |               |   |   +---factory
+|   |               |   |   |       ConfigFactory.java
+|   |               |   |   |       
+|   |               |   |   \---ui
+|   |               |   +---datagen
+|   |               |   |   |   DataGenerators.java
+|   |               |   |   |   
+|   |               |   |   \---item
+|   |               |   |           ModItemModelProvider.java
+|   |               |   |           ModItemTagProvider.java
+|   |               |   |           
+|   |               |   +---generation
+|   |               |   |   \---debug
+|   |               |   |           GenerationResultSerializer.java
+|   |               |   |           
+|   |               |   +---minecraft
+|   |               |   |   +---ai
+|   |               |   |   |   +---brain
+|   |               |   |   |   |       CustomMemoryModuleType.java
+|   |               |   |   |   |       
+|   |               |   |   |   \---schedule
+|   |               |   |   |           VanillaScheduleProvider.java
+|   |               |   |   |           
+|   |               |   |   +---behavior
+|   |               |   |   |   \---adapter
+|   |               |   |   |           DefaultBehaviorAdapter.java
+|   |               |   |   |           
+|   |               |   |   +---data
+|   |               |   |   |   +---building
+|   |               |   |   |   |       BuildingDefinitionDataManager.java
+|   |               |   |   |   |       BuildingDefinitionEntry.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---enchanting
+|   |               |   |   |   |       EnchantmentCostDataManager.java
+|   |               |   |   |   |       SpecializationDataManager.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---fishing
+|   |               |   |   |   |       FishCatchDataManager.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---history
+|   |               |   |   |   |       HistoryEventDataManager.java
+|   |               |   |   |   |       HistoryEventEntry.java
+|   |               |   |   |   |       PreconditionsEntry.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---scoring
+|   |               |   |   |   |       TraitScorerDataManager.java
+|   |               |   |   |   |       TraitScorerEntry.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---survey
+|   |               |   |   |   |       BiomeSurveyDataManager.java
+|   |               |   |   |   |       BiomeSurveyEntry.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---traits
+|   |               |   |   |   |       DisplayInfoEntry.java
+|   |               |   |   |   |       TraitDefinitionDataManager.java
+|   |               |   |   |   |       TraitDefinitionEntry.java
+|   |               |   |   |   |       
+|   |               |   |   |   \---validation
+|   |               |   |   |           GenerationDataValidator.java
+|   |               |   |   |           
+|   |               |   |   +---entities
+|   |               |   |   |   +---cats
+|   |               |   |   |   |   |   SettlementsCat.java
+|   |               |   |   |   |   |   
+|   |               |   |   |   |   \---goals
+|   |               |   |   |   |           CatFollowOwnerGoal.java
+|   |               |   |   |   |           CatSitWhenOrderedToGoal.java
+|   |               |   |   |   |           
+|   |               |   |   |   +---client
+|   |               |   |   |   |       ModModelLayers.java
+|   |               |   |   |   |       VillagerFishingHookRenderer.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---displays
+|   |               |   |   |   |   |   TransformedBlockDisplay.java
+|   |               |   |   |   |   |   TransformedDisplay.java
+|   |               |   |   |   |   |   
+|   |               |   |   |   |   \---models
+|   |               |   |   |   |           TransformationMatrix.java
+|   |               |   |   |   |           
+|   |               |   |   |   +---projectiles
+|   |               |   |   |   |       VillagerFishingHook.java
+|   |               |   |   |   |       
+|   |               |   |   |   +---villager
+|   |               |   |   |   |   |   BaseVillager.java
+|   |               |   |   |   |   |   
+|   |               |   |   |   |   +---animations
+|   |               |   |   |   |   |   |   AnimationController.java
+|   |               |   |   |   |   |   |   VillagerAnimation.java
+|   |               |   |   |   |   |   |   
+|   |               |   |   |   |   |   +---animator
+|   |               |   |   |   |   |   |       BaseAnimator.java
+|   |               |   |   |   |   |   |       ConditionAnimator.java
+|   |               |   |   |   |   |   |       OneShotAnimator.java
+|   |               |   |   |   |   |   |       
+|   |               |   |   |   |   |   +---conditions
+|   |               |   |   |   |   |   |       AndAnimationCondition.java
+|   |               |   |   |   |   |   |       AnimationCondition.java
+|   |               |   |   |   |   |   |       BooleanAnimationCondition.java
+|   |               |   |   |   |   |   |       OrAnimationCondition.java
+|   |               |   |   |   |   |   |       
+|   |               |   |   |   |   |   \---definitions
+|   |               |   |   |   |   |           BaseVillagerAnimation.java
+|   |               |   |   |   |   |           VillagerAnimationDefinition.java
+|   |               |   |   |   |   |           
+|   |               |   |   |   |   +---model
+|   |               |   |   |   |   |   |   AbstractVillagerModel.java
+|   |               |   |   |   |   |   |   BaseVillagerModel.java
+|   |               |   |   |   |   |   |   
+|   |               |   |   |   |   |   \---rendering
+|   |               |   |   |   |   |       |   BaseVillagerHeldItemLayer.java
+|   |               |   |   |   |   |       |   BaseVillagerRenderer.java
+|   |               |   |   |   |   |       |   
+|   |               |   |   |   |   |       \---predicates
+|   |               |   |   |   |   |               IsSuitableToolPredicate.java
+|   |               |   |   |   |   |               
+|   |               |   |   |   |   \---navigation
+|   |               |   |   |   |           OpenFenceGates.java
+|   |               |   |   |   |           VillagerPathNavigation.java
+|   |               |   |   |   |           
+|   |               |   |   |   \---wolves
+|   |               |   |   |       |   SettlementsWolf.java
+|   |               |   |   |       |   
+|   |               |   |   |       \---goals
+|   |               |   |   |               WolfFollowOwnerGoal.java
+|   |               |   |   |               WolfSitWhenOrderedToGoal.java
+|   |               |   |   |               
+|   |               |   |   +---mixins
+|   |               |   |   |       BaseContainerBlockEntityMixin.java
+|   |               |   |   |       BlockDisplayMixin.java
+|   |               |   |   |       CatMixin.java
+|   |               |   |   |       DisplayEntityMixin.java
+|   |               |   |   |       LevelMixin.java
+|   |               |   |   |       WolfMixin.java
+|   |               |   |   |       
+|   |               |   |   +---navigation
+|   |               |   |   |       VanillaBasicNavigationManager.java
+|   |               |   |   |       VanillaMemoryNavigationManager.java
+|   |               |   |   |       
+|   |               |   |   \---worldgen
+|   |               |   |       |   BlockPositionConverter.java
+|   |               |   |       |   NbtTemplateResolver.java
+|   |               |   |       |   SettlementsStructure.java
+|   |               |   |       |   SettlementsStructurePiece.java
+|   |               |   |       |   TerrainGridFactory.java
+|   |               |   |       |   
+|   |               |   |       +---pieces
+|   |               |   |       |       SettlementBuildingPiece.java
+|   |               |   |       |       SettlementRoadPiece.java
+|   |               |   |       |       
+|   |               |   |       \---structures
+|   |               |   |               SettlementStructure.java
+|   |               |   |               
+|   |               |   +---network
+|   |               |   |   +---core
+|   |               |   |   |       ClientBoundPacket.java
+|   |               |   |   |       ClientSidePacketHandler.java
+|   |               |   |   |       ClientSidePacketReceiver.java
+|   |               |   |   |       PacketHandler.java
+|   |               |   |   |       PacketRegistry.java
+|   |               |   |   |       ServerBoundPacket.java
+|   |               |   |   |       ServerSidePacketHandler.java
+|   |               |   |   |       ServerSidePacketReceiver.java
+|   |               |   |   |       SettlementsPacket.java
+|   |               |   |   |       
+|   |               |   |   \---features
+|   |               |   |       \---ui
+|   |               |   |           +---behavior
+|   |               |   |           |   +---codec
+|   |               |   |           |   |       BehaviorControllerSnapshotCodec.java
+|   |               |   |           |   |       BehaviorRowSnapshotCodec.java
+|   |               |   |           |   |       
+|   |               |   |           |   +---handler
+|   |               |   |           |   |       ClientBoundBehaviorControllerSnapshotPacketHandler.java
+|   |               |   |           |   |       ClientBoundBehaviorControllerUnavailablePacketHandler.java
+|   |               |   |           |   |       ClientBoundHeartbeatAckBehaviorControllerPacketHandler.java
+|   |               |   |           |   |       ClientBoundOpenBehaviorControllerPacketHandler.java
+|   |               |   |           |   |       ServerBoundCloseBehaviorControllerPacketHandler.java
+|   |               |   |           |   |       ServerBoundHeartbeatBehaviorControllerPacketHandler.java
+|   |               |   |           |   |       ServerBoundOpenBehaviorControllerPacketHandler.java
+|   |               |   |           |   |       
+|   |               |   |           |   \---packet
+|   |               |   |           |           ClientBoundBehaviorControllerSnapshotPacket.java
+|   |               |   |           |           ClientBoundBehaviorControllerUnavailablePacket.java
+|   |               |   |           |           ClientBoundHeartbeatAckBehaviorControllerPacket.java
+|   |               |   |           |           ClientBoundOpenBehaviorControllerPacket.java
+|   |               |   |           |           ServerBoundCloseBehaviorControllerPacket.java
+|   |               |   |           |           ServerBoundHeartbeatBehaviorControllerPacket.java
+|   |               |   |           |           ServerBoundOpenBehaviorControllerPacket.java
+|   |               |   |           |           
+|   |               |   |           +---bubble
+|   |               |   |           |   +---codec
+|   |               |   |           |   |       BubbleEntrySnapshotCodec.java
+|   |               |   |           |   |       
+|   |               |   |           |   +---handler
+|   |               |   |           |   |       ClientBoundBubbleSnapshotPacketHandler.java
+|   |               |   |           |   |       
+|   |               |   |           |   \---packet
+|   |               |   |           |           ClientBoundBubbleSnapshotPacket.java
+|   |               |   |           |           
+|   |               |   |           \---stats
+|   |               |   |               +---codec
+|   |               |   |               |       VillagerInventorySnapshotCodec.java
+|   |               |   |               |       VillagerStatsSnapshotCodec.java
+|   |               |   |               |       
+|   |               |   |               +---handler
+|   |               |   |               |       ClientBoundHeartbeatAckVillagerStatsPacketHandler.java
+|   |               |   |               |       ClientBoundOpenVillagerStatsPacketHandler.java
+|   |               |   |               |       ClientBoundVillagerInventorySnapshotPacketHandler.java
+|   |               |   |               |       ClientBoundVillagerStatsSnapshotPacketHandler.java
+|   |               |   |               |       ClientBoundVillagerStatsUnavailablePacketHandler.java
+|   |               |   |               |       ServerBoundCloseVillagerStatsPacketHandler.java
+|   |               |   |               |       ServerBoundHeartbeatVillagerStatsPacketHandler.java
+|   |               |   |               |       ServerBoundOpenVillagerStatsPacketHandler.java
+|   |               |   |               |       
+|   |               |   |               \---packet
+|   |               |   |                       ClientBoundHeartbeatAckVillagerStatsPacket.java
+|   |               |   |                       ClientBoundOpenVillagerStatsPacket.java
+|   |               |   |                       ClientBoundVillagerInventorySnapshotPacket.java
+|   |               |   |                       ClientBoundVillagerStatsSnapshotPacket.java
+|   |               |   |                       ClientBoundVillagerStatsUnavailablePacket.java
+|   |               |   |                       ServerBoundCloseVillagerStatsPacket.java
+|   |               |   |                       ServerBoundHeartbeatVillagerStatsPacket.java
+|   |               |   |                       ServerBoundOpenVillagerStatsPacket.java
+|   |               |   |                       
+|   |               |   \---rendering
+|   |               |       +---bubbles
+|   |               |       |   |   BubbleBoundingBox.java
+|   |               |       |   |   BubbleManager.java
+|   |               |       |   |   BubblePriority.java
+|   |               |       |   |   BubbleRenderClientEvents.java
+|   |               |       |   |   RenderParameter.java
+|   |               |       |   |   
+|   |               |       |   +---canvas
+|   |               |       |   |       BubbleBoundaryElement.java
+|   |               |       |   |       BubbleInnerElement.java
+|   |               |       |   |       BubbleRenderLayer.java
+|   |               |       |   |       BubbleTextElement.java
+|   |               |       |   |       DefaultSpeechBubble.java
+|   |               |       |   |       SpeechBubble.java
+|   |               |       |   |       
+|   |               |       |   +---registry
+|   |               |       |   |       BubbleRegistry.java
+|   |               |       |   |       BubbleShearSheepSpriteElement.java
+|   |               |       |   |       BubbleType.java
+|   |               |       |   |       EmoteExcitedSpeechBubble.java
+|   |               |       |   |       ShearSheepSpeechBubble.java
+|   |               |       |   |       
+|   |               |       |   \---texture
+|   |               |       |           AnimatedFrameTexture.java
+|   |               |       |           Texture.java
+|   |               |       |           
+|   |               |       \---particles
+|   |               +---presentation
+|   |               |   +---client
+|   |               |   |       ClientExecutor.java
+|   |               |   |       ClientUtil.java
+|   |               |   |       
+|   |               |   +---commands
+|   |               |   |       CommandRegistrar.java
+|   |               |   |       TestCommand.java
+|   |               |   |       
+|   |               |   \---ui
+|   |               |       +---behavior
+|   |               |       |       BehaviorControllerClientState.java
+|   |               |       |       BehaviorControllerScreen.java
+|   |               |       |       
+|   |               |       +---bubbles
+|   |               |       +---config
+|   |               |       |       ConfigScreen.java
+|   |               |       |       
+|   |               |       +---framework
+|   |               |       |       BaseElement.java
+|   |               |       |       Bounds.java
+|   |               |       |       Elements.java
+|   |               |       |       GuiLineDrawing.java
+|   |               |       |       Insets.java
+|   |               |       |       LayoutScreen.java
+|   |               |       |       LinearLayout.java
+|   |               |       |       ScrollableList.java
+|   |               |       |       SizeConstraint.java
+|   |               |       |       StackLayout.java
+|   |               |       |       UIElement.java
+|   |               |       |       UITheme.java
+|   |               |       |       WidgetElement.java
+|   |               |       |       
+|   |               |       +---keybindings
+|   |               |       |       SettlementsKeyMappings.java
+|   |               |       |       
+|   |               |       \---stats
+|   |               |               HexChartRenderer.java
+|   |               |               HpBarElement.java
+|   |               |               VillagerModelElement.java
+|   |               |               VillagerStatsClientState.java
+|   |               |               VillagerStatsScreen.java
+|   |               |               VillagerStatsUtil.java
+|   |               |               
+|   |               \---shared
+|   |                   +---annotations
+|   |                   |   +---functional
+|   |                   |   |       ClientSide.java
+|   |                   |   |       ServerSide.java
+|   |                   |   |       
+|   |                   |   \---stylistic
+|   |                   |           FieldsAreNonnullByDefault.java
+|   |                   |           MethodsReturnNonnullByDefault.java
+|   |                   |           VisibleForTesting.java
+|   |                   |           
+|   |                   +---logging
+|   |                   |   |   ApacheLogger.java
+|   |                   |   |   EntityLogger.java
+|   |                   |   |   ILogger.java
+|   |                   |   |   LoggerFactory.java
+|   |                   |   |   
+|   |                   |   \---levels
+|   |                   |           ApacheLogLevelAdapter.java
+|   |                   |           LogLevel.java
+|   |                   |           
+|   |                   \---util
+|   |                       |   CoordinateHashUtil.java
+|   |                       |   DebugUtil.java
+|   |                       |   DistanceUtils.java
+|   |                       |   EntityUtil.java
+|   |                       |   MathUtil.java
+|   |                       |   NbtTags.java
+|   |                       |   RandomUtil.java
+|   |                       |   ReputationUtil.java
+|   |                       |   ResourceLocationUtil.java
+|   |                       |   SettlementsException.java
+|   |                       |   SettlementsRuntimeException.java
+|   |                       |   StringUtil.java
+|   |                       |   SyncedDataWrapper.java
+|   |                       |   VillagerRaycastUtil.java
+|   |                       |   
+|   |                       \---crash
+|   |                           |   CrashUtil.java
+|   |                           |   
+|   |                           \---report
+|   |                                   BehaviorConfigurationCrashReport.java
+|   |                                   ConfigLoadingCrashReport.java
+|   |                                   CrashReport.java
+|   |                                   InvalidPacketRegistrationCrashReport.java
+|   |                                   MissingPacketHandlerCrashReport.java
+|   |                                   
+|   +---resources
+|   |   |   pack.mcmeta
+|   |   |   settlements.mixins.json
+|   |   |   
+|   |   +---assets
+|   |   |   \---settlements
+|   |   |       +---lang
+|   |   |       |       en_us.json
+|   |   |       |       
+|   |   |       +---models
+|   |   |       |   \---item
+|   |   |       |           sapphire_staff.json
+|   |   |       |           sapphire_staff_2d.json
+|   |   |       |           sapphire_staff_3d.json
+|   |   |       |           
+|   |   |       \---textures
+|   |   |           +---block
+|   |   |           |       blueberry_crop_stage_0.png
+|   |   |           |       blueberry_crop_stage_1.png
+|   |   |           |       blueberry_crop_stage_2.png
+|   |   |           |       blueberry_crop_stage_3.png
+|   |   |           |       blueberry_crop_stage_4.png
+|   |   |           |       blueberry_crop_stage_5.png
+|   |   |           |       bounce_block.png
+|   |   |           |       cat_mint.png
+|   |   |           |       corn_stage_0.png
+|   |   |           |       corn_stage_1.png
+|   |   |           |       corn_stage_2.png
+|   |   |           |       corn_stage_3.png
+|   |   |           |       corn_stage_4.png
+|   |   |           |       corn_stage_5.png
+|   |   |           |       corn_stage_6.png
+|   |   |           |       corn_stage_7.png
+|   |   |           |       corn_stage_8.png
+|   |   |           |       deepslate_sapphire_ore.png
+|   |   |           |       end_stone_sapphire_ore.png
+|   |   |           |       nether_sapphire_ore.png
+|   |   |           |       raw_sapphire_block.png
+|   |   |           |       sapphire_block.png
+|   |   |           |       sapphire_door_bottom.png
+|   |   |           |       sapphire_door_top.png
+|   |   |           |       sapphire_ore.png
+|   |   |           |       sapphire_trapdoor.png
+|   |   |           |       strawberry_stage_0.png
+|   |   |           |       strawberry_stage_1.png
+|   |   |           |       strawberry_stage_2.png
+|   |   |           |       strawberry_stage_3.png
+|   |   |           |       strawberry_stage_4.png
+|   |   |           |       strawberry_stage_5.png
+|   |   |           |       
+|   |   |           +---bubble
+|   |   |           |       anim_bubble_shears.png
+|   |   |           |       anim_bubble_sheep.png
+|   |   |           |       speech_bubble.png
+|   |   |           |       
+|   |   |           +---entity
+|   |   |           |       base_villager.png
+|   |   |           |       rhino.png
+|   |   |           |       
+|   |   |           +---item
+|   |   |           |       blueberry.png
+|   |   |           |       blueberry_seeds.png
+|   |   |           |       corn.png
+|   |   |           |       corn_seeds.png
+|   |   |           |       metal_destroyer.png
+|   |   |           |       raw_sapphire.png
+|   |   |           |       sapphire.png
+|   |   |           |       sapphire_boots.png
+|   |   |           |       sapphire_chestplate.png
+|   |   |           |       sapphire_door.png
+|   |   |           |       sapphire_helmet.png
+|   |   |           |       sapphire_leggings.png
+|   |   |           |       sapphire_staff.png
+|   |   |           |       sapphire_staff_3d.png
+|   |   |           |       strawberry.png
+|   |   |           |       strawberry_seeds.png
+|   |   |           |       
+|   |   |           \---models
+|   |   |               \---armor
+|   |   |                       sapphire_layer_1.png
+|   |   |                       sapphire_layer_2.png
+|   |   |                       
+|   |   +---data
+|   |   |   \---settlements
+|   |   |       +---settlements
+|   |   |       |   +---biomes
+|   |   |       |   |   \---survey
+|   |   |       |   |       \---minecraft
+|   |   |       |   |               badlands.json
+|   |   |       |   |               beach.json
+|   |   |       |   |               birch_forest.json
+|   |   |       |   |               cherry_grove.json
+|   |   |       |   |               cold_ocean.json
+|   |   |       |   |               dark_forest.json
+|   |   |       |   |               deep_cold_ocean.json
+|   |   |       |   |               deep_frozen_ocean.json
+|   |   |       |   |               deep_lukewarm_ocean.json
+|   |   |       |   |               deep_ocean.json
+|   |   |       |   |               desert.json
+|   |   |       |   |               eroded_badlands.json
+|   |   |       |   |               flower_forest.json
+|   |   |       |   |               forest.json
+|   |   |       |   |               frozen_ocean.json
+|   |   |       |   |               frozen_peaks.json
+|   |   |       |   |               frozen_river.json
+|   |   |       |   |               grove.json
+|   |   |       |   |               ice_spikes.json
+|   |   |       |   |               jagged_peaks.json
+|   |   |       |   |               lukewarm_ocean.json
+|   |   |       |   |               mangrove_swamp.json
+|   |   |       |   |               meadow.json
+|   |   |       |   |               mushroom_fields.json
+|   |   |       |   |               ocean.json
+|   |   |       |   |               old_growth_birch_forest.json
+|   |   |       |   |               old_growth_pine_taiga.json
+|   |   |       |   |               old_growth_spruce_taiga.json
+|   |   |       |   |               plains.json
+|   |   |       |   |               river.json
+|   |   |       |   |               savanna.json
+|   |   |       |   |               snowy_beach.json
+|   |   |       |   |               snowy_plains.json
+|   |   |       |   |               snowy_slopes.json
+|   |   |       |   |               snowy_taiga.json
+|   |   |       |   |               stony_peaks.json
+|   |   |       |   |               stony_shore.json
+|   |   |       |   |               sunflower_plains.json
+|   |   |       |   |               swamp.json
+|   |   |       |   |               taiga.json
+|   |   |       |   |               warm_ocean.json
+|   |   |       |   |               wooded_badlands.json
+|   |   |       |   |               
+|   |   |       |   +---buildings
+|   |   |       |   |   \---definitions
+|   |   |       |   |           barn.json
+|   |   |       |   |           barracks.json
+|   |   |       |   |           dock.json
+|   |   |       |   |           farmhouse.json
+|   |   |       |   |           fish_drying_rack.json
+|   |   |       |   |           house.json
+|   |   |       |   |           log_storage.json
+|   |   |       |   |           market_stall.json
+|   |   |       |   |           mine_entrance.json
+|   |   |       |   |           sawmill.json
+|   |   |       |   |           smelter.json
+|   |   |       |   |           tavern.json
+|   |   |       |   |           town_hall.json
+|   |   |       |   |           watchtower.json
+|   |   |       |   |           well.json
+|   |   |       |   |           
+|   |   |       |   +---enchantments
+|   |   |       |   |   \---costs
+|   |   |       |   |           aqua_affinity.json
+|   |   |       |   |           bane_of_arthropods.json
+|   |   |       |   |           blast_protection.json
+|   |   |       |   |           breach.json
+|   |   |       |   |           channeling.json
+|   |   |       |   |           density.json
+|   |   |       |   |           depth_strider.json
+|   |   |       |   |           efficiency.json
+|   |   |       |   |           feather_falling.json
+|   |   |       |   |           fire_aspect.json
+|   |   |       |   |           fire_protection.json
+|   |   |       |   |           flame.json
+|   |   |       |   |           fortune.json
+|   |   |       |   |           frost_walker.json
+|   |   |       |   |           impaling.json
+|   |   |       |   |           infinity.json
+|   |   |       |   |           knockback.json
+|   |   |       |   |           looting.json
+|   |   |       |   |           loyalty.json
+|   |   |       |   |           luck_of_the_sea.json
+|   |   |       |   |           lure.json
+|   |   |       |   |           mending.json
+|   |   |       |   |           multishot.json
+|   |   |       |   |           piercing.json
+|   |   |       |   |           power.json
+|   |   |       |   |           projectile_protection.json
+|   |   |       |   |           protection.json
+|   |   |       |   |           punch.json
+|   |   |       |   |           quick_charge.json
+|   |   |       |   |           respiration.json
+|   |   |       |   |           riptide.json
+|   |   |       |   |           sharpness.json
+|   |   |       |   |           silk_touch.json
+|   |   |       |   |           smite.json
+|   |   |       |   |           soul_speed.json
+|   |   |       |   |           sweeping_edge.json
+|   |   |       |   |           swift_sneak.json
+|   |   |       |   |           thorns.json
+|   |   |       |   |           unbreaking.json
+|   |   |       |   |           wind_burst.json
+|   |   |       |   |           
+|   |   |       |   +---fishing
+|   |   |       |   |   \---catches
+|   |   |       |   |           cod.json
+|   |   |       |   |           pufferfish.json
+|   |   |       |   |           salmon.json
+|   |   |       |   |           tropical_fish.json
+|   |   |       |   |           
+|   |   |       |   +---history
+|   |   |       |   |   \---events
+|   |   |       |   |           flood.json
+|   |   |       |   |           founded_as_outpost.json
+|   |   |       |   |           founded_by_exiles.json
+|   |   |       |   |           founded_by_explorers.json
+|   |   |       |   |           founded_by_fishermen.json
+|   |   |       |   |           founded_by_monks.json
+|   |   |       |   |           founded_by_prospectors.json
+|   |   |       |   |           founded_by_refugees.json
+|   |   |       |   |           founded_on_ancient_site.json
+|   |   |       |   |           great_fire.json
+|   |   |       |   |           hero_emerged.json
+|   |   |       |   |           rich_vein_struck.json
+|   |   |       |   |           
+|   |   |       |   +---specializations
+|   |   |       |   |       ancient_scholar.json
+|   |   |       |   |       war_smith.json
+|   |   |       |   |       
+|   |   |       |   \---traits
+|   |   |       |       +---definitions
+|   |   |       |       |       ancient.json
+|   |   |       |       |       arcane.json
+|   |   |       |       |       craft.json
+|   |   |       |       |       defense.json
+|   |   |       |       |       farming.json
+|   |   |       |       |       fishing.json
+|   |   |       |       |       honey.json
+|   |   |       |       |       lumber.json
+|   |   |       |       |       mining.json
+|   |   |       |       |       pastoral.json
+|   |   |       |       |       scholarly.json
+|   |   |       |       |       seafaring.json
+|   |   |       |       |       spiritual.json
+|   |   |       |       |       trade.json
+|   |   |       |       |       waypoint.json
+|   |   |       |       |       
+|   |   |       |       \---scoring
+|   |   |       |               defense.json
+|   |   |       |               farming.json
+|   |   |       |               fishing.json
+|   |   |       |               lumber.json
+|   |   |       |               mining.json
+|   |   |       |               
+|   |   |       +---structure
+|   |   |       |   \---buildings
+|   |   |       |           barracks.meta.json
+|   |   |       |           barracks.nbt
+|   |   |       |           farm.meta.json
+|   |   |       |           farm.nbt
+|   |   |       |           fishing_dock.meta.json
+|   |   |       |           fishing_dock.nbt
+|   |   |       |           fish_market.meta.json
+|   |   |       |           fish_market.nbt
+|   |   |       |           house.meta.json
+|   |   |       |           house.nbt
+|   |   |       |           lumber_camp.meta.json
+|   |   |       |           lumber_camp.nbt
+|   |   |       |           market_stall.meta.json
+|   |   |       |           market_stall.nbt
+|   |   |       |           mine.meta.json
+|   |   |       |           mine.nbt
+|   |   |       |           quarry.meta.json
+|   |   |       |           quarry.nbt
+|   |   |       |           sawmill.meta.json
+|   |   |       |           sawmill.nbt
+|   |   |       |           stonecutter.meta.json
+|   |   |       |           stonecutter.nbt
+|   |   |       |           tavern.meta.json
+|   |   |       |           tavern.nbt
+|   |   |       |           town_hall.meta.json
+|   |   |       |           town_hall.nbt
+|   |   |       |           watchtower.meta.json
+|   |   |       |           watchtower.nbt
+|   |   |       |           wheat_field.meta.json
+|   |   |       |           wheat_field.nbt
+|   |   |       |           
+|   |   |       +---tags
+|   |   |       |   \---worldgen
+|   |   |       |       \---biome
+|   |   |       |               has_settlement.json
+|   |   |       |               
+|   |   |       \---worldgen
+|   |   |           +---structure
+|   |   |           |       settlement.json
+|   |   |           |       
+|   |   |           \---structure_set
+|   |   |                   settlements.json
+|   |   |                   
+|   |   \---META-INF
+|   \---templates
+|       \---META-INF
+|               neoforge.mods.toml
+|               
+\---test
+    \---java
+        \---dev
+            \---breezes
+                \---settlements
+                    +---application
+                    |   \---ui
+                    |       \---bubble
+                    |               VillagerBubbleStateTest.java
+                    |               
+                    +---di
+                    |       TestConfigModule.java
+                    |       TestDataManagerModule.java
+                    |       TestSettlementsComponent.java
+                    |       
+                    +---domain
+                    |   +---common
+                    |   |       BiomeIdTest.java
+                    |   |       
+                    |   \---generation
+                    |       +---building
+                    |       |       BuildingManifestCalculatorTest.java
+                    |       |       
+                    |       +---history
+                    |       |       HistoryEventEngineTest.java
+                    |       |       VisualMarkerSetTest.java
+                    |       |       
+                    |       +---layout
+                    |       |       LayoutTestFixtures.java
+                    |       |       LocalResourceScannerTest.java
+                    |       |       PlacementGridTest.java
+                    |       |       PlacementValidatorTest.java
+                    |       |       RoadNetworkGeneratorTest.java
+                    |       |       SettlementLayoutEngineTest.java
+                    |       |       
+                    |       +---model
+                    |       |   |   GenerationModelDataObjectsTest.java
+                    |       |   |   GenerationModelGeometryTest.java
+                    |       |   |   
+                    |       |   \---profile
+                    |       |           TraitIdTest.java
+                    |       |           
+                    |       +---pipeline
+                    |       |       GenerationPipelineTest.java
+                    |       |       
+                    |       +---sampling
+                    |       |       SamplingEngineTest.java
+                    |       |       
+                    |       +---scoring
+                    |       |       ConfiguredTraitScorerTest.java
+                    |       |       ScoreEngineTest.java
+                    |       |       
+                    |       \---survey
+                    |               SurveyEngineTest.java
+                    |               
+                    +---infrastructure
+                    |   +---generation
+                    |   |   \---debug
+                    |   |           GenerationResultSerializerTest.java
+                    |   |           
+                    |   +---minecraft
+                    |   |   +---data
+                    |   |   |   +---building
+                    |   |   |   |       BuildingDefinitionDataManagerTest.java
+                    |   |   |   |       
+                    |   |   |   +---history
+                    |   |   |   |       HistoryEventDataManagerTest.java
+                    |   |   |   |       
+                    |   |   |   +---survey
+                    |   |   |   |       BiomeSurveyDataManagerTest.java
+                    |   |   |   |       
+                    |   |   |   +---traits
+                    |   |   |   |       TraitDefinitionDataManagerTest.java
+                    |   |   |   |       
+                    |   |   |   \---validation
+                    |   |   |           GenerationDataValidatorMockitoTest.java
+                    |   |   |           GenerationDataValidatorTest.java
+                    |   |   |           
+                    |   |   \---worldgen
+                    |   |           NbtTemplateResolverTest.java
+                    |   |           
+                    |   +---network
+                    |   |   \---features
+                    |   |       \---ui
+                    |   |           +---bubble
+                    |   |           |   \---codec
+                    |   |           |           BubbleEntrySnapshotCodecTest.java
+                    |   |           |           
+                    |   |           \---stats
+                    |   |               \---codec
+                    |   |                       VillagerStatsSnapshotCodecTest.java
+                    |   |                       
+                    |   \---rendering
+                    |       \---bubbles
+                    |               BubbleManagerTest.java
+                    |               
+                    +---models
+                    |   \---behaviors
+                    |       \---steps
+                    +---presentation
+                    |   \---ui
+                    |       +---behavior
+                    |       |   \---model
+                    |       |           BehaviorSnapshotCodecTest.java
+                    |       |           
+                    |       +---framework
+                    |       |       BoundsTest.java
+                    |       |       GuiLineDrawingTest.java
+                    |       |       InsetsTest.java
+                    |       |       LinearLayoutTest.java
+                    |       |       ScrollableListTest.java
+                    |       |       StackLayoutTest.java
+                    |       |       TestElement.java
+                    |       |       
+                    |       \---stats
+                    |               HexChartRendererTest.java
+                    |               VillagerStatsScreenUtilTest.java
+                    |               
+                    \---shared
+                        \---util
+                                StringUtilTest.java
+                                

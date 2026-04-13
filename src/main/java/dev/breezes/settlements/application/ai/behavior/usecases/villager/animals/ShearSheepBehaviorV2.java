@@ -16,10 +16,8 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
-import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
 import dev.breezes.settlements.application.ui.bubble.BubbleKind;
 import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
-import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -122,9 +120,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                             .sourceType("behavior")
                             .extraData(Map.of())
                             .build();
-                    VillagerBubbleService.getInstance().applyCommand(villager,
-                            new BubbleCommand.Upsert(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY, message),
-                            villager.getMinecraftEntity().level().getGameTime());
+                    villager.upsertBubble(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY, message);
                     return StepResult.noOp();
                 })
                 .initialStage(ShearStage.SHEAR_SHEEP)
@@ -133,9 +129,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                 .onEnd(context -> {
                     log.behaviorStatus("Removing speech bubble");
                     ISettlementsVillager villager = context.getInitiator();
-                    VillagerBubbleService.getInstance().applyCommand(villager,
-                            new BubbleCommand.RemoveByOwner(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY),
-                            villager.getMinecraftEntity().level().getGameTime());
+                    villager.removeBubbleByOwner(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY);
                     return StepResult.noOp();
                 })
                 .build();

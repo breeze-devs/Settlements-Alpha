@@ -16,6 +16,7 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -29,16 +30,12 @@ public class HistoryEventDataManager extends SimpleJsonResourceReloadListener im
 
     private static final String DIRECTORY_PATH = "settlements/history/events";
     private static final Gson GSON = new GsonBuilder().create();
-    private static final HistoryEventDataManager INSTANCE = new HistoryEventDataManager();
 
-    private volatile List<HistoryEventDefinition> definitions = List.of();
+    private List<HistoryEventDefinition> definitions = List.of();
 
-    private HistoryEventDataManager() {
+    @Inject
+    public HistoryEventDataManager() {
         super(GSON, DIRECTORY_PATH);
-    }
-
-    public static HistoryEventDataManager getInstance() {
-        return INSTANCE;
     }
 
     @Override

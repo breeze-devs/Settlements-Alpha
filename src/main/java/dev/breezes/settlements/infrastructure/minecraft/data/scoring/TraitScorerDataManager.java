@@ -18,6 +18,7 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -33,17 +34,13 @@ public class TraitScorerDataManager extends SimpleJsonResourceReloadListener imp
     private static final String DIRECTORY_PATH = "settlements/traits/scoring";
 
     private static final Gson GSON = new GsonBuilder().create();
-    private static final TraitScorerDataManager INSTANCE = new TraitScorerDataManager();
 
-    private volatile Map<TraitId, TraitScorer> rawScorersByTrait = Map.of();
-    private volatile Map<TraitId, TraitScorer> activeScorersByTrait = Map.of();
+    private Map<TraitId, TraitScorer> rawScorersByTrait = Map.of();
+    private Map<TraitId, TraitScorer> activeScorersByTrait = Map.of();
 
-    private TraitScorerDataManager() {
+    @Inject
+    public TraitScorerDataManager() {
         super(GSON, DIRECTORY_PATH);
-    }
-
-    public static TraitScorerDataManager getInstance() {
-        return INSTANCE;
     }
 
     @Override

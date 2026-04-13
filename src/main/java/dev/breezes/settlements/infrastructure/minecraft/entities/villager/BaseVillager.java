@@ -3,16 +3,22 @@ package dev.breezes.settlements.infrastructure.minecraft.entities.villager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
-import dev.breezes.settlements.application.ai.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.DefaultBrain;
+import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
+import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
+import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
+import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
+import dev.breezes.settlements.di.SettlementsDagger;
+import dev.breezes.settlements.di.behavior.BehaviorPackageResolver;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
@@ -133,7 +139,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         super.tick();
 
         if (!this.level().isClientSide()) {
-            VillagerBubbleService.getInstance().tick(this, this.level().getGameTime());
+            this.bubbleService().tick(this, this.level().getGameTime());
         }
 
         // if (this.level().isClientSide()) {
@@ -153,44 +159,44 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
      * Core components copied from parent class
      */
     private void registerBrainGoals(Brain<Villager> brain) {
+        // TODO: refactor speed, instead of hard coding 0.5F make it an attribute powered by genetics
         VillagerProfession profession = this.getVillagerData().getProfession();
+        VillagerProfessionKey villagerProfessionKey = new VillagerProfessionKey(profession.name());
         List<BehaviorBinding> trackedBehaviors = new ArrayList<>();
         int nextUiBehaviorIndex = 0;
+        BehaviorPackageResolver resolver = SettlementsDagger.serverOrThrow().behaviorPackageResolver();
 
-        // Register activities and behaviors
-        CustomBehaviorPackages.BehaviorContainer corePackage = CustomBehaviorPackages.getCorePackage(profession, 0.5F);
-        brain.addActivity(Activity.CORE, corePackage.behaviors());
-        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, corePackage.customBehaviors(), nextUiBehaviorIndex);
+        brain.addActivity(Activity.CORE, VanillaBehaviorPackages.getCorePackage(profession, 0.5F));
 
-        CustomBehaviorPackages.BehaviorContainer idlePackage = CustomBehaviorPackages.getIdlePackage(profession, 0.5F);
-        brain.addActivity(Activity.IDLE, idlePackage.behaviors());
-        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, idlePackage.customBehaviors(), nextUiBehaviorIndex);
-
+        // Idle
+        BehaviorPackageResolver.ResolvedBehaviors idleResolved = resolver.resolve(villagerProfessionKey, Activity.IDLE);
+        brain.addActivity(Activity.IDLE, VanillaBehaviorPackages.getIdlePackage(profession, 0.5F, idleResolved.choiceBehaviors()));
+        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, idleResolved.trackedBindings(), nextUiBehaviorIndex);
 
         if (this.isBaby()) {
-            // If baby, register PLAY activities
-            brain.addActivity(Activity.PLAY, CustomBehaviorPackages.getPlayPackage(0.5F));
+            // Play
+            brain.addActivity(Activity.PLAY, VanillaBehaviorPackages.getPlayPackage(0.5F));
         } else {
-            // Otherwise, register WORK activities if job site is present
-            CustomBehaviorPackages.BehaviorContainer workPackage = CustomBehaviorPackages.getWorkPackage(profession, 0.5F);
-            brain.addActivityWithConditions(Activity.WORK, workPackage.behaviors(),
+            // Work
+            BehaviorPackageResolver.ResolvedBehaviors workResolved = resolver.resolve(villagerProfessionKey, Activity.WORK);
+            brain.addActivityWithConditions(Activity.WORK, VanillaBehaviorPackages.getWorkPackage(profession, 0.5F, workResolved.choiceBehaviors()),
                     ImmutableSet.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)));
-            nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, workPackage.customBehaviors(), nextUiBehaviorIndex);
+            nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, workResolved.trackedBindings(), nextUiBehaviorIndex);
         }
 
-        // Register meet activities if meeting point is present
-        CustomBehaviorPackages.BehaviorContainer meetPackage = CustomBehaviorPackages.getMeetPackage(profession, 0.5F);
-        brain.addActivityWithConditions(Activity.MEET, meetPackage.behaviors(),
+        // Meet
+        BehaviorPackageResolver.ResolvedBehaviors meetResolved = resolver.resolve(villagerProfessionKey, Activity.MEET);
+        brain.addActivityWithConditions(Activity.MEET, VanillaBehaviorPackages.getMeetPackage(profession, 0.5F, meetResolved.choiceBehaviors()),
                 Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
-        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, meetPackage.customBehaviors(), nextUiBehaviorIndex);
+        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, meetResolved.trackedBindings(), nextUiBehaviorIndex);
 
         // Register other activities
         // TODO: if needed, add as tracked behaviors
-        brain.addActivity(Activity.REST, CustomBehaviorPackages.getRestPackage(profession, 0.5F));
-        brain.addActivity(Activity.PANIC, CustomBehaviorPackages.getPanicPackage(profession, 0.5F));
-        brain.addActivity(Activity.PRE_RAID, CustomBehaviorPackages.getPreRaidPackage(profession, 0.5F));
-        brain.addActivity(Activity.RAID, CustomBehaviorPackages.getRaidPackage(profession, 0.5F));
-        brain.addActivity(Activity.HIDE, CustomBehaviorPackages.getHidePackage(profession, 0.5F));
+        brain.addActivity(Activity.REST, VanillaBehaviorPackages.getRestPackage(profession, 0.5F));
+        brain.addActivity(Activity.PANIC, VanillaBehaviorPackages.getPanicPackage(profession, 0.5F));
+        brain.addActivity(Activity.PRE_RAID, VanillaBehaviorPackages.getPreRaidPackage(profession, 0.5F));
+        brain.addActivity(Activity.RAID, VanillaBehaviorPackages.getRaidPackage(profession, 0.5F));
+        brain.addActivity(Activity.HIDE, VanillaBehaviorPackages.getHidePackage(profession, 0.5F));
 
         // Set schedule
         if (this.isBaby()) {
@@ -253,6 +259,23 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     }
 
     @Override
+    public void upsertBubble(@Nonnull BubbleChannel channel, @Nonnull String ownerKey, @Nonnull BubbleMessage message) {
+        BubbleCommand.Upsert command = new BubbleCommand.Upsert(channel, ownerKey, message);
+        this.bubbleService().applyCommand(this, command, this.level().getGameTime());
+    }
+
+    @Override
+    public void removeBubbleByOwner(@Nonnull BubbleChannel channel, @Nonnull String ownerKey) {
+        BubbleCommand.RemoveByOwner command = new BubbleCommand.RemoveByOwner(channel, ownerKey);
+        this.bubbleService().applyCommand(this, command, this.level().getGameTime());
+    }
+
+    private VillagerBubbleService bubbleService() {
+        // Minecraft controls entity construction via EntityType, so constructor injection is not possible here.
+        return SettlementsDagger.serverOrThrow().villagerBubbleService();
+    }
+
+    @Override
     public int getNetworkingId() {
         return this.getId();
     }
@@ -283,7 +306,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
                 if (shouldAddItem(itemStack,
                         Items.SUGAR_CANE,
                         Items.BONE_MEAL,
-                        Items.WHEAT ))
+                        Items.WHEAT))
                     return true;
                 if (shouldAddItem(itemStack, Tags.Items.SEEDS)) return true;
             }
@@ -309,7 +332,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         return false;
     }
 
-    private boolean shouldAddItem(ItemStack stackToAdd, TagKey<Item> tag){
+    private boolean shouldAddItem(ItemStack stackToAdd, TagKey<Item> tag) {
         VillagerInventory inventory = this.getSettlementsInventory();
         return stackToAdd.is(tag) && inventory.countItem(stackToAdd.getItem()) < 64 && inventory.canAddItem(stackToAdd);
     }

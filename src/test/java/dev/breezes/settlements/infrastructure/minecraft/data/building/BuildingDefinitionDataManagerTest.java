@@ -29,7 +29,7 @@ class BuildingDefinitionDataManagerTest {
 
     private static final TraitId LUMBER = TraitId.of("settlements:settlement_traits/lumber");
 
-    private final BuildingDefinitionDataManager manager = BuildingDefinitionDataManager.getInstance();
+    private final BuildingDefinitionDataManager manager = new BuildingDefinitionDataManager();
 
     @BeforeEach
     void setUp() throws IOException {

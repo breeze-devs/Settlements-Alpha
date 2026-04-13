@@ -2,15 +2,16 @@ package dev.breezes.settlements.presentation.ui.stats;
 
 import dev.breezes.settlements.application.ui.stats.model.VillagerInventorySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
+import dev.breezes.settlements.di.ClientScope;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundHeartbeatVillagerStatsPacket;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
-import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.util.Optional;
 
 /**
@@ -19,18 +20,17 @@ import java.util.Optional;
  * All access must occur on the Minecraft client thread (render/tick).
  * Not thread-safe by design — Minecraft's client is single-threaded.
  * <p>
- * Implemented as a singleton with instance state to allow test injection.
- * Static delegate methods preserve the existing call-site API.
+ * The client only needs one process-lifetime instance, but keeping that lifetime
+ * in the Dagger graph avoids leaking static state between tests and sessions.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @ClientSide
+@ClientScope
+@NoArgsConstructor(onConstructor_ = @Inject)
 public final class VillagerStatsClientState {
 
     private static final int HEARTBEAT_INTERVAL_TICKS = 40;
     private static final int SNAPSHOT_STALE_THRESHOLD_TICKS = 20;
     private static final int HEARTBEAT_ACK_STALE_THRESHOLD_TICKS = 120;
-
-    private static final VillagerStatsClientState INSTANCE = new VillagerStatsClientState();
 
     private long activeSessionId = -1L;
     private int activeVillagerEntityId = -1;
@@ -47,79 +47,7 @@ public final class VillagerStatsClientState {
     private long lastHeartbeatAckReceivedGameTime = 0L;
     private int snapshotReceiveCount = 0;
 
-    public static VillagerStatsClientState getInstance() {
-        return INSTANCE;
-    }
-
-    // ---- Static delegates (preserve existing call-site API) ----
-
-    public static void openSession(long sessionId, int villagerEntityId) {
-        INSTANCE.doOpenSession(sessionId, villagerEntityId);
-    }
-
-    public static boolean applyStatsSnapshot(long sessionId, @Nonnull VillagerStatsSnapshot snapshot) {
-        return INSTANCE.doApplyStatsSnapshot(sessionId, snapshot);
-    }
-
-    public static boolean applyInventorySnapshot(long sessionId, @Nonnull VillagerInventorySnapshot inventory) {
-        return INSTANCE.doApplyInventorySnapshot(sessionId, inventory);
-    }
-
-    public static boolean recordHeartbeatAck(long sessionId) {
-        return INSTANCE.doRecordHeartbeatAck(sessionId);
-    }
-
-    public static boolean markUnavailable(long sessionId, @Nonnull String reasonKey) {
-        return INSTANCE.doMarkUnavailable(sessionId, reasonKey);
-    }
-
-    public static void clearSession(long sessionId) {
-        INSTANCE.doClearSession(sessionId);
-    }
-
-    /**
-     * Unconditionally resets all session state regardless of session ID.
-     * Used by defensive cleanup to guarantee the state is cleared even on ID mismatch.
-     */
-    public static void forceClearSession() {
-        INSTANCE.doForceClear();
-    }
-
-    public static boolean hasActiveSession() {
-        return INSTANCE.activeSessionId > 0;
-    }
-
-    public static long activeSessionId() {
-        return INSTANCE.activeSessionId;
-    }
-
-    public static int activeVillagerEntityId() {
-        return INSTANCE.activeVillagerEntityId;
-    }
-
-    public static Optional<VillagerStatsSnapshot> latestStatsSnapshot() {
-        return Optional.ofNullable(INSTANCE.latestStatsSnapshot);
-    }
-
-    public static Optional<VillagerInventorySnapshot> latestInventorySnapshot() {
-        return Optional.ofNullable(INSTANCE.latestInventorySnapshot);
-    }
-
-    public static boolean isSnapshotUpdateStale(long screenSessionId) {
-        return INSTANCE.doIsSnapshotUpdateStale(screenSessionId);
-    }
-
-    public static boolean isHeartbeatAckStale(long screenSessionId) {
-        return INSTANCE.doIsHeartbeatAckStale(screenSessionId);
-    }
-
-    public static void tickHeartbeatIfNeeded(long screenSessionId) {
-        INSTANCE.doTickHeartbeatIfNeeded(screenSessionId);
-    }
-
-    // ---- Instance methods ----
-
-    private void doOpenSession(long sessionId, int villagerEntityId) {
+    public void openSession(long sessionId, int villagerEntityId) {
         this.activeSessionId = sessionId;
         this.activeVillagerEntityId = villagerEntityId;
         this.latestStatsSnapshot = null;
@@ -132,7 +60,7 @@ public final class VillagerStatsClientState {
         this.snapshotReceiveCount = 0;
     }
 
-    private boolean doApplyStatsSnapshot(long sessionId, @Nonnull VillagerStatsSnapshot snapshot) {
+    public boolean applyStatsSnapshot(long sessionId, @Nonnull VillagerStatsSnapshot snapshot) {
         if (sessionId != this.activeSessionId) {
             return false;
         }
@@ -147,7 +75,7 @@ public final class VillagerStatsClientState {
         return true;
     }
 
-    private boolean doApplyInventorySnapshot(long sessionId, @Nonnull VillagerInventorySnapshot inventory) {
+    public boolean applyInventorySnapshot(long sessionId, @Nonnull VillagerInventorySnapshot inventory) {
         if (sessionId != this.activeSessionId) {
             return false;
         }
@@ -156,7 +84,7 @@ public final class VillagerStatsClientState {
         return true;
     }
 
-    private boolean doRecordHeartbeatAck(long sessionId) {
+    public boolean recordHeartbeatAck(long sessionId) {
         if (sessionId != this.activeSessionId) {
             return false;
         }
@@ -175,7 +103,7 @@ public final class VillagerStatsClientState {
         return false;
     }
 
-    private boolean doMarkUnavailable(long sessionId, @Nonnull String reasonKey) {
+    public boolean markUnavailable(long sessionId, @Nonnull String reasonKey) {
         if (sessionId != this.activeSessionId) {
             return false;
         }
@@ -185,14 +113,14 @@ public final class VillagerStatsClientState {
         return true;
     }
 
-    private void doClearSession(long sessionId) {
+    public void clearSession(long sessionId) {
         if (sessionId != this.activeSessionId) {
             return;
         }
-        doForceClear();
+        this.forceClearSession();
     }
 
-    private void doForceClear() {
+    public void forceClearSession() {
         this.activeSessionId = -1L;
         this.activeVillagerEntityId = -1;
         this.latestStatsSnapshot = null;
@@ -205,7 +133,27 @@ public final class VillagerStatsClientState {
         this.snapshotReceiveCount = 0;
     }
 
-    private boolean doIsSnapshotUpdateStale(long screenSessionId) {
+    public boolean hasActiveSession() {
+        return this.activeSessionId > 0;
+    }
+
+    public long activeSessionId() {
+        return this.activeSessionId;
+    }
+
+    public int activeVillagerEntityId() {
+        return this.activeVillagerEntityId;
+    }
+
+    public Optional<VillagerStatsSnapshot> latestStatsSnapshot() {
+        return Optional.ofNullable(this.latestStatsSnapshot);
+    }
+
+    public Optional<VillagerInventorySnapshot> latestInventorySnapshot() {
+        return Optional.ofNullable(this.latestInventorySnapshot);
+    }
+
+    public boolean isSnapshotUpdateStale(long screenSessionId) {
         if (screenSessionId <= 0 || screenSessionId != this.activeSessionId) {
             return false;
         }
@@ -223,7 +171,7 @@ public final class VillagerStatsClientState {
         return (gameTime - this.lastSnapshotReceivedGameTime) > SNAPSHOT_STALE_THRESHOLD_TICKS;
     }
 
-    private boolean doIsHeartbeatAckStale(long screenSessionId) {
+    public boolean isHeartbeatAckStale(long screenSessionId) {
         if (screenSessionId <= 0 || screenSessionId != this.activeSessionId) {
             return false;
         }
@@ -241,7 +189,7 @@ public final class VillagerStatsClientState {
         return (gameTime - this.lastHeartbeatAckReceivedGameTime) > HEARTBEAT_ACK_STALE_THRESHOLD_TICKS;
     }
 
-    private void doTickHeartbeatIfNeeded(long screenSessionId) {
+    public void tickHeartbeatIfNeeded(long screenSessionId) {
         if (screenSessionId <= 0 || screenSessionId != this.activeSessionId) {
             return;
         }

@@ -1,8 +1,8 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.projectiles;
 
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.fishing.FishCatchEntry;
-import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -275,7 +275,7 @@ public class VillagerFishingHook extends Projectile {
     }
 
     private Optional<Entity> createRandomFish() {
-        Optional<FishCatchEntry> catchEntry = FishCatchDataManager.getInstance().rollRandomCatch();
+        Optional<FishCatchEntry> catchEntry = SettlementsDagger.serverOrThrow().fishCatchDataManager().rollRandomCatch();
         if (catchEntry.isEmpty()) {
             log.warn("No fish catch entries available while reeling in villager fishing hook");
             this.selectedCatchEntry = null;

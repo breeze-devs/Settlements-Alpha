@@ -1,13 +1,16 @@
 package dev.breezes.settlements.application.ui.behavior.session;
 
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
 import lombok.CustomLog;
+import lombok.NoArgsConstructor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -16,18 +19,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @ServerSide
+@ServerScope
+@NoArgsConstructor(onConstructor_ = @Inject)
 @CustomLog
 public final class BehaviorControllerSessionService {
 
     private static final long HEARTBEAT_TIMEOUT_TICKS = 120L;
-    private static final BehaviorControllerSessionService INSTANCE = new BehaviorControllerSessionService();
 
     private final AtomicLong sessionIdGenerator = new AtomicLong(1000L);
     private final ConcurrentHashMap<UUID, BehaviorControllerSession> sessionsByPlayer = new ConcurrentHashMap<>();
-
-    public static BehaviorControllerSessionService getInstance() {
-        return INSTANCE;
-    }
 
     public BehaviorControllerSession startOrReplaceSession(@Nonnull ServerPlayer player,
                                                            int villagerEntityId,

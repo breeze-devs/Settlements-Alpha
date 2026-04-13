@@ -11,6 +11,7 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,16 +23,12 @@ public class EnchantmentCostDataManager extends SimpleJsonResourceReloadListener
     private static final String DIRECTORY_PATH = "settlements/enchantments/costs";
 
     private static final Gson GSON = new GsonBuilder().create();
-    private static final EnchantmentCostDataManager INSTANCE = new EnchantmentCostDataManager();
 
-    private volatile Map<String, EnchantmentCostData> costsByEnchantmentId = Map.of();
+    private Map<String, EnchantmentCostData> costsByEnchantmentId = Map.of();
 
-    private EnchantmentCostDataManager() {
+    @Inject
+    public EnchantmentCostDataManager() {
         super(GSON, DIRECTORY_PATH);
-    }
-
-    public static EnchantmentCostDataManager getInstance() {
-        return INSTANCE;
     }
 
     @Override

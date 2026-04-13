@@ -16,7 +16,7 @@ class BiomeSurveyDataManagerTest {
 
     @Test
     void parsesTemplateTagsWhenPresent() {
-        BiomeSurveyDataManager manager = BiomeSurveyDataManager.getInstance();
+        BiomeSurveyDataManager manager = new BiomeSurveyDataManager();
         manager.apply(Map.of(
                 ResourceLocation.parse("settlements:biomes/survey/minecraft/taiga"),
                 json("""
@@ -34,7 +34,7 @@ class BiomeSurveyDataManagerTest {
 
     @Test
     void missingSurveyUsesDefaultEmptyTemplateTags() {
-        BiomeSurveyDataManager manager = BiomeSurveyDataManager.getInstance();
+        BiomeSurveyDataManager manager = new BiomeSurveyDataManager();
         manager.apply(Map.of(), null, null);
 
         assertTrue(manager.lookup(BiomeId.of("minecraft:not_real")).templateTags().isEmpty());

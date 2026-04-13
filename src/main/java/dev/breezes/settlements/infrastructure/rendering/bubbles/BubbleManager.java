@@ -3,6 +3,7 @@ package dev.breezes.settlements.infrastructure.rendering.bubbles;
 import dev.breezes.settlements.application.ui.bubble.BubbleEntrySnapshot;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.SpeechBubble;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.registry.BubbleRegistry;
+import dev.breezes.settlements.shared.annotations.functional.ClientSide;
 import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -19,6 +20,7 @@ import java.util.UUID;
 
 @Getter
 @CustomLog
+@ClientSide
 public class BubbleManager {
 
     private static final double STACKED_BUBBLE_Y_OFFSET = 0.35D;

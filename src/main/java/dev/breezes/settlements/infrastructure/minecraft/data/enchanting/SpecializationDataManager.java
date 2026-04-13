@@ -11,6 +11,7 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -21,16 +22,12 @@ public class SpecializationDataManager extends SimpleJsonResourceReloadListener 
     private static final String DIRECTORY_PATH = "settlements/specializations";
 
     private static final Gson GSON = new GsonBuilder().create();
-    private static final SpecializationDataManager INSTANCE = new SpecializationDataManager();
 
-    private volatile Map<String, SpecializationProfile> profilesById = Map.of();
+    private Map<String, SpecializationProfile> profilesById = Map.of();
 
-    private SpecializationDataManager() {
+    @Inject
+    public SpecializationDataManager() {
         super(GSON, DIRECTORY_PATH);
-    }
-
-    public static SpecializationDataManager getInstance() {
-        return INSTANCE;
     }
 
     @Override

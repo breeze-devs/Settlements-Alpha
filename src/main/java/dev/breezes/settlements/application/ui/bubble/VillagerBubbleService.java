@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ui.bubble;
 
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
@@ -7,6 +8,7 @@ import dev.breezes.settlements.shared.annotations.functional.ServerSide;
 import lombok.CustomLog;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -15,6 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ServerSide
+@ServerScope
 @CustomLog
 public final class VillagerBubbleService {
 
@@ -22,16 +25,11 @@ public final class VillagerBubbleService {
     private static final Ticks DEFAULT_CHAT_TTL_CAP = Ticks.seconds(20);
     private static final Ticks DEFAULT_SYSTEM_TTL_CAP = Ticks.seconds(10);
 
-    private static final VillagerBubbleService INSTANCE = new VillagerBubbleService();
-
     private final EnumMap<BubbleChannel, ChannelPolicy> policies;
     private final Comparator<BubbleEntry> renderComparator;
 
-    public static VillagerBubbleService getInstance() {
-        return INSTANCE;
-    }
-
-    private VillagerBubbleService() {
+    @Inject
+    public VillagerBubbleService() {
         this.policies = new EnumMap<>(BubbleChannel.class);
         this.policies.put(BubbleChannel.BEHAVIOR, ChannelPolicy.builder()
                 .maxActive(1)

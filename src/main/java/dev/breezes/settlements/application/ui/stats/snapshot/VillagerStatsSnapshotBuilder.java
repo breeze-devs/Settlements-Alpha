@@ -7,6 +7,7 @@ import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorRuntimeI
 import dev.breezes.settlements.application.ui.behavior.snapshot.IBehaviorInfoProvider;
 import dev.breezes.settlements.application.ui.stats.model.VillagerInventorySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.genetics.GeneType;
@@ -14,6 +15,7 @@ import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import lombok.NoArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.SimpleContainer;
@@ -23,17 +25,14 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
 @ServerSide
+@ServerScope
+@NoArgsConstructor(onConstructor_ = @Inject)
 public final class VillagerStatsSnapshotBuilder {
-
-    private static final VillagerStatsSnapshotBuilder INSTANCE = new VillagerStatsSnapshotBuilder();
-
-    public static VillagerStatsSnapshotBuilder getInstance() {
-        return INSTANCE;
-    }
 
     @Nonnull
     public VillagerStatsSnapshot buildStats(@Nonnull BaseVillager villager, long gameTime) {

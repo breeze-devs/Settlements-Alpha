@@ -5,22 +5,25 @@ import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorer
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.validation.GenerationDataValidator;
 import lombok.CustomLog;
+import lombok.RequiredArgsConstructor;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
+@Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 @CustomLog
 public final class GenerationDataValidationReloadListener extends SimplePreparableReloadListener<Void> {
 
-    private static final GenerationDataValidationReloadListener INSTANCE = new GenerationDataValidationReloadListener();
-
     private final GenerationDataValidator validator = new GenerationDataValidator();
 
-    public static GenerationDataValidationReloadListener getInstance() {
-        return INSTANCE;
-    }
+    private final TraitDefinitionDataManager traitDefinitionDataManager;
+    private final TraitScorerDataManager traitScorerDataManager;
+    private final BuildingDefinitionDataManager buildingDefinitionDataManager;
 
     @Override
     protected Void prepare(@Nonnull ResourceManager resourceManager, @Nonnull ProfilerFiller profiler) {
@@ -31,9 +34,9 @@ public final class GenerationDataValidationReloadListener extends SimplePreparab
     protected void apply(Void ignored, @Nonnull ResourceManager resourceManager, @Nonnull ProfilerFiller profiler) {
         log.info("Validating generation datapack cross-registry references");
         this.validator.validateAndApply(
-                TraitDefinitionDataManager.getInstance(),
-                TraitScorerDataManager.getInstance(),
-                BuildingDefinitionDataManager.getInstance()
+                this.traitDefinitionDataManager,
+                this.traitScorerDataManager,
+                this.buildingDefinitionDataManager
         );
     }
 

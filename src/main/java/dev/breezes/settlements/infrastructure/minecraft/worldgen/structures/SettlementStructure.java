@@ -2,7 +2,7 @@ package dev.breezes.settlements.infrastructure.minecraft.worldgen.structures;
 
 import com.mojang.serialization.MapCodec;
 import dev.breezes.settlements.bootstrap.registry.structures.StructureRegistry;
-import dev.breezes.settlements.domain.common.BiomeId;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.generation.building.TemplateResolutionContext;
 import dev.breezes.settlements.domain.generation.building.TemplateResolver;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
@@ -14,11 +14,6 @@ import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.survey.SurveyBounds;
 import dev.breezes.settlements.domain.generation.model.survey.TerrainGrid;
 import dev.breezes.settlements.domain.generation.pipeline.GenerationPipeline;
-import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.BlockPositionConverter;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.NbtTemplateResolver;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.SettlementsStructure;
@@ -32,7 +27,6 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -58,17 +52,13 @@ public class SettlementStructure extends SettlementsStructure {
 
         SurveyBounds bounds = buildSurveyBounds(chunkPos);
         TerrainGrid terrainGrid = TerrainGridFactory.fromGenerationContext(context, bounds, 4);
-        GenerationPipeline pipeline = new GenerationPipeline(BiomeSurveyDataManager.getInstance(),
-                TraitScorerDataManager.getInstance(),
-                BuildingDefinitionDataManager.getInstance(),
-                HistoryEventDataManager.getInstance(),
-                TraitDefinitionDataManager.getInstance());
+        GenerationPipeline pipeline = SettlementsDagger.component().generationPipeline();
 
         GenerationResult result = pipeline.generate(terrainGrid, bounds, seed);
 
         TemplateResolver templateResolver = NbtTemplateResolver.getInstance(context.structureTemplateManager());
         Random random = new Random(seed);
-        Set<String> biomeTags = deriveBiomeTags(result.siteReport());
+        Set<String> biomeTags = pipeline.resolveTemplateTags(result.siteReport());
         TemplateResolutionContext resolutionContext = new TemplateResolutionContext(biomeTags, result.history().visualMarkers());
 
         log.info("Settlement template resolution context: biomeTags={}, visualMarkers={}",
@@ -110,18 +100,6 @@ public class SettlementStructure extends SettlementsStructure {
                 center.offset(-radius, 0, -radius),
                 center.offset(radius, 0, radius)
         ), 30);
-    }
-
-    private static Set<String> deriveBiomeTags(dev.breezes.settlements.domain.generation.model.survey.SiteReport siteReport) {
-        Optional<BiomeId> dominantBiome = siteReport.biomeDistribution().entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey);
-
-        if (dominantBiome.isEmpty()) {
-            return Set.of();
-        }
-
-        return BiomeSurveyDataManager.getInstance().lookup(dominantBiome.get()).templateTags();
     }
 
 }

@@ -16,6 +16,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -29,16 +30,12 @@ public class BiomeSurveyDataManager extends SimpleJsonResourceReloadListener imp
     private static final String DIRECTORY_PATH = "settlements/biomes/survey";
 
     private static final Gson GSON = new GsonBuilder().create();
-    private static final BiomeSurveyDataManager INSTANCE = new BiomeSurveyDataManager();
 
-    private volatile Map<BiomeId, BiomeSurveyData> dataByBiome = Map.of();
+    private Map<BiomeId, BiomeSurveyData> dataByBiome = Map.of();
 
-    private BiomeSurveyDataManager() {
+    @Inject
+    public BiomeSurveyDataManager() {
         super(GSON, DIRECTORY_PATH);
-    }
-
-    public static BiomeSurveyDataManager getInstance() {
-        return INSTANCE;
     }
 
     @Override

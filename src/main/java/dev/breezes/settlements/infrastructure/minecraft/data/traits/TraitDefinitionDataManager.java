@@ -14,6 +14,7 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -25,16 +26,12 @@ public class TraitDefinitionDataManager extends SimpleJsonResourceReloadListener
 
     private static final String DIRECTORY_PATH = "settlements/traits/definitions";
     private static final Gson GSON = new GsonBuilder().create();
-    private static final TraitDefinitionDataManager INSTANCE = new TraitDefinitionDataManager();
 
-    private volatile Map<TraitId, TraitDefinition> definitionsById = Map.of();
+    private Map<TraitId, TraitDefinition> definitionsById = Map.of();
 
-    private TraitDefinitionDataManager() {
+    @Inject
+    public TraitDefinitionDataManager() {
         super(GSON, DIRECTORY_PATH);
-    }
-
-    public static TraitDefinitionDataManager getInstance() {
-        return INSTANCE;
     }
 
     @Override

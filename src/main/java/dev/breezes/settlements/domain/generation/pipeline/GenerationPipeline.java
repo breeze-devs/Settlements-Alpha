@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.generation.pipeline;
 
+import dev.breezes.settlements.domain.common.BiomeId;
 import dev.breezes.settlements.domain.generation.building.BuildingManifestCalculator;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.generation.history.HistoryEventEngine;
@@ -24,7 +25,9 @@ import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 @AllArgsConstructor
 public class GenerationPipeline {
@@ -71,6 +74,21 @@ public class GenerationPipeline {
         LayoutResult layout = layoutEngine.generateLayout(report, profile, manifest, this.biomeLookup);
 
         return new GenerationResult(report, profile, historyResult, layout, seed);
+    }
+
+    /**
+     * Derives template selection tags for the dominant biome in a site report.
+     */
+    public Set<String> resolveTemplateTags(@Nonnull SiteReport siteReport) {
+        Optional<BiomeId> dominantBiome = siteReport.biomeDistribution().entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey);
+
+        if (dominantBiome.isEmpty()) {
+            return Set.of();
+        }
+
+        return this.biomeLookup.lookup(dominantBiome.get()).templateTags();
     }
 
 }

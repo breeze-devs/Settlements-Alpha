@@ -2,6 +2,8 @@ package dev.breezes.settlements.infrastructure.minecraft.data.validation;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import dev.breezes.settlements.di.DaggerTestSettlementsComponent;
+import dev.breezes.settlements.di.TestSettlementsComponent;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
@@ -17,10 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GenerationDataValidatorTest {
 
-    private final TraitDefinitionDataManager traitManager = TraitDefinitionDataManager.getInstance();
-    private final TraitScorerDataManager scorerManager = TraitScorerDataManager.getInstance();
-    private final BuildingDefinitionDataManager buildingManager = BuildingDefinitionDataManager.getInstance();
-    private final GenerationDataValidator validator = new GenerationDataValidator();
+    private final TestSettlementsComponent component = DaggerTestSettlementsComponent.create();
+    private final TraitDefinitionDataManager traitManager = this.component.traitDefinitionDataManager();
+    private final TraitScorerDataManager scorerManager = this.component.traitScorerDataManager();
+    private final BuildingDefinitionDataManager buildingManager = this.component.buildingDefinitionDataManager();
+    private final GenerationDataValidator validator = this.component.generationDataValidator();
 
     @BeforeEach
     void resetManagers() {

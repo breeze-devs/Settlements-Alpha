@@ -7,12 +7,13 @@ import dev.breezes.settlements.application.ui.stats.session.VillagerStatsSession
 import dev.breezes.settlements.application.ui.stats.snapshot.VillagerStatsSnapshotBuilder;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketHandler;
-import dev.breezes.settlements.infrastructure.network.core.annotations.HandleServerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundOpenVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerInventorySnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsUnavailablePacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundOpenVillagerStatsPacket;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -20,12 +21,16 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 
 @CustomLog
-@HandleServerPacket(ServerBoundOpenVillagerStatsPacket.class)
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public class ServerBoundOpenVillagerStatsPacketHandler implements ServerSidePacketHandler<ServerBoundOpenVillagerStatsPacket> {
 
     private static final String UNAVAILABLE_REASON_KEY = "ui.settlements.stats.unavailable";
+
+    private final VillagerStatsSessionService sessionService;
+    private final VillagerStatsSnapshotBuilder snapshotBuilder;
 
     @Override
     public void runOnServer(@Nonnull IPayloadContext context, @Nonnull ServerBoundOpenVillagerStatsPacket packet) {
@@ -40,19 +45,16 @@ public class ServerBoundOpenVillagerStatsPacketHandler implements ServerSidePack
         }
 
         long gameTime = player.serverLevel().getGameTime();
-        VillagerStatsSession session = VillagerStatsSessionService.getInstance()
-                .startOrReplaceSession(player, packet.villagerEntityId(), gameTime);
+        VillagerStatsSession session = sessionService.startOrReplaceSession(player, packet.villagerEntityId(), gameTime);
 
         PacketDistributor.sendToPlayer(player,
                 new ClientBoundOpenVillagerStatsPacket(session.getSessionId(), packet.villagerEntityId()));
 
-        VillagerStatsSnapshotBuilder builder = VillagerStatsSnapshotBuilder.getInstance();
-
-        VillagerStatsSnapshot statsSnapshot = builder.buildStats(villager, gameTime);
+        VillagerStatsSnapshot statsSnapshot = snapshotBuilder.buildStats(villager, gameTime);
         PacketDistributor.sendToPlayer(player, new ClientBoundVillagerStatsSnapshotPacket(session.getSessionId(), statsSnapshot));
         session.markStatsSnapshotSent(gameTime);
 
-        VillagerInventorySnapshot inventorySnapshot = builder.buildInventory(villager);
+        VillagerInventorySnapshot inventorySnapshot = snapshotBuilder.buildInventory(villager);
         PacketDistributor.sendToPlayer(player, new ClientBoundVillagerInventorySnapshotPacket(session.getSessionId(), inventorySnapshot));
         session.markInventorySnapshotSent(gameTime, villager.getSettlementsInventory().getInventoryVersion());
 

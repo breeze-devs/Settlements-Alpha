@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TraitDefinitionDataManagerTest {
 
-    private final TraitDefinitionDataManager manager = TraitDefinitionDataManager.getInstance();
+    private final TraitDefinitionDataManager manager = new TraitDefinitionDataManager();
 
     @BeforeEach
     void setUp() throws IOException {

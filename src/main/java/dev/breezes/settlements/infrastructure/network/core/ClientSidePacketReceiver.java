@@ -1,23 +1,22 @@
 package dev.breezes.settlements.infrastructure.network.core;
 
-import dev.breezes.settlements.infrastructure.network.core.registry.ClientPacketHandlerRegistry;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.MissingPacketHandlerCrashReport;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nonnull;
-import java.util.Optional;
+import javax.inject.Inject;
+import java.util.Map;
 
 @CustomLog
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public class ClientSidePacketReceiver {
 
-    private static final ClientSidePacketReceiver INSTANCE = new ClientSidePacketReceiver();
-
-    public static ClientSidePacketReceiver getInstance() {
-        return INSTANCE;
-    }
+    private final Map<Class<?>, ClientSidePacketHandler<?>> handlers;
 
     public void onReceivePacket(@Nonnull ClientBoundPacket data, @Nonnull IPayloadContext context) {
         context.enqueueWork(() -> this.handleClientPacket(data, context))
@@ -29,15 +28,17 @@ public class ClientSidePacketReceiver {
     }
 
     private void handleClientPacket(ClientBoundPacket data, IPayloadContext context) {
-        Optional<ClientSidePacketHandler<? extends ClientBoundPacket>> handler = ClientPacketHandlerRegistry.get(data.getClass());
-        if (handler.isEmpty()) {
+        ClientSidePacketHandler<?> handler = handlers.get(data.getClass());
+        if (handler == null) {
             String message = "Missing client-side packet handler for packet type: %s".formatted(data.getClass().getName());
             CrashUtil.crash(new MissingPacketHandlerCrashReport(new IllegalStateException(message)));
             return;
         }
 
+        // The multibinding map is keyed by the exact payload class, so once lookup succeeds
+        // the erased handler can be safely re-associated with the packet instance being processed.
         @SuppressWarnings("unchecked")
-        PacketHandler<ClientBoundPacket> typedHandler = (PacketHandler<ClientBoundPacket>) handler.get();
+        PacketHandler<ClientBoundPacket> typedHandler = (PacketHandler<ClientBoundPacket>) handler;
 
         typedHandler.onReceivePacket(context, data);
     }
