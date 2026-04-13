@@ -19,7 +19,7 @@ BehaviorModule                    BehaviorPackageResolver              BaseVilla
 ┌───────────────────┐            ┌───────────────────────┐             ┌─────────────────┐
 │ @Provides @IntoSet│            │ @Inject constructor   │             │ registerCustom  │
 │ BehaviorRegistra- │──→ Set ──→ │ groups by profession  │──resolve()─→│ Goals()         │
-│ tion (x25)        │            │ at component creation │             │ adds to brain   │
+│ tion              │            │ at component creation │             │ adds to brain   │
 └───────────────────┘            └───────────────────────┘             └─────────────────┘
 ```
 
@@ -97,20 +97,43 @@ static BehaviorRegistration fishermanFishing(FishingConfig config) {
 
 ### Current registrations
 
-| Profession        | Behaviors                                                   |
-|-------------------|-------------------------------------------------------------|
-| **Armorer**       | RepairIronGolem, BlastOre                                   |
-| **Butcher**       | BreedPigs, SmokeMeat, ButcherLivestock                      |
-| **Cleric**        | ThrowPotions (WORK, MEET, IDLE), HarvestSoulSand            |
-| **Farmer**        | HarvestSugarCane, TameWolf, TameCat, BreedChickens, MilkCow |
-| **Fisherman**     | TameCat, Fishing                                            |
-| **Fletcher**      | BreedChickens                                               |
-| **Leatherworker** | BreedCows                                                   |
-| **Librarian**     | EnchantItem                                                 |
-| **Mason**         | CutStone, HarvestOre                                        |
-| **Shepherd**      | ShearSheep, TameWolf                                        |
-| **Toolsmith**     | RepairIronGolem                                             |
-| **Weaponsmith**   | RepairIronGolem                                             |
+- **Armorer**
+    - RepairIronGolem
+    - BlastOre
+- **Butcher**
+    - BreedPigs
+    - SmokeMeat
+    - ButcherLivestock
+- **Cleric**
+    - ThrowPotions (WORK, MEET, IDLE)
+    - HarvestSoulSand
+- **Farmer**
+    - HarvestSugarCane
+    - CollectHoney
+    - HarvestHoneycomb
+    - TameWolf
+    - TameCat
+    - BreedChickens
+    - MilkCow
+- **Fisherman**
+    - TameCat
+    - Fishing
+- **Fletcher**
+    - BreedChickens
+- **Leatherworker**
+    - BreedCows
+- **Librarian**
+    - EnchantItem
+- **Mason**
+    - CutStone
+    - HarvestOre
+- **Shepherd**
+    - ShearSheep
+    - TameWolf
+- **Toolsmith**
+    - RepairIronGolem
+- **Weaponsmith**
+    - RepairIronGolem
 
 Note: Cleric's `ThrowPotions` is registered for three activities (WORK, MEET, IDLE), so it appears in each of those
 activity phases. Each activity registration creates a separate behavior instance.

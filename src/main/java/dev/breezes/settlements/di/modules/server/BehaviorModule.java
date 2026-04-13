@@ -21,6 +21,10 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.craftin
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
@@ -39,6 +43,8 @@ import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
 import dev.breezes.settlements.di.behavior.BehaviorRegistration;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.schedule.Activity;
@@ -147,6 +153,20 @@ public final class BehaviorModule {
     @IntoSet
     static BehaviorRegistration farmerMilkCow(MilkCowConfig config) {
         return work(VillagerProfessionKey.FARMER, () -> new MilkCowBehavior(config));
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorRegistration farmerCollectHoney(CollectHoneyConfig config,
+                                                   CollectHoneyYieldDataManager yieldData) {
+        return work(VillagerProfessionKey.FARMER, () -> new CollectHoneyBehavior(config, yieldData));
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorRegistration farmerHarvestHoneycomb(HarvestHoneycombConfig config,
+                                                       HarvestHoneycombYieldDataManager yieldData) {
+        return work(VillagerProfessionKey.FARMER, () -> new HarvestHoneycombBehavior(config, yieldData));
     }
 
     /*

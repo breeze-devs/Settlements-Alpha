@@ -9,6 +9,8 @@ import dev.breezes.settlements.domain.generation.scoring.TraitScorerRegistry;
 import dev.breezes.settlements.domain.generation.survey.BiomeSurveyLookup;
 import dev.breezes.settlements.domain.generation.trait.TraitRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
@@ -55,6 +57,18 @@ public final class TestDataManagerModule {
     @Singleton
     static HistoryEventDataManager historyEventDataManager() {
         return new HistoryEventDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static CollectHoneyYieldDataManager collectHoneyYieldDataManager() {
+        return new CollectHoneyYieldDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static HarvestHoneycombYieldDataManager harvestHoneycombYieldDataManager() {
+        return new HarvestHoneycombYieldDataManager();
     }
 
     @Provides

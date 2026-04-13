@@ -23,6 +23,8 @@ public enum SoundRegistry {
     ITEM_POP_IN(SoundEventPlayable.of(SoundEvents.ITEM_PICKUP, 0.3f, 0.8f)),
     ITEM_POP_OUT(SoundEventPlayable.of(SoundEvents.ITEM_PICKUP, 0.3f, 1.2f)),
     SHEAR_SHEEP(SoundEventPlayable.of(SoundEvents.SHEEP_SHEAR, 1.0f, 1.0f)),
+    COLLECT_HONEY(SoundEventPlayable.of(SoundEvents.BOTTLE_FILL, 1.0f, 1.0f)),
+    HARVEST_HONEYCOMB(SoundEventPlayable.of(SoundEvents.SHEEP_SHEAR, 0.8f, 1.2f)),
     MILK_COW(SoundEventPlayable.of(SoundEvents.COW_MILK, 1.0f, 1.0f)),
     OPEN_FENCE_GATE(SoundEventPlayable.of(SoundEvents.FENCE_GATE_OPEN, 1.0f, 1.0f)),
     CLOSE_FENCE_GATE(SoundEventPlayable.of(SoundEvents.FENCE_GATE_CLOSE, 1.0f, 1.0f)),

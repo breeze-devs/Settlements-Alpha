@@ -1,0 +1,60 @@
+{
+  "block": "default",
+  "expertise_pools": {
+    "novice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:honey_bottle",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "apprentice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:honey_bottle",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "journeyman": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:honey_bottle",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "expert": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:honey_bottle",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "master": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:honey_bottle",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    }
+  }
+}

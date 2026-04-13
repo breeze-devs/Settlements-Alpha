@@ -2,10 +2,11 @@ package dev.breezes.settlements.di.modules;
 
 import dagger.Module;
 import dagger.Provides;
-import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.SpecializationDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
@@ -67,9 +68,14 @@ public final class DataManagerModule {
 
     @Provides
     @Singleton
-    static EnchantmentEngine enchantmentEngine(EnchantmentCostDataManager costDataManager) {
-        // TODO: move EnchantmentEngine to its own module — it's an application-layer service, not a data manager.
-        return new EnchantmentEngine(costDataManager);
+    static CollectHoneyYieldDataManager collectHoneyYieldDataManager() {
+        return new CollectHoneyYieldDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static HarvestHoneycombYieldDataManager harvestHoneycombYieldDataManager() {
+        return new HarvestHoneycombYieldDataManager();
     }
 
 }

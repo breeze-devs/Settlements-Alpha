@@ -1,0 +1,35 @@
+{
+  "block": "default",
+  "expertise_pools": {
+    "novice": {
+      "rolls": 1,
+      "items": [
+        { "item": "minecraft:honeycomb", "weight": 1.0, "min_count": 1, "max_count": 2 }
+      ]
+    },
+    "apprentice": {
+      "rolls": 1,
+      "items": [
+        { "item": "minecraft:honeycomb", "weight": 1.0, "min_count": 1, "max_count": 2 }
+      ]
+    },
+    "journeyman": {
+      "rolls": 1,
+      "items": [
+        { "item": "minecraft:honeycomb", "weight": 1.0, "min_count": 2, "max_count": 3 }
+      ]
+    },
+    "expert": {
+      "rolls": 1,
+      "items": [
+        { "item": "minecraft:honeycomb", "weight": 1.0, "min_count": 2, "max_count": 3 }
+      ]
+    },
+    "master": {
+      "rolls": 1,
+      "items": [
+        { "item": "minecraft:honeycomb", "weight": 1.0, "min_count": 3, "max_count": 3 }
+      ]
+    }
+  }
+}

@@ -11,6 +11,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
@@ -101,6 +103,18 @@ public final class ConfigModule {
     @Singleton
     static HarvestSugarCaneConfig harvestSugarCaneConfig() {
         return ConfigFactory.create(HarvestSugarCaneConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static CollectHoneyConfig collectHoneyConfig() {
+        return ConfigFactory.create(CollectHoneyConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static HarvestHoneycombConfig harvestHoneycombConfig() {
+        return ConfigFactory.create(HarvestHoneycombConfig.class);
     }
 
     @Provides

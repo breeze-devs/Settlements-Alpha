@@ -42,20 +42,27 @@ public class RandomUtil {
     }
 
     public static <T> T weightedChoice(@Nonnull Map<T, Double> weightMap) {
+        if (weightMap.isEmpty()) {
+            throw new IllegalArgumentException("weightMap must not be empty");
+        }
+
         double totalWeight = weightMap.values().stream()
                 .mapToDouble(Double::doubleValue)
                 .sum();
 
         double targetWeight = randomDouble(0, totalWeight);
         double currentWeight = 0;
+        T last = null;
         for (Map.Entry<T, Double> entry : weightMap.entrySet()) {
             currentWeight += entry.getValue();
+            last = entry.getKey();
             if (currentWeight > targetWeight) {
-                return entry.getKey();
+                return last;
             }
         }
 
-        throw new ArithmeticException("Invalid weights! Check if any weight(s) are zero or negative");
+        // Floating-point accumulation can fall just short of totalWeight; the last entry is the correct pick
+        return last;
     }
 
     /**

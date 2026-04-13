@@ -85,6 +85,8 @@ public class CommonModEvents {
             event.addListener(component.traitScorerDataManager());
             event.addListener(component.historyEventDataManager());
             event.addListener(component.buildingDefinitionDataManager());
+            event.addListener(component.collectHoneyYieldDataManager());
+            event.addListener(component.harvestHoneycombYieldDataManager());
             event.addListener(component.generationDataValidationReloadListener());
             event.addListener(component.settlementTemplateReloadListener());
         });

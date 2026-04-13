@@ -6,6 +6,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
@@ -18,7 +19,9 @@ public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<
 
     private final double rangeHorizontal;
     private final double rangeVertical;
+    @Nullable
     private Block targetBlock;
+    @Nullable
     private TagKey<Block> targetTag;
     private final int minimumTargetCount;
 
@@ -66,7 +69,12 @@ public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<
             for (double y = -this.rangeVertical; y <= this.rangeVertical; y++) {
                 for (double z = -this.rangeHorizontal; z <= this.rangeHorizontal; z++) {
                     mutableBlockPos.set(entity.getX() + x, entity.getY() + y, entity.getZ() + z);
-                    if ((level.getBlockState(mutableBlockPos).is(targetBlock) || level.getBlockState(mutableBlockPos).is(targetTag)) && this.extraBlockCondition.test(mutableBlockPos, entity.level())) {
+                    BlockState blockState = level.getBlockState(mutableBlockPos);
+
+                    // Only one of targetBlock/targetTag is set depending on which constructor was used
+                    boolean blockMatches = (this.targetBlock != null && blockState.is(this.targetBlock))
+                            || (this.targetTag != null && blockState.is(this.targetTag));
+                    if (blockMatches && this.extraBlockCondition.test(mutableBlockPos, entity.level())) {
                         targets.add(mutableBlockPos.immutable());
                         if (this.targets.size() >= this.minimumTargetCount) {
                             log.sensorStatus("Found at least {} blocks nearby", this.minimumTargetCount);

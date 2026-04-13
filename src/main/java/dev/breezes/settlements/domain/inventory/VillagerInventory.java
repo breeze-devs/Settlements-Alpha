@@ -7,8 +7,10 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import java.util.Optional;
 
@@ -56,6 +58,18 @@ public class VillagerInventory {
         ItemStack remainder = this.backpack.addItem(item.copy());
         this.inventoryVersion++;
         return remainder.isEmpty() ? Optional.empty() : Optional.of(remainder);
+    }
+
+    /**
+     * Adds an item stack to the backpack and returns an Optional leftover dropped item entity if not all items could be inserted
+     */
+    public Optional<ItemEntity> addOrDropItem(ItemStack item, Level level, double x, double y, double z) {
+        Optional<ItemStack> remainder = this.addItem(item);
+        return remainder.map(leftover -> {
+            ItemEntity itemEntity = new ItemEntity(level, x, y, z, leftover.copy());
+            level.addFreshEntity(itemEntity);
+            return itemEntity;
+        });
     }
 
     /**

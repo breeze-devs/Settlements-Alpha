@@ -14,9 +14,10 @@ The Dagger graph is a three-level tree: one root component and two scoped subcom
 @Singleton SettlementsComponent               (common — lives for the entire mod session)
 │
 │   Modules:
-│   ├── ConfigModule          — 16 config records via ConfigFactory
-│   ├── DataManagerModule     — 8 data managers + EnchantmentEngine
-│   └── GenerationModule      — domain registry interfaces + GenerationPipeline
+│   ├── ConfigModule           — config records via ConfigFactory
+│   ├── DataManagerModule      — data managers
+│   ├── BehaviorServicesModule — application-layer behavior services
+│   └── GenerationModule       — domain registry interfaces + GenerationPipeline
 │
 ├── @ServerScope ServerComponent              (created per server start, cleared on server stop)
 │   │
@@ -129,10 +130,26 @@ returns the materialized config record as a `@Singleton`.
 NeoForge still owns config discovery and TOML loading. This module only wraps the already-materialized records. Config
 values are **restart-only** — changes require a server restart.
 
-Current configs: `FishingConfig`, `ShearSheepConfig`, `TameCatConfig`, `TameWolfConfig`, `BreedAnimalsConfig`,
-`ButcherLivestockConfig`, `MilkCowConfig`, `SmokeMeatConfig`, `BlastOreConfig`, `CutStoneConfig`,
-`EnchantItemConfig`, `HarvestSugarCaneConfig`, `HarvestSoulSandConfig`, `HarvestOreConfig`,
-`RepairIronGolemConfig`, `ThrowPotionsConfig`.
+Current configs:
+
+- FishingConfig
+- ShearSheepConfig
+- TameCatConfig
+- TameWolfConfig
+- BreedAnimalsConfig
+- ButcherLivestockConfig
+- MilkCowConfig
+- SmokeMeatConfig
+- BlastOreConfig
+- CutStoneConfig
+- EnchantItemConfig
+- HarvestSugarCaneConfig
+- CollectHoneyConfig
+- HarvestHoneycombConfig
+- HarvestSoulSandConfig
+- HarvestOreConfig
+- RepairIronGolemConfig
+- ThrowPotionsConfig
 
 ### DataManagerModule
 
@@ -142,11 +159,31 @@ Current configs: `FishingConfig`, `ShearSheepConfig`, `TameCatConfig`, `TameWolf
 Provides `@Singleton` instances of all JSON data managers. Data managers extend
 `SimpleJsonResourceReloadListener` — they load data from resource packs on initial load and on `/reload`.
 
-Current data managers: `FishCatchDataManager`, `EnchantmentCostDataManager`, `SpecializationDataManager`,
-`BuildingDefinitionDataManager`, `BiomeSurveyDataManager`, `TraitScorerDataManager`,
-`TraitDefinitionDataManager`, `HistoryEventDataManager`.
+Current data managers:
 
-Also provides `EnchantmentEngine` (application-layer service that depends on `EnchantmentCostDataManager`).
+- FishCatchDataManager
+- EnchantmentCostDataManager
+- SpecializationDataManager
+- BuildingDefinitionDataManager
+- BiomeSurveyDataManager
+- TraitScorerDataManager
+- TraitDefinitionDataManager
+- HistoryEventDataManager
+- CollectHoneyYieldDataManager
+- HarvestHoneycombYieldDataManager
+
+### BehaviorServicesModule
+
+**File:** `di/modules/BehaviorServicesModule.java`
+**Installed in:** `SettlementsComponent`
+
+Holds application-layer services consumed by behaviors. This module exists to keep the root graph organized:
+behavior services live here, while raw reloadable data managers stay in `DataManagerModule`.
+
+Current members: `EnchantmentEngine`.
+
+Convention: if a service performs behavior-facing orchestration or computation and is not itself a behavior, it belongs
+here rather than in `DataManagerModule`.
 
 ### GenerationModule
 
