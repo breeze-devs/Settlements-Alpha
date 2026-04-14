@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
@@ -83,8 +84,10 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
     @Nullable
     private Animal breedTarget2;
 
-    public BreedAnimalsBehavior(BreedAnimalsConfig config, Set<EntityType<? extends Animal>> breedableAnimalTypes) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public BreedAnimalsBehavior(BreedAnimalsConfig config,
+                                HungerConfig hungerConfig,
+                                Set<EntityType<? extends Animal>> breedableAnimalTypes) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.breed_animals")

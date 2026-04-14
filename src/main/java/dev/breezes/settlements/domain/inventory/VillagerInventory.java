@@ -129,6 +129,28 @@ public class VillagerInventory {
         return consumed;
     }
 
+    public int consumeFromSlot(int slot, int amount) {
+        if (slot < 0 || slot >= this.backpack.getContainerSize() || amount <= 0) {
+            return 0;
+        }
+
+        ItemStack stack = this.backpack.getItem(slot);
+        if (stack.isEmpty()) {
+            return 0;
+        }
+
+        int consumed = Math.min(stack.getCount(), amount);
+        stack.shrink(consumed);
+        if (stack.isEmpty()) {
+            this.backpack.setItem(slot, ItemStack.EMPTY);
+        }
+
+        if (consumed > 0) {
+            this.inventoryVersion++;
+        }
+        return consumed;
+    }
+
     /**
      * Sets main-hand item, returning the previous item if present
      */

@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -59,8 +60,9 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
     @Nullable
     private Animal target;
 
-    public ButcherLivestockBehavior(@Nonnull ButcherLivestockConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public ButcherLivestockBehavior(@Nonnull ButcherLivestockConfig config,
+                                    @Nonnull HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
         Map<EntityType<?>, Integer> minimumKeepByType = parseConfiguredMinimumKeep(config.minimumKeepCount());

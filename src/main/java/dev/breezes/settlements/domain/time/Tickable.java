@@ -7,15 +7,15 @@ import javax.annotation.Nonnull;
 @AllArgsConstructor
 public class Tickable implements ITickable {
 
-    protected final double maxTicks;
+    protected final double baseTicks;
     protected double currentTicks;
 
-    public Tickable(double maxTicks) {
-        this(maxTicks, maxTicks);
+    public Tickable(double baseTicks) {
+        this(baseTicks, baseTicks);
     }
 
-    public static Tickable of(@Nonnull Ticks maxTicks) {
-        return new Tickable(maxTicks.getTicks());
+    public static Tickable of(@Nonnull Ticks baseTicks) {
+        return new Tickable(baseTicks.getTicks());
     }
 
     @Override
@@ -25,7 +25,7 @@ public class Tickable implements ITickable {
 
     @Override
     public double getTicksElapsed() {
-        return this.maxTicks - this.currentTicks;
+        return this.baseTicks - this.currentTicks;
     }
 
     @Override
@@ -40,7 +40,12 @@ public class Tickable implements ITickable {
 
     @Override
     public void reset() {
-        this.currentTicks = this.maxTicks;
+        this.currentTicks = this.baseTicks;
+    }
+
+    @Override
+    public void resetWithMultiplier(double multiplier) {
+        this.currentTicks = this.baseTicks * multiplier;
     }
 
     @Override

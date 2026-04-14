@@ -11,6 +11,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.NearbySugarCaneExistsCondition;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
@@ -44,8 +45,9 @@ public class HarvestSugarCaneBehavior extends StateMachineBehavior {
     private List<BlockPos> validSugarCaneAroundVillager;
     private final NearbySugarCaneExistsCondition<BaseVillager> nearbySugarCaneExistsCondition;
 
-    public HarvestSugarCaneBehavior(HarvestSugarCaneConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public HarvestSugarCaneBehavior(HarvestSugarCaneConfig config,
+                                    HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.harvest_sugar_cane")

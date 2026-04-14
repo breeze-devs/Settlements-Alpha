@@ -1,6 +1,7 @@
 package dev.breezes.settlements.di;
 
 import dagger.Component;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.event.GenerationDataValidationReloadListener;
 import dev.breezes.settlements.bootstrap.event.SettlementTemplateReloadListener;
 import dev.breezes.settlements.di.modules.BehaviorServicesModule;
@@ -55,6 +56,8 @@ public interface SettlementsComponent {
     GenerationDataValidationReloadListener generationDataValidationReloadListener();
 
     SettlementTemplateReloadListener settlementTemplateReloadListener();
+
+    HungerConfig hungerConfig();
 
     ServerComponent.Factory serverComponentFactory();
 

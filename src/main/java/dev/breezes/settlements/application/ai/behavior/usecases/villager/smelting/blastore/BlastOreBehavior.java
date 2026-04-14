@@ -13,6 +13,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
@@ -83,8 +84,9 @@ public class BlastOreBehavior extends StateMachineBehavior {
     @Nullable
     private BlastOreRecipe currentRecipe;
 
-    public BlastOreBehavior(BlastOreConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public BlastOreBehavior(BlastOreConfig config,
+                            HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.blast_ore")

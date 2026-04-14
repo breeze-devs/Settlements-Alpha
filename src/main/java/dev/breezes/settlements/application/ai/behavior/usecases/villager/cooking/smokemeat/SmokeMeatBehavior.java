@@ -13,6 +13,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
@@ -79,8 +80,9 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
     @Nullable
     private SmokeMeatRecipe currentRecipe;
 
-    public SmokeMeatBehavior(SmokeMeatConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public SmokeMeatBehavior(SmokeMeatConfig config,
+                             HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.smoke_meat")

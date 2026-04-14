@@ -104,12 +104,13 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         log.behaviorStatus("Starting behavior");
         this.doStart(world, entity);
         this.status = BehaviorStatus.RUNNING;
-
-        // Reset behavior cooldown
-        this.behaviorCoolDown.reset();
     }
 
     public abstract void doStart(@Nonnull Level world, @Nonnull T entity);
+
+    protected double getCooldownMultiplier(@Nonnull T entity) {
+        return 1.0;
+    }
 
     @Override
     public final void tick(int delta, @Nonnull Level world, @Nonnull T entity) {
@@ -173,6 +174,8 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
 
         log.behaviorStatus("Stopping behavior");
         this.doStop(world, entity);
+
+        this.behaviorCoolDown.resetWithMultiplier(this.getCooldownMultiplier(entity));
         this.status = BehaviorStatus.STOPPED;
         this.stopRequested = false;
     }

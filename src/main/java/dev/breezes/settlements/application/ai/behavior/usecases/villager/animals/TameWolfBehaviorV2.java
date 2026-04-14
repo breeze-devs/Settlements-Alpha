@@ -13,6 +13,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
@@ -58,8 +59,9 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
 
     private int attemptsRemaining;
 
-    public TameWolfBehaviorV2(TameWolfConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public TameWolfBehaviorV2(TameWolfConfig config,
+                              HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
         this.behaviorDescriptor = BehaviorDescriptor.builder()

@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedSte
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.model.PreconditionSummary;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorRuntimeInformation;
 import dev.breezes.settlements.application.ui.behavior.snapshot.IBehaviorInfoProvider;
@@ -20,7 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager> implements IBehaviorInfoProvider {
+public abstract class StateMachineBehavior extends BaseVillagerBehavior implements IBehaviorInfoProvider {
 
     @Nullable
     private StagedStep controlStep;
@@ -33,8 +34,9 @@ public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager
 
     protected StateMachineBehavior(@Nonnull ILogger log,
                                    @Nonnull ITickable preconditionCheckCooldown,
-                                   @Nonnull ITickable behaviorCoolDown) {
-        super(log, preconditionCheckCooldown, behaviorCoolDown);
+                                   @Nonnull ITickable behaviorCoolDown,
+                                   @Nonnull HungerConfig hungerConfig) {
+        super(log, preconditionCheckCooldown, behaviorCoolDown, hungerConfig);
     }
 
     protected final void initializeStateMachine(@Nonnull StagedStep controlStep,

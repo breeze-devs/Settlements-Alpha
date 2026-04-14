@@ -11,6 +11,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.NearbyOreExistsCondition;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
@@ -32,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class HarvestOreBehavior  extends StateMachineBehavior {
+public class HarvestOreBehavior extends StateMachineBehavior {
 
     private enum HarvestStage implements StageKey {
         HARVEST_ORE,
@@ -47,8 +48,9 @@ public class HarvestOreBehavior  extends StateMachineBehavior {
     private List<BlockPos> validOresAroundVillager;
     private final NearbyOreExistsCondition<BaseVillager> nearbyOreExistsCondition;
 
-    public HarvestOreBehavior(HarvestOreConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public HarvestOreBehavior(HarvestOreConfig config,
+                              HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.harvest_ore")

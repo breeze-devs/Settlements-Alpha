@@ -3,8 +3,10 @@ package dev.breezes.settlements.infrastructure.minecraft.entities.villager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.application.ai.behavior.runtime.BaseVillagerBehavior;
 import dev.breezes.settlements.application.ai.brain.DefaultBrain;
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
@@ -13,16 +15,22 @@ import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.di.behavior.BehaviorPackageResolver;
+import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.domain.entities.hunger.IVillagerHunger;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.domain.time.ITickable;
+import dev.breezes.settlements.domain.time.Tickable;
+import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.minecraft.ai.brain.CustomMemoryModuleType;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import lombok.CustomLog;
@@ -32,6 +40,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.Brain;
@@ -53,6 +63,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.Tags;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +72,7 @@ import java.util.Set;
 // TODO: make this class abstract
 @CustomLog
 @Getter
-public class BaseVillager extends Villager implements ISettlementsVillager {
+public class BaseVillager extends Villager implements ISettlementsVillager, IVillagerHunger {
 
     private static final double DEFAULT_MOVEMENT_SPEED = 0.5D;
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
@@ -77,6 +88,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     private final BubbleManager bubbleManager;
     private final VillagerBubbleState bubbleState;
     private volatile List<BehaviorBinding> trackedCustomBehaviors;
+    @Nullable
+    private ITickable hungerDrainTimer;
 
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
@@ -100,6 +113,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         this.bubbleManager = new BubbleManager();
         this.bubbleState = new VillagerBubbleState();
         this.trackedCustomBehaviors = List.of();
+        this.hungerDrainTimer = null;
     }
 
     public static AttributeSupplier createCustomAttributes() {
@@ -139,6 +153,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         super.tick();
 
         if (!this.level().isClientSide()) {
+            this.tickHunger();
             this.bubbleService().tick(this, this.level().getGameTime());
         }
 
@@ -166,7 +181,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         int nextUiBehaviorIndex = 0;
         BehaviorPackageResolver resolver = SettlementsDagger.serverOrThrow().behaviorPackageResolver();
 
-        brain.addActivity(Activity.CORE, VanillaBehaviorPackages.getCorePackage(profession, 0.5F));
+        BehaviorPackageResolver.ResolvedBehaviors coreResolved = resolver.resolve(villagerProfessionKey, Activity.CORE);
+        brain.addActivity(Activity.CORE, VanillaBehaviorPackages.getCorePackage(profession, 0.5F, coreResolved.choiceBehaviors()));
+        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, coreResolved.trackedBindings(), nextUiBehaviorIndex);
 
         // Idle
         BehaviorPackageResolver.ResolvedBehaviors idleResolved = resolver.resolve(villagerProfessionKey, Activity.IDLE);
@@ -237,6 +254,16 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     public void clearHeldItem() {
         this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+    }
+
+    @Override
+    public float getHunger() {
+        return VillagerHungerAttachment.getHunger(this);
+    }
+
+    @Override
+    public void setHunger(float hunger) {
+        VillagerHungerAttachment.setHunger(this, Math.clamp(hunger, 0.0f, 1.0f));
     }
 
     public Expertise getExpertise() {
@@ -339,6 +366,40 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
 
     public boolean hasItemInInventory(Item item) {
         return this.getSettlementsInventory().containsItem(item);
+    }
+
+    private void tickHunger() {
+        HungerConfig config = SettlementsDagger.component().hungerConfig();
+
+        if (this.hungerDrainTimer == null) {
+            this.hungerDrainTimer = Tickable.of(Ticks.seconds(config.tickIntervalSeconds()));
+        }
+
+        if (!this.hungerDrainTimer.tickCheckAndReset(1)) {
+            return;
+        }
+
+        float baseDrain = config.drainPerInterval();
+        double behaviorModifier = this.getTrackedCustomBehaviors().stream()
+                .map(BehaviorBinding::behavior)
+                .filter(BaseVillagerBehavior.class::isInstance)
+                .map(BaseVillagerBehavior.class::cast)
+                .filter(behavior -> behavior.getStatus() == BehaviorStatus.RUNNING)
+                .mapToDouble(BaseVillagerBehavior::getHungerDrainModifier)
+                .max()
+                .orElse(1.0);
+
+        double sleepMultiplier = this.isSleeping() ? config.sleepingDrainMultiplier() : 1.0;
+        this.setHunger((float) (this.getHunger() - baseDrain * behaviorModifier * sleepMultiplier));
+
+        float hunger = this.getHunger();
+        if (hunger < config.effectStartThreshold()) {
+            int effectDuration = Ticks.seconds(config.tickIntervalSeconds() + 1).getTicksAsInt();
+            int level = (int) Math.min(4, Math.ceil((config.effectStartThreshold() - hunger) / config.effectStartThreshold() * 4.0));
+
+            this.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, effectDuration, level - 1, true, false));
+            this.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, effectDuration, level - 1, true, false));
+        }
     }
 
     @Override

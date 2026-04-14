@@ -11,6 +11,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.NearbySoulSandExistsCondition;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
@@ -54,8 +55,9 @@ public class HarvestSoulSandBehavior extends StateMachineBehavior {
     private List<BlockPos> validSoulSandAroundVillager;
     private final NearbySoulSandExistsCondition<BaseVillager> nearbySoulSandExistsCondition;
 
-    public HarvestSoulSandBehavior(HarvestSoulSandConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public HarvestSoulSandBehavior(HarvestSoulSandConfig config,
+                                   HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.harvest_soul_sand")

@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyWaterExistsCondition;
@@ -85,8 +86,9 @@ public class FishingBehavior extends StateMachineBehavior {
     private ItemStack caughtItem;
     private int castRetryCount;
 
-    public FishingBehavior(@Nonnull FishingConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public FishingBehavior(@Nonnull FishingConfig config,
+                           @Nonnull HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
         this.behaviorDescriptor = BehaviorDescriptor.builder()

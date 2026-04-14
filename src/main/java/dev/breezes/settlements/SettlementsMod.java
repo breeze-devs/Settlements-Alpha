@@ -1,5 +1,6 @@
 package dev.breezes.settlements;
 
+import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry;
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
@@ -28,6 +29,7 @@ public final class SettlementsMod {
         CreativeTabRegistry.register(modEventBus);
         EntityRegistry.register(modEventBus);
         DataComponentRegistry.register(modEventBus);
+        AttachmentRegistry.register(modEventBus);
         StructureRegistry.register(modEventBus);
 
         processAnnotations(modEventBus);

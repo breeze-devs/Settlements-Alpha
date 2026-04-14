@@ -11,6 +11,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFriendlyNeedsPotionCondition;
@@ -55,8 +56,9 @@ public class ThrowPotionsBehavior extends StateMachineBehavior {
     @Nullable
     private ItemStack potionToThrow;
 
-    public ThrowPotionsBehavior(ThrowPotionsConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public ThrowPotionsBehavior(ThrowPotionsConfig config,
+                                HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.throw_potions")

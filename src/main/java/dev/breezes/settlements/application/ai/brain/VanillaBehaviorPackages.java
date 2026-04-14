@@ -91,7 +91,8 @@ public final class VanillaBehaviorPackages {
      */
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getCorePackage(
             VillagerProfession profession,
-            float speed) {
+            float speed,
+            @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> customChoiceBehaviors) {
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> coreBehaviors = new ArrayList<>();
 
         // Add default behaviors
@@ -119,6 +120,10 @@ public final class VanillaBehaviorPackages {
                 Pair.of(10, AssignProfessionFromJobSite.create()),
                 Pair.of(10, ResetProfession.create())
         ));
+
+        if (!customChoiceBehaviors.isEmpty()) {
+            coreBehaviors.add(Pair.of(4, new RunOne<>(customChoiceBehaviors)));
+        }
 
         return ImmutableList.copyOf(coreBehaviors);
     }

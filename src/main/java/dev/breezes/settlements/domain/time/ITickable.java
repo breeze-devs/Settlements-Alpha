@@ -38,6 +38,11 @@ public interface ITickable {
 
     void reset();
 
+    // Values above 1.0 extend beyond the natural duration while values below 1.0 shorten it.
+    default void resetWithMultiplier(double multiplier) {
+        this.reset();
+    }
+
     boolean isComplete();
 
     void forceComplete();

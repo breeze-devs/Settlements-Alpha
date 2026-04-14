@@ -92,6 +92,8 @@ public class VillagerStatsScreen extends LayoutScreen {
     private ItemStack cachedActivityIcon;
     @Nullable
     private HpBarElement hpBarElement;
+    @Nullable
+    private HungerBarElement hungerBarElement;
 
     // Cached components
     private Component cachedReputationText;
@@ -180,6 +182,9 @@ public class VillagerStatsScreen extends LayoutScreen {
         if (this.hpBarElement != null) {
             this.hpBarElement.setHp(snapshot.currentHealth(), snapshot.maxHealth());
         }
+        if (this.hungerBarElement != null) {
+            this.hungerBarElement.setHunger(snapshot.hunger());
+        }
     }
 
     public void applyInventorySnapshot(@Nonnull VillagerInventorySnapshot inventory) {
@@ -264,6 +269,7 @@ public class VillagerStatsScreen extends LayoutScreen {
                 .child(Elements.centeredText(this::getExpertiseProfessionComponent, theme.subtleTextColor()))
                 .child(buildVillagerModelArea())
                 .child(buildHpBar())
+                .child(buildHungerBar())
                 .child(buildHomeRow())
                 .child(buildWorkstationRow())
                 .child(buildCurrentActivity())
@@ -302,6 +308,11 @@ public class VillagerStatsScreen extends LayoutScreen {
     private UIElement buildHpBar() {
         this.hpBarElement = new HpBarElement(theme, statsSnapshot.currentHealth(), statsSnapshot.maxHealth());
         return this.hpBarElement;
+    }
+
+    private UIElement buildHungerBar() {
+        this.hungerBarElement = new HungerBarElement(theme, statsSnapshot.hunger());
+        return this.hungerBarElement;
     }
 
     private UIElement buildHexChart() {

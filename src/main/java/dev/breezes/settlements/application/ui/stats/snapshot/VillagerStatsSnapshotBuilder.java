@@ -66,6 +66,7 @@ public final class VillagerStatsSnapshotBuilder {
                 .activeBehaviorIconId(activeBehavior != null ? activeBehavior.iconId : null)
                 .schedulePhase(schedulePhase)
                 .reputation(0) // TODO: wire to actual villager reputation data
+                .hunger(villager.getHunger())
                 .build();
     }
 

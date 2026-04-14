@@ -30,6 +30,7 @@ class VillagerStatsSnapshotCodecTest {
                 .activeBehaviorIconId("minecraft:wheat")
                 .schedulePhase(SchedulePhase.WORK)
                 .reputation(25)
+                .hunger(0.72F)
                 .build();
 
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
@@ -52,6 +53,7 @@ class VillagerStatsSnapshotCodecTest {
         Assertions.assertEquals(input.activeBehaviorIconId(), decoded.activeBehaviorIconId());
         Assertions.assertEquals(input.schedulePhase(), decoded.schedulePhase());
         Assertions.assertEquals(input.reputation(), decoded.reputation());
+        Assertions.assertEquals(input.hunger(), decoded.hunger(), 0.001F);
     }
 
     @Test
@@ -72,6 +74,7 @@ class VillagerStatsSnapshotCodecTest {
                 .activeBehaviorIconId(null)
                 .schedulePhase(SchedulePhase.IDLE)
                 .reputation(-30)
+                .hunger(1.0F)
                 .build();
 
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
@@ -107,6 +110,7 @@ class VillagerStatsSnapshotCodecTest {
                 .activeBehaviorIconId(null)
                 .schedulePhase(SchedulePhase.IDLE)
                 .reputation(0)
+                .hunger(0.5F)
                 .build();
 
         // Mutating original array should not affect snapshot (compact constructor clones)
@@ -141,6 +145,7 @@ class VillagerStatsSnapshotCodecTest {
                     .activeBehaviorIconId(null)
                     .schedulePhase(phase)
                     .reputation(0)
+                    .hunger(1.0F)
                     .build();
 
             FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());

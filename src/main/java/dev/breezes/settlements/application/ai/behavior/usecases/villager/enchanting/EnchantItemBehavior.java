@@ -13,6 +13,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
@@ -65,8 +66,9 @@ public class EnchantItemBehavior extends StateMachineBehavior {
     private int targetSlot;
 
     public EnchantItemBehavior(@Nonnull EnchantItemConfig config,
+                               @Nonnull HungerConfig hungerConfig,
                                @Nonnull EnchantmentEngine enchantmentEngine) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
         this.behaviorDescriptor = BehaviorDescriptor.builder()

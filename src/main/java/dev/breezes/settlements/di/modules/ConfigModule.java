@@ -20,6 +20,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 
 import javax.inject.Singleton;
@@ -139,6 +140,12 @@ public final class ConfigModule {
     @Singleton
     static ThrowPotionsConfig throwPotionsConfig() {
         return ConfigFactory.create(ThrowPotionsConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static HungerConfig hungerConfig() {
+        return ConfigFactory.create(HungerConfig.class);
     }
 
 }

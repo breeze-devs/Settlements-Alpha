@@ -14,6 +14,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleKind;
@@ -84,8 +85,9 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
     private final AtomicInteger shearCount;
 
-    public ShearSheepBehaviorV2(@Nonnull ShearSheepConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public ShearSheepBehaviorV2(@Nonnull ShearSheepConfig config,
+                                @Nonnull HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
         this.behaviorDescriptor = BehaviorDescriptor.builder()

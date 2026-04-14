@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
@@ -53,8 +54,9 @@ public class RepairIronGolemBehavior extends StateMachineBehavior {
     private IronGolem targetToRepair;
     private int remainingRepairAttempts;
 
-    public RepairIronGolemBehavior(RepairIronGolemConfig config) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+    public RepairIronGolemBehavior(RepairIronGolemConfig config,
+                                   HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
         this.behaviorDescriptor = BehaviorDescriptor.builder()
