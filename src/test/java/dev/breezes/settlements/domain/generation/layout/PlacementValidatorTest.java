@@ -3,10 +3,12 @@ package dev.breezes.settlements.domain.generation.layout;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.geometry.Direction;
+import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
 import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
 import dev.breezes.settlements.domain.generation.model.survey.TerrainGrid;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -96,8 +98,8 @@ class PlacementValidatorTest {
         PlacementResult result = validator.evaluate(
                 LayoutTestFixtures.building(
                         "settlements:forbidden_stone",
-                        java.util.Map.of(),
-                        dev.breezes.settlements.domain.generation.model.profile.TraitSlot.FLAVOR,
+                        Map.of(),
+                        TraitSlot.FLAVOR,
                         10,
                         Set.of(),
                         Set.of(ResourceTag.STONE),

@@ -19,8 +19,9 @@ public class ClientBoundBubbleSnapshotPacketHandler implements ClientSidePacketH
 
     @Override
     public void runOnClient(@Nonnull IPayloadContext context, @Nonnull ClientBoundBubbleSnapshotPacket packet) {
-        log.debug("Received {} for villagerEntityId={} entryCount={}",
-                packet.getClass().getSimpleName(), packet.villagerEntityId(), packet.entries().size());
+        log.info("Received {} for villagerEntityId={} entryCount={} sources={}",
+                packet.getClass().getSimpleName(), packet.villagerEntityId(), packet.entries().size(),
+                packet.entries().stream().map(e -> e.sourceType()).toList());
 
         Level level = context.player().level();
         Optional.ofNullable(level.getEntity(packet.villagerEntityId()))

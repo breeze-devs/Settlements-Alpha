@@ -14,7 +14,8 @@ public record BubbleEntry(
         @Nonnull BubbleMessage message,
         long createdGameTime,
         long expireGameTime,
-        long sequenceNumber
+        long sequenceNumber,
+        int contentVersion
 ) {
 
     public BubbleEntry {
@@ -47,6 +48,9 @@ public record BubbleEntry(
                 .createdGameTime(newCreatedGameTime)
                 .expireGameTime(newExpireGameTime)
                 .sequenceNumber(this.sequenceNumber)
+                // Incrementing here signals to the client that segments changed without
+                // requiring it to perform a segment-by-segment equality check.
+                .contentVersion(this.contentVersion + 1)
                 .build();
     }
 

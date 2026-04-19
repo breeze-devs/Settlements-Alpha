@@ -1,12 +1,16 @@
 package dev.breezes.settlements.domain.entities;
 
+import net.minecraft.resources.ResourceLocation;
+
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
  * Domain-layer identity for a villager profession.
  * <p>
- * Convert at the infrastructure boundary: {@code new VillagerProfessionKey(profession.name())}.
+ * Convert at the infrastructure boundary rather than leaking Minecraft registry ids into the
+ * domain. JSON/data loaders may speak in full resource locations while domain services only care
+ * about the stable profession path.
  * Never import VillagerProfession in domain code.
  */
 public record VillagerProfessionKey(@Nonnull String id) {
@@ -34,6 +38,21 @@ public record VillagerProfessionKey(@Nonnull String id) {
 
     public VillagerProfessionKey {
         Objects.requireNonNull(id, "id");
+        if (id.isBlank()) {
+            throw new IllegalArgumentException("Profession id must not be blank");
+        }
+    }
+
+    public static VillagerProfessionKey of(@Nonnull String id) {
+        return new VillagerProfessionKey(id);
+    }
+
+    public static VillagerProfessionKey fromResourceLocation(@Nonnull ResourceLocation professionId) {
+        return new VillagerProfessionKey(professionId.getPath());
+    }
+
+    public ResourceLocation toResourceLocation(@Nonnull String namespace) {
+        return ResourceLocation.fromNamespaceAndPath(namespace, this.id);
     }
 
 }

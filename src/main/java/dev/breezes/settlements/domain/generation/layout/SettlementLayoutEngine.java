@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @CustomLog
 public class SettlementLayoutEngine {
@@ -112,7 +113,7 @@ public class SettlementLayoutEngine {
         Set<TraitId> satisfiedTraits = constrainedResult.placed().stream()
                 .map(assignment -> LayoutSupport.dominantTrait(assignment.building(), profile))
                 .filter(Objects::nonNull)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
         List<BuildingDefinition> signatureBuildings = new ArrayList<>();
         Map<String, TraitId> traitOverrides = new HashMap<>();

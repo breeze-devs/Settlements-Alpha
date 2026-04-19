@@ -1,0 +1,54 @@
+{
+  "profession": "minecraft:cartographer",
+  "offers": [
+    {
+      "id": "cartographer_compass",
+      "match": {
+        "item": "minecraft:compass"
+      },
+      "bundleSize": 1,
+      "basePrice": 12,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "cartographer_map",
+      "match": {
+        "item": "minecraft:map"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "cartographer_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "cartographer_paper",
+      "match": {
+        "item": "minecraft:paper"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 50
+    },
+    {
+      "id": "cartographer_glass_pane",
+      "match": {
+        "tag": "c:glass_panes"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 2,
+      "basePriority": 30
+    }
+  ]
+}

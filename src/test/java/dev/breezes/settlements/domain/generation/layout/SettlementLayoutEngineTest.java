@@ -5,12 +5,17 @@ import dev.breezes.settlements.domain.generation.model.building.BuildingDefiniti
 import dev.breezes.settlements.domain.generation.model.building.BuildingManifest;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
+import dev.breezes.settlements.domain.generation.model.layout.RoadSegment;
+import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
+import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
 import dev.breezes.settlements.domain.generation.model.layout.ZoneTier;
 import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,8 +54,8 @@ class SettlementLayoutEngineTest {
         BuildingAssignment dock = findById(result.assignments(), "settlements:dock");
         BuildingAssignment mine = findById(result.assignments(), "settlements:mine_entrance");
 
-        assertTrue(dock.plot().localResources().contains(dev.breezes.settlements.domain.generation.model.survey.ResourceTag.FRESHWATER));
-        assertTrue(mine.plot().localResources().contains(dev.breezes.settlements.domain.generation.model.survey.ResourceTag.STONE));
+        assertTrue(dock.plot().localResources().contains(ResourceTag.FRESHWATER));
+        assertTrue(mine.plot().localResources().contains(ResourceTag.STONE));
     }
 
     @Test
@@ -72,11 +77,11 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.townHall(),
                 LayoutTestFixtures.building(
                         "settlements:forbidden_stone_building",
-                        java.util.Map.of(),
-                        dev.breezes.settlements.domain.generation.model.profile.TraitSlot.FLAVOR,
+                        Map.of(),
+                        TraitSlot.FLAVOR,
                         500,
-                        java.util.Set.of(),
-                        java.util.Set.of(dev.breezes.settlements.domain.generation.model.survey.ResourceTag.STONE),
+                        Set.of(),
+                        Set.of(ResourceTag.STONE),
                         false,
                         6,
                         8,
@@ -292,10 +297,10 @@ class SettlementLayoutEngineTest {
         for (int i = 0; i < constrainedCount; i++) {
             buildings.add(LayoutTestFixtures.building(
                     "settlements:stone_outpost_" + i,
-                    java.util.Map.of(),
-                    dev.breezes.settlements.domain.generation.model.profile.TraitSlot.FLAVOR,
+                    Map.of(),
+                    TraitSlot.FLAVOR,
                     100 - i,
-                    java.util.Set.of(dev.breezes.settlements.domain.generation.model.survey.ResourceTag.STONE),
+                    Set.of(ResourceTag.STONE),
                     false,
                     6,
                     8,
@@ -357,7 +362,7 @@ class SettlementLayoutEngineTest {
     }
 
     private static long countBuildingsWithIdPrefixNearResource(LayoutResult result, String prefix,
-                                                               dev.breezes.settlements.domain.generation.model.survey.ResourceTag resource) {
+                                                               ResourceTag resource) {
         return result.assignments().stream()
                 .filter(assignment -> assignment.building().id().startsWith(prefix))
                 .filter(assignment -> assignment.plot().localResources().contains(resource))
@@ -402,7 +407,7 @@ class SettlementLayoutEngineTest {
         return values;
     }
 
-    private static boolean roadNearPlot(dev.breezes.settlements.domain.generation.model.layout.RoadSegment road,
+    private static boolean roadNearPlot(RoadSegment road,
                                         BoundingRegion bounds) {
         BoundingRegion expandedRoad = LayoutSupport.roadBounds(road).expandedBy(2);
         return expandedRoad.intersects(bounds);

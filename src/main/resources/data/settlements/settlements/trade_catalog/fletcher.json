@@ -1,0 +1,82 @@
+{
+  "profession": "minecraft:fletcher",
+  "offers": [
+    {
+      "id": "fletcher_arrow",
+      "match": {
+        "item": "minecraft:arrow"
+      },
+      "bundleSize": 16,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "fletcher_bow",
+      "match": {
+        "item": "minecraft:bow"
+      },
+      "bundleSize": 1,
+      "basePrice": 10,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "fletcher_crossbow",
+      "match": {
+        "item": "minecraft:crossbow"
+      },
+      "bundleSize": 1,
+      "basePrice": 16,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "fletcher_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "fletcher_feather",
+      "match": {
+        "tag": "c:feathers"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 50
+    },
+    {
+      "id": "fletcher_stick",
+      "match": {
+        "tag": "c:rods/wooden"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 1,
+      "basePriority": 40
+    },
+    {
+      "id": "fletcher_string",
+      "match": {
+        "tag": "c:strings"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 2,
+      "basePriority": 40
+    },
+    {
+      "id": "fletcher_flint",
+      "match": {
+        "item": "minecraft:flint"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 1,
+      "basePriority": 30
+    }
+  ]
+}

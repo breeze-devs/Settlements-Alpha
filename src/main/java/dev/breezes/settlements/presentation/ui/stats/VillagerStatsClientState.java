@@ -1,7 +1,9 @@
 package dev.breezes.settlements.presentation.ui.stats;
 
+import dev.breezes.settlements.application.ui.stats.model.VillagerDemandDisplaySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerInventorySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
+import dev.breezes.settlements.application.ui.stats.model.VillagerTradeCatalogSnapshot;
 import dev.breezes.settlements.di.ClientScope;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundHeartbeatVillagerStatsPacket;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
@@ -40,6 +42,10 @@ public final class VillagerStatsClientState {
     @Nullable
     private VillagerInventorySnapshot latestInventorySnapshot;
     @Nullable
+    private VillagerTradeCatalogSnapshot latestTradeCatalogSnapshot;
+    @Nullable
+    private VillagerDemandDisplaySnapshot latestDemandSnapshot;
+    @Nullable
     private String unavailableReasonKey;
     private boolean sessionTerminalUnavailable = false;
     private long nextHeartbeatGameTime = 0L;
@@ -52,6 +58,8 @@ public final class VillagerStatsClientState {
         this.activeVillagerEntityId = villagerEntityId;
         this.latestStatsSnapshot = null;
         this.latestInventorySnapshot = null;
+        this.latestTradeCatalogSnapshot = null;
+        this.latestDemandSnapshot = null;
         this.unavailableReasonKey = null;
         this.sessionTerminalUnavailable = false;
         this.nextHeartbeatGameTime = 0L;
@@ -81,6 +89,24 @@ public final class VillagerStatsClientState {
         }
 
         this.latestInventorySnapshot = inventory;
+        return true;
+    }
+
+    public boolean applyTradeCatalogSnapshot(long sessionId, @Nonnull VillagerTradeCatalogSnapshot snapshot) {
+        if (sessionId != this.activeSessionId) {
+            return false;
+        }
+
+        this.latestTradeCatalogSnapshot = snapshot;
+        return true;
+    }
+
+    public boolean applyDemandSnapshot(long sessionId, @Nonnull VillagerDemandDisplaySnapshot snapshot) {
+        if (sessionId != this.activeSessionId) {
+            return false;
+        }
+
+        this.latestDemandSnapshot = snapshot;
         return true;
     }
 
@@ -125,6 +151,8 @@ public final class VillagerStatsClientState {
         this.activeVillagerEntityId = -1;
         this.latestStatsSnapshot = null;
         this.latestInventorySnapshot = null;
+        this.latestTradeCatalogSnapshot = null;
+        this.latestDemandSnapshot = null;
         this.unavailableReasonKey = null;
         this.sessionTerminalUnavailable = false;
         this.nextHeartbeatGameTime = 0L;
@@ -151,6 +179,14 @@ public final class VillagerStatsClientState {
 
     public Optional<VillagerInventorySnapshot> latestInventorySnapshot() {
         return Optional.ofNullable(this.latestInventorySnapshot);
+    }
+
+    public Optional<VillagerTradeCatalogSnapshot> latestTradeCatalogSnapshot() {
+        return Optional.ofNullable(this.latestTradeCatalogSnapshot);
+    }
+
+    public Optional<VillagerDemandDisplaySnapshot> latestDemandSnapshot() {
+        return Optional.ofNullable(this.latestDemandSnapshot);
     }
 
     public boolean isSnapshotUpdateStale(long screenSessionId) {

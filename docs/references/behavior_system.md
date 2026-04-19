@@ -14,6 +14,21 @@ stateful use case that ticks every server tick for the villager that owns it. Th
 2. **Resolution** — `BehaviorPackageResolver` groups registrations by profession and resolves them per villager.
 3. **Consumption** — `BaseVillager.registerCustomGoals()` wires resolved behaviors into Minecraft's brain system.
 
+Sensors complete the read/write loop around memories:
+
+- Sensors write `MemoryModuleType` values into the brain.
+- Behaviors read those memories as preconditions or live inputs.
+
+For V1, custom sensors should be vanilla `Sensor<Villager>` subclasses registered through `SensorTypeRegistry` and
+added to `BaseVillager.SENSOR_TYPES`. The older `AbstractSensor` framework under `application/ai/sensors/` is not
+currently wired into the brain tick path.
+
+The `application/ai/sensors/AbstractSensor` framework currently present in the codebase is a parallel design that is
+not wired into `BaseVillager` and is therefore dormant. Do not add new sensors to that framework unless there is an
+explicit plan to wire and tick it.
+
+---
+
 ```
 BehaviorModule                    BehaviorPackageResolver              BaseVillager
 ┌───────────────────┐            ┌───────────────────────┐             ┌─────────────────┐
@@ -83,8 +98,8 @@ Each method:
 ```
 @Provides
 @IntoSet
-static BehaviorRegistration fishermanFishing(FishingConfig config) {
-    return work(VillagerProfessionKey.FISHERMAN, () -> new FishingBehavior(config));
+static BehaviorRegistration fishermanFishing(FishingConfig config, HungerConfig hungerConfig) {
+    return work(VillagerProfessionKey.FISHERMAN, () -> new FishingBehavior(config, hungerConfig));
 }
 ```
 
@@ -93,6 +108,7 @@ static BehaviorRegistration fishermanFishing(FishingConfig config) {
 | Method                                        | Activity        | Weight | Priority |
 |-----------------------------------------------|-----------------|--------|----------|
 | `work(profession, factory)`                   | `Activity.WORK` | 10     | 10       |
+| `core(profession, factory)`                   | `Activity.CORE` | 10     | 10       |
 | `registration(profession, activity, factory)` | (any)           | 10     | 10       |
 
 ### Current registrations
@@ -135,8 +151,17 @@ static BehaviorRegistration fishermanFishing(FishingConfig config) {
 - **Weaponsmith**
     - RepairIronGolem
 
+**Cross-profession CORE behaviors** — registered once per vanilla profession constant (including `NONE` and `NITWIT`):
+
+- **All professions** (CORE)
+    - EatFood
+
 Note: Cleric's `ThrowPotions` is registered for three activities (WORK, MEET, IDLE), so it appears in each of those
 activity phases. Each activity registration creates a separate behavior instance.
+
+Note: `EatFood` is a universal behavior that every villager needs regardless of profession. It is currently registered
+with a separate `@Provides @IntoSet` method per profession constant. This is a known DRY limitation of the flat-set
+registration model — any behavior that must apply to all professions requires one entry per profession.
 
 ---
 

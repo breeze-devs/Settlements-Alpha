@@ -1,0 +1,143 @@
+{
+  "profession": "minecraft:butcher",
+  "offers": [
+    {
+      "id": "butcher_beef",
+      "match": {
+        "item": "minecraft:beef"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_cooked_beef",
+      "match": {
+        "item": "minecraft:cooked_beef"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_porkchop",
+      "match": {
+        "item": "minecraft:porkchop"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_cooked_porkchop",
+      "match": {
+        "item": "minecraft:cooked_porkchop"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_chicken",
+      "match": {
+        "item": "minecraft:chicken"
+      },
+      "bundleSize": 4,
+      "basePrice": 8,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_cooked_chicken",
+      "match": {
+        "item": "minecraft:cooked_chicken"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_mutton",
+      "match": {
+        "item": "minecraft:mutton"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_cooked_mutton",
+      "match": {
+        "item": "minecraft:cooked_mutton"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_leather",
+      "match": {
+        "tag": "c:leathers"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "butcher_rabbit_hide",
+      "match": {
+        "item": "minecraft:rabbit_hide"
+      },
+      "bundleSize": 4,
+      "basePrice": 8,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "butcher_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "butcher_wheat",
+      "match": {
+        "item": "minecraft:wheat"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 40
+    },
+    {
+      "id": "butcher_seeds",
+      "match": {
+        "tag": "c:seeds"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 1,
+      "basePriority": 30
+    },
+    {
+      "id": "butcher_coal",
+      "match": {
+        "tag": "c:coals"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 20
+    }
+  ]
+}

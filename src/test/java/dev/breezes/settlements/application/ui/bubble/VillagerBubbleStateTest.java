@@ -1,10 +1,11 @@
 package dev.breezes.settlements.application.ui.bubble;
 
+import dev.breezes.settlements.domain.time.Ticks;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 class VillagerBubbleStateTest {
@@ -55,11 +56,10 @@ class VillagerBubbleStateTest {
                 .channel(channel)
                 .ownerKey(ownerKey)
                 .message(BubbleMessage.builder()
-                        .bubbleKind(BubbleKind.TEST_ONLY)
                         .priority(priority)
-                        .ttl(dev.breezes.settlements.domain.time.Ticks.seconds(5))
+                        .ttl(Ticks.seconds(5))
                         .sourceType("test")
-                        .extraData(Map.of())
+                        .segments(List.of(BubbleSegment.Item.iconOnly(ResourceLocation.withDefaultNamespace("wheat"))))
                         .build())
                 .createdGameTime(createdGameTime)
                 .expireGameTime(expireGameTime)

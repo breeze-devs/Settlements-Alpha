@@ -7,6 +7,7 @@ import dev.breezes.settlements.domain.generation.building.TemplateResolutionCont
 import dev.breezes.settlements.domain.generation.building.TemplateResolver;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.building.BuildingAssignment;
+import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.building.ResolvedTemplate;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.layout.RoadSegment;
@@ -96,7 +97,7 @@ public class SettlementStructure extends SettlementsStructure {
     private static SurveyBounds buildSurveyBounds(ChunkPos chunkPos) {
         int radius = ScaleTier.VILLAGE.areaRadius();
         BlockPosition center = new BlockPosition(chunkPos.getMiddleBlockX(), 0, chunkPos.getMiddleBlockZ());
-        return SurveyBounds.fromBuildArea(new dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion(
+        return SurveyBounds.fromBuildArea(new BoundingRegion(
                 center.offset(-radius, 0, -radius),
                 center.offset(radius, 0, radius)
         ), 30);

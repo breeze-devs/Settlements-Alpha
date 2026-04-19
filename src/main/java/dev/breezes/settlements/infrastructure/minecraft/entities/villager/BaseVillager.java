@@ -368,6 +368,21 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         return this.getSettlementsInventory().containsItem(item);
     }
 
+    public boolean isTradeAvailable() {
+        if (!this.isAlive() || this.isRemoved()) {
+            return false;
+        }
+
+        // TODO: check that no behaviors are running
+
+        // Trading partner scans need one canonical availability predicate so session ownership rules
+        // stay consistent instead of drifting across multiple call sites.
+        return SettlementsDagger.serverOrThrow()
+                .tradeSessionRegistry()
+                .getActiveSession(this.getUUID())
+                .isEmpty();
+    }
+
     private void tickHunger() {
         HungerConfig config = SettlementsDagger.component().hungerConfig();
 
@@ -472,7 +487,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 SensorType.VILLAGER_HOSTILES,
                 SensorType.VILLAGER_BABIES,
                 SensorType.SECONDARY_POIS,
-                SensorType.GOLEM_DETECTED);
+                SensorType.GOLEM_DETECTED
+        );
     }
 
 }

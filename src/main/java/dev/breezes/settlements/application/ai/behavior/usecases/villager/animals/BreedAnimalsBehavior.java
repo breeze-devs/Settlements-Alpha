@@ -193,7 +193,7 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
                                               @Nonnull BreedStage nextStage,
                                               @Nonnull Supplier<Animal> targetSupplier) {
         TimeBasedStep feedStep = TimeBasedStep.builder()
-                .withTickable(Ticks.one().asTickable())
+                .withTickable(Ticks.ONE.asTickable())
                 .onStart(ctx -> {
                     Animal target = targetSupplier.get();
                     if (target == null || this.heldItem == null) {

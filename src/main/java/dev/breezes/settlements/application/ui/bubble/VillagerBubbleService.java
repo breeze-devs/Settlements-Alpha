@@ -198,6 +198,10 @@ public final class VillagerBubbleService {
                 .map(BubbleEntrySnapshot::fromEntry)
                 .toList();
 
+        log.info("Publishing bubble snapshot: villager={} entryCount={} sources={}",
+                villager.getUUID(), snapshots.size(),
+                snapshots.stream().map(BubbleEntrySnapshot::sourceType).toList());
+
         PacketDistributor.sendToPlayersTrackingEntity(
                 villager.getMinecraftEntity(),
                 new ClientBoundBubbleSnapshotPacket(villager.getNetworkingId(), snapshots));

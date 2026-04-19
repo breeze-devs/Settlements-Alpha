@@ -1,0 +1,73 @@
+{
+  "profession": "minecraft:weaponsmith",
+  "offers": [
+    {
+      "id": "weaponsmith_iron_sword",
+      "match": {
+        "item": "minecraft:iron_sword"
+      },
+      "bundleSize": 1,
+      "basePrice": 18,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "weaponsmith_iron_axe",
+      "match": {
+        "item": "minecraft:iron_axe"
+      },
+      "bundleSize": 1,
+      "basePrice": 20,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "weaponsmith_shield",
+      "match": {
+        "item": "minecraft:shield"
+      },
+      "bundleSize": 1,
+      "basePrice": 12,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "weaponsmith_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "weaponsmith_iron_ingot",
+      "match": {
+        "tag": "c:ingots/iron"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 3,
+      "basePriority": 50
+    },
+    {
+      "id": "weaponsmith_coal",
+      "match": {
+        "tag": "c:coals"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 40
+    },
+    {
+      "id": "weaponsmith_stick",
+      "match": {
+        "tag": "c:rods/wooden"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 1,
+      "basePriority": 30
+    }
+  ]
+}

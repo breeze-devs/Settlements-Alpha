@@ -1,0 +1,104 @@
+{
+  "profession": "minecraft:fisherman",
+  "offers": [
+    {
+      "id": "fisherman_cod",
+      "match": {
+        "item": "minecraft:cod"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "fisherman_cooked_cod",
+      "match": {
+        "item": "minecraft:cooked_cod"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "fisherman_salmon",
+      "match": {
+        "item": "minecraft:salmon"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "fisherman_cooked_salmon",
+      "match": {
+        "item": "minecraft:cooked_salmon"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "fisherman_pufferfish",
+      "match": {
+        "item": "minecraft:pufferfish"
+      },
+      "bundleSize": 2,
+      "basePrice": 10,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "fisherman_tropical_fish",
+      "match": {
+        "item": "minecraft:tropical_fish"
+      },
+      "bundleSize": 2,
+      "basePrice": 8,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "fisherman_ink_sac",
+      "match": {
+        "item": "minecraft:ink_sac"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "fisherman_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "fisherman_fishing_rod",
+      "match": {
+        "item": "minecraft:fishing_rod"
+      },
+      "desiredMinCount": 1,
+      "basePricePerUnit": 8,
+      "basePriority": 50
+    },
+    {
+      "id": "fisherman_string",
+      "match": {
+        "tag": "c:strings"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 2,
+      "basePriority": 30
+    }
+  ]
+}

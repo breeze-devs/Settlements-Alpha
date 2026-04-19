@@ -129,8 +129,8 @@ class ScoreEngineTest {
                         DEFENSE,
                         5.0f,
                         Map.of(),
-                        java.util.Set.of(),
-                        java.util.Set.of(),
+                        Set.of(),
+                        Set.of(),
                         Map.of(),
                         Map.of(),
                         0.0f,
@@ -149,8 +149,8 @@ class ScoreEngineTest {
                         FARMING,
                         0.5f,
                         Map.of(ResourceTag.LUMBER, -0.4f),
-                        java.util.Set.of(),
-                        java.util.Set.of(),
+                        Set.of(),
+                        Set.of(),
                         Map.of(),
                         Map.of(),
                         0.0f,
@@ -169,8 +169,8 @@ class ScoreEngineTest {
                         LUMBER,
                         0.0f,
                         Map.of(ResourceTag.LUMBER, 1.0f),
-                        java.util.Set.of(),
-                        java.util.Set.of(),
+                        Set.of(),
+                        Set.of(),
                         Map.of(),
                         Map.of(),
                         0.0f,
@@ -187,22 +187,22 @@ class ScoreEngineTest {
     private Map<TraitId, TraitScorer> defaultScorers() {
         Map<TraitId, TraitScorer> scorers = new LinkedHashMap<>();
         scorers.put(LUMBER, new ConfiguredTraitScorer(new TraitScorerConfig(
-                LUMBER, 0.0f, Map.of(ResourceTag.LUMBER, 0.8f, ResourceTag.FRESHWATER, 0.15f), java.util.Set.of(), java.util.Set.of(), Map.of(), Map.of(), 0.0f, 0.0f
+                LUMBER, 0.0f, Map.of(ResourceTag.LUMBER, 0.8f, ResourceTag.FRESHWATER, 0.15f), Set.of(), Set.of(), Map.of(), Map.of(), 0.0f, 0.0f
         )));
         scorers.put(FARMING, new ConfiguredTraitScorer(new TraitScorerConfig(
-                FARMING, 0.0f, Map.of(ResourceTag.FRESHWATER, 0.2f, ResourceTag.LUMBER, -0.2f), java.util.Set.of(), java.util.Set.of(ResourceTag.FROZEN), Map.of(),
+                FARMING, 0.0f, Map.of(ResourceTag.FRESHWATER, 0.2f, ResourceTag.LUMBER, -0.2f), Set.of(), Set.of(ResourceTag.FROZEN), Map.of(),
                 Map.of(BiomeId.of("minecraft:plains"), 0.6f, BiomeId.of("minecraft:meadow"), 0.7f, BiomeId.of("minecraft:savanna"), 0.5f, BiomeId.of("minecraft:sunflower_plains"), 0.55f),
                 0.0f, 0.0f
         )));
         scorers.put(FISHING, new ConfiguredTraitScorer(new TraitScorerConfig(
-                FISHING, 0.0f, Map.of(ResourceTag.FRESHWATER, 0.2f, ResourceTag.COASTAL, 0.2f), java.util.Set.of(), java.util.Set.of(),
+                FISHING, 0.0f, Map.of(ResourceTag.FRESHWATER, 0.2f, ResourceTag.COASTAL, 0.2f), Set.of(), Set.of(),
                 Map.of(WaterFeatureType.RIVER, 0.3f, WaterFeatureType.OCEAN, 0.4f, WaterFeatureType.LAKE, 0.25f), Map.of(), 0.0f, 0.0f
         )));
         scorers.put(MINING, new ConfiguredTraitScorer(new TraitScorerConfig(
-                MINING, 0.0f, Map.of(ResourceTag.STONE, 0.4f, ResourceTag.ORE_BEARING, 0.35f), java.util.Set.of(), java.util.Set.of(), Map.of(), Map.of(), 0.2f, 60.0f
+                MINING, 0.0f, Map.of(ResourceTag.STONE, 0.4f, ResourceTag.ORE_BEARING, 0.35f), Set.of(), Set.of(), Map.of(), Map.of(), 0.2f, 60.0f
         )));
         scorers.put(DEFENSE, new ConfiguredTraitScorer(new TraitScorerConfig(
-                DEFENSE, 0.1f, Map.of(ResourceTag.STONE, 0.15f), java.util.Set.of(), java.util.Set.of(), Map.of(), Map.of(), 0.3f, 60.0f
+                DEFENSE, 0.1f, Map.of(ResourceTag.STONE, 0.15f), Set.of(), Set.of(), Map.of(), Map.of(), 0.3f, 60.0f
         )));
         return scorers;
     }

@@ -20,13 +20,17 @@ etc. are auto-registered with NeoForge's config system via `ConfigAnnotationProc
 
 **File:** `application/ai/behavior/usecases/villager/farming/CompostBehavior.java`
 
-Extend `BaseVillagerBehavior` (or `StateMachineBehavior` for multi-step workflows). Accept the config as a constructor
-parameter.
+Extend `StateMachineBehavior` (for multi-step workflows) or `BaseVillagerBehavior` (for simple single-tick behaviors).
+Accept the behavior's own config and `HungerConfig` as constructor parameters — `HungerConfig` is required by
+`BaseVillagerBehavior` and controls the hunger-based cooldown multiplier applied when the behavior stops.
 
 ```
-public class CompostBehavior extends BaseVillagerBehavior {
-    public CompostBehavior(CompostConfig config) {
-        super(config.enabled(), config.cooldown());
+public class CompostBehavior extends StateMachineBehavior {
+    public CompostBehavior(CompostConfig config, HungerConfig hungerConfig) {
+        super(log,
+              config.createPreconditionCheckCooldownTickable(),
+              config.createBehaviorCooldownTickable(),
+              hungerConfig);
         // ...
     }
 }
@@ -51,8 +55,8 @@ static CompostConfig compostConfig() {
 ```
 @Provides
 @IntoSet
-static BehaviorRegistration farmerCompost(CompostConfig config) {
-    return work(VillagerProfessionKey.FARMER, () -> new CompostBehavior(config));
+static BehaviorRegistration farmerCompost(CompostConfig config, HungerConfig hungerConfig) {
+    return work(VillagerProfessionKey.FARMER, () -> new CompostBehavior(config, hungerConfig));
 }
 ```
 
@@ -135,6 +139,52 @@ static MyRegistry myRegistry(MyDataManager manager) {
     return manager;
 }
 ```
+
+---
+
+## Add a New Custom Sensor
+
+**Example:** Adding a `NeedFoodSensor` that writes a custom memory when a villager is low on food.
+
+### 1. Register the memory type
+
+**File:** `domain/ai/memory/MemoryTypeRegistry.java`
+
+Add a new `MemoryType<T>` entry and register it so `BaseVillager` can include the resulting
+`MemoryModuleType<?>` in its `MEMORY_TYPES` list.
+
+### 2. Create the sensor class
+
+**File:** `infrastructure/minecraft/ai/sensors/NeedFoodSensor.java`
+
+Implement a vanilla `Sensor<Villager>` subclass (or the concrete villager subtype used by the codebase) and keep the
+logic focused on translating world/entity state into brain memory writes. This keeps the sensor on the infrastructure
+side of the architecture boundary because it directly depends on Minecraft brain APIs.
+
+### 3. Register the sensor type
+
+**File:** `bootstrap/registry/sensors/SensorTypeRegistry.java`
+
+Create a `DeferredRegister<SensorType<?>>`, register the sensor type, and expose a `register(IEventBus)` method so the
+mod entry point can bind it to the mod event bus.
+
+### 4. Wire the registry into the mod bootstrap
+
+**File:** `SettlementsMod.java`
+
+Register `SensorTypeRegistry` on the mod event bus alongside the other deferred registries.
+
+### 5. Add the memory and sensor to BaseVillager
+
+**File:** `infrastructure/minecraft/entities/villager/BaseVillager.java`
+
+Append the custom memory module to `MEMORY_TYPES` and the registered sensor type to `SENSOR_TYPES`. If either side is
+missing, the brain will not have the full contract the sensor expects.
+
+### 6. Build and verify
+
+Run the Gradle build and then verify in-game that the target villager gains and clears the memory on the expected sense
+interval. Sensors write memories; behaviors consume them later.
 
 ---
 

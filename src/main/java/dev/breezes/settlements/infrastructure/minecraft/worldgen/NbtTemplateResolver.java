@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -350,7 +351,7 @@ public final class NbtTemplateResolver implements TemplateResolver {
 
     @VisibleForTesting
     static Map<String, List<TemplateEntry>> materializeCatalogForTesting(Collection<TemplateDescriptor> descriptors,
-                                                                         java.util.function.Function<ResourceLocation, Optional<Vec3i>> sizeLoader) {
+                                                                         Function<ResourceLocation, Optional<Vec3i>> sizeLoader) {
         Map<String, List<TemplateEntry>> entriesByBuilding = new LinkedHashMap<>();
         for (TemplateDescriptor descriptor : descriptors) {
             Optional<Vec3i> sizeOptional = sizeLoader.apply(descriptor.templateId());

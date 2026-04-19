@@ -26,6 +26,7 @@ import dev.breezes.settlements.domain.generation.model.survey.TerrainSample;
 import dev.breezes.settlements.domain.generation.model.survey.WaterFeatureType;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -160,7 +161,7 @@ class GenerationModelDataObjectsTest {
                 null,
                 0
         );
-        List<BuildingDefinition> mutable = new java.util.ArrayList<>(List.of(house));
+        List<BuildingDefinition> mutable = new ArrayList<>(List.of(house));
 
         BuildingManifest manifest = new BuildingManifest(mutable);
         mutable.clear();

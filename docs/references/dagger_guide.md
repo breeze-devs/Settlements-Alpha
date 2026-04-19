@@ -150,6 +150,7 @@ Current configs:
 - HarvestOreConfig
 - RepairIronGolemConfig
 - ThrowPotionsConfig
+- HungerConfig
 
 ### DataManagerModule
 

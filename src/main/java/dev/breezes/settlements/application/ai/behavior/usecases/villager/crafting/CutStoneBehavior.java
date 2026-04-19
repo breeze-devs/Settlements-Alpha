@@ -184,7 +184,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
 
     private BehaviorStep createCutStep() {
         TimeBasedStep setup = TimeBasedStep.builder()
-                .withTickable(Ticks.one().asTickable())
+                .withTickable(Ticks.ONE.asTickable())
                 .onEnd(ctx -> {
                     if (this.stoneCutter == null || this.initialBlockDisplay == null) {
                         return StepResult.complete();
@@ -213,7 +213,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
                 .build();
 
         TimeBasedStep transition = TimeBasedStep.builder()
-                .withTickable(Ticks.one().asTickable())
+                .withTickable(Ticks.ONE.asTickable())
                 .onEnd(ctx -> {
                     if (this.stoneCutter == null || this.finalBlockDisplay == null || this.finalMatrix == null) {
                         return StepResult.complete();

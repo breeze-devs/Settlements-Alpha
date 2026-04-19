@@ -1,0 +1,15 @@
+{
+  "profession": "minecraft:nitwit",
+  "offers": [],
+  "demands": [
+    {
+      "id": "nitwit_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    }
+  ]
+}

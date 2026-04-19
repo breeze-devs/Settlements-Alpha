@@ -45,8 +45,8 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior implemen
             crashInvalidConfiguration("StateMachineBehavior for '%s' was initialized more than once"
                     .formatted(this.getClass().getSimpleName()));
         }
-        this.controlStep = Objects.requireNonNull(controlStep);
-        this.expectedEndStage = Objects.requireNonNull(expectedEndStage);
+        this.controlStep = controlStep;
+        this.expectedEndStage = expectedEndStage;
     }
 
     @Nonnull

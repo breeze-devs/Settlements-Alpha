@@ -15,6 +15,7 @@ import dev.breezes.settlements.domain.generation.model.survey.ElevationStats;
 import dev.breezes.settlements.domain.generation.model.survey.SiteReport;
 import dev.breezes.settlements.domain.generation.model.survey.SurveyBounds;
 import dev.breezes.settlements.domain.generation.model.survey.TerrainGrid;
+import dev.breezes.settlements.domain.generation.model.survey.TerrainSample;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -31,8 +32,8 @@ class GenerationResultSerializerTest {
     void toJson_includesNestedHistoryPayload() {
         SiteReport report = new SiteReport(
                 SurveyBounds.fromBuildArea(BoundingRegion.of(new BlockPosition(0, 64, 0), new BlockPosition(31, 64, 31)), 0),
-                TerrainGrid.of(0, 0, 1, new dev.breezes.settlements.domain.generation.model.survey.TerrainSample[][]{{
-                        new dev.breezes.settlements.domain.generation.model.survey.TerrainSample(64, BiomeId.of("minecraft:plains"), 1.0f)
+                TerrainGrid.of(0, 0, 1, new TerrainSample[][]{{
+                        new TerrainSample(64, BiomeId.of("minecraft:plains"), 1.0f)
                 }}),
                 new ElevationStats(64, 70, 66, new BlockPosition(5, 70, 5)),
                 Map.of(),

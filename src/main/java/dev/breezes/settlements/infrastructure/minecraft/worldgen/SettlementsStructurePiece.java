@@ -14,6 +14,8 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
+import java.util.function.Function;
+
 public abstract class SettlementsStructurePiece extends TemplateStructurePiece {
 
     private static final String ROTATION_TAG = "Rot";
@@ -26,7 +28,7 @@ public abstract class SettlementsStructurePiece extends TemplateStructurePiece {
 
     protected SettlementsStructurePiece(StructurePieceType type, CompoundTag tag,
                                         StructureTemplateManager structureTemplateManager,
-                                        java.util.function.Function<ResourceLocation, StructurePlaceSettings> settingsFactory) {
+                                        Function<ResourceLocation, StructurePlaceSettings> settingsFactory) {
         super(type, tag, structureTemplateManager, settingsFactory);
     }
 

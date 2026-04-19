@@ -2,8 +2,9 @@ package dev.breezes.settlements.infrastructure.rendering.bubbles;
 
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleEntrySnapshot;
-import dev.breezes.settlements.application.ui.bubble.BubbleKind;
+import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.SpeechBubble;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -20,9 +21,9 @@ class BubbleManagerTest {
     void applySnapshot_preservesIncomingServerOrderForStoredEntries() {
         BubbleManager manager = new TestBubbleManager();
 
-        BubbleEntrySnapshot first = createSnapshot(BubbleChannel.SYSTEM, 1, 300, 3, BubbleKind.SHEAR_SHEEP);
-        BubbleEntrySnapshot second = createSnapshot(BubbleChannel.BEHAVIOR, 99, 100, 1, BubbleKind.SHEAR_SHEEP);
-        BubbleEntrySnapshot third = createSnapshot(BubbleChannel.CHAT, 50, 200, 2, BubbleKind.SHEAR_SHEEP);
+        BubbleEntrySnapshot first = createSnapshot(BubbleChannel.SYSTEM, 1, 300, 3);
+        BubbleEntrySnapshot second = createSnapshot(BubbleChannel.BEHAVIOR, 99, 100, 1);
+        BubbleEntrySnapshot third = createSnapshot(BubbleChannel.CHAT, 50, 200, 2);
 
         manager.applySnapshot(List.of(first, second, third), 0L);
 
@@ -34,8 +35,8 @@ class BubbleManagerTest {
     void getActiveBubble_usesRenderComparatorOrderingNotInsertionOrder() {
         BubbleManager manager = new TestBubbleManager();
 
-        BubbleEntrySnapshot lowerPriorityChat = createSnapshot(BubbleChannel.CHAT, 1, 300, 3, BubbleKind.SHEAR_SHEEP);
-        BubbleEntrySnapshot higherPriorityBehavior = createSnapshot(BubbleChannel.BEHAVIOR, 100, 100, 1, BubbleKind.SHEAR_SHEEP);
+        BubbleEntrySnapshot lowerPriorityChat = createSnapshot(BubbleChannel.CHAT, 1, 300, 3);
+        BubbleEntrySnapshot higherPriorityBehavior = createSnapshot(BubbleChannel.BEHAVIOR, 100, 100, 1);
 
         manager.applySnapshot(List.of(lowerPriorityChat, higherPriorityBehavior), 0L);
 
@@ -48,11 +49,11 @@ class BubbleManagerTest {
         TestBubbleManager manager = new TestBubbleManager();
         UUID retainedBubbleId = UUID.randomUUID();
 
-        BubbleEntrySnapshot first = createSnapshot(retainedBubbleId, BubbleChannel.CHAT, 10, 100, 1, BubbleKind.SHEAR_SHEEP);
+        BubbleEntrySnapshot first = createSnapshot(retainedBubbleId, BubbleChannel.CHAT, 10, 100, 1);
         manager.applySnapshot(List.of(first), 0L);
         SpeechBubble firstBubbleRef = manager.getActiveBubble().orElseThrow();
 
-        BubbleEntrySnapshot second = createSnapshot(retainedBubbleId, BubbleChannel.SYSTEM, 50, 200, 2, BubbleKind.SHEAR_SHEEP);
+        BubbleEntrySnapshot second = createSnapshot(retainedBubbleId, BubbleChannel.SYSTEM, 50, 200, 2);
         manager.applySnapshot(List.of(second), 0L);
         SpeechBubble secondBubbleRef = manager.getActiveBubble().orElseThrow();
 
@@ -66,8 +67,8 @@ class BubbleManagerTest {
         UUID keepId = UUID.randomUUID();
         UUID removeId = UUID.randomUUID();
 
-        BubbleEntrySnapshot keep = createSnapshot(keepId, BubbleChannel.CHAT, 1, 100, 1, BubbleKind.SHEAR_SHEEP);
-        BubbleEntrySnapshot remove = createSnapshot(removeId, BubbleChannel.CHAT, 2, 101, 2, BubbleKind.SHEAR_SHEEP);
+        BubbleEntrySnapshot keep = createSnapshot(keepId, BubbleChannel.CHAT, 1, 100, 1);
+        BubbleEntrySnapshot remove = createSnapshot(removeId, BubbleChannel.CHAT, 2, 101, 2);
         manager.applySnapshot(List.of(keep, remove), 0L);
 
         TestSpeechBubble removedBubbleRef = manager.getCreatedBubble(removeId);
@@ -84,8 +85,8 @@ class BubbleManagerTest {
         UUID firstId = UUID.randomUUID();
         UUID secondId = UUID.randomUUID();
 
-        BubbleEntrySnapshot first = createSnapshot(firstId, BubbleChannel.CHAT, 1, 100, 1, BubbleKind.SHEAR_SHEEP);
-        BubbleEntrySnapshot second = createSnapshot(secondId, BubbleChannel.CHAT, 1, 101, 2, BubbleKind.SHEAR_SHEEP);
+        BubbleEntrySnapshot first = createSnapshot(firstId, BubbleChannel.CHAT, 1, 100, 1);
+        BubbleEntrySnapshot second = createSnapshot(secondId, BubbleChannel.CHAT, 1, 101, 2);
 
         manager.applySnapshot(List.of(first), 0L);
         manager.applySnapshot(List.of(first, second), 0L);
@@ -101,15 +102,15 @@ class BubbleManagerTest {
         UUID firstId = UUID.randomUUID();
         UUID secondId = UUID.randomUUID();
 
-        BubbleEntrySnapshot first = createSnapshot(firstId, BubbleChannel.CHAT, 100, 100, 1, BubbleKind.SHEAR_SHEEP);
-        BubbleEntrySnapshot second = createSnapshot(secondId, BubbleChannel.CHAT, 50, 101, 2, BubbleKind.SHEAR_SHEEP);
+        BubbleEntrySnapshot first = createSnapshot(firstId, BubbleChannel.CHAT, 100, 100, 1);
+        BubbleEntrySnapshot second = createSnapshot(secondId, BubbleChannel.CHAT, 50, 101, 2);
         manager.applySnapshot(List.of(first, second), 0L);
 
         TestSpeechBubble initialActive = (TestSpeechBubble) manager.getActiveBubble().orElseThrow();
         Assertions.assertEquals(firstId, initialActive.bubbleId());
 
-        BubbleEntrySnapshot firstUpdated = createSnapshot(firstId, BubbleChannel.CHAT, 10, 200, 3, BubbleKind.SHEAR_SHEEP);
-        BubbleEntrySnapshot secondUpdated = createSnapshot(secondId, BubbleChannel.CHAT, 99, 201, 4, BubbleKind.SHEAR_SHEEP);
+        BubbleEntrySnapshot firstUpdated = createSnapshot(firstId, BubbleChannel.CHAT, 10, 200, 3);
+        BubbleEntrySnapshot secondUpdated = createSnapshot(secondId, BubbleChannel.CHAT, 99, 201, 4);
         manager.applySnapshot(List.of(firstUpdated, secondUpdated), 0L);
 
         TestSpeechBubble reconciledActive = (TestSpeechBubble) manager.getActiveBubble().orElseThrow();
@@ -121,9 +122,16 @@ class BubbleManagerTest {
     private static BubbleEntrySnapshot createSnapshot(BubbleChannel channel,
                                                       int priority,
                                                       long createdGameTime,
-                                                      long sequenceNumber,
-                                                      BubbleKind bubbleKind) {
-        return createSnapshot(UUID.randomUUID(), channel, priority, createdGameTime, sequenceNumber, bubbleKind);
+                                                      long sequenceNumber) {
+        return createSnapshot(UUID.randomUUID(), channel, priority, createdGameTime, sequenceNumber, 0);
+    }
+
+    private static BubbleEntrySnapshot createSnapshot(UUID bubbleId,
+                                                      BubbleChannel channel,
+                                                      int priority,
+                                                      long createdGameTime,
+                                                      long sequenceNumber) {
+        return createSnapshot(bubbleId, channel, priority, createdGameTime, sequenceNumber, 0);
     }
 
     private static BubbleEntrySnapshot createSnapshot(UUID bubbleId,
@@ -131,19 +139,57 @@ class BubbleManagerTest {
                                                       int priority,
                                                       long createdGameTime,
                                                       long sequenceNumber,
-                                                      BubbleKind bubbleKind) {
+                                                      int contentVersion) {
         return BubbleEntrySnapshot.builder()
                 .bubbleId(bubbleId)
                 .channel(channel)
-                .bubbleKind(bubbleKind)
                 .ownerKey(null)
                 .priority(priority)
                 .expireGameTime(createdGameTime + 200)
                 .createdGameTime(createdGameTime)
                 .sequenceNumber(sequenceNumber)
+                .contentVersion(contentVersion)
                 .sourceType("test")
-                .extraData(Map.of())
+                .segments(List.of(BubbleSegment.Item.iconOnly(ResourceLocation.withDefaultNamespace("wheat"))))
                 .build();
+    }
+
+    @Test
+    void applySnapshot_bumpedContentVersion_rebuildsBubbleInstance() {
+        // Arrange
+        TestBubbleManager manager = new TestBubbleManager();
+        UUID bubbleId = UUID.randomUUID();
+        BubbleEntrySnapshot initial = createSnapshot(bubbleId, BubbleChannel.BEHAVIOR, 10, 100, 1, 0);
+        manager.applySnapshot(List.of(initial), 0L);
+        SpeechBubble firstBubble = manager.getActiveBubble().orElseThrow();
+
+        // Act — same UUID, bumped contentVersion signals segment change
+        BubbleEntrySnapshot updated = createSnapshot(bubbleId, BubbleChannel.BEHAVIOR, 10, 100, 1, 1);
+        manager.applySnapshot(List.of(updated), 0L);
+
+        // Assert — stale rendering instance must be discarded and a fresh one created
+        SpeechBubble secondBubble = manager.getActiveBubble().orElseThrow();
+        Assertions.assertNotSame(firstBubble, secondBubble);
+        Assertions.assertEquals(2, manager.getCreateCount(bubbleId));
+    }
+
+    @Test
+    void applySnapshot_unchangedContentVersion_preservesBubbleInstance() {
+        // Arrange
+        TestBubbleManager manager = new TestBubbleManager();
+        UUID bubbleId = UUID.randomUUID();
+        BubbleEntrySnapshot initial = createSnapshot(bubbleId, BubbleChannel.BEHAVIOR, 10, 100, 1, 0);
+        manager.applySnapshot(List.of(initial), 0L);
+        SpeechBubble firstBubble = manager.getActiveBubble().orElseThrow();
+
+        // Act — same UUID, same contentVersion (metadata-only refresh, e.g. priority change)
+        BubbleEntrySnapshot refreshed = createSnapshot(bubbleId, BubbleChannel.BEHAVIOR, 99, 200, 2, 0);
+        manager.applySnapshot(List.of(refreshed), 0L);
+
+        // Assert — same instance preserved so animation state (e.g. sprite frame clocks) is not reset
+        SpeechBubble secondBubble = manager.getActiveBubble().orElseThrow();
+        Assertions.assertSame(firstBubble, secondBubble);
+        Assertions.assertEquals(1, manager.getCreateCount(bubbleId));
     }
 
     private static final class TestBubbleManager extends BubbleManager {
@@ -188,7 +234,7 @@ class BubbleManagerTest {
         }
 
         @Override
-        public void render(dev.breezes.settlements.infrastructure.rendering.bubbles.RenderParameter parameter) {
+        public void render(RenderParameter parameter) {
         }
 
         @Override

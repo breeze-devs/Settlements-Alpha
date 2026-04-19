@@ -1,7 +1,13 @@
 package dev.breezes.settlements.presentation.ui.stats;
 
+import dev.breezes.settlements.application.economy.demand.ActiveDemand;
+import dev.breezes.settlements.application.ui.stats.model.DemandDisplayEntry;
+import dev.breezes.settlements.application.ui.stats.model.VillagerDemandDisplaySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerInventorySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
+import dev.breezes.settlements.application.ui.stats.model.VillagerTradeCatalogSnapshot;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
+import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundCloseVillagerStatsPacket;
 import dev.breezes.settlements.presentation.ui.framework.Elements;
@@ -17,8 +23,10 @@ import dev.breezes.settlements.shared.annotations.functional.ClientSide;
 import dev.breezes.settlements.shared.util.StringUtil;
 import lombok.CustomLog;
 import lombok.Getter;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -26,6 +34,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
@@ -67,11 +76,15 @@ public class VillagerStatsScreen extends LayoutScreen {
     private static final String ACTIVITY_KEY = "ui.settlements.stats.activity";
     private static final String CLOSE_KEY = "ui.settlements.stats.close";
     private static final String UNEMPLOYED_KEY = "ui.settlements.stats.unemployed";
+    private static final String WALLET_KEY = "ui.settlements.stats.wallet";
+    private static final String TRADES_OFFERS_KEY = "ui.settlements.stats.trades.offers";
+    private static final String TRADES_DEMANDS_KEY = "ui.settlements.stats.trades.demands";
     private static final String DEFAULT_VILLAGER_NAME = "Villager";
 
     // Static fallback icons
     private static final ItemStack FALLBACK_ACTIVITY_ICON = new ItemStack(Items.PAPER);
     private static final ItemStack BED_ICON = new ItemStack(Items.RED_BED);
+    private static final ItemStack EMERALD_ICON = new ItemStack(Items.EMERALD);
 
     @Getter
     private final long sessionId;
@@ -80,12 +93,21 @@ public class VillagerStatsScreen extends LayoutScreen {
     @Nullable
     private VillagerInventorySnapshot inventorySnapshot;
     @Nullable
+    private VillagerTradeCatalogSnapshot tradeCatalogSnapshot;
+    @Nullable
+    private VillagerDemandDisplaySnapshot latestDemandSnapshot;
+    @Nullable
     private Component unavailableMessage;
 
     private final HexChartRenderer hexChartRenderer;
     @Nullable
     private ScrollableList inventoryList;
+    @Nullable
+    private ScrollableList offersList;
+    @Nullable
+    private ScrollableList demandsList;
     private int inventoryColumns;
+    private int tradeCatalogColumns;
 
     // Cached per-snapshot render state
     private ItemStack cachedWorkstationIcon;
@@ -104,6 +126,7 @@ public class VillagerStatsScreen extends LayoutScreen {
     private int cachedHomeTextColor;
     private Component cachedWorkText;
     private int cachedWorkTextColor;
+    private Component cachedWalletText;
 
     public VillagerStatsScreen(long sessionId,
                                @Nonnull VillagerStatsSnapshot statsSnapshot,
@@ -114,6 +137,8 @@ public class VillagerStatsScreen extends LayoutScreen {
         this.villagerStatsClientState = villagerStatsClientState;
         this.statsSnapshot = statsSnapshot;
         this.inventorySnapshot = null;
+        this.tradeCatalogSnapshot = null;
+        this.latestDemandSnapshot = null;
         this.unavailableMessage = null;
         this.hexChartRenderer = new HexChartRenderer();
         this.cachedWorkstationIcon = getWorkstationIcon(statsSnapshot.professionKey());
@@ -195,6 +220,25 @@ public class VillagerStatsScreen extends LayoutScreen {
         }
     }
 
+    public void applyTradeCatalogSnapshot(@Nonnull VillagerTradeCatalogSnapshot snapshot) {
+        this.tradeCatalogSnapshot = snapshot;
+
+        if (this.offersList != null) {
+            this.offersList.rebuildRows();
+        }
+        if (this.demandsList != null) {
+            this.demandsList.rebuildRows();
+        }
+    }
+
+    public void applyDemandSnapshot(@Nonnull VillagerDemandDisplaySnapshot snapshot) {
+        this.latestDemandSnapshot = snapshot;
+
+        if (this.demandsList != null) {
+            this.demandsList.rebuildRows();
+        }
+    }
+
     public void markUnavailable(@Nonnull Component message) {
         this.unavailableMessage = message;
     }
@@ -227,6 +271,9 @@ public class VillagerStatsScreen extends LayoutScreen {
             this.cachedHomeText = Component.translatable(HOME_NONE_KEY);
             this.cachedHomeTextColor = theme.subtleTextColor();
         }
+
+        // Wallet
+        this.cachedWalletText = Component.translatable(WALLET_KEY, snapshot.walletBalance());
 
         // Workstation
         if (VillagerStatsUtil.isUnemployed(snapshot.professionKey())) {
@@ -273,6 +320,7 @@ public class VillagerStatsScreen extends LayoutScreen {
                 .child(buildHomeRow())
                 .child(buildWorkstationRow())
                 .child(buildCurrentActivity())
+                .child(buildWalletRow())
                 .child(buildHexChart())
                 .child(buildReputation())
                 .build();
@@ -342,6 +390,13 @@ public class VillagerStatsScreen extends LayoutScreen {
         });
     }
 
+    private UIElement buildWalletRow() {
+        return Elements.custom(SizeConstraint.FILL, SizeConstraint.fixed(18), (graphics, bounds, mouseX, mouseY, partialTick) -> {
+            graphics.renderItem(EMERALD_ICON, bounds.x(), bounds.y());
+            graphics.drawString(this.font, this.cachedWalletText, bounds.x() + 18, bounds.y() + 4, theme.textColor(), false);
+        });
+    }
+
     private static ItemStack resolveActivityIcon(@Nullable String iconId) {
         if (iconId == null) {
             return FALLBACK_ACTIVITY_ICON;
@@ -404,13 +459,17 @@ public class VillagerStatsScreen extends LayoutScreen {
                 .width(SizeConstraint.weighted(RIGHT_PANEL_WEIGHT))
                 .height(SizeConstraint.FILL)
                 .padding(new Insets(6, 6, 6, 6))
+                .gap(4)
                 .child(buildInventorySection())
+                .child(buildOffersSection())
+                .child(buildDemandsSection())
                 .build();
     }
 
     private UIElement buildInventorySection() {
         int availableWidth = Math.max(100, getPanelWidth() * RIGHT_PANEL_WEIGHT / (LEFT_PANEL_WEIGHT + RIGHT_PANEL_WEIGHT) - 16);
         this.inventoryColumns = Math.max(1, availableWidth / ITEM_CELL_SIZE);
+        this.tradeCatalogColumns = this.inventoryColumns;
 
         this.inventoryList = ScrollableList.builder()
                 .rowHeight(ITEM_CELL_SIZE)
@@ -424,10 +483,50 @@ public class VillagerStatsScreen extends LayoutScreen {
 
         return LinearLayout.vertical()
                 .width(SizeConstraint.FILL)
-                .height(new SizeConstraint.Weighted(1))
+                .height(new SizeConstraint.Weighted(2))
                 .gap(2)
                 .child(Elements.text(this::getInventoryHeaderComponent, theme.subtleTextColor()))
                 .child(this.inventoryList)
+                .build();
+    }
+
+    private UIElement buildOffersSection() {
+        this.offersList = ScrollableList.builder()
+                .rowHeight(ITEM_CELL_SIZE)
+                .rowFactory(this::buildOfferRows)
+                .width(SizeConstraint.FILL)
+                .height(new SizeConstraint.Weighted(1))
+                .padding(Insets.NONE)
+                .alternatingRowColors(0, 0)
+                .build();
+        this.offersList.rebuildRows();
+
+        return LinearLayout.vertical()
+                .width(SizeConstraint.FILL)
+                .height(new SizeConstraint.Weighted(1))
+                .gap(2)
+                .child(Elements.text(() -> Component.translatable(TRADES_OFFERS_KEY), theme.subtleTextColor()))
+                .child(this.offersList)
+                .build();
+    }
+
+    private UIElement buildDemandsSection() {
+        this.demandsList = ScrollableList.builder()
+                .rowHeight(ITEM_CELL_SIZE)
+                .rowFactory(this::buildDemandRows)
+                .width(SizeConstraint.FILL)
+                .height(new SizeConstraint.Weighted(1))
+                .padding(Insets.NONE)
+                .alternatingRowColors(0, 0)
+                .build();
+        this.demandsList.rebuildRows();
+
+        return LinearLayout.vertical()
+                .width(SizeConstraint.FILL)
+                .height(new SizeConstraint.Weighted(1))
+                .gap(2)
+                .child(Elements.text(() -> Component.translatable(TRADES_DEMANDS_KEY), theme.subtleTextColor()))
+                .child(this.demandsList)
                 .build();
     }
 
@@ -470,6 +569,149 @@ public class VillagerStatsScreen extends LayoutScreen {
         int used = this.inventorySnapshot != null ? this.inventorySnapshot.nonEmptyItems().size() : 0;
         int total = this.inventorySnapshot != null ? this.inventorySnapshot.backpackSize() : 0;
         return Component.translatable(INVENTORY_KEY, used, total);
+    }
+
+    private List<UIElement> buildOfferRows() {
+        if (this.tradeCatalogSnapshot == null || this.tradeCatalogSnapshot.offers().isEmpty()) {
+            return List.of();
+        }
+
+        List<ItemStack> offerStacks = this.tradeCatalogSnapshot.offers().stream()
+                .map(this::createOfferTooltipStack)
+                .toList();
+        return buildTradeCatalogItemRows(offerStacks);
+    }
+
+    private List<UIElement> buildDemandRows() {
+        if (this.latestDemandSnapshot == null || this.latestDemandSnapshot.entries().isEmpty()) {
+            return List.of();
+        }
+
+        return buildDemandDisplayRows(this.latestDemandSnapshot.entries());
+    }
+
+    private List<UIElement> buildDemandDisplayRows(@Nonnull List<DemandDisplayEntry> entries) {
+        int rowCount = (entries.size() + this.tradeCatalogColumns - 1) / this.tradeCatalogColumns;
+        List<UIElement> rows = new ArrayList<>(rowCount);
+
+        for (int row = 0; row < rowCount; row++) {
+            LinearLayout.Builder rowLayout = LinearLayout.horizontal()
+                    .width(SizeConstraint.WRAP)
+                    .height(SizeConstraint.fixed(ITEM_CELL_SIZE))
+                    .gap(0);
+
+            for (int col = 0; col < this.tradeCatalogColumns; col++) {
+                int index = row * this.tradeCatalogColumns + col;
+                if (index < entries.size()) {
+                    final DemandDisplayEntry entry = entries.get(index);
+                    final ItemStack stack = createDemandTooltipStack(entry);
+                    rowLayout.child(Elements.itemIcon(
+                            () -> stack,
+                            () -> entry.active() ? theme.successColor() : theme.borderLight(),
+                            () -> stack
+                    ));
+                }
+            }
+            rows.add(rowLayout.build());
+        }
+
+        return rows;
+    }
+
+    private List<UIElement> buildTradeCatalogItemRows(@Nonnull List<ItemStack> stacks) {
+        int rowCount = (stacks.size() + this.tradeCatalogColumns - 1) / this.tradeCatalogColumns;
+        List<UIElement> rows = new ArrayList<>(rowCount);
+
+        for (int row = 0; row < rowCount; row++) {
+            LinearLayout.Builder rowLayout = LinearLayout.horizontal()
+                    .width(SizeConstraint.WRAP)
+                    .height(SizeConstraint.fixed(ITEM_CELL_SIZE))
+                    .gap(0);
+
+            for (int col = 0; col < this.tradeCatalogColumns; col++) {
+                int index = row * this.tradeCatalogColumns + col;
+                if (index < stacks.size()) {
+                    final ItemStack stack = stacks.get(index);
+                    rowLayout.child(Elements.itemIcon(
+                            () -> stack,
+                            theme::borderLight,
+                            () -> stack
+                    ));
+                }
+            }
+            rows.add(rowLayout.build());
+        }
+
+        return rows;
+    }
+
+    @Nonnull
+    private ItemStack createOfferTooltipStack(@Nonnull OfferEntry offer) {
+        ItemStack stack = createDisplayStack(offer.match());
+        List<Component> lore = List.of(
+                Component.literal("Bundle: " + offer.bundleSize() + "x")
+                        .withStyle(style -> style.withItalic(false))
+                        .withStyle(ChatFormatting.GRAY),
+                Component.literal("Bundle price: " + offer.basePrice() + " ± " + offer.priceJitter())
+                        .withStyle(style -> style.withItalic(false))
+                        .withStyle(ChatFormatting.GRAY),
+                Component.literal("Surplus threshold: " + offer.surplusThreshold())
+                        .withStyle(style -> style.withItalic(false))
+                        .withStyle(ChatFormatting.GRAY)
+        );
+        return withLore(stack, lore);
+    }
+
+    @Nonnull
+    private ItemStack createDemandTooltipStack(@Nonnull DemandDisplayEntry demand) {
+        ItemStack stack = createDisplayStack(demand.match());
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.literal("Keep at least: " + demand.desiredMinCount())
+                .withStyle(style -> style.withItalic(false))
+                .withStyle(ChatFormatting.GRAY));
+        lore.add(Component.literal("Base price: " + demand.basePricePerUnit() + " per unit")
+                .withStyle(style -> style.withItalic(false))
+                .withStyle(ChatFormatting.GRAY));
+        lore.add(Component.literal("Base priority: " + demand.basePriority())
+                .withStyle(style -> style.withItalic(false))
+                .withStyle(ChatFormatting.GRAY));
+        ActiveDemand activeDemand = demand.activeDemand();
+        if (activeDemand != null) {
+            lore.add(Component.literal("Desired count: " + activeDemand.desiredCount())
+                    .withStyle(style -> style.withItalic(false))
+                    .withStyle(ChatFormatting.GRAY));
+            lore.add(Component.literal("Priority: " + activeDemand.priority())
+                    .withStyle(style -> style.withItalic(false))
+                    .withStyle(ChatFormatting.GRAY));
+            lore.add(Component.literal("Origin: " + activeDemand.origin().name())
+                    .withStyle(style -> style.withItalic(false))
+                    .withStyle(ChatFormatting.GRAY));
+        }
+        return withLore(stack, lore);
+    }
+
+    @Nonnull
+    private ItemStack createDisplayStack(@Nonnull ItemMatch match) {
+        return switch (match) {
+            case ItemMatch.ItemRef itemRef -> {
+                Item item = BuiltInRegistries.ITEM.get(itemRef.id());
+                yield item == Items.AIR ? new ItemStack(Items.BARRIER) : item.getDefaultInstance();
+            }
+            case ItemMatch.TagRef tagRef -> {
+                ItemStack stack = new ItemStack(Items.NAME_TAG);
+                stack.set(DataComponents.CUSTOM_NAME, Component.literal(tagRef.tag().location().toString())
+                        .withStyle(style -> style.withItalic(false))
+                        .withStyle(ChatFormatting.GOLD));
+                yield stack;
+            }
+        };
+    }
+
+    @Nonnull
+    private static ItemStack withLore(@Nonnull ItemStack stack, @Nonnull List<Component> lore) {
+        ItemStack tooltipStack = stack.copy();
+        tooltipStack.set(DataComponents.LORE, new ItemLore(lore));
+        return tooltipStack;
     }
 
     // ---- Footer ----

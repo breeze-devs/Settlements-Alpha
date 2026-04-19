@@ -5,8 +5,19 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
+import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
+import dev.breezes.settlements.application.ui.bubble.BubbleEntry;
+import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
+import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
+import dev.breezes.settlements.application.ui.bubble.SpriteRef;
+import dev.breezes.settlements.application.ui.bubble.TradeMarker;
+import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
@@ -50,13 +61,18 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -64,6 +80,17 @@ import java.util.concurrent.TimeUnit;
 public class TestCommand {
 
     private static final int GENERATION_SAMPLE_INTERVAL = 4;
+
+    // Argument names for the bubble subcommand
+    private static final String ARG_ITEM_ID = "item_id";
+    private static final String ARG_COUNT = "count";
+    private static final String ARG_EMERALD_COUNT = "emerald_count";
+    private static final String ARG_MARKER = "marker";
+    private static final String ARG_CHANNEL = "channel";
+    private static final String ARG_OWNER_KEY = "owner_key";
+    private static final String ARG_BUBBLE_ID = "bubble_id";
+
+    private static final Ticks TEST_BUBBLE_TTL = Ticks.seconds(10);
     private static final int GENERATION_SURVEY_PADDING = 30;
     private static final DateTimeFormatter GENERATION_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
@@ -118,7 +145,64 @@ public class TestCommand {
                                                 .then(Commands.argument("seed", LongArgumentType.longArg())
                                                         .executes(TestCommand::generateSettlement))))))
                 .then(Commands.literal("open_inventory").executes(TestCommand::openInventory))
-                .executes(TestCommand::execute));
+                .then(buildBubbleCommand()));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> buildBubbleCommand() {
+        return Commands.literal("bubble")
+                .then(buildPushBubbleCommand())
+                .then(buildUpsertBubbleCommand())
+                .then(Commands.literal("remove_by_id")
+                        .then(Commands.argument(ARG_BUBBLE_ID, StringArgumentType.word())
+                                .executes(TestCommand::removeBubbleById)))
+                .then(Commands.literal("remove_by_owner")
+                        .then(Commands.argument(ARG_CHANNEL, StringArgumentType.word())
+                                .suggests(TestCommand::suggestChannels)
+                                .then(Commands.argument(ARG_OWNER_KEY, StringArgumentType.word())
+                                        .executes(TestCommand::removeBubbleByOwner))))
+                .then(Commands.literal("clear_channel")
+                        .then(Commands.argument(ARG_CHANNEL, StringArgumentType.word())
+                                .suggests(TestCommand::suggestChannels)
+                                .executes(TestCommand::clearBubbleChannel)))
+                .executes(TestCommand::execute);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> buildPushBubbleCommand() {
+        return Commands.literal("push")
+                .then(Commands.literal("trade_negotiation")
+                        .then(Commands.argument(ARG_CHANNEL, StringArgumentType.word())
+                                .suggests(TestCommand::suggestChannels)
+                                .then(Commands.argument(ARG_ITEM_ID, StringArgumentType.word())
+                                        .then(Commands.argument(ARG_COUNT, IntegerArgumentType.integer(0))
+                                                .then(Commands.argument(ARG_EMERALD_COUNT, IntegerArgumentType.integer(0))
+                                                        .executes(TestCommand::pushTradeNegotiationBubble)
+                                                        .then(Commands.argument(ARG_MARKER, StringArgumentType.word())
+                                                                .suggests(TestCommand::suggestMarkers)
+                                                                .executes(TestCommand::pushTradeNegotiationBubble)))))))
+                .then(Commands.literal("shear_sheep")
+                        .then(Commands.argument(ARG_CHANNEL, StringArgumentType.word())
+                                .suggests(TestCommand::suggestChannels)
+                                .executes(TestCommand::pushShearSheepBubble)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> buildUpsertBubbleCommand() {
+        return Commands.literal("upsert")
+                .then(Commands.literal("trade_negotiation")
+                        .then(Commands.argument(ARG_CHANNEL, StringArgumentType.word())
+                                .suggests(TestCommand::suggestChannels)
+                                .then(Commands.argument(ARG_OWNER_KEY, StringArgumentType.word())
+                                        .then(Commands.argument(ARG_ITEM_ID, StringArgumentType.word())
+                                                .then(Commands.argument(ARG_COUNT, IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument(ARG_EMERALD_COUNT, IntegerArgumentType.integer(1))
+                                                                .executes(TestCommand::upsertTradeNegotiationBubble)
+                                                                .then(Commands.argument(ARG_MARKER, StringArgumentType.word())
+                                                                        .suggests(TestCommand::suggestMarkers)
+                                                                        .executes(TestCommand::upsertTradeNegotiationBubble))))))))
+                .then(Commands.literal("shear_sheep")
+                        .then(Commands.argument(ARG_CHANNEL, StringArgumentType.word())
+                                .suggests(TestCommand::suggestChannels)
+                                .then(Commands.argument(ARG_OWNER_KEY, StringArgumentType.word())
+                                        .executes(TestCommand::upsertShearSheepBubble))));
     }
 
     private static int generateSettlement(CommandContext<CommandSourceStack> context) {
@@ -242,6 +326,210 @@ public class TestCommand {
         return Command.SINGLE_SUCCESS;
     }
 
+    private static int pushTradeNegotiationBubble(CommandContext<CommandSourceStack> context) {
+        return applyPresetBubbleCommand(context, false, BubblePreset.TRADE_NEGOTIATION);
+    }
+
+    private static int upsertTradeNegotiationBubble(CommandContext<CommandSourceStack> context) {
+        return applyPresetBubbleCommand(context, true, BubblePreset.TRADE_NEGOTIATION);
+    }
+
+    private static int pushShearSheepBubble(CommandContext<CommandSourceStack> context) {
+        return applyPresetBubbleCommand(context, false, BubblePreset.SHEAR_SHEEP);
+    }
+
+    private static int upsertShearSheepBubble(CommandContext<CommandSourceStack> context) {
+        return applyPresetBubbleCommand(context, true, BubblePreset.SHEAR_SHEEP);
+    }
+
+    private static int applyPresetBubbleCommand(CommandContext<CommandSourceStack> context,
+                                                boolean upsert,
+                                                BubblePreset preset) {
+        Optional<ISettlementsVillager> villagerOptional = getLookedAtVillager(context);
+        if (villagerOptional.isEmpty()) {
+            return 0;
+        }
+
+        BubbleChannel channel;
+        try {
+            channel = parseChannel(StringArgumentType.getString(context, ARG_CHANNEL));
+        } catch (IllegalArgumentException ex) {
+            context.getSource().sendFailure(Component.literal(ex.getMessage()));
+            return 0;
+        }
+
+        BubbleMessage message;
+        try {
+            message = buildBubbleMessage(context, preset);
+        } catch (IllegalArgumentException ex) {
+            context.getSource().sendFailure(Component.literal(ex.getMessage()));
+            return 0;
+        }
+
+        ISettlementsVillager villager = villagerOptional.get();
+        long gameTime = villager.getMinecraftEntity().level().getGameTime();
+        VillagerBubbleService bubbleService = SettlementsDagger.serverOrThrow().villagerBubbleService();
+
+        BubbleCommand command;
+        String operation;
+        if (upsert) {
+            String ownerKey = StringArgumentType.getString(context, ARG_OWNER_KEY);
+            command = new BubbleCommand.Upsert(channel, ownerKey, message);
+            operation = "upserted";
+        } else {
+            command = new BubbleCommand.Push(channel, message);
+            operation = "pushed";
+        }
+
+        boolean changed = bubbleService.applyCommand(villager, command, gameTime);
+        if (!changed) {
+            context.getSource().sendFailure(Component.literal("Bubble command was rejected by channel policy."));
+            return 0;
+        }
+
+        String ownerSuffix = upsert ? " | ownerKey=" + StringArgumentType.getString(context, ARG_OWNER_KEY) : "";
+        Component successMessage = Component.literal(
+                "Bubble " + operation + " on villager " + villager.getUUID()
+                        + " | channel=" + channel.name()
+                        + ownerSuffix
+                        + " | sourceType=" + message.getSourceType()
+                        + " | segments=" + message.getSegments());
+        context.getSource().sendSuccess(() -> successMessage, false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int removeBubbleById(CommandContext<CommandSourceStack> context) {
+        Optional<ISettlementsVillager> villagerOptional = getLookedAtVillager(context);
+        if (villagerOptional.isEmpty()) {
+            return 0;
+        }
+
+        UUID bubbleId;
+        try {
+            bubbleId = UUID.fromString(StringArgumentType.getString(context, ARG_BUBBLE_ID));
+        } catch (IllegalArgumentException ex) {
+            context.getSource().sendFailure(Component.literal("Invalid bubble UUID: "
+                    + StringArgumentType.getString(context, ARG_BUBBLE_ID)));
+            return 0;
+        }
+
+        ISettlementsVillager villager = villagerOptional.get();
+        Optional<BubbleEntry> existing = villager.getBubbleState().getById(bubbleId);
+        if (existing.isEmpty()) {
+            context.getSource().sendFailure(Component.literal("No bubble with id " + bubbleId + " exists on the targeted villager."));
+            return 0;
+        }
+
+        VillagerBubbleService bubbleService = SettlementsDagger.serverOrThrow().villagerBubbleService();
+        boolean changed = bubbleService.applyCommand(
+                villager,
+                new BubbleCommand.RemoveById(bubbleId),
+                villager.getMinecraftEntity().level().getGameTime());
+
+        if (!changed) {
+            context.getSource().sendFailure(Component.literal("Failed to remove bubble " + bubbleId + "."));
+            return 0;
+        }
+
+        var removed = existing.get();
+        Component successMessage = Component.literal(
+                "Removed bubble " + bubbleId
+                        + " | villager=" + villager.getUUID()
+                        + " | channel=" + removed.channel().name()
+                        + " | ownerKey=" + removed.ownerKey()
+                        + " | sourceType=" + removed.message().getSourceType());
+        context.getSource().sendSuccess(() -> successMessage, false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int removeBubbleByOwner(CommandContext<CommandSourceStack> context) {
+        Optional<ISettlementsVillager> villagerOptional = getLookedAtVillager(context);
+        if (villagerOptional.isEmpty()) {
+            return 0;
+        }
+
+        BubbleChannel channel;
+        try {
+            channel = parseChannel(StringArgumentType.getString(context, ARG_CHANNEL));
+        } catch (IllegalArgumentException ex) {
+            context.getSource().sendFailure(Component.literal(ex.getMessage()));
+            return 0;
+        }
+
+        String ownerKey = StringArgumentType.getString(context, ARG_OWNER_KEY);
+        ISettlementsVillager villager = villagerOptional.get();
+        Optional<BubbleEntry> existing =
+                villager.getBubbleState().getByOwner(channel, ownerKey);
+        if (existing.isEmpty()) {
+            context.getSource().sendFailure(Component.literal(
+                    "No bubble exists for owner '" + ownerKey + "' on channel " + channel.name() + "."));
+            return 0;
+        }
+
+        VillagerBubbleService bubbleService = SettlementsDagger.serverOrThrow().villagerBubbleService();
+        boolean changed = bubbleService.applyCommand(
+                villager,
+                new BubbleCommand.RemoveByOwner(channel, ownerKey),
+                villager.getMinecraftEntity().level().getGameTime());
+
+        if (!changed) {
+            context.getSource().sendFailure(Component.literal("Failed to remove bubble for owner '" + ownerKey + "'."));
+            return 0;
+        }
+
+        var removed = existing.get();
+        Component successMessage = Component.literal(
+                "Removed bubble by owner"
+                        + " | villager=" + villager.getUUID()
+                        + " | channel=" + channel.name()
+                        + " | ownerKey=" + ownerKey
+                        + " | bubbleId=" + removed.bubbleId()
+                        + " | sourceType=" + removed.message().getSourceType());
+        context.getSource().sendSuccess(() -> successMessage, false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int clearBubbleChannel(CommandContext<CommandSourceStack> context) {
+        Optional<ISettlementsVillager> villagerOptional = getLookedAtVillager(context);
+        if (villagerOptional.isEmpty()) {
+            return 0;
+        }
+
+        BubbleChannel channel;
+        try {
+            channel = parseChannel(StringArgumentType.getString(context, ARG_CHANNEL));
+        } catch (IllegalArgumentException ex) {
+            context.getSource().sendFailure(Component.literal(ex.getMessage()));
+            return 0;
+        }
+
+        ISettlementsVillager villager = villagerOptional.get();
+        int removedCount = villager.getBubbleState().getEntries(channel).size();
+        if (removedCount == 0) {
+            context.getSource().sendFailure(Component.literal(
+                    "No bubbles to clear on channel " + channel.name() + " for the targeted villager."));
+            return 0;
+        }
+
+        VillagerBubbleService bubbleService = SettlementsDagger.serverOrThrow().villagerBubbleService();
+        boolean changed = bubbleService.applyCommand(
+                villager,
+                new BubbleCommand.ClearChannel(channel),
+                villager.getMinecraftEntity().level().getGameTime());
+
+        if (!changed) {
+            context.getSource().sendFailure(Component.literal("Failed to clear channel " + channel.name() + "."));
+            return 0;
+        }
+
+        Component successMessage = Component.literal(
+                "Cleared bubble channel " + channel.name()
+                        + " | villager=" + villager.getUUID()
+                        + " | removed=" + removedCount);
+        context.getSource().sendSuccess(() -> successMessage, false);
+        return Command.SINGLE_SUCCESS;
+    }
+
     private static int execute(CommandContext<CommandSourceStack> command) {
         if (command.getSource().getEntity() instanceof Player player) {
             player.displayClientMessage(Component.literal("Starting test"), true);
@@ -280,6 +568,118 @@ public class TestCommand {
         }, 2 * 1000, TimeUnit.MILLISECONDS);
 
         executor.schedule(display::remove, 10 * 1000, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Reads the optional {@code marker} argument without throwing if it was omitted.
+     * Brigadier throws {@link IllegalArgumentException} for missing optional args, so we catch silently.
+     */
+    @Nullable
+    private static String parseOptionalMarker(CommandContext<CommandSourceStack> context) {
+        try {
+            return StringArgumentType.getString(context, ARG_MARKER);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private static BubbleMessage buildBubbleMessage(CommandContext<CommandSourceStack> context, BubblePreset preset) {
+        return switch (preset) {
+            case TRADE_NEGOTIATION -> BubbleMessage.builder()
+                    .ttl(TEST_BUBBLE_TTL)
+                    .sourceType("stest.trade_negotiation")
+                    .segments(buildTradeNegotiationSegments(context))
+                    .build();
+            case SHEAR_SHEEP -> BubbleMessage.builder()
+                    .ttl(TEST_BUBBLE_TTL)
+                    .sourceType("stest.shear_sheep")
+                    .segments(List.of(
+                            BubbleSegment.Sprite.builder()
+                                    .sprite(SpriteRef.SHEARS)
+                                    .frameDuration(Ticks.seconds(0.5))
+                                    .build(),
+                            BubbleSegment.Sprite.builder()
+                                    .sprite(SpriteRef.SHEEP)
+                                    .frameDuration(Ticks.seconds(0.6))
+                                    .build()))
+                    .build();
+        };
+    }
+
+    private static List<BubbleSegment> buildTradeNegotiationSegments(CommandContext<CommandSourceStack> context) {
+        String rawItemId = StringArgumentType.getString(context, ARG_ITEM_ID);
+        int itemCount = IntegerArgumentType.getInteger(context, ARG_COUNT);
+        int emeraldCount = IntegerArgumentType.getInteger(context, ARG_EMERALD_COUNT);
+        String markerName = parseOptionalMarker(context);
+
+        ResourceLocation itemId;
+        try {
+            itemId = ResourceLocation.parse(rawItemId);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid item id: " + rawItemId);
+        }
+
+        List<BubbleSegment> segments = new ArrayList<>();
+        segments.add(BubbleSegment.Item.builder()
+                .itemId(itemId)
+                .count(itemCount)
+                .build());
+        segments.add(BubbleSegment.Item.builder()
+                .itemId(ResourceLocation.withDefaultNamespace("emerald"))
+                .count(emeraldCount)
+                .build());
+        if (markerName != null) {
+            segments.add(TradeMarker.fromSerializedName(markerName).asSegment());
+        }
+        return List.copyOf(segments);
+    }
+
+    private static BubbleChannel parseChannel(String rawChannel) {
+        return switch (rawChannel.toLowerCase(Locale.ROOT)) {
+            case "behavior" -> BubbleChannel.BEHAVIOR;
+            case "chat" -> BubbleChannel.CHAT;
+            case "system" -> BubbleChannel.SYSTEM;
+            default -> throw new IllegalArgumentException("Unsupported bubble channel: " + rawChannel);
+        };
+    }
+
+    private static CompletableFuture<Suggestions> suggestChannels(
+            CommandContext<CommandSourceStack> context,
+            SuggestionsBuilder builder) {
+        builder.suggest("behavior");
+        builder.suggest("chat");
+        builder.suggest("system");
+        return builder.buildFuture();
+    }
+
+    private static CompletableFuture<Suggestions> suggestMarkers(
+            CommandContext<CommandSourceStack> context,
+            SuggestionsBuilder builder) {
+        builder.suggest("up");
+        builder.suggest("down");
+        builder.suggest("check");
+        builder.suggest("cross");
+        return builder.buildFuture();
+    }
+
+    private enum BubblePreset {
+        TRADE_NEGOTIATION,
+        SHEAR_SHEEP,
+    }
+
+    private static Optional<ISettlementsVillager> getLookedAtVillager(CommandContext<CommandSourceStack> context) {
+        if (!(context.getSource().getEntity() instanceof Player player)) {
+            context.getSource().sendFailure(Component.literal("Only players can use this command."));
+            return Optional.empty();
+        }
+
+        Optional<EntityHitResult> hitResult = VillagerRaycastUtil.raycastVillagerTarget(player, 15.0);
+        if (hitResult.isEmpty() || !(hitResult.get().getEntity() instanceof ISettlementsVillager villager)) {
+            player.displayClientMessage(Component.literal("No villager found in range"), true);
+            return Optional.empty();
+        }
+
+        return Optional.of(villager);
     }
 
     private static Rotation parseRotation(String rawRotation) {

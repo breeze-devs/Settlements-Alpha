@@ -11,6 +11,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDa
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 
 import javax.inject.Singleton;
@@ -76,6 +77,12 @@ public final class DataManagerModule {
     @Singleton
     static HarvestHoneycombYieldDataManager harvestHoneycombYieldDataManager() {
         return new HarvestHoneycombYieldDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static TradeCatalogDataManager tradeCatalogDataManager() {
+        return new TradeCatalogDataManager();
     }
 
 }

@@ -14,15 +14,19 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
-import dev.breezes.settlements.application.ui.bubble.BubbleKind;
 import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
+import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
+import dev.breezes.settlements.application.ui.bubble.SpriteRef;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -54,6 +58,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
 
     private static final String BUBBLE_OWNER_KEY = "behavior:shear_sheep";
     private static final Ticks BUBBLE_TTL = Ticks.seconds(30);
+    private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
 
     private static final Map<DyeColor, ItemLike> WOOL_COLOR_MAP = Map.ofEntries(
             Map.entry(DyeColor.WHITE, Items.WHITE_WOOL),
@@ -79,6 +84,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
     }
 
     private final ShearSheepConfig config;
+    private final DemandSignalService demandSignalService;
     @Getter
     private final BehaviorDescriptor behaviorDescriptor;
 
@@ -86,10 +92,12 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
     private final AtomicInteger shearCount;
 
     public ShearSheepBehaviorV2(@Nonnull ShearSheepConfig config,
-                                @Nonnull HungerConfig hungerConfig) {
+                                @Nonnull HungerConfig hungerConfig,
+                                @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
+        this.demandSignalService = demandSignalService;
         this.behaviorDescriptor = BehaviorDescriptor.builder()
                 .displayNameKey("ui.settlements.behavior.behavior.shear_sheep")
                 .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
@@ -103,9 +111,9 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                 .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbyShearableSheepExistsCondition);
+        this.preconditions.add(villager -> villager != null && ensureShearsAvailable(villager));
 
         this.initializeStateMachine(this.createControlStep(), ShearStage.END);
-
     }
 
     protected StagedStep createControlStep() {
@@ -116,11 +124,18 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                     ISettlementsVillager villager = context.getInitiator();
 
                     BubbleMessage message = BubbleMessage.builder()
-                            .bubbleKind(BubbleKind.SHEAR_SHEEP)
                             .priority(0)
                             .ttl(BUBBLE_TTL)
                             .sourceType("behavior")
-                            .extraData(Map.of())
+                            .segments(List.of(
+                                    BubbleSegment.Sprite.builder()
+                                            .sprite(SpriteRef.SHEARS)
+                                            .frameDuration(Ticks.seconds(0.5))
+                                            .build(),
+                                    BubbleSegment.Sprite.builder()
+                                            .sprite(SpriteRef.SHEEP)
+                                            .frameDuration(Ticks.seconds(0.6))
+                                            .build()))
                             .build();
                     villager.upsertBubble(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY, message);
                     return StepResult.noOp();
@@ -217,10 +232,27 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
         this.shearCount.set(limit);
         log.behaviorStatus("Villager is '{}' level, maximum shear count is {}", expertise.toString(), limit);
 
+        if (!this.ensureShearsAvailable(entity)) {
+            this.requestStop();
+            return;
+        }
+
         List<Targetable> targets = this.nearbyShearableSheepExistsCondition.getTargets().stream()
                 .map(Targetable::fromEntity)
                 .toList();
         context.setState(BehaviorStateType.TARGET, TargetState.of(targets));
+    }
+
+    private boolean ensureShearsAvailable(@Nonnull BaseVillager villager) {
+        VillagerInventory inventory = villager.getSettlementsInventory();
+        if (inventory.containsItem(Items.SHEARS)) {
+            return true;
+        }
+
+        log.behaviorStatus("Emitting demand signal for {}", SHEARS_ITEM_ID);
+        this.demandSignalService.emit(villager, new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, null,
+                this.getBehaviorDescriptor().displayNameKey(), villager.level().getGameTime());
+        return false;
     }
 
     private Optional<Sheep> getTargetSheep(@Nonnull BehaviorContext context) {

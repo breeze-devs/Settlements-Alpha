@@ -1,0 +1,63 @@
+{
+  "profession": "minecraft:shepherd",
+  "offers": [
+    {
+      "id": "shepherd_wool",
+      "match": {
+        "tag": "c:wools"
+      },
+      "bundleSize": 4,
+      "basePrice": 12,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "shepherd_string",
+      "match": {
+        "item": "minecraft:string"
+      },
+      "bundleSize": 4,
+      "basePrice": 8,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "shepherd_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "shepherd_needs_shears",
+      "match": {
+        "item": "minecraft:shears"
+      },
+      "desiredMinCount": 1,
+      "basePricePerUnit": 15,
+      "basePriority": 80
+    },
+    {
+      "id": "shepherd_dye",
+      "match": {
+        "tag": "c:dyes"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 2,
+      "basePriority": 30
+    },
+    {
+      "id": "shepherd_wheat",
+      "match": {
+        "item": "minecraft:wheat"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 20
+    }
+  ]
+}

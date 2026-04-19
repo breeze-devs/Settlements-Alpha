@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,7 +46,7 @@ class RoadNetworkGeneratorTest {
                 64,
                 0,
                 false,
-                java.util.Set.of()
+                Set.of()
         );
         return new BuildingAssignment(LayoutTestFixtures.house(), plot, Direction.SOUTH, null);
     }

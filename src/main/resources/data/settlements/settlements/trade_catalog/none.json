@@ -1,0 +1,15 @@
+{
+  "profession": "minecraft:none",
+  "offers": [],
+  "demands": [
+    {
+      "id": "none_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    }
+  ]
+}

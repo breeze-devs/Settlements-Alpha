@@ -17,14 +17,18 @@ import dev.breezes.settlements.infrastructure.network.features.ui.bubble.handler
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundHeartbeatAckVillagerStatsPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundOpenVillagerStatsPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerDemandSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerInventorySnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerStatsSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerStatsUnavailablePacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerTradeCatalogSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundHeartbeatAckVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundOpenVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerDemandSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerInventorySnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsUnavailablePacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerTradeCatalogSnapshotPacket;
 
 @Module
 public abstract class ClientNetworkModule {
@@ -63,6 +67,16 @@ public abstract class ClientNetworkModule {
     @IntoMap
     @ClassKey(ClientBoundVillagerInventorySnapshotPacket.class)
     abstract ClientSidePacketHandler<?> inventorySnapshot(ClientBoundVillagerInventorySnapshotPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundVillagerTradeCatalogSnapshotPacket.class)
+    abstract ClientSidePacketHandler<?> tradeCatalogSnapshot(ClientBoundVillagerTradeCatalogSnapshotPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundVillagerDemandSnapshotPacket.class)
+    abstract ClientSidePacketHandler<?> demandSnapshot(ClientBoundVillagerDemandSnapshotPacketHandler impl);
 
     @Binds
     @IntoMap

@@ -1,0 +1,93 @@
+{
+  "profession": "minecraft:cleric",
+  "offers": [
+    {
+      "id": "cleric_soul_sand",
+      "match": {
+        "item": "minecraft:soul_sand"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "cleric_nether_wart",
+      "match": {
+        "item": "minecraft:nether_wart"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "cleric_glowstone_dust",
+      "match": {
+        "tag": "c:dusts/glowstone"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "cleric_redstone_dust",
+      "match": {
+        "tag": "c:dusts/redstone"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "cleric_ender_pearl",
+      "match": {
+        "item": "minecraft:ender_pearl"
+      },
+      "bundleSize": 1,
+      "basePrice": 10,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "cleric_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "cleric_sugar",
+      "match": {
+        "item": "minecraft:sugar"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 50
+    },
+    {
+      "id": "cleric_blaze_powder",
+      "match": {
+        "item": "minecraft:blaze_powder"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 4,
+      "basePriority": 40
+    },
+    {
+      "id": "cleric_glass_bottle",
+      "match": {
+        "item": "minecraft:glass_bottle"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 30
+    }
+  ]
+}

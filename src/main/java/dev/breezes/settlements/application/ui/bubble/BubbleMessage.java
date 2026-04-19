@@ -4,7 +4,8 @@ import dev.breezes.settlements.domain.time.Ticks;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.Map;
+import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * Immutable payload describing a single bubble to display for a villager.
@@ -12,11 +13,6 @@ import java.util.Map;
 @Builder
 @Getter
 public final class BubbleMessage {
-
-    /**
-     * The bubble content variant to render.
-     */
-    private final BubbleKind bubbleKind;
 
     /**
      * Relative importance of the message within the same render channel.
@@ -37,11 +33,28 @@ public final class BubbleMessage {
     private final String sourceType;
 
     /**
-     * Optional renderer-facing metadata for this message.
-     * <p>
-     * Defaults to an immutable empty map when not explicitly provided.
+     * Bubble content described as semantic render primitives rather than pre-baked templates.
+     * The list is copied defensively so later mutation at the call site cannot desynchronize
+     * authoritative state from the network snapshot derived from it.
      */
-    @Builder.Default
-    private final Map<String, String> extraData = Map.of();
+    private final List<BubbleSegment> segments;
+
+    public BubbleMessage(int priority,
+                         @Nonnull Ticks ttl,
+                         @Nonnull String sourceType,
+                         @Nonnull List<BubbleSegment> segments) {
+        this.priority = priority;
+        this.ttl = ttl;
+
+        if (sourceType.isBlank()) {
+            throw new IllegalArgumentException("sourceType must not be blank");
+        }
+        this.sourceType = sourceType;
+
+        if (segments.isEmpty()) {
+            throw new IllegalArgumentException("segments must not be empty");
+        }
+        this.segments = List.copyOf(segments);
+    }
 
 }

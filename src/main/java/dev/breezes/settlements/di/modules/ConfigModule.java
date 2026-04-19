@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
+import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
@@ -146,6 +147,12 @@ public final class ConfigModule {
     @Singleton
     static HungerConfig hungerConfig() {
         return ConfigFactory.create(HungerConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static TradingConfig tradingConfig() {
+        return ConfigFactory.create(TradingConfig.class);
     }
 
 }

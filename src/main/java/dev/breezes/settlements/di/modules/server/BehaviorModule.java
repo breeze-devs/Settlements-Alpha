@@ -2,6 +2,7 @@ package dev.breezes.settlements.di.modules.server;
 
 import dagger.Module;
 import dagger.Provides;
+import dagger.multibindings.ElementsIntoSet;
 import dagger.multibindings.IntoSet;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
@@ -40,10 +41,23 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.support
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.PartnerScanner;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeAcceptBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeInitiateBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeSessionPresenter;
+import dev.breezes.settlements.application.ai.trading.NegotiationEngine;
+import dev.breezes.settlements.application.ai.trading.TradeExecutor;
+import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
+import dev.breezes.settlements.application.ai.trading.TradingConfig;
+import dev.breezes.settlements.application.economy.VillagerWallet;
+import dev.breezes.settlements.application.economy.catalog.TradePriceResolver;
+import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.di.behavior.BehaviorRegistration;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
@@ -51,14 +65,39 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.schedule.Activity;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Module
 public final class BehaviorModule {
 
     private static final int CUSTOM_WEIGHT = 10;
     private static final int CUSTOM_PRIORITY = 10;
+
+    private static final int TRADE_INITIATE_WEIGHT = 10;
+    private static final int TRADE_INITIATE_PRIORITY = 10;
+    private static final int TRADE_ACCEPT_WEIGHT = 15;
+    private static final int TRADE_ACCEPT_PRIORITY = 15;
+
+    private static final List<VillagerProfessionKey> TRADE_PROFESSIONS = List.of(
+            VillagerProfessionKey.NONE,
+            VillagerProfessionKey.ARMORER,
+            VillagerProfessionKey.BUTCHER,
+            VillagerProfessionKey.CARTOGRAPHER,
+            VillagerProfessionKey.CLERIC,
+            VillagerProfessionKey.FARMER,
+            VillagerProfessionKey.FISHERMAN,
+            VillagerProfessionKey.FLETCHER,
+            VillagerProfessionKey.LEATHERWORKER,
+            VillagerProfessionKey.LIBRARIAN,
+            VillagerProfessionKey.MASON,
+            VillagerProfessionKey.NITWIT,
+            VillagerProfessionKey.SHEPHERD,
+            VillagerProfessionKey.TOOLSMITH,
+            VillagerProfessionKey.WEAPONSMITH);
 
     /*
      * Armorer
@@ -237,8 +276,10 @@ public final class BehaviorModule {
      */
     @Provides
     @IntoSet
-    static BehaviorRegistration shepherdShearSheep(ShearSheepConfig config, HungerConfig hungerConfig) {
-        return work(VillagerProfessionKey.SHEPHERD, () -> new ShearSheepBehaviorV2(config, hungerConfig));
+    static BehaviorRegistration shepherdShearSheep(ShearSheepConfig config,
+                                                   HungerConfig hungerConfig,
+                                                   DemandSignalService demandSignalService) {
+        return work(VillagerProfessionKey.SHEPHERD, () -> new ShearSheepBehaviorV2(config, hungerConfig, demandSignalService));
     }
 
     @Provides
@@ -263,6 +304,29 @@ public final class BehaviorModule {
     @IntoSet
     static BehaviorRegistration weaponsmithRepairGolem(RepairIronGolemConfig config, HungerConfig hungerConfig) {
         return work(VillagerProfessionKey.WEAPONSMITH, () -> new RepairIronGolemBehavior(config, hungerConfig));
+    }
+
+    @Provides
+    @ElementsIntoSet
+    static Set<BehaviorRegistration> tradeMeetBehaviors(TradingConfig config,
+                                                        HungerConfig hungerConfig,
+                                                        TradeSessionRegistry sessionRegistry,
+                                                        TradeCatalogRegistry tradeCatalogRegistry,
+                                                        TradePriceResolver tradePriceResolver,
+                                                        DemandSignalService demandSignalService,
+                                                        VillagerWallet villagerWallet,
+                                                        TradeExecutor tradeExecutor,
+                                                        TradeSessionPresenter tradeSessionPresenter,
+                                                        DemandEvaluator demandEvaluator,
+                                                        PartnerScanner partnerScanner,
+                                                        NegotiationEngine negotiationEngine) {
+        return TRADE_PROFESSIONS.stream()
+                .flatMap(profession -> Stream.of(
+                        tradeAccept(profession, config, hungerConfig, sessionRegistry, tradeSessionPresenter),
+                        tradeInitiate(profession, config, hungerConfig, sessionRegistry, tradeCatalogRegistry, tradePriceResolver,
+                                demandSignalService, villagerWallet, tradeExecutor, tradeSessionPresenter, demandEvaluator,
+                                partnerScanner, negotiationEngine)))
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Provides
@@ -372,13 +436,61 @@ public final class BehaviorModule {
             VillagerProfessionKey villagerProfessionKey,
             Activity activity,
             Supplier<IBehavior<BaseVillager>> behaviorFactory) {
+        return registration(villagerProfessionKey, activity, behaviorFactory, CUSTOM_WEIGHT, CUSTOM_PRIORITY);
+    }
+
+    private static BehaviorRegistration registration(
+            VillagerProfessionKey villagerProfessionKey,
+            Activity activity,
+            Supplier<IBehavior<BaseVillager>> behaviorFactory,
+            int weight,
+            int priority) {
         return BehaviorRegistration.builder()
                 .profession(villagerProfessionKey)
                 .behaviorFactory(behaviorFactory)
                 .activity(activity)
-                .weight(CUSTOM_WEIGHT)
-                .priority(CUSTOM_PRIORITY)
+                .weight(weight)
+                .priority(priority)
                 .build();
+    }
+
+    private static BehaviorRegistration meet(VillagerProfessionKey villagerProfessionKey,
+                                             Supplier<IBehavior<BaseVillager>> behaviorFactory,
+                                             int weight,
+                                             int priority) {
+        return registration(villagerProfessionKey, Activity.MEET, behaviorFactory, weight, priority);
+    }
+
+    private static BehaviorRegistration tradeAccept(VillagerProfessionKey profession,
+                                                    TradingConfig config,
+                                                    HungerConfig hungerConfig,
+                                                    TradeSessionRegistry sessionRegistry,
+                                                    TradeSessionPresenter tradeSessionPresenter) {
+        return meet(profession,
+                () -> new TradeAcceptBehavior(config, hungerConfig, sessionRegistry, tradeSessionPresenter),
+                TRADE_ACCEPT_WEIGHT,
+                TRADE_ACCEPT_PRIORITY);
+    }
+
+    private static BehaviorRegistration tradeInitiate(VillagerProfessionKey profession,
+                                                      TradingConfig config,
+                                                      HungerConfig hungerConfig,
+                                                      TradeSessionRegistry sessionRegistry,
+                                                      TradeCatalogRegistry tradeCatalogRegistry,
+                                                      TradePriceResolver tradePriceResolver,
+                                                      DemandSignalService demandSignalService,
+                                                      VillagerWallet villagerWallet,
+                                                      TradeExecutor tradeExecutor,
+                                                      TradeSessionPresenter tradeSessionPresenter,
+                                                      DemandEvaluator demandEvaluator,
+                                                      PartnerScanner partnerScanner,
+                                                      NegotiationEngine negotiationEngine) {
+        return meet(profession,
+                () -> new TradeInitiateBehavior(config, hungerConfig, sessionRegistry, tradeCatalogRegistry, tradePriceResolver,
+                        demandSignalService, villagerWallet, tradeExecutor, tradeSessionPresenter, demandEvaluator, partnerScanner,
+                        negotiationEngine),
+                TRADE_INITIATE_WEIGHT,
+                TRADE_INITIATE_PRIORITY);
     }
 
 }

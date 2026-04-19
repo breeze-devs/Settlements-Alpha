@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -56,7 +57,7 @@ public class HistoryEventEngine {
         List<String> eventIds = survivors.stream().map(HistoryEventDefinition::id).toList();
         VisualMarkerSet visualMarkers = new VisualMarkerSet(survivors.stream()
                 .flatMap(event -> event.visualMarkers().stream())
-                .collect(Collectors.toCollection(java.util.LinkedHashSet::new)));
+                .collect(Collectors.toCollection(LinkedHashSet::new)));
 
         log.info("Rolled history events produced visual markers: {}", visualMarkers.markers());
 

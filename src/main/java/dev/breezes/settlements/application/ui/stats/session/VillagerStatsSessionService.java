@@ -46,6 +46,8 @@ public final class VillagerStatsSessionService {
                 .lastStatsSnapshotSentGameTime(gameTime)
                 .lastInventorySnapshotSentGameTime(gameTime)
                 .lastSentInventoryVersion(-1)
+                .lastSentCatalogVersion(-1)
+                .lastSentDemandVersion(-1)
                 .lastClientAckOrKeepAliveGameTime(gameTime)
                 .build();
 

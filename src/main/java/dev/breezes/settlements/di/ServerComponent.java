@@ -1,6 +1,9 @@
 package dev.breezes.settlements.di;
 
 import dagger.Subcomponent;
+import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
+import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.ui.behavior.session.BehaviorControllerSessionService;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorControllerSnapshotBuilder;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
@@ -38,6 +41,12 @@ public interface ServerComponent {
     BehaviorControllerServerEvents behaviorControllerServerEvents();
 
     VillagerStatsServerEvents villagerStatsServerEvents();
+
+    VillagerWallet villagerWallet();
+
+    DemandSignalService demandSignalService();
+
+    TradeSessionRegistry tradeSessionRegistry();
 
     // Exposed for VillagerFishingHook (non-injectable Minecraft entity, server-only)
     FishCatchDataManager fishCatchDataManager();

@@ -2,8 +2,8 @@ package dev.breezes.settlements.infrastructure.minecraft.behavior.adapter;
 
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.Behavior;
@@ -15,7 +15,7 @@ import java.util.Map;
 @CustomLog
 public class DefaultBehaviorAdapter extends Behavior<Villager> {
 
-    private static final Ticks DEFAULT_MAX_DURATION = Ticks.minutes(2);
+    private static final Ticks DEFAULT_MAX_DURATION = Ticks.minutes(10);
 
     private final IBehavior<BaseVillager> wrappedBehavior;
 

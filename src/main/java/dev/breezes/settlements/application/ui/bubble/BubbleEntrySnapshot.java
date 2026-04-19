@@ -4,7 +4,7 @@ import lombok.Builder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -14,18 +14,18 @@ import java.util.UUID;
 public record BubbleEntrySnapshot(
         @Nonnull UUID bubbleId,
         @Nonnull BubbleChannel channel,
-        @Nonnull BubbleKind bubbleKind,
         @Nullable String ownerKey,
         int priority,
         long expireGameTime,
         long createdGameTime,
         long sequenceNumber,
+        int contentVersion,
         @Nonnull String sourceType,
-        @Nonnull Map<String, String> extraData
+        @Nonnull List<BubbleSegment> segments
 ) {
 
     public BubbleEntrySnapshot {
-        extraData = Map.copyOf(extraData);
+        segments = List.copyOf(segments);
         if (createdGameTime < 0) {
             throw new IllegalArgumentException("createdGameTime must be >= 0");
         }
@@ -41,20 +41,23 @@ public record BubbleEntrySnapshot(
         if (sourceType.isBlank()) {
             throw new IllegalArgumentException("sourceType must not be blank");
         }
+        if (segments.isEmpty()) {
+            throw new IllegalArgumentException("segments must not be empty");
+        }
     }
 
     public static BubbleEntrySnapshot fromEntry(@Nonnull BubbleEntry entry) {
         return BubbleEntrySnapshot.builder()
                 .bubbleId(entry.bubbleId())
                 .channel(entry.channel())
-                .bubbleKind(entry.message().getBubbleKind())
                 .ownerKey(entry.ownerKey())
                 .priority(entry.message().getPriority())
                 .expireGameTime(entry.expireGameTime())
                 .createdGameTime(entry.createdGameTime())
                 .sequenceNumber(entry.sequenceNumber())
+                .contentVersion(entry.contentVersion())
                 .sourceType(entry.message().getSourceType())
-                .extraData(entry.message().getExtraData())
+                .segments(entry.message().getSegments())
                 .build();
     }
 

@@ -25,7 +25,8 @@ public record VillagerStatsSnapshot(
         @Nullable String activeBehaviorIconId,
         @Nonnull SchedulePhase schedulePhase,
         int reputation,
-        float hunger
+        float hunger,
+        int walletBalance
 ) {
 
     public VillagerStatsSnapshot {

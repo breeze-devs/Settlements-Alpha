@@ -21,7 +21,7 @@ import javax.inject.Singleton;
  * depend on stable abstractions instead of infrastructure details.
  */
 @Module
-public final class GenerationModule {
+public final class WorldGenerationModule {
 
     @Provides
     @Singleton

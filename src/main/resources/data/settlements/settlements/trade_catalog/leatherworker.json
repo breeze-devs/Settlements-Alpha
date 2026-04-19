@@ -1,0 +1,93 @@
+{
+  "profession": "minecraft:leatherworker",
+  "offers": [
+    {
+      "id": "leatherworker_leather_helmet",
+      "match": {
+        "item": "minecraft:leather_helmet"
+      },
+      "bundleSize": 1,
+      "basePrice": 8,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "leatherworker_leather_chestplate",
+      "match": {
+        "item": "minecraft:leather_chestplate"
+      },
+      "bundleSize": 1,
+      "basePrice": 12,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "leatherworker_leather_leggings",
+      "match": {
+        "item": "minecraft:leather_leggings"
+      },
+      "bundleSize": 1,
+      "basePrice": 10,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "leatherworker_leather_boots",
+      "match": {
+        "item": "minecraft:leather_boots"
+      },
+      "bundleSize": 1,
+      "basePrice": 8,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "leatherworker_saddle",
+      "match": {
+        "item": "minecraft:saddle"
+      },
+      "bundleSize": 1,
+      "basePrice": 40,
+      "priceJitter": 5,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "leatherworker_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "leatherworker_leather",
+      "match": {
+        "tag": "c:leathers"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 3,
+      "basePriority": 50
+    },
+    {
+      "id": "leatherworker_rabbit_hide",
+      "match": {
+        "item": "minecraft:rabbit_hide"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 2,
+      "basePriority": 30
+    },
+    {
+      "id": "leatherworker_dye",
+      "match": {
+        "tag": "c:dyes"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 2,
+      "basePriority": 20
+    }
+  ]
+}

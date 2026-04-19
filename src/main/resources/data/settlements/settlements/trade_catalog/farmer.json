@@ -1,0 +1,102 @@
+{
+  "profession": "minecraft:farmer",
+  "offers": [
+    {
+      "id": "farmer_food_bundle",
+      "match": {
+        "tag": "c:foods"
+      },
+      "bundleSize": 8,
+      "basePrice": 8,
+      "priceJitter": 4,
+      "surplusThreshold": 32
+    },
+    {
+      "id": "farmer_wheat",
+      "match": {
+        "item": "minecraft:wheat"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 16
+    },
+    {
+      "id": "farmer_sugar_cane",
+      "match": {
+        "item": "minecraft:sugar_cane"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "farmer_honey_bottle",
+      "match": {
+        "item": "minecraft:honey_bottle"
+      },
+      "bundleSize": 1,
+      "basePrice": 6,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "farmer_honeycomb",
+      "match": {
+        "item": "minecraft:honeycomb"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "farmer_needs_shears",
+      "match": {
+        "item": "minecraft:shears"
+      },
+      "desiredMinCount": 1,
+      "basePricePerUnit": 15,
+      "basePriority": 80
+    },
+    {
+      "id": "farmer_needs_iron_hoe",
+      "match": {
+        "item": "minecraft:iron_hoe"
+      },
+      "desiredMinCount": 1,
+      "basePricePerUnit": 15,
+      "basePriority": 60
+    },
+    {
+      "id": "farmer_bone_meal",
+      "match": {
+        "item": "minecraft:bone_meal"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 40
+    },
+    {
+      "id": "farmer_seeds",
+      "match": {
+        "tag": "c:seeds"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 1,
+      "basePriority": 30
+    },
+    {
+      "id": "farmer_beef",
+      "match": {
+        "item": "minecraft:beef"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 3,
+      "basePriority": 15
+    }
+  ]
+}

@@ -1,11 +1,12 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.villager.animations.conditions;
 
 import dev.breezes.settlements.shared.util.SyncedDataWrapper;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.minecraft.network.syncher.SynchedEntityData;
 
-@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class BooleanAnimationCondition extends AnimationCondition {
 

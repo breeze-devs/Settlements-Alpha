@@ -5,10 +5,9 @@ import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleBoundingBo
 import dev.breezes.settlements.infrastructure.rendering.bubbles.RenderParameter;
 import lombok.Builder;
 import lombok.CustomLog;
-import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import org.joml.Matrix4f;
 
@@ -19,15 +18,15 @@ import java.util.List;
 @CustomLog
 public class BubbleTextElement implements BubbleInnerElement {
 
-    // TODO: replace with domain model
     private Font font;
-    private ChatFormatting color;
-    private String message;
+    private Component component;
 
     @Builder.Default
     private int maxWidth = 200;
     @Builder.Default
     private float opacity = 0.8F;
+    @Builder.Default
+    private float scale = 1.0F;
 
 
     @Override
@@ -36,54 +35,75 @@ public class BubbleTextElement implements BubbleInnerElement {
 
     @Override
     public void render(@Nonnull RenderParameter parameter, @Nonnull PoseStack bubblePoseStack, @Nonnull Matrix4f bubblePose) {
-        MutableComponent component = Component.literal(this.message)
-                .withStyle(this.color);
-        List<FormattedCharSequence> messageLines = this.font.split(component, this.maxWidth);
+        Font resolvedFont = this.resolveFont();
+        List<FormattedCharSequence> messageLines = resolvedFont.split(this.component, this.maxWidth);
 
         BubbleBoundingBox boundingBox = this.getBoundingBox();
         float xStart = -boundingBox.getWidth() / 2.0F;
         float yStart = -boundingBox.getHeight() / 2.0F;
-        float yIncrement = this.font.lineHeight;
+
+        bubblePoseStack.pushPose();
+        // Scaling at the element boundary keeps larger marker glyphs and smaller count text as a
+        // presentation concern instead of multiplying bubble variants.
+        bubblePoseStack.scale(this.scale, this.scale, 1.0F);
+        Matrix4f resolvedPose = bubblePoseStack.last().pose();
 
         for (int i = 0; i < messageLines.size(); i++) {
             FormattedCharSequence sequence = messageLines.get(i);
             if (sequence != null) {
-                this.font.drawInBatch(sequence, xStart, yStart + yIncrement * i, -1, false, bubblePose, parameter.getBuffer(), Font.DisplayMode.NORMAL, 0, parameter.getPackedLight());
+                resolvedFont.drawInBatch(sequence,
+                        xStart / this.scale,
+                        (yStart / this.scale) + resolvedFont.lineHeight * i,
+                        -1, // Color formatting is handled by the Component style natively
+                        false,
+                        resolvedPose,
+                        parameter.getBuffer(),
+                        Font.DisplayMode.NORMAL,
+                        0,
+                        parameter.getPackedLight());
             }
         }
+        bubblePoseStack.popPose();
     }
 
     @Override
     public BubbleBoundingBox getBoundingBox() {
-        MutableComponent component = Component.literal(this.message);
-        List<FormattedCharSequence> messageLines = this.font.split(component, this.maxWidth);
+        Font resolvedFont = this.resolveFont();
+        List<FormattedCharSequence> messageLines = resolvedFont.split(this.component, this.maxWidth);
 
         int textWidth = messageLines.stream()
-                .map(this.font::width)
+                .map(resolvedFont::width)
                 .max(Integer::compare)
                 .orElse(this.maxWidth);
         return BubbleBoundingBox.builder()
-                .width(textWidth)
-                .height(this.font.lineHeight * messageLines.size())
+                .width(Math.max(1, Math.round(textWidth * this.scale)))
+                .height(Math.max(1, Math.round(resolvedFont.lineHeight * messageLines.size() * this.scale)))
                 .build();
     }
 
     @Override
     public void adjustPoseStack(@Nonnull RenderParameter parameter, @Nonnull PoseStack poseStack) {
-        MutableComponent component = Component.literal(this.message);
-        List<FormattedCharSequence> messageLines = this.font.split(component, this.maxWidth);
-        poseStack.translate(0.0D, (0.1F * messageLines.size()), 0.0D);
+        Font resolvedFont = this.resolveFont();
+        List<FormattedCharSequence> messageLines = resolvedFont.split(this.component, this.maxWidth);
+        poseStack.translate(0.0D, (0.1F * messageLines.size() * this.scale), 0.0D);
     }
 
     @Override
     public BubbleInnerElement copy() {
         return BubbleTextElement.builder()
                 .font(this.font)
-                .color(this.color)
-                .message(this.message)
+                .component(this.component != null ? this.component.copy() : null)
                 .maxWidth(this.maxWidth)
                 .opacity(this.opacity)
+                .scale(this.scale)
                 .build();
+    }
+
+    private Font resolveFont() {
+        if (this.font != null) {
+            return this.font;
+        }
+        return Minecraft.getInstance().font;
     }
 
 }

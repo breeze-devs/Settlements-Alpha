@@ -1,0 +1,83 @@
+{
+  "profession": "minecraft:armorer",
+  "offers": [
+    {
+      "id": "armorer_iron_helmet",
+      "match": {
+        "item": "minecraft:iron_helmet"
+      },
+      "bundleSize": 1,
+      "basePrice": 20,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "armorer_iron_chestplate",
+      "match": {
+        "item": "minecraft:iron_chestplate"
+      },
+      "bundleSize": 1,
+      "basePrice": 28,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "armorer_iron_leggings",
+      "match": {
+        "item": "minecraft:iron_leggings"
+      },
+      "bundleSize": 1,
+      "basePrice": 24,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "armorer_iron_boots",
+      "match": {
+        "item": "minecraft:iron_boots"
+      },
+      "bundleSize": 1,
+      "basePrice": 18,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "armorer_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "armorer_iron_ingot",
+      "match": {
+        "tag": "c:ingots/iron"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 3,
+      "basePriority": 50
+    },
+    {
+      "id": "armorer_coal",
+      "match": {
+        "tag": "c:coals"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 30
+    },
+    {
+      "id": "armorer_leather",
+      "match": {
+        "tag": "c:leathers"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 3,
+      "basePriority": 20
+    }
+  ]
+}

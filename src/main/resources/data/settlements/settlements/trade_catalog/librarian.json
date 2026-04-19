@@ -1,0 +1,92 @@
+{
+  "profession": "minecraft:librarian",
+  "offers": [
+    {
+      "id": "librarian_enchanted_book",
+      "match": {
+        "item": "minecraft:enchanted_book"
+      },
+      "bundleSize": 1,
+      "basePrice": 30,
+      "priceJitter": 5,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "librarian_bookshelf",
+      "match": {
+        "item": "minecraft:bookshelf"
+      },
+      "bundleSize": 1,
+      "basePrice": 10,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "librarian_paper",
+      "match": {
+        "item": "minecraft:paper"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "librarian_name_tag",
+      "match": {
+        "item": "minecraft:name_tag"
+      },
+      "bundleSize": 1,
+      "basePrice": 20,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "librarian_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "librarian_sugar_cane",
+      "match": {
+        "item": "minecraft:sugar_cane"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 60
+    },
+    {
+      "id": "librarian_leather",
+      "match": {
+        "tag": "c:leathers"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 3,
+      "basePriority": 50
+    },
+    {
+      "id": "librarian_lapis",
+      "match": {
+        "tag": "c:gems/lapis"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 3,
+      "basePriority": 40
+    },
+    {
+      "id": "librarian_feather",
+      "match": {
+        "tag": "c:feathers"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 2,
+      "basePriority": 30
+    }
+  ]
+}

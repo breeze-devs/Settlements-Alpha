@@ -38,6 +38,7 @@ public final class VillagerStatsSnapshotCodec {
         SchedulePhase schedulePhase = buffer.readEnum(SchedulePhase.class);
         int reputation = buffer.readInt();
         float hunger = buffer.readFloat();
+        int walletBalance = buffer.readInt();
 
         return VillagerStatsSnapshot.builder()
                 .gameTime(gameTime)
@@ -56,6 +57,7 @@ public final class VillagerStatsSnapshotCodec {
                 .schedulePhase(schedulePhase)
                 .reputation(reputation)
                 .hunger(hunger)
+                .walletBalance(walletBalance)
                 .build();
     }
 
@@ -82,6 +84,7 @@ public final class VillagerStatsSnapshotCodec {
         buffer.writeEnum(snapshot.schedulePhase());
         buffer.writeInt(snapshot.reputation());
         buffer.writeFloat(snapshot.hunger());
+        buffer.writeInt(snapshot.walletBalance());
     }
 
     @Nullable

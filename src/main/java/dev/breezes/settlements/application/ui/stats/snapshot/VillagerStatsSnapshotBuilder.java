@@ -1,23 +1,34 @@
 package dev.breezes.settlements.application.ui.stats.snapshot;
 
+import dev.breezes.settlements.application.economy.VillagerWallet;
+import dev.breezes.settlements.application.economy.demand.ActiveDemand;
+import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorRuntimeInformation;
 import dev.breezes.settlements.application.ui.behavior.snapshot.IBehaviorInfoProvider;
+import dev.breezes.settlements.application.ui.stats.model.DemandDisplayEntry;
+import dev.breezes.settlements.application.ui.stats.model.VillagerDemandDisplaySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerInventorySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
+import dev.breezes.settlements.application.ui.stats.model.VillagerTradeCatalogSnapshot;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
+import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
+import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
-import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.schedule.Activity;
@@ -27,12 +38,19 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @ServerSide
 @ServerScope
-@NoArgsConstructor(onConstructor_ = @Inject)
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class VillagerStatsSnapshotBuilder {
+
+    private final VillagerWallet villagerWallet;
+    private final TradeCatalogRegistry tradeCatalogRegistry;
+    private final DemandEvaluator demandEvaluator;
 
     @Nonnull
     public VillagerStatsSnapshot buildStats(@Nonnull BaseVillager villager, long gameTime) {
@@ -67,6 +85,7 @@ public final class VillagerStatsSnapshotBuilder {
                 .schedulePhase(schedulePhase)
                 .reputation(0) // TODO: wire to actual villager reputation data
                 .hunger(villager.getHunger())
+                .walletBalance(villagerWallet.getBalance(villager))
                 .build();
     }
 
@@ -89,6 +108,35 @@ public final class VillagerStatsSnapshotBuilder {
                 .build();
     }
 
+    @Nonnull
+    public VillagerTradeCatalogSnapshot buildTradeCatalog(@Nonnull BaseVillager villager) {
+        var professionKey = resolveProfessionKey(villager);
+        return new VillagerTradeCatalogSnapshot(this.tradeCatalogRegistry.offersFor(professionKey));
+    }
+
+    @Nonnull
+    public VillagerDemandDisplaySnapshot buildDemandSnapshot(@Nonnull BaseVillager villager, long gameTime) {
+        var professionKey = resolveProfessionKey(villager);
+        List<ActiveDemand> activeDemands = this.demandEvaluator.resolve(villager);
+        Map<ItemMatch, ActiveDemand> activeByMatch = activeDemands.stream()
+                .collect(Collectors.toMap(ActiveDemand::match, demand -> demand, (left, right) -> left, LinkedHashMap::new));
+
+        List<DemandDisplayEntry> entries = this.tradeCatalogRegistry.demandsFor(professionKey).stream()
+                .map(demand -> {
+                    ActiveDemand activeDemand = activeByMatch.get(demand.match());
+                    return DemandDisplayEntry.builder()
+                            .id(demand.id())
+                            .match(demand.match())
+                            .desiredMinCount(demand.desiredMinCount())
+                            .basePricePerUnit(demand.basePricePerUnit())
+                            .basePriority(demand.basePriority())
+                            .activeDemand(activeDemand)
+                            .build();
+                })
+                .toList();
+        return new VillagerDemandDisplaySnapshot(entries);
+    }
+
     private static double[] buildGeneValues(@Nonnull BaseVillager villager) {
         GeneticsProfile genetics = villager.getGenetics();
         GeneType[] types = GeneType.VALUES;
@@ -97,6 +145,13 @@ public final class VillagerStatsSnapshotBuilder {
             values[i] = genetics.getGeneValue(types[i]);
         }
         return values;
+    }
+
+    @Nonnull
+    private static VillagerProfessionKey resolveProfessionKey(@Nonnull BaseVillager villager) {
+        return VillagerProfessionKey.fromResourceLocation(
+                BuiltInRegistries.VILLAGER_PROFESSION.getKey(villager.getVillagerData().getProfession())
+        );
     }
 
     @Nullable

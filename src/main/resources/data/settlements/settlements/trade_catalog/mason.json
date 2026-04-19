@@ -1,0 +1,113 @@
+{
+  "profession": "minecraft:mason",
+  "offers": [
+    {
+      "id": "mason_stone_bricks",
+      "match": {
+        "item": "minecraft:stone_bricks"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "mason_bricks",
+      "match": {
+        "item": "minecraft:bricks"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "mason_polished_granite",
+      "match": {
+        "item": "minecraft:polished_granite"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "mason_polished_andesite",
+      "match": {
+        "item": "minecraft:polished_andesite"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "mason_polished_diorite",
+      "match": {
+        "item": "minecraft:polished_diorite"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "mason_quartz_block",
+      "match": {
+        "item": "minecraft:quartz_block"
+      },
+      "bundleSize": 4,
+      "basePrice": 16,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "mason_terracotta",
+      "match": {
+        "item": "minecraft:terracotta"
+      },
+      "bundleSize": 8,
+      "basePrice": 16,
+      "priceJitter": 0,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "mason_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "mason_ores",
+      "match": {
+        "tag": "c:ores"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 4,
+      "basePriority": 50
+    },
+    {
+      "id": "mason_clay",
+      "match": {
+        "item": "minecraft:clay_ball"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 40
+    },
+    {
+      "id": "mason_sand",
+      "match": {
+        "item": "minecraft:sand"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 1,
+      "basePriority": 30
+    }
+  ]
+}

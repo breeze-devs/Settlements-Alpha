@@ -7,7 +7,8 @@ import dev.breezes.settlements.bootstrap.event.SettlementTemplateReloadListener;
 import dev.breezes.settlements.di.modules.BehaviorServicesModule;
 import dev.breezes.settlements.di.modules.ConfigModule;
 import dev.breezes.settlements.di.modules.DataManagerModule;
-import dev.breezes.settlements.di.modules.GenerationModule;
+import dev.breezes.settlements.di.modules.EconomyModule;
+import dev.breezes.settlements.di.modules.WorldGenerationModule;
 import dev.breezes.settlements.domain.generation.pipeline.GenerationPipeline;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
@@ -18,6 +19,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDa
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 
 import javax.inject.Singleton;
@@ -27,7 +29,8 @@ import javax.inject.Singleton;
         ConfigModule.class,
         DataManagerModule.class,
         BehaviorServicesModule.class,
-        GenerationModule.class,
+        EconomyModule.class,
+        WorldGenerationModule.class,
 })
 public interface SettlementsComponent {
 
@@ -52,6 +55,8 @@ public interface SettlementsComponent {
     CollectHoneyYieldDataManager collectHoneyYieldDataManager();
 
     HarvestHoneycombYieldDataManager harvestHoneycombYieldDataManager();
+
+    TradeCatalogDataManager tradeCatalogDataManager();
 
     GenerationDataValidationReloadListener generationDataValidationReloadListener();
 

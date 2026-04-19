@@ -1,8 +1,9 @@
 package dev.breezes.settlements.infrastructure.rendering.bubbles;
 
 import dev.breezes.settlements.application.ui.bubble.BubbleEntrySnapshot;
+import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.SpeechBubble;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.registry.BubbleRegistry;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.registry.SegmentComposedSpeechBubble;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
 import lombok.Builder;
 import lombok.CustomLog;
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class BubbleManager {
 
     private static final double STACKED_BUBBLE_Y_OFFSET = 0.35D;
+    private static final int DEFAULT_VISIBILITY_BLOCKS = 32;
 
     private final Map<UUID, BubbleViewEntry> bubblesById;
     private long nextLocalSequenceNumber;
@@ -65,6 +67,10 @@ public class BubbleManager {
     }
 
     public void applySnapshot(@Nonnull List<BubbleEntrySnapshot> entries, long currentGameTime) {
+        log.info("Bubble applySnapshot: incoming={} existing={} incomingSources={}",
+                entries.size(), this.bubblesById.size(),
+                entries.stream().map(BubbleEntrySnapshot::sourceType).toList());
+
         Map<UUID, BubbleEntrySnapshot> incomingById = new LinkedHashMap<>();
         for (BubbleEntrySnapshot entry : entries) {
             incomingById.put(entry.bubbleId(), entry);
@@ -86,9 +92,18 @@ public class BubbleManager {
             BubbleViewEntry existing = this.bubblesById.get(snapshot.bubbleId());
 
             if (existing != null) {
+                // A contentVersion mismatch means the server changed the bubble's segments.
+                // Only in that case do we rebuild; otherwise we preserve the existing instance
+                // to avoid resetting per-bubble animation state (e.g. sprite frame clocks).
+                boolean contentChanged = existing.getContentVersion() != snapshot.contentVersion();
+                SpeechBubble bubble = contentChanged
+                        ? this.createBubble(snapshot, currentGameTime).orElse(existing.getBubble())
+                        : existing.getBubble();
+
                 this.bubblesById.put(snapshot.bubbleId(), BubbleViewEntry.builder()
                         .bubbleId(snapshot.bubbleId())
-                        .bubble(existing.getBubble())
+                        .bubble(bubble)
+                        .contentVersion(snapshot.contentVersion())
                         .channelOrder(snapshot.channel().ordinal())
                         .priority(snapshot.priority())
                         .createdGameTime(snapshot.createdGameTime())
@@ -101,6 +116,7 @@ public class BubbleManager {
                     .ifPresent(bubble -> this.bubblesById.put(snapshot.bubbleId(), BubbleViewEntry.builder()
                             .bubbleId(snapshot.bubbleId())
                             .bubble(bubble)
+                            .contentVersion(snapshot.contentVersion())
                             .channelOrder(snapshot.channel().ordinal())
                             .priority(snapshot.priority())
                             .createdGameTime(snapshot.createdGameTime())
@@ -110,7 +126,17 @@ public class BubbleManager {
     }
 
     protected Optional<SpeechBubble> createBubble(@Nonnull BubbleEntrySnapshot entry, long currentGameTime) {
-        return BubbleRegistry.getBubble(entry, currentGameTime);
+        try {
+            Ticks remainingLifetime = Ticks.of(Math.max(1, entry.expireGameTime() - currentGameTime));
+            return Optional.of(new SegmentComposedSpeechBubble(
+                    entry.bubbleId(),
+                    entry.segments(),
+                    DEFAULT_VISIBILITY_BLOCKS,
+                    remainingLifetime));
+        } catch (Exception e) {
+            log.error("Failed to generate bubble from snapshot: {}", entry, e);
+            return Optional.empty();
+        }
     }
 
     private List<BubbleViewEntry> getOrderedEntries() {
@@ -136,6 +162,7 @@ public class BubbleManager {
         private int priority;
         private long createdGameTime;
         private long sequenceNumber;
+        private int contentVersion;
 
     }
 

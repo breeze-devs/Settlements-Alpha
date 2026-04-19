@@ -1,0 +1,112 @@
+{
+  "profession": "minecraft:toolsmith",
+  "offers": [
+    {
+      "id": "toolsmith_shears",
+      "match": {
+        "item": "minecraft:shears"
+      },
+      "bundleSize": 1,
+      "basePrice": 15,
+      "priceJitter": 2,
+      "surplusThreshold": 1
+    },
+    {
+      "id": "toolsmith_iron_pickaxe",
+      "match": {
+        "item": "minecraft:iron_pickaxe"
+      },
+      "bundleSize": 1,
+      "basePrice": 20,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "toolsmith_iron_axe",
+      "match": {
+        "item": "minecraft:iron_axe"
+      },
+      "bundleSize": 1,
+      "basePrice": 20,
+      "priceJitter": 3,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "toolsmith_iron_shovel",
+      "match": {
+        "item": "minecraft:iron_shovel"
+      },
+      "bundleSize": 1,
+      "basePrice": 15,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "toolsmith_iron_hoe",
+      "match": {
+        "item": "minecraft:iron_hoe"
+      },
+      "bundleSize": 1,
+      "basePrice": 15,
+      "priceJitter": 2,
+      "surplusThreshold": 0
+    },
+    {
+      "id": "toolsmith_lantern",
+      "match": {
+        "item": "minecraft:lantern"
+      },
+      "bundleSize": 1,
+      "basePrice": 8,
+      "priceJitter": 1,
+      "surplusThreshold": 0
+    }
+  ],
+  "demands": [
+    {
+      "id": "toolsmith_food",
+      "match": {
+        "tag": "c:foods"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 100
+    },
+    {
+      "id": "toolsmith_iron_ingot",
+      "match": {
+        "tag": "c:ingots/iron"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 3,
+      "basePriority": 50
+    },
+    {
+      "id": "toolsmith_coal",
+      "match": {
+        "tag": "c:coals"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 2,
+      "basePriority": 40
+    },
+    {
+      "id": "toolsmith_stick",
+      "match": {
+        "tag": "c:rods/wooden"
+      },
+      "desiredMinCount": 16,
+      "basePricePerUnit": 1,
+      "basePriority": 30
+    },
+    {
+      "id": "toolsmith_flint",
+      "match": {
+        "item": "minecraft:flint"
+      },
+      "desiredMinCount": 8,
+      "basePricePerUnit": 1,
+      "basePriority": 20
+    }
+  ]
+}

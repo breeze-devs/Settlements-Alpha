@@ -28,9 +28,11 @@ import dev.breezes.settlements.domain.generation.survey.BiomeSurveyLookup;
 import dev.breezes.settlements.domain.generation.trait.TraitRegistry;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.Set;
 
@@ -305,12 +307,12 @@ class GenerationPipelineTest {
             Map<TraitId, List<BuildingDefinition>> computedByTrait = new LinkedHashMap<>();
             for (BuildingDefinition definition : this.buildings) {
                 for (TraitId trait : definition.traitAffinities().keySet()) {
-                    computedByTrait.computeIfAbsent(trait, ignored -> new java.util.ArrayList<>())
+                    computedByTrait.computeIfAbsent(trait, ignored -> new ArrayList<>())
                             .add(definition);
                 }
             }
             this.byTrait = Map.copyOf(computedByTrait);
-            this.byId = this.buildings.stream().collect(java.util.stream.Collectors.toMap(BuildingDefinition::id, definition -> definition));
+            this.byId = this.buildings.stream().collect(Collectors.toMap(BuildingDefinition::id, definition -> definition));
         }
 
         @Override
