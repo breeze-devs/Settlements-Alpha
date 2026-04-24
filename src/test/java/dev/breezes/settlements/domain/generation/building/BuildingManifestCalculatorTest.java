@@ -36,22 +36,22 @@ class BuildingManifestCalculatorTest {
     private static final TraitId DEFENSE = TraitId.of("settlements:settlement_traits/defense");
     private static final TraitId TRADE = TraitId.of("settlements:settlement_traits/trade");
 
-    private static final BuildingDefinition TOWN_HALL = building("settlements:town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of());
-    private static final BuildingDefinition WELL = building("settlements:well", Map.of(), TraitSlot.FLAVOR, 900, Set.of());
-    private static final BuildingDefinition TAVERN = building("settlements:tavern", Map.of(), TraitSlot.FLAVOR, 800, Set.of());
-    private static final BuildingDefinition MARKET_STALL = building("settlements:market_stall", Map.of(), TraitSlot.FLAVOR, 700, Set.of());
-    private static final BuildingDefinition HOUSE = building("settlements:house", Map.of(), TraitSlot.FLAVOR, 10, Set.of());
-    private static final BuildingDefinition SAWMILL = building("settlements:sawmill", Map.of(LUMBER, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.LUMBER));
-    private static final BuildingDefinition LOG_STORAGE = building("settlements:log_storage", Map.of(LUMBER, 0.8f), TraitSlot.FLAVOR, 80, Set.of());
-    private static final BuildingDefinition FARMHOUSE = building("settlements:farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of());
-    private static final BuildingDefinition BARN = building("settlements:barn", Map.of(FARMING, 0.7f), TraitSlot.FLAVOR, 70, Set.of());
-    private static final BuildingDefinition DOCK = building("settlements:dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 110, Set.of(ResourceTag.FRESHWATER));
-    private static final BuildingDefinition DRYING_RACK = building("settlements:fish_drying_rack", Map.of(FISHING, 0.6f), TraitSlot.FLAVOR, 60, Set.of());
-    private static final BuildingDefinition MINE = building("settlements:mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE));
-    private static final BuildingDefinition SMELTER = building("settlements:smelter", Map.of(MINING, 0.7f), TraitSlot.FLAVOR, 75, Set.of());
-    private static final BuildingDefinition WATCHTOWER = building("settlements:watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 100, Set.of());
-    private static final BuildingDefinition BARRACKS = building("settlements:barracks", Map.of(DEFENSE, 0.8f), TraitSlot.SECONDARY, 85, Set.of());
-    private static final BuildingDefinition PRIMARY_ONLY_LUMBER = building("settlements:primary_only_lumber", Map.of(LUMBER, 0.9f), TraitSlot.PRIMARY, 130, Set.of());
+    private static final BuildingDefinition TOWN_HALL = building("settlements:building_definitions/town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of());
+    private static final BuildingDefinition WELL = building("settlements:building_definitions/well", Map.of(), TraitSlot.FLAVOR, 900, Set.of());
+    private static final BuildingDefinition TAVERN = building("settlements:building_definitions/tavern", Map.of(), TraitSlot.FLAVOR, 800, Set.of());
+    private static final BuildingDefinition MARKET_STALL = building("settlements:building_definitions/market_stall", Map.of(), TraitSlot.FLAVOR, 700, Set.of());
+    private static final BuildingDefinition HOUSE = building("settlements:building_definitions/house", Map.of(), TraitSlot.FLAVOR, 10, Set.of());
+    private static final BuildingDefinition SAWMILL = building("settlements:building_definitions/sawmill", Map.of(LUMBER, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.LUMBER));
+    private static final BuildingDefinition LOG_STORAGE = building("settlements:building_definitions/log_storage", Map.of(LUMBER, 0.8f), TraitSlot.FLAVOR, 80, Set.of());
+    private static final BuildingDefinition FARMHOUSE = building("settlements:building_definitions/farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of());
+    private static final BuildingDefinition BARN = building("settlements:building_definitions/barn", Map.of(FARMING, 0.7f), TraitSlot.FLAVOR, 70, Set.of());
+    private static final BuildingDefinition DOCK = building("settlements:building_definitions/dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 110, Set.of(ResourceTag.FRESHWATER));
+    private static final BuildingDefinition DRYING_RACK = building("settlements:building_definitions/fish_drying_rack", Map.of(FISHING, 0.6f), TraitSlot.FLAVOR, 60, Set.of());
+    private static final BuildingDefinition MINE = building("settlements:building_definitions/mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE));
+    private static final BuildingDefinition SMELTER = building("settlements:building_definitions/smelter", Map.of(MINING, 0.7f), TraitSlot.FLAVOR, 75, Set.of());
+    private static final BuildingDefinition WATCHTOWER = building("settlements:building_definitions/watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 100, Set.of());
+    private static final BuildingDefinition BARRACKS = building("settlements:building_definitions/barracks", Map.of(DEFENSE, 0.8f), TraitSlot.SECONDARY, 85, Set.of());
+    private static final BuildingDefinition PRIMARY_ONLY_LUMBER = building("settlements:building_definitions/primary_only_lumber", Map.of(LUMBER, 0.9f), TraitSlot.PRIMARY, 130, Set.of());
 
     private final BuildingRegistry registry = new TestBuildingRegistry(List.of(
             TOWN_HALL,
@@ -82,7 +82,7 @@ class BuildingManifestCalculatorTest {
 
         assertTrue(manifest.buildings().size() >= 5);
         assertTrue(manifest.buildings().size() <= 8);
-        assertFalse(containsId(manifest, "settlements:tavern"));
+        assertFalse(containsId(manifest, "settlements:building_definitions/tavern"));
     }
 
     @Test
@@ -91,8 +91,8 @@ class BuildingManifestCalculatorTest {
 
         BuildingManifest manifest = this.calculator.calculate(profile, new Random(202L));
 
-        assertTrue(containsId(manifest, "settlements:town_hall"));
-        assertTrue(containsId(manifest, "settlements:tavern"));
+        assertTrue(containsId(manifest, "settlements:building_definitions/town_hall"));
+        assertTrue(containsId(manifest, "settlements:building_definitions/tavern"));
     }
 
     @Test
@@ -127,9 +127,9 @@ class BuildingManifestCalculatorTest {
 
         BuildingManifest manifest = this.calculator.calculate(profile, random);
 
-        long lumberCount = countIds(manifest, Set.of("settlements:sawmill", "settlements:log_storage"));
-        long farmingCount = countIds(manifest, Set.of("settlements:farmhouse", "settlements:barn"));
-        long fishingCount = countIds(manifest, Set.of("settlements:dock", "settlements:fish_drying_rack"));
+        long lumberCount = countIds(manifest, Set.of("settlements:building_definitions/sawmill", "settlements:building_definitions/log_storage"));
+        long farmingCount = countIds(manifest, Set.of("settlements:building_definitions/farmhouse", "settlements:building_definitions/barn"));
+        long fishingCount = countIds(manifest, Set.of("settlements:building_definitions/dock", "settlements:building_definitions/fish_drying_rack"));
 
         assertTrue(lumberCount > farmingCount);
         assertTrue(lumberCount > fishingCount);
@@ -147,7 +147,7 @@ class BuildingManifestCalculatorTest {
         BuildingManifest manifest = this.calculator.calculate(profile, random);
 
         assertEquals(5, manifest.buildings().size());
-        assertEquals(1, countIds(manifest, Set.of("settlements:house")));
+        assertEquals(1, countIds(manifest, Set.of("settlements:building_definitions/house")));
     }
 
     @Test
@@ -194,7 +194,7 @@ class BuildingManifestCalculatorTest {
 
         BuildingManifest manifest = this.calculator.calculate(profile, random);
 
-        assertFalse(containsId(manifest, "settlements:primary_only_lumber"));
+        assertFalse(containsId(manifest, "settlements:building_definitions/primary_only_lumber"));
     }
 
     @Test
@@ -216,8 +216,8 @@ class BuildingManifestCalculatorTest {
 
         BuildingManifest manifest = assertDoesNotThrow(() -> this.calculator.calculate(profile, new Random(707L)));
 
-        assertTrue(containsId(manifest, "settlements:town_hall"));
-        assertTrue(containsId(manifest, "settlements:house"));
+        assertTrue(containsId(manifest, "settlements:building_definitions/town_hall"));
+        assertTrue(containsId(manifest, "settlements:building_definitions/house"));
     }
 
     @Test

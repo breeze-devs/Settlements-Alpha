@@ -1,5 +1,5 @@
 {
-  "id": "settlements:farmhouse",
+  "id": "settlements:building_definitions/farmhouse",
   "placement_priority": 50,
   "zone_tier_min": 3,
   "zone_tier_max": 4,

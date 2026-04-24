@@ -1,4 +1,4 @@
 {
-  "building_definition": "settlements:house",
+  "building_definition": "settlements:building_definitions/house",
   "tags": []
 }

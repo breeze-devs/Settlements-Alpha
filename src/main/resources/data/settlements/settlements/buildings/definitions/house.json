@@ -1,5 +1,5 @@
 {
-  "id": "settlements:house",
+  "id": "settlements:building_definitions/house",
   "placement_priority": 10,
   "zone_tier_min": 2,
   "zone_tier_max": 4,

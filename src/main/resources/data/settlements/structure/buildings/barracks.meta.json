@@ -1,4 +1,4 @@
 {
-  "building_definition": "settlements:barracks",
+  "building_definition": "settlements:building_definitions/barracks",
   "tags": []
 }

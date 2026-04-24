@@ -16,11 +16,11 @@ import java.util.Random;
 
 public class BuildingManifestCalculator {
 
-    private static final String TOWN_HALL_ID = "settlements:town_hall";
-    private static final String TAVERN_ID = "settlements:tavern";
-    private static final String WELL_ID = "settlements:well";
-    private static final String MARKET_STALL_ID = "settlements:market_stall";
-    private static final String HOUSE_ID = "settlements:house";
+    private static final String TOWN_HALL_ID = "settlements:building_definitions/town_hall";
+    private static final String TAVERN_ID = "settlements:building_definitions/tavern";
+    private static final String WELL_ID = "settlements:building_definitions/well";
+    private static final String MARKET_STALL_ID = "settlements:building_definitions/market_stall";
+    private static final String HOUSE_ID = "settlements:building_definitions/house";
 
     private static final Comparator<BuildingDefinition> MANIFEST_ORDER =
             Comparator.<BuildingDefinition>comparingInt(definition -> definition.requiresResources().isEmpty() ? 1 : 0)

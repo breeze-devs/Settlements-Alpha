@@ -245,31 +245,31 @@ final class LayoutTestFixtures {
     }
 
     static BuildingDefinition townHall() {
-        return building("settlements:town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of(), false, 7, 9, 7, 9);
+        return building("settlements:building_definitions/town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of(), false, 7, 9, 7, 9);
     }
 
     static BuildingDefinition well() {
-        return building("settlements:well", Map.of(), TraitSlot.FLAVOR, 900, Set.of(), false, 3, 5, 3, 5);
+        return building("settlements:building_definitions/well", Map.of(), TraitSlot.FLAVOR, 900, Set.of(), false, 3, 5, 3, 5);
     }
 
     static BuildingDefinition dock() {
-        return building("settlements:dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.FRESHWATER), true, 6, 8, 8, 10);
+        return building("settlements:building_definitions/dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.FRESHWATER), true, 6, 8, 8, 10);
     }
 
     static BuildingDefinition mine() {
-        return building("settlements:mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE), false, 6, 8, 6, 8);
+        return building("settlements:building_definitions/mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE), false, 6, 8, 6, 8);
     }
 
     static BuildingDefinition farmhouse() {
-        return building("settlements:farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of(), true, 5, 7, 6, 8);
+        return building("settlements:building_definitions/farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of(), true, 5, 7, 6, 8);
     }
 
     static BuildingDefinition watchtower() {
-        return building("settlements:watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 85, Set.of(), false, 4, 6, 4, 6);
+        return building("settlements:building_definitions/watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 85, Set.of(), false, 4, 6, 4, 6);
     }
 
     static BuildingDefinition house() {
-        return building("settlements:house", Map.of(), TraitSlot.FLAVOR, 10, Set.of(), true, 4, 6, 4, 6);
+        return building("settlements:building_definitions/house", Map.of(), TraitSlot.FLAVOR, 10, Set.of(), true, 4, 6, 4, 6);
     }
 
     static BuildingDefinition building(String id,

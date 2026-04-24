@@ -27,6 +27,9 @@ import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.survey.SurveyBounds;
 import dev.breezes.settlements.domain.generation.model.survey.TerrainGrid;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.domain.settlement.query.BuildingContext;
+import dev.breezes.settlements.domain.settlement.query.SettlementPositionContext;
+import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.generation.debug.GenerationResultSerializer;
@@ -144,8 +147,40 @@ public class TestCommand {
                                                 .executes(TestCommand::generateSettlement)
                                                 .then(Commands.argument("seed", LongArgumentType.longArg())
                                                         .executes(TestCommand::generateSettlement))))))
+                .then(Commands.literal("info").executes(TestCommand::settlementInfo))
                 .then(Commands.literal("open_inventory").executes(TestCommand::openInventory))
                 .then(buildBubbleCommand()));
+    }
+
+    private static int settlementInfo(CommandContext<CommandSourceStack> context) {
+        if (!(context.getSource().getEntity() instanceof ServerPlayer player)) {
+            context.getSource().sendFailure(Component.literal("Only players can use this command."));
+            return 0;
+        }
+
+        SettlementQueryService settlementQueryService = SettlementsDagger.serverOrThrow().settlementQueryService();
+        SettlementPositionContext positionContext = settlementQueryService.getContextAt(player.serverLevel(), player.blockPosition());
+
+        if (!positionContext.hasSettlement()) {
+            context.getSource().sendSuccess(() -> Component.literal("You are not standing in a settlement."), false);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        var settlementMetadata = positionContext.settlement().orElseThrow().metadata();
+        context.getSource().sendSuccess(() -> Component.literal("Settlement: " + settlementMetadata.name()), false);
+        context.getSource().sendSuccess(() -> Component.literal("Scale tier: " + settlementMetadata.scaleTier()), false);
+        context.getSource().sendSuccess(() -> Component.literal("Primary trait: " + settlementMetadata.primaryTrait()), false);
+        context.getSource().sendSuccess(() -> Component.literal("Population: " + settlementMetadata.estimatedPopulation()), false);
+        context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT, "Wealth level: %.2f", settlementMetadata.wealthLevel())), false);
+        context.getSource().sendSuccess(() -> Component.literal("Center: (" + settlementMetadata.centerX() + ", " + settlementMetadata.centerZ() + ")"), false);
+
+        positionContext.building()
+                .map(BuildingContext::displayName)
+                .ifPresentOrElse(
+                        buildingName -> context.getSource().sendSuccess(() -> Component.literal("Building: " + buildingName), false),
+                        () -> context.getSource().sendSuccess(() -> Component.literal("Building: none"), false)
+                );
+        return Command.SINGLE_SUCCESS;
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildBubbleCommand() {

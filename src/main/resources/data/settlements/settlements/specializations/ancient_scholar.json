@@ -1,5 +1,5 @@
 {
-    "id": "settlements:ancient_scholar",
+    "id": "settlements:specializations/ancient_scholar",
     "display_name": "Ancient Scholar",
     "description": "Drawn to the magic of the deep dark. Favours preservation and endurance.",
     "enchantment_weights": {

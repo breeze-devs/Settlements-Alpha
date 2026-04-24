@@ -1,5 +1,5 @@
 {
-  "id": "settlements:sawmill",
+  "id": "settlements:building_definitions/sawmill",
   "placement_priority": 75,
   "zone_tier_min": 3,
   "zone_tier_max": 3,

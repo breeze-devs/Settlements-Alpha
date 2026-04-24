@@ -1,5 +1,5 @@
 {
-    "id": "settlements:war_smith",
+    "id": "settlements:specializations/war_smith",
     "display_name": "War Smith",
     "description": "A veteran of a thousand battles. Knows exactly how to arm a warrior.",
     "enchantment_weights": {

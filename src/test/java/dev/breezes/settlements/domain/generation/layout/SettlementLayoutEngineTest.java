@@ -51,8 +51,8 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.lookup()
         );
 
-        BuildingAssignment dock = findById(result.assignments(), "settlements:dock");
-        BuildingAssignment mine = findById(result.assignments(), "settlements:mine_entrance");
+        BuildingAssignment dock = findById(result.assignments(), "settlements:building_definitions/dock");
+        BuildingAssignment mine = findById(result.assignments(), "settlements:building_definitions/mine_entrance");
 
         assertTrue(dock.plot().localResources().contains(ResourceTag.FRESHWATER));
         assertTrue(mine.plot().localResources().contains(ResourceTag.STONE));
@@ -68,7 +68,7 @@ class SettlementLayoutEngineTest {
         );
 
         assertEquals(1, result.assignments().size());
-        assertEquals("settlements:town_hall", result.assignments().getFirst().building().id());
+        assertEquals("settlements:building_definitions/town_hall", result.assignments().getFirst().building().id());
     }
 
     @Test
@@ -76,7 +76,7 @@ class SettlementLayoutEngineTest {
         BuildingManifest manifest = new BuildingManifest(List.of(
                 LayoutTestFixtures.townHall(),
                 LayoutTestFixtures.building(
-                        "settlements:forbidden_stone_building",
+                        "settlements:building_definitions/forbidden_stone_building",
                         Map.of(),
                         TraitSlot.FLAVOR,
                         500,
@@ -98,7 +98,7 @@ class SettlementLayoutEngineTest {
         );
 
         assertEquals(1, result.assignments().size());
-        assertEquals("settlements:town_hall", result.assignments().getFirst().building().id());
+        assertEquals("settlements:building_definitions/town_hall", result.assignments().getFirst().building().id());
     }
 
     @Test
@@ -124,7 +124,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.lookup()
         );
 
-        BuildingAssignment townHall = findById(result.assignments(), "settlements:town_hall");
+        BuildingAssignment townHall = findById(result.assignments(), "settlements:building_definitions/town_hall");
         BlockPosition planningCenter = planningCenter(result);
 
         assertFalse(result.anchor().sameXZ(planningCenter));
@@ -141,7 +141,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.lookup()
         );
 
-        BuildingAssignment townHall = findById(result.assignments(), "settlements:town_hall");
+        BuildingAssignment townHall = findById(result.assignments(), "settlements:building_definitions/town_hall");
         assertTrue(result.anchor().sameXZ(townHall.plot().bounds().centerXZ()));
     }
 
@@ -201,8 +201,8 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.lookup()
         );
 
-        BuildingAssignment dock = findById(result.assignments(), "settlements:dock");
-        BuildingAssignment mine = findById(result.assignments(), "settlements:mine_entrance");
+        BuildingAssignment dock = findById(result.assignments(), "settlements:building_definitions/dock");
+        BuildingAssignment mine = findById(result.assignments(), "settlements:building_definitions/mine_entrance");
         BlockPosition planningCenter = planningCenter(result);
 
         assertEquals(expectedZone(planningCenter, dock, ScaleTier.VILLAGE), dock.plot().zone());
@@ -371,13 +371,13 @@ class SettlementLayoutEngineTest {
 
     private static boolean allRoadFrontageAssignmentsTouchRoad(LayoutResult result) {
         return result.assignments().stream()
-                .filter(assignment -> assignment.plot().roadFrontage() || assignment.building().id().equals("settlements:town_hall"))
-                .allMatch(assignment -> assignment.building().id().equals("settlements:town_hall")
+                .filter(assignment -> assignment.plot().roadFrontage() || assignment.building().id().equals("settlements:building_definitions/town_hall"))
+                .allMatch(assignment -> assignment.building().id().equals("settlements:building_definitions/town_hall")
                         || result.roads().stream().anyMatch(road -> roadNearPlot(road, assignment.plot().bounds())));
     }
 
     private static BlockPosition planningCenter(LayoutResult result) {
-        BuildingAssignment townHall = findById(result.assignments(), "settlements:town_hall");
+        BuildingAssignment townHall = findById(result.assignments(), "settlements:building_definitions/town_hall");
         return townHall.plot().bounds().centerXZ().withY(townHall.plot().targetY());
     }
 

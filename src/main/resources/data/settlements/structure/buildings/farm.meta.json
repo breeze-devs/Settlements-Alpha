@@ -1,4 +1,15 @@
 {
-  "building_definition": "settlements:farm",
-  "tags": []
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "building_definition": "settlements:building_definitions/farm",
+  "tags": [
+    "taiga"
+  ],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Cold biome residential variant.",
+  "width": 9,
+  "depth": 9,
+  "height": 5,
+  "min_minecraft_version": "1.21.1"
 }

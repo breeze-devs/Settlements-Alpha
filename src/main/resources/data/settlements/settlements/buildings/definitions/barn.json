@@ -1,5 +1,5 @@
 {
-  "id": "settlements:barn",
+  "id": "settlements:building_definitions/barn",
   "placement_priority": 45,
   "zone_tier_min": 4,
   "zone_tier_max": 4,

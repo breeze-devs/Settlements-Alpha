@@ -84,9 +84,9 @@ public class SettlementLayoutEngine {
         List<BuildingDefinition> pool = new ArrayList<>(LayoutSupport.sortedManifestBuildings(manifest));
 
         BuildingDefinition hub = pool.stream()
-                .filter(building -> "settlements:town_hall".equals(building.id()))
+                .filter(building -> "settlements:building_definitions/town_hall".equals(building.id()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Manifest must contain settlements:town_hall"));
+                .orElseThrow(() -> new IllegalStateException("Manifest must contain settlements:building_definitions/town_hall"));
         pool.remove(hub);
         context.setBuildings(List.of(hub));
         PlacementPhaseResult hubResult = this.hubPlacer.executePlacement(context);
@@ -177,7 +177,7 @@ public class SettlementLayoutEngine {
                 scatterResult.placed().size(), scatterResult.remaining().size());
         log.worldgenStatus("Layout complete: {} buildings, {} roads", allAssignments.size(), roads.size());
 
-        return new LayoutResult(anchor, roads, allAssignments);
+        return new LayoutResult(anchor, context.getPlanningCenter(), roads, allAssignments);
     }
 
 }

@@ -2,27 +2,32 @@ package dev.breezes.settlements.infrastructure.minecraft.worldgen;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.SerializedName;
 import dev.breezes.settlements.domain.generation.building.TemplateResolutionContext;
 import dev.breezes.settlements.domain.generation.building.TemplateResolver;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
 import dev.breezes.settlements.domain.generation.model.building.FootprintConstraint;
 import dev.breezes.settlements.domain.generation.model.building.ResolvedTemplate;
-import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
-import lombok.Builder;
+import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import lombok.AccessLevel;
 import lombok.CustomLog;
-import net.minecraft.core.Vec3i;
+import lombok.NoArgsConstructor;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,300 +35,263 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * Resolves NBT structure template variants for a given building type.
- *
- * <p>Three distinct resource identifiers are in play here:
- *
- * <ul>
- *   <li><b>Resource path</b> — the raw path returned by {@code ResourceManager.listResources()},
- *       e.g. {@code settlements:structure/buildings/fish_market.nbt}.
- *       This includes the NeoForge-reserved {@code structure/} root and the .nbt extension.</li>
- *
- *   <li><b>Template ID</b> — the identifier {@code StructureTemplateManager.get()} accepts,
- *       e.g. {@code settlements:buildings/fish_market}.
- *       Same as the resource path but with {@code structure/} and {@code .nbt} stripped.
- *       NeoForge re-adds the prefix internally. No file at this path exists on disk.</li>
- *
- *   <li><b>Building definition ID</b> — the logical building type this template belongs to,
- *       e.g. {@code settlements:building_definitions/fish_market}. Declared in the companion {@code .meta.json}
- *       {@code building_definition} field. This is the catalog key used during resolution.
- *       Completely independent of the NBT file's location or name.</li>
- * </ul>
  */
+@Singleton
+@ServerSide
+@NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 @CustomLog
-public final class NbtTemplateResolver implements TemplateResolver {
+public final class NbtTemplateResolver extends SimplePreparableReloadListener<Map<String, List<TemplateMetadata>>> implements TemplateResolver {
 
-    // NeoForge stores all structure templates under "structure/" in the data pack.
-    // ResourceManager.listResources() returns full paths including this prefix.
     private static final String NEOFORGE_STRUCTURE_ROOT = "structure/";
-
-    // The subfolder within the structure root where settlement templates live.
     private static final String TEMPLATE_DISCOVERY_ROOT = NEOFORGE_STRUCTURE_ROOT + "buildings";
-
     private static final String NBT_EXTENSION = ".nbt";
+    private static final String STRUCTURE_SIZE_KEY = "size";
 
     private static final Gson GSON = new GsonBuilder().create();
 
-    private static volatile NbtTemplateResolver INSTANCE = null;
-    private static volatile StructureTemplateManager lastTemplateManager = null;
-    private static volatile ResourceManager lastResourceManager = null;
-    private static volatile List<TemplateDescriptor> lastDiscoveredTemplates = List.of();
+    private volatile Map<String, List<TemplateMetadata>> catalog = Map.of();
 
-    private final Map<String, List<TemplateEntry>> catalog;
+    @Override
+    protected Map<String, List<TemplateMetadata>> prepare(@Nonnull ResourceManager resourceManager,
+                                                          @Nonnull ProfilerFiller profiler) {
+        log.resourceLoadingStatus("Discovering settlement structure NBT templates...");
+        Map<ResourceLocation, Resource> nbtResources = resourceManager.listResources(TEMPLATE_DISCOVERY_ROOT,
+                path -> path.getPath().endsWith(NBT_EXTENSION));
 
-    NbtTemplateResolver(@Nonnull Map<String, List<TemplateEntry>> catalog) {
-        Map<String, List<TemplateEntry>> immutable = new LinkedHashMap<>();
-        for (Map.Entry<String, List<TemplateEntry>> entry : catalog.entrySet()) {
-            immutable.put(entry.getKey(), List.copyOf(entry.getValue()));
-        }
-        this.catalog = Map.copyOf(immutable);
-    }
+        Map<String, List<TemplateMetadata>> entriesByBuilding = new LinkedHashMap<>();
 
-    public static NbtTemplateResolver getInstance(@Nonnull StructureTemplateManager templateManager) {
-        lastTemplateManager = templateManager;
-        if (INSTANCE == null) {
-            synchronized (NbtTemplateResolver.class) {
-                if (INSTANCE == null) {
-                    ResourceManager resourceManager = lastResourceManager;
-                    List<TemplateDescriptor> descriptors = lastDiscoveredTemplates;
-                    if (!descriptors.isEmpty()) {
-                        INSTANCE = new NbtTemplateResolver(loadCatalog(templateManager, descriptors));
-                    } else if (resourceManager == null) {
-                        log.resourceLoadingWarn("Settlement template resolver initialized before ResourceManager was available; template catalog will be empty until reload");
-                        INSTANCE = new NbtTemplateResolver(Map.of());
-                    } else {
-                        descriptors = discoverTemplateDescriptors(resourceManager);
-                        lastDiscoveredTemplates = descriptors;
-                        INSTANCE = new NbtTemplateResolver(loadCatalog(templateManager, descriptors));
-                    }
-                }
+        for (ResourceLocation resourcePath : nbtResources.keySet()) {
+            Optional<TemplateMetadata> metadataOptional = readCompanionMetadata(resourceManager, resourcePath);
+            if (metadataOptional.isEmpty()) {
+                continue;
             }
-        }
-        return INSTANCE;
-    }
+            TemplateMetadata metadata = metadataOptional.get();
 
-    public static void refresh(@Nonnull ResourceManager resourceManager) {
-        lastResourceManager = resourceManager;
-        List<TemplateDescriptor> descriptors = discoverTemplateDescriptors(resourceManager);
-        lastDiscoveredTemplates = descriptors;
-        StructureTemplateManager templateManager = lastTemplateManager;
-        synchronized (NbtTemplateResolver.class) {
-            INSTANCE = null;
+            ResourceLocation resourceLocation = toMinecraftTemplateId(resourcePath);
+            metadata.setResourceLocation(resourceLocation);
+
+            Optional<int[]> structureSizeOptional = readStructureSize(resourceManager, resourcePath);
+            if (structureSizeOptional.isEmpty()) {
+                continue;
+            }
+
+            int[] structureSize = structureSizeOptional.get();
+            if (!matchesMetadataDimensions(metadata, structureSize)) {
+                log.resourceLoadingError("Skipping template {} because metadata dimensions (width={}, height={}, depth={},) do not match NBT size {}",
+                        resourceLocation, metadata.getWidth(), metadata.getDepth(), metadata.getHeight(), structureSize);
+                continue;
+            }
+
+            log.resourceLoadingStatus("Loaded building template {}: {}", resourceLocation, metadata);
+            entriesByBuilding.computeIfAbsent(metadata.getBuildingDefinition(), ignored -> new ArrayList<>()).add(metadata);
         }
-        log.resourceLoadingStatus("Settlement template resolver descriptors reloaded from ResourceManager (templates discovered={})", descriptors.size());
-        if (templateManager == null) {
-            log.resourceLoadingStatus("Settlement template resolver rebuild deferred until StructureTemplateManager becomes available");
-            return;
+
+        if (entriesByBuilding.isEmpty()) {
+            log.resourceLoadingWarn("No settlement building templates were discovered under {}", TEMPLATE_DISCOVERY_ROOT);
+            return Map.of();
         }
-        getInstance(templateManager);
+
+        int totalTemplates = entriesByBuilding.values().stream().mapToInt(List::size).sum();
+        for (Map.Entry<String, List<TemplateMetadata>> entry : entriesByBuilding.entrySet()) {
+            boolean hasUntaggedFallback = entry.getValue().stream()
+                    .anyMatch(template -> template.getTags().isEmpty());
+            if (!hasUntaggedFallback) {
+                log.resourceLoadingError("Template catalog entry '{}' has no untagged fallback template", entry.getKey());
+            }
+
+            log.resourceLoadingStatus("Template catalog type '{}' loaded with {} variants", entry.getKey(), entry.getValue().size());
+        }
+        log.resourceLoadingStatus("Loaded {} settlement building templates across {} building types", totalTemplates, entriesByBuilding.size());
+
+        return entriesByBuilding.entrySet().stream()
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     }
 
     @Override
-    public Optional<ResolvedTemplate> resolve(BuildingDefinition building, Random random, TemplateResolutionContext context) {
-        List<TemplateEntry> candidates = this.catalog.get(building.id());
+    protected void apply(@Nonnull Map<String, List<TemplateMetadata>> preparedCatalog,
+                         @Nonnull ResourceManager resourceManager,
+                         @Nonnull ProfilerFiller profiler) {
+        this.catalog = preparedCatalog;
+
+        int totalTemplates = preparedCatalog.values().stream()
+                .mapToInt(List::size)
+                .sum();
+        log.resourceLoadingStatus("Applied settlement template catalog with {} templates across {} building types",
+                totalTemplates, preparedCatalog.size());
+    }
+
+    @Override
+    public Optional<ResolvedTemplate> resolve(BuildingDefinition definition,
+                                              Random random,
+                                              TemplateResolutionContext context) {
+        List<TemplateMetadata> candidates = this.catalog.get(definition.id());
         if (candidates == null || candidates.isEmpty()) {
-            log.info("Template resolution found no catalog entries for building {}", building.id());
+            log.info("Template resolution found no catalog entries for building {}", definition.id());
             return Optional.empty();
         }
 
-        FootprintConstraint footprint = building.footprint();
-        List<TemplateEntry> footprintMatches = candidates.stream()
-                .filter(entry -> footprint.fits(entry.width(), entry.depth()))
-                .toList();
-        if (footprintMatches.isEmpty()) {
-            log.info("Template resolution found no footprint matches for building {} in {} candidates", building.id(), candidates.size());
+        FootprintConstraint footprint = definition.footprint();
+        Set<String> contextTags = context.allRequestedTags();
+        Set<String> prefTags = definition.preferredTags();
+
+        Set<String> requestedTags;
+        if (contextTags.isEmpty() && prefTags.isEmpty()) {
+            requestedTags = Set.of();
+        } else {
+            requestedTags = new LinkedHashSet<>(contextTags);
+            requestedTags.addAll(prefTags);
+        }
+
+        // Pre-allocate buckets for our single-pass categorization
+        List<TemplateMetadata> allFootprintMatches = new ArrayList<>();
+        List<TemplateMetadata> fullMatches = new ArrayList<>();
+        List<TemplateMetadata> bestPartialMatches = new ArrayList<>();
+        List<TemplateMetadata> untaggedMatches = new ArrayList<>();
+
+        int bestPartialOverlapCount = 0;
+        int targetOverlapCount = requestedTags.size();
+
+        for (TemplateMetadata entry : candidates) {
+            if (!footprint.fits(entry.getWidth(), entry.getDepth())) {
+                continue;
+            }
+            allFootprintMatches.add(entry);
+
+            boolean isUntagged = entry.getTags().isEmpty();
+            if (isUntagged) {
+                untaggedMatches.add(entry);
+            }
+
+            if (targetOverlapCount > 0 && !isUntagged) {
+                int currentOverlapCount = overlapCount(entry.getTags(), requestedTags);
+
+                // If overlap equals target overlap, it contains all requested tags
+                if (currentOverlapCount == targetOverlapCount) {
+                    fullMatches.add(entry);
+                } else if (currentOverlapCount > 0) {
+                    if (currentOverlapCount > bestPartialOverlapCount) {
+                        bestPartialOverlapCount = currentOverlapCount;
+                        bestPartialMatches.clear();
+                        bestPartialMatches.add(entry);
+                    } else if (currentOverlapCount == bestPartialOverlapCount) {
+                        bestPartialMatches.add(entry);
+                    }
+                }
+            }
+        }
+
+        if (allFootprintMatches.isEmpty()) {
+            log.info("Template resolution found no footprint matches for building {} in {} candidates", definition.id(), candidates.size());
             return Optional.empty();
         }
 
-        Set<String> requestedTags = new LinkedHashSet<>(context.allRequestedTags());
-        requestedTags.addAll(building.preferredTags());
-
-        TemplateEntry selected;
+        // Select template
+        TemplateMetadata selected;
         String resolutionPath;
 
         if (requestedTags.isEmpty()) {
-            List<TemplateEntry> untagged = footprintMatches.stream()
-                    .filter(entry -> entry.tags().isEmpty())
-                    .toList();
-            if (untagged.isEmpty()) {
-                log.error("No untagged fallback for building {}, selecting randomly from {} candidates", building.id(), footprintMatches.size());
-                selected = pickRandom(footprintMatches, random);
-                resolutionPath = "error-random-fallback";
-            } else {
-                selected = pickRandom(untagged, random);
+            if (!untaggedMatches.isEmpty()) {
+                selected = pickRandom(untaggedMatches, random);
                 resolutionPath = "untagged-fallback";
+            } else {
+                log.error("No untagged fallback for building {}, selecting randomly from {} candidates", definition.id(), allFootprintMatches.size());
+                selected = pickRandom(allFootprintMatches, random);
+                resolutionPath = "error-random-fallback";
             }
         } else {
-            List<TemplateEntry> fullMatches = footprintMatches.stream()
-                    .filter(entry -> entry.tags().containsAll(requestedTags))
-                    .toList();
             if (!fullMatches.isEmpty()) {
                 selected = pickRandom(fullMatches, random);
                 resolutionPath = "full-match";
+            } else if (!bestPartialMatches.isEmpty()) {
+                selected = pickRandom(bestPartialMatches, random);
+                resolutionPath = "partial-match";
+            } else if (!untaggedMatches.isEmpty()) {
+                selected = pickRandom(untaggedMatches, random);
+                resolutionPath = "untagged-fallback";
             } else {
-                int bestOverlap = footprintMatches.stream()
-                        .mapToInt(entry -> overlapCount(entry.tags(), requestedTags))
-                        .max()
-                        .orElse(0);
-
-                if (bestOverlap > 0) {
-                    List<TemplateEntry> partialMatches = footprintMatches.stream()
-                            .filter(entry -> overlapCount(entry.tags(), requestedTags) == bestOverlap)
-                            .toList();
-                    selected = pickRandom(partialMatches, random);
-                    resolutionPath = "partial-match";
-                } else {
-                    List<TemplateEntry> untagged = footprintMatches.stream()
-                            .filter(entry -> entry.tags().isEmpty())
-                            .toList();
-                    if (!untagged.isEmpty()) {
-                        selected = pickRandom(untagged, random);
-                        resolutionPath = "untagged-fallback";
-                    } else {
-                        log.error("No untagged fallback for building {}, no tag match for {}", building.id(), requestedTags);
-                        selected = pickRandom(footprintMatches, random);
-                        resolutionPath = "error-random-fallback";
-                    }
-                }
+                log.error("No untagged fallback for building {}, no tag match for {}", definition.id(), requestedTags);
+                selected = pickRandom(allFootprintMatches, random);
+                resolutionPath = "error-random-fallback";
             }
         }
 
         log.info("Resolved template for building {} via {} (candidates={}, requestedTags={}, selected={}, templateTags={})",
-                building.id(), resolutionPath, footprintMatches.size(), requestedTags, selected.templateId(), selected.tags());
+                definition.id(), resolutionPath, allFootprintMatches.size(), requestedTags, selected.resourceLocationOrThrow(), selected.getTags());
 
         return Optional.of(ResolvedTemplate.builder()
-                .templatePath(selected.templateId().toString())
-                .width(selected.width())
-                .depth(selected.depth())
-                .tags(selected.tags())
+                .templatePath(selected.resourceLocationOrThrow().toString())
+                .width(selected.getWidth())
+                .depth(selected.getDepth())
+                .tags(selected.getTags())
                 .build());
     }
 
-    private static List<TemplateDescriptor> discoverTemplateDescriptors(ResourceManager resourceManager) {
-        Map<ResourceLocation, Resource> nbtResources = resourceManager.listResources(TEMPLATE_DISCOVERY_ROOT,
-                path -> path.getPath().endsWith(NBT_EXTENSION));
-        log.resourceLoadingStatus("Discovering settlement structure templates...");
-
-        List<TemplateDescriptor> descriptors = new ArrayList<>();
-
-        for (ResourceLocation resourcePath : nbtResources.keySet()) {
-            ResourceLocation templateId = toMinecraftTemplateId(resourcePath);
-            MetaEntry metadata = readMetadata(resourceManager, resourcePath).get();
-
-            TemplateDescriptor descriptor = TemplateDescriptor.builder()
-                    .templateId(templateId)
-                    .buildingDefinitionId(metadata.buildingDefinition())
-                    .tags(metadata.tags().stream()
-                            .filter(tag -> !tag.isBlank())
-                            .collect(Collectors.toUnmodifiableSet()))
-                    .author(metadata.author())
-                    .build();
-            descriptors.add(descriptor);
-            log.resourceLoadingStatus("Discovered template descriptor {}", descriptor);
-        }
-
-        if (descriptors.isEmpty()) {
-            log.resourceLoadingWarn("No settlement building templates were discovered under {}", TEMPLATE_DISCOVERY_ROOT);
-            return List.of();
-        }
-
-        return List.copyOf(descriptors);
-    }
-
-    private static Map<String, List<TemplateEntry>> loadCatalog(StructureTemplateManager templateManager,
-                                                                Collection<TemplateDescriptor> descriptors) {
-        Map<String, List<TemplateEntry>> entriesByBuilding = new LinkedHashMap<>();
-        log.resourceLoadingStatus("Materializing settlement structure template catalog...");
-
-        for (TemplateDescriptor descriptor : descriptors) {
-            Optional<Vec3i> sizeOptional = loadTemplateSize(templateManager, descriptor.templateId());
-            if (sizeOptional.isEmpty()) {
-                continue;
-            }
-
-            Vec3i size = sizeOptional.get();
-            TemplateEntry entry = new TemplateEntry(descriptor.templateId(), descriptor.buildingDefinitionId(), size.getX(), size.getZ(), descriptor.tags());
-            log.resourceLoadingStatus("Loaded template {}: {}", descriptor.templateId(), entry);
-
-            entriesByBuilding.computeIfAbsent(entry.buildingDefinitionId(), ignored -> new ArrayList<>()).add(entry);
-        }
-
-        if (entriesByBuilding.isEmpty()) {
-            log.resourceLoadingWarn("No settlement building templates could be materialized from {} discovered descriptors", descriptors.size());
-            return Map.of();
-        }
-
-        int totalTemplates = entriesByBuilding.values().stream()
-                .mapToInt(List::size)
-                .sum();
-        for (Map.Entry<String, List<TemplateEntry>> entry : entriesByBuilding.entrySet()) {
-            boolean hasUntaggedFallback = entry.getValue().stream().anyMatch(templateEntry -> templateEntry.tags().isEmpty());
-            if (!hasUntaggedFallback) {
-                log.resourceLoadingError("Template catalog entry '{}' has no untagged fallback template", entry.getKey());
-            }
-            log.resourceLoadingStatus("Template catalog type '{}' loaded with {} variants", entry.getKey(), entry.getValue().size());
-        }
-
-        log.resourceLoadingStatus("Loaded {} settlement building templates across {} building types", totalTemplates, entriesByBuilding.size());
-        return entriesByBuilding;
-    }
-
-    private static Optional<Vec3i> loadTemplateSize(StructureTemplateManager templateManager, ResourceLocation templateId) {
-        Optional<StructureTemplate> templateOptional = templateManager.get(templateId);
-        if (templateOptional.isEmpty()) {
-            log.resourceLoadingWarn("Skipping template {} because StructureTemplateManager could not load it", templateId);
-            return Optional.empty();
-        }
-
-        Vec3i size = templateOptional.get().getSize();
-        if (size.getX() <= 0 || size.getZ() <= 0) {
-            log.resourceLoadingWarn("Skipping template {} because it has invalid size {}", templateId, size);
-            return Optional.empty();
-        }
-
-        return Optional.of(size);
-    }
-
-    private static Optional<MetaEntry> readMetadata(ResourceManager resourceManager, ResourceLocation nbtResource) {
+    private static Optional<TemplateMetadata> readCompanionMetadata(ResourceManager resourceManager, ResourceLocation nbtResource) {
         ResourceLocation metadataPath = ResourceLocation.fromNamespaceAndPath(nbtResource.getNamespace(),
                 nbtResource.getPath().replaceAll("\\.nbt$", ".meta.json"));
 
         Optional<Resource> resourceOptional = resourceManager.getResource(metadataPath);
         if (resourceOptional.isEmpty()) {
+            log.resourceLoadingWarn("Ignoring template {} because required companion metadata {} is missing", nbtResource, metadataPath);
             return Optional.empty();
         }
 
         try (BufferedReader reader = resourceOptional.get().openAsReader()) {
-            MetaEntry meta = GSON.fromJson(reader, MetaEntry.class);
-            if (meta == null || meta.buildingDefinition() == null || meta.buildingDefinition().isBlank()) {
-                log.resourceLoadingWarn("Ignoring template metadata {} because building_definition is missing", metadataPath);
+            TemplateMetadata metadata = GSON.fromJson(reader, TemplateMetadata.class);
+            if (metadata == null) {
+                log.resourceLoadingWarn("Ignoring template metadata {} because it is empty or malformed", metadataPath);
                 return Optional.empty();
             }
-
-            return Optional.of(meta);
+            if (!metadata.isValid()) {
+                log.resourceLoadingWarn("Ignoring template metadata {} because required fields are missing or invalid", metadataPath);
+                return Optional.empty();
+            }
+            return Optional.of(metadata);
         } catch (Exception e) {
             log.resourceLoadingWarn("Failed to read template metadata {}: {}", metadataPath, e.getMessage());
             return Optional.empty();
         }
     }
 
-    @VisibleForTesting
-    public static ResourceLocation toMinecraftTemplateId(ResourceLocation resourcePath) {
+    private static Optional<int[]> readStructureSize(ResourceManager resourceManager, ResourceLocation nbtResource) {
+        Optional<Resource> resourceOptional = resourceManager.getResource(nbtResource);
+        if (resourceOptional.isEmpty()) {
+            log.resourceLoadingWarn("Skipping template {} because resource stream could not be opened", nbtResource);
+            return Optional.empty();
+        }
+
+        try (InputStream inputStream = resourceOptional.get().open()) {
+            CompoundTag root = NbtIo.readCompressed(inputStream, NbtAccounter.unlimitedHeap());
+            ListTag sizeTag = root.getList(STRUCTURE_SIZE_KEY, Tag.TAG_INT);
+
+            return Optional.of(new int[]{sizeTag.getInt(0), sizeTag.getInt(1), sizeTag.getInt(2)});
+        } catch (Exception e) {
+            log.resourceLoadingWarn("Failed to read structure size from {}", nbtResource, e);
+            return Optional.empty();
+        }
+    }
+
+    private static boolean matchesMetadataDimensions(TemplateMetadata metadata, int[] size) {
+        return size[0] == metadata.getWidth()
+                && size[2] == metadata.getDepth()
+                && size[1] == metadata.getHeight();
+    }
+
+    private static ResourceLocation toMinecraftTemplateId(ResourceLocation resourcePath) {
         String fullPath = resourcePath.getPath();
         if (!fullPath.startsWith(NEOFORGE_STRUCTURE_ROOT) || !fullPath.endsWith(NBT_EXTENSION)) {
             throw new IllegalStateException("Unexpected structure resource path: " + resourcePath);
         }
 
-        // Strip the implicit NeoForge root prefix and the file extension
         String templatePath = fullPath.substring(NEOFORGE_STRUCTURE_ROOT.length(), fullPath.length() - NBT_EXTENSION.length());
         return ResourceLocation.fromNamespaceAndPath(resourcePath.getNamespace(), templatePath);
     }
 
-    private static TemplateEntry pickRandom(List<TemplateEntry> entries, Random random) {
+    private static TemplateMetadata pickRandom(List<TemplateMetadata> entries, Random random) {
         return entries.get(random.nextInt(entries.size()));
     }
 
@@ -335,58 +303,6 @@ public final class NbtTemplateResolver implements TemplateResolver {
             }
         }
         return overlap;
-    }
-
-    protected record TemplateEntry(
-            ResourceLocation templateId,
-            String buildingDefinitionId,
-            int width,
-            int depth,
-            Set<String> tags
-    ) {
-        protected TemplateEntry {
-            tags = tags == null ? Set.of() : tags;
-        }
-    }
-
-    @VisibleForTesting
-    static Map<String, List<TemplateEntry>> materializeCatalogForTesting(Collection<TemplateDescriptor> descriptors,
-                                                                         Function<ResourceLocation, Optional<Vec3i>> sizeLoader) {
-        Map<String, List<TemplateEntry>> entriesByBuilding = new LinkedHashMap<>();
-        for (TemplateDescriptor descriptor : descriptors) {
-            Optional<Vec3i> sizeOptional = sizeLoader.apply(descriptor.templateId());
-            if (sizeOptional.isEmpty()) {
-                continue;
-            }
-
-            Vec3i size = sizeOptional.get();
-            if (size.getX() <= 0 || size.getZ() <= 0) {
-                continue;
-            }
-
-            TemplateEntry entry = new TemplateEntry(descriptor.templateId(), descriptor.buildingDefinitionId(), size.getX(), size.getZ(), descriptor.tags());
-            entriesByBuilding.computeIfAbsent(entry.buildingDefinitionId(), ignored -> new ArrayList<>()).add(entry);
-        }
-
-        return Map.copyOf(entriesByBuilding);
-    }
-
-    @VisibleForTesting
-    @Builder
-    protected record TemplateDescriptor(
-            ResourceLocation templateId,
-            String buildingDefinitionId,
-            Set<String> tags,
-            @Nullable String author
-    ) {
-        protected TemplateDescriptor {
-            tags = tags == null ? Set.of() : tags;
-        }
-    }
-
-    private record MetaEntry(@SerializedName("building_definition") String buildingDefinition,
-                             List<String> tags,
-                             @Nullable String author) {
     }
 
 }

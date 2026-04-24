@@ -97,7 +97,7 @@ class PlacementValidatorTest {
 
         PlacementResult result = validator.evaluate(
                 LayoutTestFixtures.building(
-                        "settlements:forbidden_stone",
+                        "settlements:building_definitions/forbidden_stone",
                         Map.of(),
                         TraitSlot.FLAVOR,
                         10,

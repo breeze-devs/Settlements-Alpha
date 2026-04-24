@@ -1,5 +1,5 @@
 {
-  "id": "settlements:smelter",
+  "id": "settlements:building_definitions/smelter",
   "placement_priority": 65,
   "zone_tier_min": 3,
   "zone_tier_max": 3,

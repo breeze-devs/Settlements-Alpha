@@ -1,4 +1,4 @@
 {
-  "building_definition": "settlements:wheat_field",
+  "building_definition": "settlements:building_definitions/wheat_field",
   "tags": []
 }

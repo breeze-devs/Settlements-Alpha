@@ -1,5 +1,5 @@
 {
-  "building_definition": "settlements:town_hall",
+  "building_definition": "settlements:building_definitions/town_hall",
   "tags": [],
   "author": "Breeze"
 }

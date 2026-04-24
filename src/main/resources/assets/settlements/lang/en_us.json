@@ -1,4 +1,5 @@
 {
+  "mod.name": "Settlements",
   "item.settlements.sapphire": "Sapphire",
   "item.settlements.raw_sapphire": "Raw Sapphire",
   "item.settlements.metal_destroyer": "Metal Destroyer",
@@ -20,6 +21,7 @@
   "block.settlements.sapphire_trapdoor": "Sapphire Trapdoor",
   "block.settlements.cat_mint": "Cat Mint",
   "creative_tab.settlements": "Settlements",
+  "overlay.settlements.region.enter.title": "Welcome to",
   "ui.settlements.behavior.title": "BEHAVIOR CONTROLLER",
   "ui.settlements.behavior.villager": "Villager: %s",
   "ui.settlements.behavior.schedule": "Schedule: %s",
@@ -89,7 +91,6 @@
   "ui.settlements.gene.intelligence.desc": "Intelligence: %s (%s) — Affects work efficiency and learning rate",
   "ui.settlements.gene.will.desc": "Will: %s (%s) — Affects resistance to negative effects",
   "ui.settlements.gene.charisma.desc": "Charisma: %s (%s) — Affects trade prices and social interactions",
-  "key.categories.settlements": "Settlements",
   "key.settlements.open_villager_stats": "Open Villager Stats",
   "key.settlements.open_behavior_controller_debug": "Open Behavior Controller (Debug)",
   "entity.settlements.base_villager.armorer": "Armorer",

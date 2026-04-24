@@ -1,5 +1,5 @@
 {
-  "id": "settlements:tavern",
+  "id": "settlements:building_definitions/tavern",
   "placement_priority": 90,
   "zone_tier_min": 1,
   "zone_tier_max": 2,

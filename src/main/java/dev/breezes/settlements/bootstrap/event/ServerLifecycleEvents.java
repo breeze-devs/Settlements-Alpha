@@ -22,6 +22,9 @@ public final class ServerLifecycleEvents {
 
         log.info("Registering events");
         NeoForge.EVENT_BUS.register(serverComponent.behaviorControllerServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.playerSettlementTracker());
+        NeoForge.EVENT_BUS.register(serverComponent.regionSubtitleHandler());
+        NeoForge.EVENT_BUS.register(serverComponent.settlementMetadataPersistenceServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.villagerStatsServerEvents());
     }
 
@@ -32,6 +35,9 @@ public final class ServerLifecycleEvents {
         if (serverComponent != null) {
             // Because they are @ServerScoped, Dagger returns the exact instances we registered earlier
             NeoForge.EVENT_BUS.unregister(serverComponent.behaviorControllerServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.playerSettlementTracker());
+            NeoForge.EVENT_BUS.unregister(serverComponent.regionSubtitleHandler());
+            NeoForge.EVENT_BUS.unregister(serverComponent.settlementMetadataPersistenceServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.villagerStatsServerEvents());
         }
 

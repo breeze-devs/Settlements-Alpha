@@ -1,5 +1,5 @@
 {
-  "id": "settlements:market_stall",
+  "id": "settlements:building_definitions/market_stall",
   "placement_priority": 30,
   "zone_tier_min": 2,
   "zone_tier_max": 2,

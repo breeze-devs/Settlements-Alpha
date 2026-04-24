@@ -61,6 +61,7 @@ class GenerationResultSerializerTest {
 
         LayoutResult layout = new LayoutResult(
                 new BlockPosition(10, 64, 10),
+                new BlockPosition(12, 64, 12),
                 List.of(),
                 List.of());
 

@@ -14,7 +14,7 @@ import org.lwjgl.glfw.GLFW;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SettlementsKeyMappings {
 
-    public static final String KEY_CATEGORY = "key.categories.settlements";
+    public static final String KEY_CATEGORY = "mod.name";
 
     public static final KeyMapping OPEN_VILLAGER_STATS = new KeyMapping(
             "key.settlements.open_villager_stats",

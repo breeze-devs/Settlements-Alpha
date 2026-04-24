@@ -65,7 +65,7 @@ class BuildingDefinitionDataManagerTest {
     void for_trait_sorted_by_affinity() {
         List<BuildingDefinition> lumberBuildings = this.manager.forTrait(LUMBER);
 
-        assertEquals(List.of("settlements:sawmill", "settlements:log_storage"),
+        assertEquals(List.of("settlements:building_definitions/sawmill", "settlements:building_definitions/log_storage"),
                 lumberBuildings.stream().map(BuildingDefinition::id).toList());
     }
 
@@ -75,19 +75,19 @@ class BuildingDefinitionDataManagerTest {
                 .map(BuildingDefinition::id)
                 .toList();
 
-        assertFalse(lumberBuildings.contains("settlements:mine_entrance"));
+        assertFalse(lumberBuildings.contains("settlements:building_definitions/mine_entrance"));
     }
 
     @Test
     void universal_empty_affinities() {
-        assertTrue(this.manager.byId("settlements:house").orElseThrow().traitAffinities().isEmpty());
-        assertTrue(this.manager.byId("settlements:well").orElseThrow().traitAffinities().isEmpty());
-        assertTrue(this.manager.byId("settlements:town_hall").orElseThrow().traitAffinities().isEmpty());
+        assertTrue(this.manager.byId("settlements:building_definitions/house").orElseThrow().traitAffinities().isEmpty());
+        assertTrue(this.manager.byId("settlements:building_definitions/well").orElseThrow().traitAffinities().isEmpty());
+        assertTrue(this.manager.byId("settlements:building_definitions/town_hall").orElseThrow().traitAffinities().isEmpty());
     }
 
     @Test
     void by_id_found_and_not_found() {
-        assertTrue(this.manager.byId("settlements:tavern").isPresent());
+        assertTrue(this.manager.byId("settlements:building_definitions/tavern").isPresent());
         assertTrue(this.manager.byId("settlements:not_real").isEmpty());
     }
 
@@ -118,7 +118,7 @@ class BuildingDefinitionDataManagerTest {
         Map<ResourceLocation, JsonElement> entries = loadDefaultEntries();
         entries.put(resource("settlements:buildings/definitions/bad_json"), JsonParser.parseString("""
                 {
-                  "id": "settlements:bad_json_test",
+                  "id": "settlements:building_definitions/bad_json_test",
                   "placement_priority": 1,
                   "zone_tier_min": 3,
                   "zone_tier_max": 2,
@@ -139,7 +139,7 @@ class BuildingDefinitionDataManagerTest {
         this.manager.apply(entries, null, null);
 
         assertEquals(15, this.manager.allBuildings().size());
-        assertTrue(this.manager.byId("settlements:bad_json_test").isEmpty());
+        assertTrue(this.manager.byId("settlements:building_definitions/bad_json_test").isEmpty());
     }
 
     @Test
@@ -175,7 +175,7 @@ class BuildingDefinitionDataManagerTest {
                 resource("settlements:buildings/definitions/unknown_trait"),
                 JsonParser.parseString("""
                         {
-                          "id": "settlements:unknown_trait_test",
+                          "id": "settlements:building_definitions/unknown_trait_test",
                           "placement_priority": 1,
                           "zone_tier_min": 0,
                           "zone_tier_max": 1,
@@ -199,7 +199,7 @@ class BuildingDefinitionDataManagerTest {
 
         this.manager.apply(entries, null, null);
 
-        BuildingDefinition definition = this.manager.byId("settlements:unknown_trait_test").orElseThrow();
+        BuildingDefinition definition = this.manager.byId("settlements:building_definitions/unknown_trait_test").orElseThrow();
         assertEquals(Map.of(LUMBER, 0.5f), definition.traitAffinities());
     }
 
@@ -209,7 +209,7 @@ class BuildingDefinitionDataManagerTest {
                 resource("settlements:buildings/definitions/unknown_resource"),
                 JsonParser.parseString("""
                         {
-                          "id": "settlements:unknown_resource_test",
+                          "id": "settlements:building_definitions/unknown_resource_test",
                           "placement_priority": 1,
                           "zone_tier_min": 0,
                           "zone_tier_max": 1,
@@ -228,7 +228,7 @@ class BuildingDefinitionDataManagerTest {
                         """
                 )), null, null);
 
-        BuildingDefinition definition = this.manager.byId("settlements:unknown_resource_test").orElseThrow();
+        BuildingDefinition definition = this.manager.byId("settlements:building_definitions/unknown_resource_test").orElseThrow();
         assertEquals(Set.of(ResourceTag.LUMBER), definition.requiresResources());
     }
 
@@ -238,7 +238,7 @@ class BuildingDefinitionDataManagerTest {
                 resource("settlements:buildings/definitions/preferred_tags"),
                 JsonParser.parseString("""
                         {
-                          "id": "settlements:preferred_tags_test",
+                          "id": "settlements:building_definitions/preferred_tags_test",
                           "placement_priority": 1,
                           "zone_tier_min": 0,
                           "zone_tier_max": 1,
@@ -258,7 +258,7 @@ class BuildingDefinitionDataManagerTest {
                         """)
         ), null, null);
 
-        BuildingDefinition definition = this.manager.byId("settlements:preferred_tags_test").orElseThrow();
+        BuildingDefinition definition = this.manager.byId("settlements:building_definitions/preferred_tags_test").orElseThrow();
         assertEquals(Set.of("taiga", "charred"), definition.preferredTags());
     }
 

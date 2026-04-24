@@ -1,4 +1,4 @@
 {
-  "building_definition": "settlements:market_stall",
+  "building_definition": "settlements:building_definitions/market_stall",
   "tags": []
 }

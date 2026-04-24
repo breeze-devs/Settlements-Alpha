@@ -3,7 +3,6 @@ package dev.breezes.settlements.di;
 import dagger.Component;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.event.GenerationDataValidationReloadListener;
-import dev.breezes.settlements.bootstrap.event.SettlementTemplateReloadListener;
 import dev.breezes.settlements.di.modules.BehaviorServicesModule;
 import dev.breezes.settlements.di.modules.ConfigModule;
 import dev.breezes.settlements.di.modules.DataManagerModule;
@@ -21,6 +20,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorer
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.worldgen.NbtTemplateResolver;
 
 import javax.inject.Singleton;
 
@@ -60,7 +60,7 @@ public interface SettlementsComponent {
 
     GenerationDataValidationReloadListener generationDataValidationReloadListener();
 
-    SettlementTemplateReloadListener settlementTemplateReloadListener();
+    NbtTemplateResolver nbtTemplateResolver();
 
     HungerConfig hungerConfig();
 

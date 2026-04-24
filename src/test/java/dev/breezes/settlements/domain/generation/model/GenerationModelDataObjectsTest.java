@@ -118,7 +118,7 @@ class GenerationModelDataObjectsTest {
     @Test
     void buildingDefinitionAndAffinitiesAreUsableInTests() {
         BuildingDefinition building = new BuildingDefinition(
-                "settlements:sawmill",
+                "settlements:building_definitions/sawmill",
                 new DisplayInfo("Sawmill", "Cuts timber", null, "minecraft:iron_axe"),
                 Map.of(LUMBER, 0.8f),
                 TraitSlot.SECONDARY,
@@ -129,9 +129,9 @@ class GenerationModelDataObjectsTest {
                 Set.of(),
                 new FootprintConstraint(7, 11, 9, 13),
                 Set.of("default"),
-                List.of(new ProximityAffinity("settlements:log_storage", 0.5f, 0.8f)),
+                List.of(new ProximityAffinity("settlements:building_definitions/log_storage", 0.5f, 0.8f)),
                 List.of(new GlobalAffinity("trait:settlements:settlement_traits/lumber", 0.6f)),
-                "settlements:lumberjack",
+                "settlements:building_definitions/lumberjack",
                 1
         );
 
@@ -145,7 +145,7 @@ class GenerationModelDataObjectsTest {
     @Test
     void buildingManifestCopiesCollectionsDefensively() {
         BuildingDefinition house = new BuildingDefinition(
-                "settlements:house",
+                "settlements:building_definitions/house",
                 null,
                 Map.of(),
                 TraitSlot.FLAVOR,
@@ -167,7 +167,7 @@ class GenerationModelDataObjectsTest {
         mutable.clear();
 
         assertEquals(1, manifest.buildings().size());
-        assertEquals("settlements:house", manifest.buildings().getFirst().id());
+        assertEquals("settlements:building_definitions/house", manifest.buildings().getFirst().id());
         assertThrows(UnsupportedOperationException.class, () -> manifest.buildings().add(house));
     }
 

@@ -1,5 +1,5 @@
 {
-  "id": "settlements:watchtower",
+  "id": "settlements:building_definitions/watchtower",
   "placement_priority": 60,
   "zone_tier_min": 4,
   "zone_tier_max": 4,

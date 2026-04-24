@@ -1,5 +1,5 @@
 {
-  "id": "settlements:log_storage",
+  "id": "settlements:building_definitions/log_storage",
   "placement_priority": 40,
   "zone_tier_min": 3,
   "zone_tier_max": 4,

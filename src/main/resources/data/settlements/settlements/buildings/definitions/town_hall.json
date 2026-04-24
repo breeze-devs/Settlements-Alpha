@@ -1,5 +1,5 @@
 {
-  "id": "settlements:town_hall",
+  "id": "settlements:building_definitions/town_hall",
   "placement_priority": 1000,
   "zone_tier_min": 0,
   "zone_tier_max": 1,

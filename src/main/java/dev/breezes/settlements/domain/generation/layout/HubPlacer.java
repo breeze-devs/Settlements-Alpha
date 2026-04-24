@@ -14,7 +14,7 @@ public class HubPlacer extends BuildingPlacer {
 
     private static final int DEFAULT_MAX_ATTEMPTS = 8;
     private static final int DEFAULT_MAX_RADIUS = 48;
-    private static final String TOWN_HALL_ID = "settlements:town_hall";
+    private static final String TOWN_HALL_ID = "settlements:building_definitions/town_hall";
 
     private final int maxAttempts;
     private final int maxRadius;
@@ -32,7 +32,7 @@ public class HubPlacer extends BuildingPlacer {
 
         BuildingDefinition building = context.getBuildings().getFirst();
         if (!TOWN_HALL_ID.equals(building.id())) {
-            throw new IllegalStateException("HubPlacer requires settlements:town_hall, got: " + building.id());
+            throw new IllegalStateException("HubPlacer requires settlements:building_definitions/town_hall, got: " + building.id());
         }
 
         for (int attempt = 1; attempt <= this.maxAttempts; attempt++) {

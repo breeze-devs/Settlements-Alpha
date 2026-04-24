@@ -1,5 +1,5 @@
 {
-  "id": "settlements:barracks",
+  "id": "settlements:building_definitions/barracks",
   "placement_priority": 55,
   "zone_tier_min": 3,
   "zone_tier_max": 4,

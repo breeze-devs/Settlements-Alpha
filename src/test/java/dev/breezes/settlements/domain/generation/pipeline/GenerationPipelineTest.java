@@ -178,18 +178,18 @@ class GenerationPipelineTest {
 
     private static BuildingRegistry buildingRegistry() {
         List<BuildingDefinition> buildings = List.of(
-                building("settlements:town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of(), false, 7, 9, 7, 9),
-                building("settlements:well", Map.of(), TraitSlot.FLAVOR, 900, Set.of(), false, 3, 5, 3, 5),
-                building("settlements:tavern", Map.of(), TraitSlot.FLAVOR, 800, Set.of(), true, 6, 8, 6, 8),
-                building("settlements:market_stall", Map.of(), TraitSlot.FLAVOR, 700, Set.of(), true, 4, 5, 4, 5),
-                building("settlements:house", Map.of(), TraitSlot.FLAVOR, 10, Set.of(), true, 4, 6, 4, 6),
-                building("settlements:farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of(), true, 5, 7, 6, 8),
-                building("settlements:barn", Map.of(FARMING, 0.7f), TraitSlot.FLAVOR, 70, Set.of(), false, 5, 7, 5, 7),
-                building("settlements:dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.FRESHWATER), true, 6, 8, 8, 10),
-                building("settlements:fish_drying_rack", Map.of(FISHING, 0.6f), TraitSlot.FLAVOR, 60, Set.of(), true, 4, 5, 4, 5),
-                building("settlements:mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE), false, 6, 8, 6, 8),
-                building("settlements:smelter", Map.of(MINING, 0.7f), TraitSlot.FLAVOR, 75, Set.of(), false, 5, 7, 5, 7),
-                building("settlements:watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 85, Set.of(), false, 4, 6, 4, 6)
+                building("settlements:building_definitions/town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of(), false, 7, 9, 7, 9),
+                building("settlements:building_definitions/well", Map.of(), TraitSlot.FLAVOR, 900, Set.of(), false, 3, 5, 3, 5),
+                building("settlements:building_definitions/tavern", Map.of(), TraitSlot.FLAVOR, 800, Set.of(), true, 6, 8, 6, 8),
+                building("settlements:building_definitions/market_stall", Map.of(), TraitSlot.FLAVOR, 700, Set.of(), true, 4, 5, 4, 5),
+                building("settlements:building_definitions/house", Map.of(), TraitSlot.FLAVOR, 10, Set.of(), true, 4, 6, 4, 6),
+                building("settlements:building_definitions/farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of(), true, 5, 7, 6, 8),
+                building("settlements:building_definitions/barn", Map.of(FARMING, 0.7f), TraitSlot.FLAVOR, 70, Set.of(), false, 5, 7, 5, 7),
+                building("settlements:building_definitions/dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.FRESHWATER), true, 6, 8, 8, 10),
+                building("settlements:building_definitions/fish_drying_rack", Map.of(FISHING, 0.6f), TraitSlot.FLAVOR, 60, Set.of(), true, 4, 5, 4, 5),
+                building("settlements:building_definitions/mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE), false, 6, 8, 6, 8),
+                building("settlements:building_definitions/smelter", Map.of(MINING, 0.7f), TraitSlot.FLAVOR, 75, Set.of(), false, 5, 7, 5, 7),
+                building("settlements:building_definitions/watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 85, Set.of(), false, 4, 6, 4, 6)
         );
         return new TestBuildingRegistry(buildings);
     }

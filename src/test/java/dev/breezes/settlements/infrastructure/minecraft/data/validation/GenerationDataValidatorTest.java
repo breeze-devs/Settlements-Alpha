@@ -62,7 +62,7 @@ class GenerationDataValidatorTest {
         this.buildingManager.loadForTest(Map.of(
                 resource("settlements:buildings/definitions/valid"), JsonParser.parseString("""
                         {
-                          "id": "settlements:valid_building",
+                          "id": "settlements:building_definitions/valid_building",
                           "placement_priority": 1,
                           "zone_tier_min": 0,
                           "zone_tier_max": 1,
@@ -83,7 +83,7 @@ class GenerationDataValidatorTest {
                         """),
                 resource("settlements:buildings/definitions/invalid"), JsonParser.parseString("""
                         {
-                          "id": "settlements:invalid_building",
+                          "id": "settlements:building_definitions/invalid_building",
                           "placement_priority": 1,
                           "zone_tier_min": 0,
                           "zone_tier_max": 1,
@@ -108,8 +108,8 @@ class GenerationDataValidatorTest {
 
         assertEquals(2, this.buildingManager.rawDefinitions().size());
         assertEquals(1, this.buildingManager.allBuildings().size());
-        assertTrue(this.buildingManager.byId("settlements:valid_building").isPresent());
-        assertTrue(this.buildingManager.byId("settlements:invalid_building").isEmpty());
+        assertTrue(this.buildingManager.byId("settlements:building_definitions/valid_building").isPresent());
+        assertTrue(this.buildingManager.byId("settlements:building_definitions/invalid_building").isEmpty());
     }
 
     private static JsonElement scorerJson(String traitId) {

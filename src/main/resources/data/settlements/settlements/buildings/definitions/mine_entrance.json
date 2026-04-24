@@ -1,5 +1,5 @@
 {
-  "id": "settlements:mine_entrance",
+  "id": "settlements:building_definitions/mine_entrance",
   "placement_priority": 80,
   "zone_tier_min": 3,
   "zone_tier_max": 4,

@@ -8,6 +8,7 @@ import java.util.List;
 
 public record LayoutResult(
         BlockPosition anchor,
+        BlockPosition planningCenter,
         List<RoadSegment> roads,
         List<BuildingAssignment> assignments
 ) {

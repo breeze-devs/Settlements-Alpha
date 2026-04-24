@@ -1,5 +1,5 @@
 {
-  "id": "settlements:well",
+  "id": "settlements:building_definitions/well",
   "placement_priority": 30,
   "zone_tier_min": 2,
   "zone_tier_max": 4,

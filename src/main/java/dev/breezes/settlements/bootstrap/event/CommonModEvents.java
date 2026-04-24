@@ -89,7 +89,7 @@ public class CommonModEvents {
             event.addListener(component.harvestHoneycombYieldDataManager());
             event.addListener(component.tradeCatalogDataManager());
             event.addListener(component.generationDataValidationReloadListener());
-            event.addListener(component.settlementTemplateReloadListener());
+            event.addListener(component.nbtTemplateResolver());
         });
     }
 

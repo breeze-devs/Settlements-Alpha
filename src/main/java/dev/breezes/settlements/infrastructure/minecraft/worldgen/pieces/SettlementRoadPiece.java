@@ -18,6 +18,7 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,28 +32,34 @@ public class SettlementRoadPiece extends StructurePiece {
     private static final String END_Z_TAG = "EndZ";
     private static final String ROAD_TYPE_TAG = "RoadType";
     private static final String WEALTH_LEVEL_TAG = "WealthLevel";
+    private static final String SETTLEMENT_ID_TAG = "SettlementId";
 
     private final BlockPos start;
     private final BlockPos end;
     private final RoadType roadType;
     private final float wealthLevel;
+    @Nullable
+    private final String settlementId;
 
     public SettlementRoadPiece(@Nonnull BlockPos start,
                                @Nonnull BlockPos end,
                                @Nonnull RoadType roadType,
-                               float wealthLevel) {
+                               float wealthLevel,
+                               @Nullable String settlementId) {
         super(StructureRegistry.SETTLEMENT_ROAD_PIECE_TYPE.get(), 0, createBoundingBox(start, end, roadType));
         this.start = start;
         this.end = end;
         this.roadType = roadType;
         this.wealthLevel = wealthLevel;
+        this.settlementId = settlementId;
     }
 
     private SettlementRoadPiece(@Nonnull CompoundTag tag) {
         this(new BlockPos(tag.getInt(START_X_TAG), tag.getInt(START_Y_TAG), tag.getInt(START_Z_TAG)),
                 new BlockPos(tag.getInt(END_X_TAG), tag.getInt(END_Y_TAG), tag.getInt(END_Z_TAG)),
                 RoadType.values()[tag.getInt(ROAD_TYPE_TAG)],
-                tag.getFloat(WEALTH_LEVEL_TAG));
+                tag.getFloat(WEALTH_LEVEL_TAG),
+                tag.contains(SETTLEMENT_ID_TAG) ? tag.getString(SETTLEMENT_ID_TAG) : null);
     }
 
     public static SettlementRoadPiece deserialize(@Nonnull StructurePieceSerializationContext context,
@@ -71,6 +78,14 @@ public class SettlementRoadPiece extends StructurePiece {
         tag.putInt(END_Z_TAG, this.end.getZ());
         tag.putInt(ROAD_TYPE_TAG, this.roadType.ordinal());
         tag.putFloat(WEALTH_LEVEL_TAG, this.wealthLevel);
+        if (this.settlementId != null) {
+            tag.putString(SETTLEMENT_ID_TAG, this.settlementId);
+        }
+    }
+
+    @Nullable
+    public String getSettlementId() {
+        return this.settlementId;
     }
 
     @Override
