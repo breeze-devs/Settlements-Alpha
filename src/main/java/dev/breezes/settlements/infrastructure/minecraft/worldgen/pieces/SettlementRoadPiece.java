@@ -88,6 +88,21 @@ public class SettlementRoadPiece extends StructurePiece {
         return this.settlementId;
     }
 
+    @Nonnull
+    public BlockPos getStart() {
+        return this.start;
+    }
+
+    @Nonnull
+    public BlockPos getEnd() {
+        return this.end;
+    }
+
+    @Nonnull
+    public RoadType getRoadType() {
+        return this.roadType;
+    }
+
     @Override
     public void postProcess(@Nonnull WorldGenLevel level,
                             @Nonnull StructureManager structureManager,

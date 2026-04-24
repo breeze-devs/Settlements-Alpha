@@ -5,6 +5,8 @@ import dagger.Module;
 import dagger.multibindings.ClassKey;
 import dagger.multibindings.IntoMap;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.debug.handler.ClientBoundSettlementDebugPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.handler.ClientBoundBehaviorControllerSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.handler.ClientBoundBehaviorControllerUnavailablePacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.handler.ClientBoundHeartbeatAckBehaviorControllerPacketHandler;
@@ -32,6 +34,11 @@ import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.C
 
 @Module
 public abstract class ClientNetworkModule {
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundSettlementDebugPacket.class)
+    abstract ClientSidePacketHandler<?> settlementDebug(ClientBoundSettlementDebugPacketHandler impl);
 
     @Binds
     @IntoMap

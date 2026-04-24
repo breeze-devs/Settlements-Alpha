@@ -20,6 +20,7 @@ import dev.breezes.settlements.application.ui.bubble.TradeMarker;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
@@ -35,7 +36,11 @@ import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.generation.debug.GenerationResultSerializer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models.TransformationMatrix;
+import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.TerrainGridFactory;
+import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementBuildingPiece;
+import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementRoadPiece;
+import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.shared.util.CoordinateHashUtil;
 import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import net.minecraft.commands.CommandSourceStack;
@@ -57,11 +62,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -94,6 +103,8 @@ public class TestCommand {
     private static final String ARG_BUBBLE_ID = "bubble_id";
 
     private static final Ticks TEST_BUBBLE_TTL = Ticks.seconds(10);
+    private static final int SETTLEMENT_DEBUG_MIN_Y_OFFSET = -5;
+    private static final int SETTLEMENT_DEBUG_MAX_Y_OFFSET = 30;
     private static final int GENERATION_SURVEY_PADDING = 30;
     private static final DateTimeFormatter GENERATION_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
@@ -180,7 +191,48 @@ public class TestCommand {
                         buildingName -> context.getSource().sendSuccess(() -> Component.literal("Building: " + buildingName), false),
                         () -> context.getSource().sendSuccess(() -> Component.literal("Building: none"), false)
                 );
+
+        sendSettlementDebugOverlay(player, settlementMetadata);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static void sendSettlementDebugOverlay(@Nonnull ServerPlayer player,
+                                                   @Nonnull dev.breezes.settlements.domain.settlement.model.SettlementMetadata settlementMetadata) {
+        SettlementStructureLocator settlementStructureLocator = SettlementsDagger.serverOrThrow().settlementStructureLocator();
+        Optional<StructureStart> structureStart = settlementStructureLocator.locate(player.serverLevel(), player.blockPosition());
+        if (structureStart.isEmpty()) {
+            return;
+        }
+
+        BuildingRegistry buildingRegistry = SettlementsDagger.component().buildingDefinitionDataManager();
+        List<StructurePiece> pieces = structureStart.get().getPieces();
+        List<ClientBoundSettlementDebugPacket.BuildingBox> buildings = pieces.stream()
+                .filter(SettlementBuildingPiece.class::isInstance)
+                .map(SettlementBuildingPiece.class::cast)
+                .map(piece -> new ClientBoundSettlementDebugPacket.BuildingBox(
+                        piece.getBoundingBox(),
+                        buildingRegistry.displayNameFor(piece.getBuildingDefinitionId())))
+                .toList();
+        List<ClientBoundSettlementDebugPacket.RoadBox> roads = pieces.stream()
+                .filter(SettlementRoadPiece.class::isInstance)
+                .map(SettlementRoadPiece.class::cast)
+                .map(piece -> new ClientBoundSettlementDebugPacket.RoadBox(
+                        piece.getBoundingBox(),
+                        piece.getRoadType(),
+                        piece.getStart(),
+                        piece.getEnd()))
+                .toList();
+
+        int playerY = player.blockPosition().getY();
+        BoundingBox settlementBox = new BoundingBox(
+                settlementMetadata.boundsMinX(),
+                playerY + SETTLEMENT_DEBUG_MIN_Y_OFFSET,
+                settlementMetadata.boundsMinZ(),
+                settlementMetadata.boundsMaxX(),
+                playerY + SETTLEMENT_DEBUG_MAX_Y_OFFSET,
+                settlementMetadata.boundsMaxZ());
+
+        PacketDistributor.sendToPlayer(player, new ClientBoundSettlementDebugPacket(settlementBox, buildings, roads));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildBubbleCommand() {

@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.network.core;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.di.SettlementsDagger;
+import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundBehaviorControllerSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundBehaviorControllerUnavailablePacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundHeartbeatAckBehaviorControllerPacket;
@@ -34,6 +35,7 @@ public class PacketRegistry {
         // Register with Minecraft registrar
         PayloadRegistrar registrar = event.registrar(SettlementsMod.MOD_ID).optional();
 
+        registerClient(registrar, ClientBoundSettlementDebugPacket.ID, ClientBoundSettlementDebugPacket.CODEC);
         registerClient(registrar, ClientBoundBubbleSnapshotPacket.ID, ClientBoundBubbleSnapshotPacket.CODEC);
 
         // Villager behavior UI packets

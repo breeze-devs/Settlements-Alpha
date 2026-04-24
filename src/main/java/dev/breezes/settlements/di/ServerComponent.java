@@ -21,6 +21,7 @@ import dev.breezes.settlements.di.modules.server.ServerNetworkModule;
 import dev.breezes.settlements.di.modules.server.SettlementQueryModule;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketReceiver;
 
 @ServerScope
@@ -62,6 +63,8 @@ public interface ServerComponent {
     DemandSignalService demandSignalService();
 
     SettlementQueryService settlementQueryService();
+
+    SettlementStructureLocator settlementStructureLocator();
 
     TradeSessionRegistry tradeSessionRegistry();
 
