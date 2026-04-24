@@ -1,0 +1,13 @@
+{
+  "id": "bb6c6c70-4874-4f58-8af0-ea04bb1c9d13",
+  "building_definition": "settlements:building_definitions/watchtower",
+  "tags": [],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Generated placeholder structure metadata.",
+  "width": 7,
+  "depth": 7,
+  "height": 8,
+  "min_minecraft_version": "1.21.1"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "3cff4608-1bbf-4108-974d-64c45cfe436a",
+  "building_definition": "settlements:building_definitions/barn",
+  "tags": [],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Generated placeholder structure metadata.",
+  "width": 15,
+  "depth": 15,
+  "height": 8,
+  "min_minecraft_version": "1.21.1"
+}

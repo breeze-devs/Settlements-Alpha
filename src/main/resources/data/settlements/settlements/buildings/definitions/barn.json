@@ -10,10 +10,8 @@
     "settlements:settlement_traits/farming": 0.6
   },
   "minimum_rank": "FLAVOR",
-  "footprint_min_width": 11,
-  "footprint_max_width": 15,
-  "footprint_min_depth": 11,
-  "footprint_max_depth": 15,
+  "footprint_width": 15,
+  "footprint_depth": 15,
   "npc_profession": null,
   "npc_count": 0
 }

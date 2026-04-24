@@ -102,7 +102,6 @@ public final class PlayerSettlementTracker {
                                         @Nonnull BlockPos position,
                                         @Nonnull PlayerRegionState previousState,
                                         @Nonnull SettlementPositionContext currentContext) {
-        log.info("emitting enter: {}", currentContext.settlementContext());
         currentContext.settlement()
                 .filter(context -> hasChanged(previousState.settlementId(), context.metadata().settlementId()))
                 .ifPresent(context -> NeoForge.EVENT_BUS.post(new SettlementEnterEvent(player, position, context.metadata())));

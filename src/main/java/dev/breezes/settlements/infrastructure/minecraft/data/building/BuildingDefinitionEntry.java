@@ -15,16 +15,16 @@ public class BuildingDefinitionEntry {
     String id;
 
     @SerializedName("placement_priority")
-    Integer placementPriority;
+    int placementPriority;
 
     @SerializedName("zone_tier_min")
-    Integer zoneTierMin;
+    int zoneTierMin;
 
     @SerializedName("zone_tier_max")
-    Integer zoneTierMax;
+    int zoneTierMax;
 
     @SerializedName("requires_road_frontage")
-    Boolean requiresRoadFrontage;
+    boolean requiresRoadFrontage;
 
     @SerializedName("requires_resources")
     List<String> requiresResources;
@@ -41,22 +41,16 @@ public class BuildingDefinitionEntry {
     @SerializedName("preferred_tags")
     List<String> preferredTags;
 
-    @SerializedName("footprint_min_width")
-    Integer footprintMinWidth;
+    @SerializedName("footprint_width")
+    int footprintWidth;
 
-    @SerializedName("footprint_max_width")
-    Integer footprintMaxWidth;
-
-    @SerializedName("footprint_min_depth")
-    Integer footprintMinDepth;
-
-    @SerializedName("footprint_max_depth")
-    Integer footprintMaxDepth;
+    @SerializedName("footprint_depth")
+    int footprintDepth;
 
     @SerializedName("npc_profession")
     String npcProfession;
 
     @SerializedName("npc_count")
-    Integer npcCount;
+    int npcCount;
 
 }

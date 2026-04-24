@@ -1,0 +1,13 @@
+{
+  "id": "9d5ebae9-09d2-433a-a494-dd1260e20e09",
+  "building_definition": "settlements:building_definitions/log_storage",
+  "tags": [],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Generated placeholder structure metadata.",
+  "width": 7,
+  "depth": 7,
+  "height": 8,
+  "min_minecraft_version": "1.21.1"
+}

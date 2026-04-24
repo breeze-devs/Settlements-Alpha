@@ -2,8 +2,8 @@ package dev.breezes.settlements.domain.generation.building;
 
 import dev.breezes.settlements.domain.generation.model.IntRange;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.building.BuildingManifest;
-import dev.breezes.settlements.domain.generation.model.building.FootprintConstraint;
 import dev.breezes.settlements.domain.generation.model.profile.DefenseLevel;
 import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.profile.SettlementProfile;
@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -271,7 +271,7 @@ class BuildingManifestCalculatorTest {
                 false,
                 requiresResources,
                 Set.of(),
-                new FootprintConstraint(1, 2, 1, 2),
+                new BuildingFootprint(2, 2),
                 Set.of(),
                 List.of(),
                 List.of(),

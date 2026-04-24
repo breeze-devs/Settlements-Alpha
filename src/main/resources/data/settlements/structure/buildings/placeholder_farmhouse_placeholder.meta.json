@@ -1,0 +1,13 @@
+{
+  "id": "d9401878-f7d8-4fa3-90cc-4e1ee4330098",
+  "building_definition": "settlements:building_definitions/farmhouse",
+  "tags": [],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Generated placeholder structure metadata.",
+  "width": 11,
+  "depth": 13,
+  "height": 8,
+  "min_minecraft_version": "1.21.1"
+}

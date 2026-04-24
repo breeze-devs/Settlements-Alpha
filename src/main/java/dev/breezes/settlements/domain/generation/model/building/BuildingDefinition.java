@@ -22,7 +22,7 @@ public final class BuildingDefinition {
     private final boolean requiresRoadFrontage;
     private final Set<ResourceTag> requiresResources;
     private final Set<ResourceTag> forbiddenResources;
-    private final FootprintConstraint footprint;
+    private final BuildingFootprint footprint;
     private final Set<String> preferredTags;
     private final List<ProximityAffinity> proximityAffinities;
     private final List<GlobalAffinity> globalAffinities;
@@ -38,7 +38,7 @@ public final class BuildingDefinition {
                               boolean requiresRoadFrontage,
                               Set<ResourceTag> requiresResources,
                               Set<ResourceTag> forbiddenResources,
-                              FootprintConstraint footprint,
+                              BuildingFootprint footprint,
                               Set<String> preferredTags,
                               List<ProximityAffinity> proximityAffinities,
                               List<GlobalAffinity> globalAffinities,
@@ -103,7 +103,7 @@ public final class BuildingDefinition {
         return this.forbiddenResources;
     }
 
-    public FootprintConstraint footprint() {
+    public BuildingFootprint footprint() {
         return this.footprint;
     }
 

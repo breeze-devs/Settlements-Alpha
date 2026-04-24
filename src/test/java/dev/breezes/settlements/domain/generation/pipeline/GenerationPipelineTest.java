@@ -8,10 +8,10 @@ import dev.breezes.settlements.domain.generation.history.HistoryEventRegistry;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.IntRange;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
-import dev.breezes.settlements.domain.generation.model.building.FootprintConstraint;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
-import dev.breezes.settlements.domain.generation.model.profile.TraitDefinition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
+import dev.breezes.settlements.domain.generation.model.profile.TraitDefinition;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
 import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
@@ -32,9 +32,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -145,7 +145,8 @@ class GenerationPipelineTest {
         return biomeId -> switch (biomeId.full()) {
             case "minecraft:plains" ->
                     new BiomeSurveyData(Map.of(ResourceTag.LUMBER, 0.1f, ResourceTag.FLORAL, 0.8f), null, Set.of());
-            case "minecraft:river" -> new BiomeSurveyData(Map.of(ResourceTag.FRESHWATER, 1.0f), WaterFeatureType.RIVER, Set.of());
+            case "minecraft:river" ->
+                    new BiomeSurveyData(Map.of(ResourceTag.FRESHWATER, 1.0f), WaterFeatureType.RIVER, Set.of());
             case "minecraft:stony_peaks" ->
                     new BiomeSurveyData(Map.of(ResourceTag.STONE, 0.9f, ResourceTag.ORE_BEARING, 0.7f), null, Set.of());
             default -> BiomeSurveyData.DEFAULT;
@@ -178,18 +179,18 @@ class GenerationPipelineTest {
 
     private static BuildingRegistry buildingRegistry() {
         List<BuildingDefinition> buildings = List.of(
-                building("settlements:building_definitions/town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of(), false, 7, 9, 7, 9),
-                building("settlements:building_definitions/well", Map.of(), TraitSlot.FLAVOR, 900, Set.of(), false, 3, 5, 3, 5),
-                building("settlements:building_definitions/tavern", Map.of(), TraitSlot.FLAVOR, 800, Set.of(), true, 6, 8, 6, 8),
-                building("settlements:building_definitions/market_stall", Map.of(), TraitSlot.FLAVOR, 700, Set.of(), true, 4, 5, 4, 5),
-                building("settlements:building_definitions/house", Map.of(), TraitSlot.FLAVOR, 10, Set.of(), true, 4, 6, 4, 6),
-                building("settlements:building_definitions/farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of(), true, 5, 7, 6, 8),
-                building("settlements:building_definitions/barn", Map.of(FARMING, 0.7f), TraitSlot.FLAVOR, 70, Set.of(), false, 5, 7, 5, 7),
-                building("settlements:building_definitions/dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.FRESHWATER), true, 6, 8, 8, 10),
-                building("settlements:building_definitions/fish_drying_rack", Map.of(FISHING, 0.6f), TraitSlot.FLAVOR, 60, Set.of(), true, 4, 5, 4, 5),
-                building("settlements:building_definitions/mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE), false, 6, 8, 6, 8),
-                building("settlements:building_definitions/smelter", Map.of(MINING, 0.7f), TraitSlot.FLAVOR, 75, Set.of(), false, 5, 7, 5, 7),
-                building("settlements:building_definitions/watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 85, Set.of(), false, 4, 6, 4, 6)
+                building("settlements:building_definitions/town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of(), false, 9, 9),
+                building("settlements:building_definitions/well", Map.of(), TraitSlot.FLAVOR, 900, Set.of(), false, 5, 5),
+                building("settlements:building_definitions/tavern", Map.of(), TraitSlot.FLAVOR, 800, Set.of(), true, 8, 8),
+                building("settlements:building_definitions/market_stall", Map.of(), TraitSlot.FLAVOR, 700, Set.of(), true, 5, 5),
+                building("settlements:building_definitions/house", Map.of(), TraitSlot.FLAVOR, 10, Set.of(), true, 6, 6),
+                building("settlements:building_definitions/farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of(), true, 7, 8),
+                building("settlements:building_definitions/barn", Map.of(FARMING, 0.7f), TraitSlot.FLAVOR, 70, Set.of(), false, 7, 7),
+                building("settlements:building_definitions/dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.FRESHWATER), true, 8, 10),
+                building("settlements:building_definitions/fish_drying_rack", Map.of(FISHING, 0.6f), TraitSlot.FLAVOR, 60, Set.of(), true, 5, 5),
+                building("settlements:building_definitions/mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE), false, 8, 8),
+                building("settlements:building_definitions/smelter", Map.of(MINING, 0.7f), TraitSlot.FLAVOR, 75, Set.of(), false, 7, 7),
+                building("settlements:building_definitions/watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 85, Set.of(), false, 6, 6)
         );
         return new TestBuildingRegistry(buildings);
     }
@@ -273,10 +274,8 @@ class GenerationPipelineTest {
                                                int priority,
                                                Set<ResourceTag> requiresResources,
                                                boolean roadFrontage,
-                                               int minWidth,
-                                               int maxWidth,
-                                               int minDepth,
-                                               int maxDepth) {
+                                               int width,
+                                               int depth) {
         return new BuildingDefinition(
                 id,
                 null,
@@ -287,7 +286,7 @@ class GenerationPipelineTest {
                 roadFrontage,
                 requiresResources,
                 Set.of(),
-                new FootprintConstraint(minWidth, maxWidth, minDepth, maxDepth),
+                new BuildingFootprint(width, depth),
                 Set.of(),
                 List.of(),
                 List.of(),

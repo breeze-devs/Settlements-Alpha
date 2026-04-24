@@ -63,7 +63,7 @@ public class RandomSearchPlacer extends BuildingPlacer {
                         context.terrainGrid(),
                         center,
                         facing,
-                        LayoutSupport.rollFootprint(building.footprint(), context.getRandom())
+                        building.footprint()
                 );
                 PlacementResult result = context.getValidator().evaluate(building, footprint);
                 if (!result.valid()) {

@@ -2,14 +2,15 @@ package dev.breezes.settlements.domain.generation.layout;
 
 import dev.breezes.settlements.domain.generation.model.building.BuildingAssignment;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.building.BuildingManifest;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.layout.RoadSegment;
-import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
-import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
 import dev.breezes.settlements.domain.generation.model.layout.ZoneTier;
 import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
+import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
+import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -83,9 +84,7 @@ class SettlementLayoutEngineTest {
                         Set.of(),
                         Set.of(ResourceTag.STONE),
                         false,
-                        6,
                         8,
-                        6,
                         8
                 )
         ));
@@ -251,7 +250,7 @@ class SettlementLayoutEngineTest {
                         assignment.plot().bounds(),
                         assignment.plot().targetY(),
                         assignment.plot().maxElevationDelta(),
-                        new LayoutSupport.BuildingFootprint(assignment.plot().bounds().widthX(), assignment.plot().bounds().widthZ()),
+                        new BuildingFootprint(assignment.plot().bounds().widthX(), assignment.plot().bounds().widthZ()),
                         assignment.facing(),
                         assignment.plot().bounds().centerXZ().withY(assignment.plot().targetY())
                 ),
@@ -302,9 +301,7 @@ class SettlementLayoutEngineTest {
                     100 - i,
                     Set.of(ResourceTag.STONE),
                     false,
-                    6,
                     8,
-                    6,
                     8
             ));
         }

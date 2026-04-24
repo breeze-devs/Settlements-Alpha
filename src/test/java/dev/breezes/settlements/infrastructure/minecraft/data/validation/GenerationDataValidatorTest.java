@@ -73,10 +73,8 @@ class GenerationDataValidatorTest {
                             "settlements:settlement_traits/farming": 1.0
                           },
                           "minimum_rank": "FLAVOR",
-                          "footprint_min_width": 1,
-                          "footprint_max_width": 2,
-                          "footprint_min_depth": 1,
-                          "footprint_max_depth": 2,
+                          "footprint_width": 2,
+                          "footprint_depth": 2,
                           "npc_profession": null,
                           "npc_count": 0
                         }
@@ -94,10 +92,8 @@ class GenerationDataValidatorTest {
                             "settlements:settlement_traits/unknown": 1.0
                           },
                           "minimum_rank": "FLAVOR",
-                          "footprint_min_width": 1,
-                          "footprint_max_width": 2,
-                          "footprint_min_depth": 1,
-                          "footprint_max_depth": 2,
+                          "footprint_width": 2,
+                          "footprint_depth": 2,
                           "npc_profession": null,
                           "npc_count": 0
                         }

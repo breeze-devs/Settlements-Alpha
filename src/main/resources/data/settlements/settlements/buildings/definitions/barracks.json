@@ -10,10 +10,8 @@
     "settlements:settlement_traits/defense": 0.8
   },
   "minimum_rank": "FLAVOR",
-  "footprint_min_width": 9,
-  "footprint_max_width": 13,
-  "footprint_min_depth": 9,
-  "footprint_max_depth": 13,
+  "footprint_width": 13,
+  "footprint_depth": 13,
   "npc_profession": null,
   "npc_count": 0
 }

@@ -37,9 +37,8 @@ public class HubPlacer extends BuildingPlacer {
 
         for (int attempt = 1; attempt <= this.maxAttempts; attempt++) {
             BlockPosition center = this.generatePlacementPosition(context, attempt);
-            LayoutSupport.BuildingFootprint rolled = LayoutSupport.rollFootprint(building.footprint(), context.getRandom());
             Direction facing = LayoutSupport.directionToward(center, context.getAnchor());
-            LayoutSupport.CandidateFootprint footprint = LayoutSupport.evaluateFootprint(context.terrainGrid(), center, facing, rolled);
+            LayoutSupport.CandidateFootprint footprint = LayoutSupport.evaluateFootprint(context.terrainGrid(), center, facing, building.footprint());
             PlacementResult result = context.getValidator().evaluate(building, footprint);
             if (result.valid()) {
                 BuildingAssignment assignment = this.createAssignment(context.getStartingPlotId(), building, null,

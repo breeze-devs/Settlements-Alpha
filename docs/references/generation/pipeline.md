@@ -282,7 +282,7 @@ All Phase A placements become "nuclei" — nodes the road network will connect.
 
 1. Walk each road segment (MAIN first, then SECONDARY, then SIDE), attempting placements on both
    sides.
-2. For each candidate, roll footprint dimensions, check conflicts, validate terrain flatness.
+2. For each candidate, use the building definition's fixed footprint, check conflicts, validate terrain flatness.
 3. Buildings face the road. Zone assigned by BFS road-graph distance from the planning center.
 4. Higher-priority buildings claim spots on earlier (more central) road segments.
 

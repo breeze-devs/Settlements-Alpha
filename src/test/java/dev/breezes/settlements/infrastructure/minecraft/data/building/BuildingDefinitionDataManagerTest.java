@@ -94,8 +94,8 @@ class BuildingDefinitionDataManagerTest {
     @Test
     void all_footprints_valid() {
         for (BuildingDefinition definition : this.manager.allBuildings()) {
-            assertTrue(definition.footprint().minWidth() <= definition.footprint().maxWidth());
-            assertTrue(definition.footprint().minDepth() <= definition.footprint().maxDepth());
+            assertTrue(definition.footprint().width() > 0);
+            assertTrue(definition.footprint().depth() > 0);
         }
     }
 
@@ -127,10 +127,8 @@ class BuildingDefinitionDataManagerTest {
                   "forbidden_resources": [],
                   "trait_affinities": {},
                   "minimum_rank": "FLAVOR",
-                  "footprint_min_width": 1,
-                  "footprint_max_width": 1,
-                  "footprint_min_depth": 1,
-                  "footprint_max_depth": 1,
+                  "footprint_width": 1,
+                  "footprint_depth": 1,
                   "npc_profession": null,
                   "npc_count": 0
                 }
@@ -155,10 +153,8 @@ class BuildingDefinitionDataManagerTest {
                   "forbidden_resources": [],
                   "trait_affinities": {},
                   "minimum_rank": "FLAVOR",
-                  "footprint_min_width": 1,
-                  "footprint_max_width": 1,
-                  "footprint_min_depth": 1,
-                  "footprint_max_depth": 1,
+                  "footprint_width": 1,
+                  "footprint_depth": 1,
                   "npc_profession": null,
                   "npc_count": 0
                 }
@@ -187,10 +183,8 @@ class BuildingDefinitionDataManagerTest {
                             "settlements:settlement_traits/lumber": 0.5
                           },
                           "minimum_rank": "FLAVOR",
-                          "footprint_min_width": 1,
-                          "footprint_max_width": 2,
-                          "footprint_min_depth": 1,
-                          "footprint_max_depth": 2,
+                          "footprint_width": 2,
+                          "footprint_depth": 2,
                           "npc_profession": null,
                           "npc_count": 0
                         }
@@ -218,10 +212,8 @@ class BuildingDefinitionDataManagerTest {
                           "forbidden_resources": [],
                           "trait_affinities": {},
                           "minimum_rank": "FLAVOR",
-                          "footprint_min_width": 1,
-                          "footprint_max_width": 2,
-                          "footprint_min_depth": 1,
-                          "footprint_max_depth": 2,
+                          "footprint_width": 2,
+                          "footprint_depth": 2,
                           "npc_profession": null,
                           "npc_count": 0
                         }
@@ -248,10 +240,8 @@ class BuildingDefinitionDataManagerTest {
                           "trait_affinities": {},
                           "minimum_rank": "FLAVOR",
                           "preferred_tags": ["taiga", "charred"],
-                          "footprint_min_width": 1,
-                          "footprint_max_width": 2,
-                          "footprint_min_depth": 1,
-                          "footprint_max_depth": 2,
+                          "footprint_width": 2,
+                          "footprint_depth": 2,
                           "npc_profession": null,
                           "npc_count": 0
                         }

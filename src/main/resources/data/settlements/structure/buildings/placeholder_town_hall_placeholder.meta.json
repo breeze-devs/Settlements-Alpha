@@ -1,0 +1,13 @@
+{
+  "id": "fa2ec290-55ab-40b1-bc50-719e87a7e982",
+  "building_definition": "settlements:building_definitions/town_hall",
+  "tags": [],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Generated placeholder structure metadata.",
+  "width": 13,
+  "depth": 15,
+  "height": 8,
+  "min_minecraft_version": "1.21.1"
+}

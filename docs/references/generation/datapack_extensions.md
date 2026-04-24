@@ -145,7 +145,7 @@ relationships. The full `BuildingDefinition` contract includes:
 | `requires_road_frontage` | If true, must be placed adjacent to a road                                     |
 | `requires_resources`     | Hard gate on local resources (OR logic)                                        |
 | `forbidden_resources`    | Hard veto — building cannot be placed where these resources are present        |
-| `footprint`              | Min/max width and depth                                                        |
+| `footprint`              | Fixed plot width and depth                                                     |
 | `preferred_tags`         | Building-specific string tags merged with biome/history tags during resolution |
 | `proximity_affinities`   | Distance-decaying probability bonus toward specific buildings                  |
 | `global_affinities`      | Existence-triggered probability boost from other buildings or traits           |

@@ -2,6 +2,7 @@ package dev.breezes.settlements.domain.generation.layout;
 
 import dev.breezes.settlements.domain.generation.model.building.BuildingAssignment;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.Direction;
 import dev.breezes.settlements.domain.generation.model.layout.RoadSegment;
@@ -66,18 +67,18 @@ public class RoadInfillPlacer extends BuildingPlacer {
 
                 while (!buildingQueue.isEmpty() && usedRoadLength <= roadLength) {
                     BuildingDefinition building = buildingQueue.peek();
-                    LayoutSupport.BuildingFootprint roll = LayoutSupport.rollFootprint(building.footprint(), context.getRandom());
+                    BuildingFootprint footprintShape = building.footprint();
 
                     double ratio = usedRoadLength / roadLength;
                     BlockPosition roadPoint = LayoutSupport.interpolateOnSegment(road.start(), road.end(), ratio, context.terrainGrid());
-                    int maxBuildingRadius = Math.max(roll.width(), roll.depth());
+                    int maxBuildingRadius = Math.max(footprintShape.width(), footprintShape.depth());
                     double lateralDistance = (LayoutSupport.roadWidth(road.type()) / 2.0d) + 1.0d + (maxBuildingRadius / 2.0d);
                     int candidateX = (int) Math.round(roadPoint.x() + perpendicularX * lateralDistance * side);
                     int candidateZ = (int) Math.round(roadPoint.z() + perpendicularZ * lateralDistance * side);
 
                     BlockPosition center = new BlockPosition(candidateX, context.terrainGrid().getHeightAtWorld(candidateX, candidateZ), candidateZ);
                     Direction facing = LayoutSupport.directionToward(center, roadPoint);
-                    LayoutSupport.CandidateFootprint footprint = LayoutSupport.evaluateFootprint(context.terrainGrid(), center, facing, roll);
+                    LayoutSupport.CandidateFootprint footprint = LayoutSupport.evaluateFootprint(context.terrainGrid(), center, facing, footprintShape);
                     PlacementResult result = context.getValidator().evaluate(building, footprint);
 
                     if (result.valid()) {

@@ -1,0 +1,13 @@
+{
+  "id": "94b51899-baa0-4ee0-b86d-56b87fd72398",
+  "building_definition": "settlements:building_definitions/sawmill",
+  "tags": [],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Generated placeholder structure metadata.",
+  "width": 11,
+  "depth": 13,
+  "height": 8,
+  "min_minecraft_version": "1.21.1"
+}

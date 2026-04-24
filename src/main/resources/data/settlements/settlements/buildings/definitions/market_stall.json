@@ -8,10 +8,8 @@
   "forbidden_resources": [],
   "trait_affinities": {},
   "minimum_rank": "FLAVOR",
-  "footprint_min_width": 3,
-  "footprint_max_width": 5,
-  "footprint_min_depth": 3,
-  "footprint_max_depth": 5,
+  "footprint_width": 5,
+  "footprint_depth": 5,
   "npc_profession": null,
   "npc_count": 0
 }

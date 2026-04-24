@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import dev.breezes.settlements.domain.generation.building.TemplateResolutionContext;
 import dev.breezes.settlements.domain.generation.building.TemplateResolver;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
-import dev.breezes.settlements.domain.generation.model.building.FootprintConstraint;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.building.ResolvedTemplate;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
 import lombok.AccessLevel;
@@ -134,7 +134,7 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
             return Optional.empty();
         }
 
-        FootprintConstraint footprint = definition.footprint();
+        BuildingFootprint footprint = definition.footprint();
         Set<String> contextTags = context.allRequestedTags();
         Set<String> prefTags = definition.preferredTags();
 

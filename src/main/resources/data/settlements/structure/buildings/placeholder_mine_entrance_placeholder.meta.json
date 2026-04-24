@@ -1,0 +1,13 @@
+{
+  "id": "3faf8da6-9059-40fe-b7dd-4c02fff4d3c8",
+  "building_definition": "settlements:building_definitions/mine_entrance",
+  "tags": [],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Generated placeholder structure metadata.",
+  "width": 11,
+  "depth": 13,
+  "height": 8,
+  "min_minecraft_version": "1.21.1"
+}

@@ -6,7 +6,7 @@ import com.google.gson.JsonElement;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.generation.model.IntRange;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
-import dev.breezes.settlements.domain.generation.model.building.FootprintConstraint;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
 import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
@@ -159,25 +159,11 @@ public class BuildingDefinitionDataManager extends SimpleJsonResourceReloadListe
         if (entry.getId() == null || entry.getId().isBlank()) {
             throw new IllegalArgumentException("missing id");
         }
-        if (entry.getPlacementPriority() == null) {
-            throw new IllegalArgumentException("missing placement_priority");
-        }
-        if (entry.getZoneTierMin() == null || entry.getZoneTierMax() == null) {
-            throw new IllegalArgumentException("missing zone tier bounds");
-        }
         if (entry.getZoneTierMin() < 0 || entry.getZoneTierMax() > 4) {
             throw new IllegalArgumentException("zone tier bounds must be within 0-4");
         }
         if (entry.getZoneTierMin() > entry.getZoneTierMax()) {
             throw new IllegalArgumentException("zone_tier_min must be <= zone_tier_max");
-        }
-        if (entry.getFootprintMinWidth() == null || entry.getFootprintMaxWidth() == null
-                || entry.getFootprintMinDepth() == null || entry.getFootprintMaxDepth() == null) {
-            throw new IllegalArgumentException("missing footprint bounds");
-        }
-        if (entry.getFootprintMinWidth() > entry.getFootprintMaxWidth()
-                || entry.getFootprintMinDepth() > entry.getFootprintMaxDepth()) {
-            throw new IllegalArgumentException("footprint min dimensions must be <= max dimensions");
         }
 
         return BuildingDefinition.builder()
@@ -187,20 +173,18 @@ public class BuildingDefinitionDataManager extends SimpleJsonResourceReloadListe
                 .minimumRank(parseMinimumRank(entry.getMinimumRank(), fileId))
                 .placementPriority(entry.getPlacementPriority())
                 .zoneTierPreference(IntRange.of(entry.getZoneTierMin(), entry.getZoneTierMax()))
-                .requiresRoadFrontage(Boolean.TRUE.equals(entry.getRequiresRoadFrontage()))
+                .requiresRoadFrontage(entry.isRequiresRoadFrontage())
                 .requiresResources(parseResourceTags(entry.getRequiresResources(), fileId, "required resource"))
                 .forbiddenResources(parseResourceTags(entry.getForbiddenResources(), fileId, "forbidden resource"))
-                .footprint(FootprintConstraint.builder()
-                        .minWidth(entry.getFootprintMinWidth())
-                        .maxWidth(entry.getFootprintMaxWidth())
-                        .minDepth(entry.getFootprintMinDepth())
-                        .maxDepth(entry.getFootprintMaxDepth())
+                .footprint(BuildingFootprint.builder()
+                        .width(entry.getFootprintWidth())
+                        .depth(entry.getFootprintDepth())
                         .build())
                 .preferredTags(parsePreferredTags(entry.getPreferredTags(), fileId))
                 .proximityAffinities(List.of())
                 .globalAffinities(List.of())
                 .npcProfession(entry.getNpcProfession())
-                .npcCount(entry.getNpcCount() == null ? 0 : entry.getNpcCount())
+                .npcCount(entry.getNpcCount())
                 .build();
     }
 

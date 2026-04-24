@@ -2,9 +2,9 @@ package dev.breezes.settlements.domain.generation.model;
 
 import dev.breezes.settlements.domain.common.BiomeId;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.building.BuildingManifest;
 import dev.breezes.settlements.domain.generation.model.building.DisplayInfo;
-import dev.breezes.settlements.domain.generation.model.building.FootprintConstraint;
 import dev.breezes.settlements.domain.generation.model.building.GlobalAffinity;
 import dev.breezes.settlements.domain.generation.model.building.ProximityAffinity;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
@@ -105,13 +105,14 @@ class GenerationModelDataObjectsTest {
                 true,
                 Set.of(ResourceTag.FRESHWATER)
         );
-        FootprintConstraint footprint = new FootprintConstraint(7, 9, 7, 11);
+        BuildingFootprint footprint = new BuildingFootprint(9, 11);
 
         assertEquals(ZoneTier.SUBURB, plot.zone());
         assertEquals(65, plot.targetY());
         assertTrue(plot.roadFrontage());
         assertTrue(plot.localResources().contains(ResourceTag.FRESHWATER));
         assertTrue(footprint.fits(8, 9));
+        assertTrue(footprint.fits(1, 1));
         assertFalse(footprint.fits(10, 9));
     }
 
@@ -127,7 +128,7 @@ class GenerationModelDataObjectsTest {
                 false,
                 Set.of(ResourceTag.LUMBER),
                 Set.of(),
-                new FootprintConstraint(7, 11, 9, 13),
+                new BuildingFootprint(11, 13),
                 Set.of("default"),
                 List.of(new ProximityAffinity("settlements:building_definitions/log_storage", 0.5f, 0.8f)),
                 List.of(new GlobalAffinity("trait:settlements:settlement_traits/lumber", 0.6f)),
@@ -154,7 +155,7 @@ class GenerationModelDataObjectsTest {
                 false,
                 Set.of(),
                 Set.of(),
-                new FootprintConstraint(1, 2, 1, 2),
+                new BuildingFootprint(2, 2),
                 Set.of(),
                 List.of(),
                 List.of(),

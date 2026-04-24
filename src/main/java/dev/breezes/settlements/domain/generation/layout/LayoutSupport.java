@@ -1,8 +1,8 @@
 package dev.breezes.settlements.domain.generation.layout;
 
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.building.BuildingManifest;
-import dev.breezes.settlements.domain.generation.model.building.FootprintConstraint;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.geometry.Direction;
@@ -20,21 +20,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 public final class LayoutSupport {
 
     static final int FLATNESS_THRESHOLD = 5;
-
-    /**
-     * Rolls a concrete width and depth for a building footprint within its constraint bounds.
-     */
-    public static BuildingFootprint rollFootprint(FootprintConstraint footprint, Random random) {
-        int width = random.nextInt(footprint.minWidth(), footprint.maxWidth() + 1);
-        int depth = random.nextInt(footprint.minDepth(), footprint.maxDepth() + 1);
-        return new BuildingFootprint(width, depth);
-    }
 
     /**
      * Samples terrain heights across the full XZ footprint centred on {@code center} and
@@ -317,9 +307,6 @@ public final class LayoutSupport {
 
     private static boolean usesWidthOnX(Direction facing) {
         return facing == Direction.NORTH || facing == Direction.SOUTH;
-    }
-
-    public record BuildingFootprint(int width, int depth) {
     }
 
     public record CandidateFootprint(

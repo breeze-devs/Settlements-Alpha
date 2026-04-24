@@ -1,0 +1,13 @@
+{
+  "id": "40682cdd-10f9-4b85-8a94-f21eadb9c013",
+  "building_definition": "settlements:building_definitions/well",
+  "tags": [],
+  "authors": [
+    "breeze"
+  ],
+  "notes": "Generated placeholder structure metadata.",
+  "width": 5,
+  "depth": 5,
+  "height": 8,
+  "min_minecraft_version": "1.21.1"
+}

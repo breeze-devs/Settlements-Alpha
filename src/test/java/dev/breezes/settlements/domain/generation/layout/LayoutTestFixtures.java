@@ -3,7 +3,7 @@ package dev.breezes.settlements.domain.generation.layout;
 import dev.breezes.settlements.domain.common.BiomeId;
 import dev.breezes.settlements.domain.generation.model.IntRange;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
-import dev.breezes.settlements.domain.generation.model.building.FootprintConstraint;
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.profile.DefenseLevel;
@@ -245,31 +245,31 @@ final class LayoutTestFixtures {
     }
 
     static BuildingDefinition townHall() {
-        return building("settlements:building_definitions/town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of(), false, 7, 9, 7, 9);
+        return building("settlements:building_definitions/town_hall", Map.of(), TraitSlot.FLAVOR, 1000, Set.of(), false, 9, 9);
     }
 
     static BuildingDefinition well() {
-        return building("settlements:building_definitions/well", Map.of(), TraitSlot.FLAVOR, 900, Set.of(), false, 3, 5, 3, 5);
+        return building("settlements:building_definitions/well", Map.of(), TraitSlot.FLAVOR, 900, Set.of(), false, 5, 5);
     }
 
     static BuildingDefinition dock() {
-        return building("settlements:building_definitions/dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.FRESHWATER), true, 6, 8, 8, 10);
+        return building("settlements:building_definitions/dock", Map.of(FISHING, 1.0f), TraitSlot.FLAVOR, 120, Set.of(ResourceTag.FRESHWATER), true, 8, 10);
     }
 
     static BuildingDefinition mine() {
-        return building("settlements:building_definitions/mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE), false, 6, 8, 6, 8);
+        return building("settlements:building_definitions/mine_entrance", Map.of(MINING, 1.0f), TraitSlot.FLAVOR, 115, Set.of(ResourceTag.STONE), false, 8, 8);
     }
 
     static BuildingDefinition farmhouse() {
-        return building("settlements:building_definitions/farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of(), true, 5, 7, 6, 8);
+        return building("settlements:building_definitions/farmhouse", Map.of(FARMING, 1.0f), TraitSlot.FLAVOR, 90, Set.of(), true, 7, 8);
     }
 
     static BuildingDefinition watchtower() {
-        return building("settlements:building_definitions/watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 85, Set.of(), false, 4, 6, 4, 6);
+        return building("settlements:building_definitions/watchtower", Map.of(DEFENSE, 1.0f), TraitSlot.FLAVOR, 85, Set.of(), false, 6, 6);
     }
 
     static BuildingDefinition house() {
-        return building("settlements:building_definitions/house", Map.of(), TraitSlot.FLAVOR, 10, Set.of(), true, 4, 6, 4, 6);
+        return building("settlements:building_definitions/house", Map.of(), TraitSlot.FLAVOR, 10, Set.of(), true, 6, 6);
     }
 
     static BuildingDefinition building(String id,
@@ -278,11 +278,9 @@ final class LayoutTestFixtures {
                                        int priority,
                                        Set<ResourceTag> requiresResources,
                                        boolean roadFrontage,
-                                       int minWidth,
-                                       int maxWidth,
-                                       int minDepth,
-                                       int maxDepth) {
-        return building(id, affinities, minimumRank, priority, requiresResources, Set.of(), roadFrontage, minWidth, maxWidth, minDepth, maxDepth);
+                                       int width,
+                                       int depth) {
+        return building(id, affinities, minimumRank, priority, requiresResources, Set.of(), roadFrontage, width, depth);
     }
 
     static BuildingDefinition building(String id,
@@ -292,10 +290,8 @@ final class LayoutTestFixtures {
                                        Set<ResourceTag> requiresResources,
                                        Set<ResourceTag> forbiddenResources,
                                        boolean roadFrontage,
-                                       int minWidth,
-                                       int maxWidth,
-                                       int minDepth,
-                                       int maxDepth) {
+                                       int width,
+                                       int depth) {
         return new BuildingDefinition(
                 id,
                 null,
@@ -306,7 +302,7 @@ final class LayoutTestFixtures {
                 roadFrontage,
                 requiresResources,
                 forbiddenResources,
-                new FootprintConstraint(minWidth, maxWidth, minDepth, maxDepth),
+                new BuildingFootprint(width, depth),
                 Set.of(),
                 List.of(),
                 List.of(),

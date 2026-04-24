@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.generation.layout;
 
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.geometry.Direction;
@@ -50,7 +51,7 @@ class PlacementValidatorTest {
                 BoundingRegion.of(new BlockPosition(10, 64, 10), new BlockPosition(12, 70, 12)),
                 64,
                 6,
-                new LayoutSupport.BuildingFootprint(3, 3),
+                new BuildingFootprint(3, 3),
                 Direction.NORTH,
                 new BlockPosition(11, 64, 11)
         );
@@ -104,8 +105,6 @@ class PlacementValidatorTest {
                         Set.of(),
                         Set.of(ResourceTag.STONE),
                         false,
-                        4,
-                        4,
                         4,
                         4
                 ),
@@ -164,7 +163,7 @@ class PlacementValidatorTest {
     private static LayoutSupport.CandidateFootprint flatFootprint(int centerX, int centerZ, int width, int depth) {
         TerrainGrid grid = LayoutTestFixtures.standardReport().terrainGrid();
         BlockPosition center = new BlockPosition(centerX, grid.getHeightAtWorld(centerX, centerZ), centerZ);
-        return LayoutSupport.evaluateFootprint(grid, center, Direction.NORTH, new LayoutSupport.BuildingFootprint(width, depth));
+        return LayoutSupport.evaluateFootprint(grid, center, Direction.NORTH, new BuildingFootprint(width, depth));
     }
 
     private static final class TrackingScanner extends LocalResourceScanner {

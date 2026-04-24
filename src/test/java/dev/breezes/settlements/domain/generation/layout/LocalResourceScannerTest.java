@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.generation.layout;
 
+import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.Direction;
 import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
@@ -42,7 +43,7 @@ class LocalResourceScannerTest {
                 grid,
                 new BlockPosition(14, grid.getHeightAtWorld(14, 30), 30),
                 Direction.NORTH,
-                new LayoutSupport.BuildingFootprint(3, 3)
+                new BuildingFootprint(3, 3)
         );
 
         assertTrue(LayoutSupport.isOnWater(grid, scanner, edgeTouchingFootprint, false));
