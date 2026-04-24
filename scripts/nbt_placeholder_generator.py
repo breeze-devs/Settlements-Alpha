@@ -15,11 +15,10 @@ Example usages:
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
-
+import json
 import nbtlib
-from nbtlib.tag import Compound, Int, List, String
-
+from nbtlib.tag import Byte, Compound, Int, List, String
+from pathlib import Path
 
 DATA_VERSION = 3955
 
@@ -32,10 +31,10 @@ def _sanitize_file_component(value: str) -> str:
 
 
 def _get_or_create_palette_index(
-    palette: List[Compound],
-    palette_indices: dict[tuple[str, tuple[tuple[str, str], ...]], int],
-    block_name: str,
-    properties: dict[str, str] | None = None,
+        palette: List[Compound],
+        palette_indices: dict[tuple[str, tuple[tuple[str, str], ...]], int],
+        block_name: str,
+        properties: dict[str, str] | None = None,
 ) -> int:
     """Return a stable palette index for a block state, creating it on first use.
 
@@ -63,16 +62,30 @@ def _get_or_create_palette_index(
 def _build_sign_lines(first_line: str = "") -> List[String]:
     """Create a fresh four-line sign message list for one sign instance.
 
-    Fresh tag instances matter here because NBT tags are container objects. Reusing the same
-    ``List[String]`` across multiple sign compounds can lead to serialization behavior that does
-    not mirror the per-sign data layout Minecraft expects.
+    We construct the list explicitly as a TAG_List of TAG_String because the sign codec is strict:
+    it expects exactly four string entries for both ``front_text.messages`` and
+    ``back_text.messages``.
     """
+    # Each message must be a JSON-encoded text component, not a raw string.
+    # An empty "" fails parsing as null; the JSON form of an empty string is the two chars "".
+    empty = json.dumps("")
     return List[String]([
-        String(first_line),
-        String(""),
-        String(""),
-        String(""),
+        String(json.dumps(first_line)),
+        String(empty),
+        String(empty),
+        String(empty),
     ])
+
+
+def _build_sign_text(first_line: str = "") -> Compound:
+    """Create one sign text compound matching the working structure layout exactly."""
+    return Compound(
+        {
+            "has_glowing_text": Byte(0),
+            "color": String("black"),
+            "messages": _build_sign_lines(first_line),
+        }
+    )
 
 
 def generate_placeholder_structure(width: int, depth: int, height: int, name: str) -> Path:
@@ -154,21 +167,9 @@ def generate_placeholder_structure(width: int, depth: int, height: int, name: st
                     "nbt": Compound(
                         {
                             "id": String("minecraft:sign"),
-                            "is_waxed": nbtlib.Byte(0),
-                            "front_text": Compound(
-                                {
-                                    "has_glowing_text": nbtlib.Byte(0),
-                                    "color": String("black"),
-                                    "messages": _build_sign_lines(name),
-                                }
-                            ),
-                            "back_text": Compound(
-                                {
-                                    "has_glowing_text": nbtlib.Byte(0),
-                                    "color": String("black"),
-                                    "messages": _build_sign_lines(),
-                                }
-                            ),
+                            "is_waxed": Byte(0),
+                            "front_text": _build_sign_text(name),
+                            "back_text": _build_sign_text(),
                         }
                     ),
                 }
