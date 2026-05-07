@@ -129,8 +129,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         try {
             this.tickBehavior(delta, world, entity);
         } catch (StopBehaviorException e) {
-            log.behaviorStatus("Behavior stop requested by exception");
-            this.requestStop();
+            this.requestStop("Behavior stop requested by exception");
         }
 
         // No cooldown for checking continue conditions
@@ -155,13 +154,13 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
     }
 
     @Override
-    public void requestStop() {
+    public void requestStop(@Nonnull String reason) {
         if (this.stopRequested) {
             log.behaviorTrace("Ignoring stop request since behavior is already stopping");
             return;
         }
 
-        log.behaviorStatus("Requesting to stop behavior");
+        log.behaviorStatus("Requesting to stop behavior: {}", reason);
         this.stopRequested = true;
     }
 

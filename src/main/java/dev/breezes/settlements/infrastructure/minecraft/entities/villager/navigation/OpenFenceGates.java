@@ -1,10 +1,10 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.villager.navigation;
 
 import com.google.common.collect.Sets;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.ai.brain.CustomMemoryModuleType;
-import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -24,7 +24,13 @@ import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 public class OpenFenceGates extends OneShot<Villager> {
     private static final int COOLDOWN_BEFORE_RERUNNING_IN_SAME_NODE = 20;
@@ -95,19 +101,20 @@ public class OpenFenceGates extends OneShot<Villager> {
         closeRelevantFenceGates(level, villager, toCheck);
         return triggered;
     }
+
     private static void rememberFenceGateToClose(ServerLevel level, BaseVillager villager, BlockPos toClose) {
         GlobalPos globalPos = GlobalPos.of(level.dimension(), toClose);
         Brain<Villager> brain = villager.getBrain();
 
         // If there are no memory of fence gates, create new memory
-        if (!brain.hasMemoryValue(CustomMemoryModuleType.FENCE_GATES_TO_CLOSE)) {
+        if (!brain.hasMemoryValue(MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType())) {
             Set<GlobalPos> memory = Sets.newHashSet(globalPos);
-            brain.setMemory(CustomMemoryModuleType.FENCE_GATES_TO_CLOSE, Optional.of(memory));
+            brain.setMemory(MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType(), Optional.of(memory));
             return;
         }
 
         // Otherwise, add to the existing memory
-        Set<GlobalPos> memory = villager.getBrain().getMemory(CustomMemoryModuleType.FENCE_GATES_TO_CLOSE).get();
+        Set<GlobalPos> memory = villager.getBrain().getMemory(MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType()).get();
         memory.add(globalPos);
     }
 
@@ -115,10 +122,10 @@ public class OpenFenceGates extends OneShot<Villager> {
         Brain<Villager> brain = villager.getBrain();
 
         // If there are no memory, ignore
-        if (!brain.hasMemoryValue(CustomMemoryModuleType.FENCE_GATES_TO_CLOSE)) return;
+        if (!brain.hasMemoryValue(MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType())) return;
 
         // Loop through each remembered position
-        Set<GlobalPos> memory = villager.getBrain().getMemory(CustomMemoryModuleType.FENCE_GATES_TO_CLOSE).get();
+        Set<GlobalPos> memory = villager.getBrain().getMemory(MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType()).get();
         Iterator<GlobalPos> iterator = memory.iterator();
         while (iterator.hasNext()) {
             GlobalPos pos = iterator.next();
@@ -169,7 +176,7 @@ public class OpenFenceGates extends OneShot<Villager> {
 
         level.setBlock(pos, state.setValue(FenceGateBlock.OPEN, toOpen), 10);
 
-        if(toOpen) SoundRegistry.OPEN_FENCE_GATE.playGlobally(Location.of(pos, level), SoundSource.BLOCKS);
+        if (toOpen) SoundRegistry.OPEN_FENCE_GATE.playGlobally(Location.of(pos, level), SoundSource.BLOCKS);
         else SoundRegistry.CLOSE_FENCE_GATE.playGlobally(Location.of(pos, level), SoundSource.BLOCKS);
 
         level.gameEvent(entity, toOpen ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);

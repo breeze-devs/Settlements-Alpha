@@ -6,8 +6,6 @@ import javax.annotation.Nonnull;
 
 public interface IBehaviorInfoProvider {
 
-    BehaviorDescriptor getBehaviorDescriptor();
-
     BehaviorRuntimeInformation getBehaviorRuntimeInformation(@Nonnull BaseVillager villager);
 
 }

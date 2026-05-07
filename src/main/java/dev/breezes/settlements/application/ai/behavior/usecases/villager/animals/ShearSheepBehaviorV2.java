@@ -16,7 +16,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
@@ -32,7 +31,6 @@ import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
@@ -57,6 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ShearSheepBehaviorV2 extends StateMachineBehavior {
 
     private static final String BUBBLE_OWNER_KEY = "behavior:shear_sheep";
+    private static final String DISPLAY_NAME_KEY = "ui.settlements.behavior.behavior.shear_sheep";
     private static final Ticks BUBBLE_TTL = Ticks.seconds(30);
     private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
 
@@ -85,8 +84,6 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
 
     private final ShearSheepConfig config;
     private final DemandSignalService demandSignalService;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
 
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
     private final AtomicInteger shearCount;
@@ -98,11 +95,6 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
 
         this.config = config;
         this.demandSignalService = demandSignalService;
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.shear_sheep")
-                .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
-                .displaySuffix(null)
-                .build();
         this.shearCount = new AtomicInteger(0);
 
         // Create behavior preconditions
@@ -233,7 +225,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
         log.behaviorStatus("Villager is '{}' level, maximum shear count is {}", expertise.toString(), limit);
 
         if (!this.ensureShearsAvailable(entity)) {
-            this.requestStop();
+            this.requestStop("No shears available");
             return;
         }
 
@@ -251,7 +243,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
 
         log.behaviorStatus("Emitting demand signal for {}", SHEARS_ITEM_ID);
         this.demandSignalService.emit(villager, new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, null,
-                this.getBehaviorDescriptor().displayNameKey(), villager.level().getGameTime());
+                DISPLAY_NAME_KEY, villager.level().getGameTime());
         return false;
     }
 

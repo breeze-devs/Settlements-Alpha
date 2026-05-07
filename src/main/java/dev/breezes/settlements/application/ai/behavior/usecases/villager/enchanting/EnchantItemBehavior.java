@@ -14,7 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBlockExistsCondition;
@@ -27,10 +26,8 @@ import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
@@ -56,8 +53,6 @@ public class EnchantItemBehavior extends StateMachineBehavior {
     private static final int MAX_BOOKSHELF_COUNT = 15;
 
     private final EnchantItemConfig config;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
     private final NearbyBlockExistsCondition<BaseVillager> nearbyEnchantingTableCondition;
     private final EnchantmentEngine enchantmentEngine;
 
@@ -71,11 +66,6 @@ public class EnchantItemBehavior extends StateMachineBehavior {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.enchant_item")
-                .iconItemId(ResourceLocation.withDefaultNamespace("enchanting_table"))
-                .displaySuffix(null)
-                .build();
 
         this.nearbyEnchantingTableCondition = new NearbyBlockExistsCondition<>(
                 config.scanRangeHorizontal(),
@@ -139,14 +129,14 @@ public class EnchantItemBehavior extends StateMachineBehavior {
         this.enchantingTablePos = this.nearbyEnchantingTableCondition.getTargets().getFirst();
         if (this.enchantingTablePos == null) {
             log.behaviorError("Unable to find enchanting table position");
-            this.requestStop();
+            this.requestStop("Unable to find enchanting table position");
             return;
         }
 
         this.targetSlot = this.findFirstEnchantableNonEnchantedSlot(entity.getSettlementsInventory()).orElse(-1);
         if (this.targetSlot < 0) {
             log.behaviorError("Invalid enchanting slot: {}", this.targetSlot);
-            this.requestStop();
+            this.requestStop("Invalid enchanting slot");
             return;
         }
 

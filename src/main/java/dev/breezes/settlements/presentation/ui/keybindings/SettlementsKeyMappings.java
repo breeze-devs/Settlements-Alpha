@@ -30,4 +30,11 @@ public final class SettlementsKeyMappings {
             KEY_CATEGORY
     );
 
+    public static final KeyMapping OPEN_DAY_PLAN = new KeyMapping(
+            "key.settlements.open_day_plan",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_C,
+            KEY_CATEGORY
+    );
+
 }

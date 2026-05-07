@@ -23,15 +23,12 @@ import dev.breezes.settlements.application.economy.demand.ActiveDemand;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
-import lombok.Getter;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -63,8 +60,6 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
     private static final double TRADE_CLOSE_ENOUGH_DISTANCE = 3.0D;
 
     private final TradingConfig config;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
     private final TradeSessionRegistry sessionRegistry;
     private final TradeCatalogRegistry tradeCatalogRegistry;
     private final TradePriceResolver tradePriceResolver;
@@ -103,11 +98,6 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
                         Ticks.seconds(config.initiateBehaviorCooldownSecondsMin())),
                 hungerConfig);
         this.config = config;
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.trade_initiate")
-                .iconItemId(ResourceLocation.withDefaultNamespace("emerald"))
-                .displaySuffix(null)
-                .build();
 
         this.sessionRegistry = sessionRegistry;
         this.tradeCatalogRegistry = tradeCatalogRegistry;

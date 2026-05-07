@@ -18,12 +18,6 @@ public final class BehaviorRowSnapshotCodec {
     public static BehaviorRowSnapshot read(@Nonnull FriendlyByteBuf buffer) {
         String behaviorId = buffer.readUtf(MAX_TEXT_LENGTH);
         String displayNameKey = buffer.readUtf(MAX_TEXT_LENGTH);
-
-        String displaySuffix = null;
-        if (buffer.readBoolean()) {
-            displaySuffix = buffer.readUtf(MAX_TEXT_LENGTH);
-        }
-
         ResourceLocation iconItemId = buffer.readResourceLocation();
         int priority = buffer.readInt();
         int uiBehaviorIndex = buffer.readInt();
@@ -50,7 +44,6 @@ public final class BehaviorRowSnapshotCodec {
         return BehaviorRowSnapshot.builder()
                 .behaviorId(behaviorId)
                 .displayNameKey(displayNameKey)
-                .displaySuffix(displaySuffix)
                 .iconItemId(iconItemId)
                 .priority(priority)
                 .uiBehaviorIndex(uiBehaviorIndex)
@@ -65,13 +58,6 @@ public final class BehaviorRowSnapshotCodec {
     public static void write(@Nonnull FriendlyByteBuf buffer, @Nonnull BehaviorRowSnapshot row) {
         buffer.writeUtf(row.behaviorId(), MAX_TEXT_LENGTH);
         buffer.writeUtf(row.displayNameKey(), MAX_TEXT_LENGTH);
-
-        boolean hasDisplaySuffix = row.displaySuffix() != null;
-        buffer.writeBoolean(hasDisplaySuffix);
-        if (hasDisplaySuffix) {
-            buffer.writeUtf(row.displaySuffix(), MAX_TEXT_LENGTH);
-        }
-
         buffer.writeResourceLocation(row.iconItemId());
         buffer.writeInt(row.priority());
         buffer.writeInt(row.uiBehaviorIndex());

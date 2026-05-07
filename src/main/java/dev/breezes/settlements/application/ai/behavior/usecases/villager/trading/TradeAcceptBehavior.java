@@ -15,14 +15,11 @@ import dev.breezes.settlements.application.ai.trading.TradeSessionPhase;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
-import lombok.Getter;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
@@ -41,8 +38,6 @@ public final class TradeAcceptBehavior extends StateMachineBehavior {
 
     private final TradeSessionRegistry sessionRegistry;
     private final TradeSessionPresenter tradeSessionPresenter;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
 
     @Nullable
     private PresentationSignature lastObservedSignature;
@@ -59,11 +54,6 @@ public final class TradeAcceptBehavior extends StateMachineBehavior {
                 hungerConfig);
         this.sessionRegistry = sessionRegistry;
         this.tradeSessionPresenter = tradeSessionPresenter;
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.trade_accept")
-                .iconItemId(ResourceLocation.withDefaultNamespace("emerald"))
-                .displaySuffix(null)
-                .build();
 
         this.preconditions.add(this.hasTradeToMirror());
         this.initializeStateMachine(
@@ -115,7 +105,6 @@ public final class TradeAcceptBehavior extends StateMachineBehavior {
         TradeSession session = this.sessionRegistry.getActiveSession(self.getUUID()).orElse(null);
         if (session == null) {
             log.behaviorWarn("Trade session is null, stopping the behavior");
-            this.requestStop();
             return StepResult.fail("Trade session is null");
         }
 

@@ -6,18 +6,15 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.food.FoodProperties;
@@ -40,9 +37,6 @@ public class EatFoodBehavior extends StateMachineBehavior {
     private static final Ticks PARTICLE_MAX_INTERVAL = Ticks.of(12);
     private static final Ticks PARTICLE_MIN_INTERVAL = Ticks.of(8);
 
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
-
     @Nullable
     private ItemStack selectedFood;
     private int selectedFoodSlot;
@@ -52,14 +46,9 @@ public class EatFoodBehavior extends StateMachineBehavior {
     public EatFoodBehavior(@Nonnull HungerConfig hungerConfig) {
         super(log, Ticks.seconds(10).asTickable(), Ticks.seconds(20).asTickable(), hungerConfig);
 
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.eat_food")
-                .iconItemId(ResourceLocation.withDefaultNamespace("bread"))
-                .displaySuffix(null)
-                .build();
-
         this.preconditions.add(villager -> villager.getHunger() < hungerConfig.eatPriorityThreshold());
         this.preconditions.add(villager -> this.findFirstFoodSlot(villager.getSettlementsInventory()) >= 0);
+        this.preconditions.add(villager -> !villager.isSleeping());
 
         this.selectedFoodSlot = -1;
         this.selectedFood = null;

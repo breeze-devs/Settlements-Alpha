@@ -14,7 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
@@ -29,7 +28,6 @@ import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -63,7 +61,6 @@ public class CutStoneBehavior extends StateMachineBehavior {
         END;
     }
 
-    private final BehaviorDescriptor behaviorDescriptor;
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     @Nullable
     private PhysicalBlock stoneCutter;
@@ -85,12 +82,6 @@ public class CutStoneBehavior extends StateMachineBehavior {
                             HungerConfig hungerConfig) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.cut_stone")
-                .iconItemId(ResourceLocation.withDefaultNamespace("stonecutter"))
-                .displaySuffix(null)
-                .build();
-
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER));
         this.preconditions.add(this.jobSiteBlockExistsCondition);
@@ -105,11 +96,6 @@ public class CutStoneBehavior extends StateMachineBehavior {
         this.finalMatrix = null;
 
         this.initializeStateMachine(this.createControlStep(), CutStage.END);
-    }
-
-    @Override
-    public BehaviorDescriptor getBehaviorDescriptor() {
-        return this.behaviorDescriptor;
     }
 
     protected StagedStep createControlStep() {
@@ -127,7 +113,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
                                    @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext context) {
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
-            this.requestStop();
+            this.requestStop("No stone-cutter block found at job site");
             return;
         }
 
@@ -147,7 +133,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
             this.finalMatrix = this.getMatrix(0, axisDirection * ANIMATION_OFFSET);
         } else {
             log.error("Unexpected axis '{}' for stone-cutter block at location {}", axis, this.stoneCutter.getLocation(false));
-            this.requestStop();
+            this.requestStop("Unexpected axis for stone-cutter block");
             return;
         }
 

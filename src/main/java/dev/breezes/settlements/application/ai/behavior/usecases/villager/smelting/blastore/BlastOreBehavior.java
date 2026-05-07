@@ -14,7 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.time.Ticks;
@@ -26,10 +25,8 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import dev.breezes.settlements.infrastructure.minecraft.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.LockCode;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -76,8 +73,6 @@ public class BlastOreBehavior extends StateMachineBehavior {
 
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     private final BlastRecipeAvailableCondition blastRecipeAvailableCondition;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
 
     @Nullable
     private PhysicalBlock blastFurnace;
@@ -87,12 +82,6 @@ public class BlastOreBehavior extends StateMachineBehavior {
     public BlastOreBehavior(BlastOreConfig config,
                             HungerConfig hungerConfig) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
-
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.blast_ore")
-                .iconItemId(ResourceLocation.withDefaultNamespace("blast_furnace"))
-                .displaySuffix(null)
-                .build();
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));
@@ -123,15 +112,14 @@ public class BlastOreBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext context) {
-
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
-            this.requestStop();
+            this.requestStop("No blast furnace block found at job site");
             return;
         }
         this.blastFurnace = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
         List<BlastOreRecipe> validRecipes = this.blastRecipeAvailableCondition.getValidRecipes();
         if (validRecipes.isEmpty()) {
-            this.requestStop();
+            this.requestStop("No valid blast-ore recipes available");
             return;
         }
 

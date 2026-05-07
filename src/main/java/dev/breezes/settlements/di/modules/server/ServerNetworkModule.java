@@ -17,9 +17,30 @@ import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundCloseVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundHeartbeatVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundOpenVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ServerBoundCloseUiPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ServerBoundHeartbeatUiPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ServerBoundOpenUiPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundCloseUiPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundHeartbeatUiPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundOpenUiPacket;
 
 @Module
 public abstract class ServerNetworkModule {
+
+    @Binds
+    @IntoMap
+    @ClassKey(ServerBoundOpenUiPacket.class)
+    abstract ServerSidePacketHandler<?> openUi(ServerBoundOpenUiPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ServerBoundCloseUiPacket.class)
+    abstract ServerSidePacketHandler<?> closeUi(ServerBoundCloseUiPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ServerBoundHeartbeatUiPacket.class)
+    abstract ServerSidePacketHandler<?> heartbeatUi(ServerBoundHeartbeatUiPacketHandler impl);
 
     @Binds
     @IntoMap

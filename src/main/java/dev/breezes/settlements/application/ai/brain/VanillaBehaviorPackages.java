@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.navigation.OpenFenceGates;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
@@ -20,7 +19,6 @@ import net.minecraft.world.entity.ai.behavior.GiveGiftToHero;
 import net.minecraft.world.entity.ai.behavior.GoToClosestVillage;
 import net.minecraft.world.entity.ai.behavior.GoToPotentialJobSite;
 import net.minecraft.world.entity.ai.behavior.GoToWantedItem;
-import net.minecraft.world.entity.ai.behavior.HarvestFarmland;
 import net.minecraft.world.entity.ai.behavior.InsideBrownianWalk;
 import net.minecraft.world.entity.ai.behavior.InteractWith;
 import net.minecraft.world.entity.ai.behavior.InteractWithDoor;
@@ -49,21 +47,16 @@ import net.minecraft.world.entity.ai.behavior.ShowTradesToPlayer;
 import net.minecraft.world.entity.ai.behavior.SleepInBed;
 import net.minecraft.world.entity.ai.behavior.SocializeAtBell;
 import net.minecraft.world.entity.ai.behavior.StrollAroundPoi;
-import net.minecraft.world.entity.ai.behavior.StrollToPoi;
-import net.minecraft.world.entity.ai.behavior.StrollToPoiList;
 import net.minecraft.world.entity.ai.behavior.Swim;
 import net.minecraft.world.entity.ai.behavior.TradeWithVillager;
 import net.minecraft.world.entity.ai.behavior.TriggerGate;
 import net.minecraft.world.entity.ai.behavior.UpdateActivityFromSchedule;
-import net.minecraft.world.entity.ai.behavior.UseBonemeal;
 import net.minecraft.world.entity.ai.behavior.ValidateNearbyPoi;
 import net.minecraft.world.entity.ai.behavior.VillageBoundRandomStroll;
 import net.minecraft.world.entity.ai.behavior.VillagerCalmDown;
 import net.minecraft.world.entity.ai.behavior.VillagerMakeLove;
 import net.minecraft.world.entity.ai.behavior.VillagerPanicTrigger;
 import net.minecraft.world.entity.ai.behavior.WakeUp;
-import net.minecraft.world.entity.ai.behavior.WorkAtComposter;
-import net.minecraft.world.entity.ai.behavior.WorkAtPoi;
 import net.minecraft.world.entity.ai.behavior.YieldJobSite;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -99,7 +92,7 @@ public final class VanillaBehaviorPackages {
         coreBehaviors.addAll(List.of(
                 Pair.of(0, new Swim(0.8F)),
                 Pair.of(0, InteractWithDoor.create()),
-                Pair.of(0, new OpenFenceGates()),
+//                Pair.of(0, new OpenFenceGates()),
                 Pair.of(0, new LookAtTargetSink(45, 90)),
                 Pair.of(0, new VillagerPanicTrigger()),
                 Pair.of(0, WakeUp.create()),
@@ -126,41 +119,6 @@ public final class VanillaBehaviorPackages {
         }
 
         return ImmutableList.copyOf(coreBehaviors);
-    }
-
-    /**
-     * Work activity behaviors
-     */
-    public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getWorkPackage(
-            VillagerProfession profession,
-            float speed,
-            @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> customChoiceBehaviors) {
-        ArrayList<Pair<? extends BehaviorControl<? super Villager>, Integer>> workChoiceBehaviors = new ArrayList<>();
-
-        workChoiceBehaviors.addAll(List.of(
-                Pair.of(profession == VillagerProfession.FARMER ? new WorkAtComposter() : new WorkAtPoi(), 7),
-                Pair.of(StrollAroundPoi.create(MemoryModuleType.JOB_SITE, STROLL_SPEED_MODIFIER, 4), 2),
-                Pair.of(StrollToPoi.create(MemoryModuleType.JOB_SITE, STROLL_SPEED_MODIFIER, 1, 10), 5),
-                Pair.of(StrollToPoiList.create(MemoryModuleType.SECONDARY_JOB_SITE, speed, 1, 6, MemoryModuleType.JOB_SITE), 5),
-                Pair.of(new HarvestFarmland(), profession == VillagerProfession.FARMER ? 2 : 5),
-                Pair.of(new UseBonemeal(), profession == VillagerProfession.FARMER ? 4 : 7)
-        ));
-
-        // Vanilla and Settlements custom behaviors must share the same RunOne bucket,
-        // otherwise scheduling semantics change even though the activity still compiles.
-        workChoiceBehaviors.addAll(customChoiceBehaviors);
-
-        ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> behaviors = ImmutableList.of(
-                getMinimalLookBehavior(),
-                Pair.of(2, SetWalkTargetFromBlockMemory.create(MemoryModuleType.JOB_SITE, speed, 9, 100, 1200)),
-                Pair.of(3, new GiveGiftToHero(100)),
-                Pair.of(5, new RunOne<>(workChoiceBehaviors)),
-                Pair.of(10, new ShowTradesToPlayer(400, 1600)),
-                Pair.of(10, SetLookAndInteract.create(EntityType.PLAYER, 4)),
-                Pair.of(99, UpdateActivityFromSchedule.create())
-        );
-
-        return behaviors;
     }
 
     /**
@@ -320,7 +278,7 @@ public final class VanillaBehaviorPackages {
     /**
      * Usually used when the villager is "busy"
      */
-    private static Pair<Integer, BehaviorControl<LivingEntity>> getMinimalLookBehavior() {
+    public static Pair<Integer, BehaviorControl<LivingEntity>> getMinimalLookBehavior() {
         return Pair.of(5, new RunOne<>(ImmutableList.of(
                 Pair.of(SetEntityLookTarget.create(EntityType.VILLAGER, 8.0F), 2),
                 Pair.of(SetEntityLookTarget.create(EntityType.PLAYER, 8.0F), 2),
@@ -331,7 +289,7 @@ public final class VanillaBehaviorPackages {
     /**
      * Usually used when the villager is "free"
      */
-    private static Pair<Integer, BehaviorControl<LivingEntity>> getFullLookBehavior() {
+    public static Pair<Integer, BehaviorControl<LivingEntity>> getFullLookBehavior() {
         return Pair.of(5, new RunOne<>(ImmutableList.of(
                 Pair.of(SetEntityLookTarget.create(EntityType.CAT, 8.0F), 8),
                 Pair.of(SetEntityLookTarget.create(EntityType.VILLAGER, 8.0F), 2),

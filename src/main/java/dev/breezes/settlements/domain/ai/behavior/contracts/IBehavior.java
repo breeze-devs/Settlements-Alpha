@@ -1,8 +1,8 @@
 package dev.breezes.settlements.domain.ai.behavior.contracts;
 
+import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.time.ITickable;
-import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
@@ -68,6 +68,6 @@ public interface IBehavior<T extends Entity> {
      * <p>
      * This is usually called within the behavior if a condition is no longer met
      */
-    void requestStop();
+    void requestStop(@Nonnull String reason);
 
 }

@@ -5,7 +5,6 @@ import dev.breezes.settlements.application.economy.demand.ActiveDemand;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorRuntimeInformation;
 import dev.breezes.settlements.application.ui.behavior.snapshot.IBehaviorInfoProvider;
 import dev.breezes.settlements.application.ui.stats.model.DemandDisplayEntry;
@@ -15,8 +14,8 @@ import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerTradeCatalogSnapshot;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
-import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneType;
@@ -174,14 +173,10 @@ public final class VillagerStatsSnapshotBuilder {
                 continue;
             }
 
-            BehaviorDescriptor descriptor = infoProvider.getBehaviorDescriptor();
             BehaviorRuntimeInformation runtime = infoProvider.getBehaviorRuntimeInformation(villager);
 
-            return new ActiveBehaviorInfo(
-                    descriptor.displayNameKey(),
-                    runtime.currentStageLabel(),
-                    descriptor.iconItemId().toString()
-            );
+            return new ActiveBehaviorInfo("ui.settlements.behavior.behavior.unknown",
+                    runtime.currentStageLabel(), "minecraft:barrier");
         }
         return null;
     }

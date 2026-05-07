@@ -6,6 +6,15 @@ import lombok.Getter;
 
 import java.util.Objects;
 
+/**
+ * Real-world elapsed time expressed in server ticks (20 ticks per real second).
+ * <p>
+ * Use this class for durations anchored to real elapsed time — behavior cooldowns,
+ * animation lengths, or anything that should feel the same regardless of the in-game clock.
+ * <p>
+ * For durations that live on the Minecraft day cycle (plan slot times, schedule offsets),
+ * use {@link GameTicks} instead, where 1,000 ticks equal one game hour.
+ */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class Ticks {

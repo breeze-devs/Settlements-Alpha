@@ -12,15 +12,12 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.NearbySoulSandExistsCondition;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.BlockItem;
@@ -50,20 +47,12 @@ public class HarvestSoulSandBehavior extends StateMachineBehavior {
     @Nullable
     private BlockPos netherWartPos;
     private int timeWorkedSoFar;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
     private List<BlockPos> validSoulSandAroundVillager;
     private final NearbySoulSandExistsCondition<BaseVillager> nearbySoulSandExistsCondition;
 
     public HarvestSoulSandBehavior(HarvestSoulSandConfig config,
                                    HungerConfig hungerConfig) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
-
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.harvest_soul_sand")
-                .iconItemId(ResourceLocation.withDefaultNamespace("nether_wart"))
-                .displaySuffix(null)
-                .build();
 
         this.nearbySoulSandExistsCondition = NearbySoulSandExistsCondition.builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
@@ -131,7 +120,7 @@ public class HarvestSoulSandBehavior extends StateMachineBehavior {
 
         this.validSoulSandAroundVillager = new ArrayList<>(this.nearbySoulSandExistsCondition.getTargets());
         if (this.validSoulSandAroundVillager.isEmpty()) {
-            this.requestStop();
+            this.requestStop("No soul sand found within range");
             return;
         }
 
@@ -139,7 +128,7 @@ public class HarvestSoulSandBehavior extends StateMachineBehavior {
         while (world.getBlockState(this.netherWartPos).isAir() && !entity.hasItemInInventory(Items.NETHER_WART)) {
             this.validSoulSandAroundVillager.remove(this.netherWartPos);
             if (this.validSoulSandAroundVillager.isEmpty()) {
-                this.requestStop();
+                this.requestStop("No more soul sand to harvest");
                 return;
             }
             this.netherWartPos = this.getRandomPosition(world);

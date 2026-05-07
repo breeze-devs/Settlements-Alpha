@@ -8,6 +8,7 @@ import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.NoArgsConstructor;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.schedule.Activity;
 
 import javax.annotation.Nonnull;
@@ -20,6 +21,8 @@ import java.util.Set;
 @ServerScope
 @NoArgsConstructor(onConstructor_ = @Inject)
 public final class BehaviorControllerSnapshotBuilder {
+
+    private static final ResourceLocation DEFAULT_ICON_ITEM_ID = ResourceLocation.parse("minecraft:barrier");
 
     private static final Comparator<BehaviorRowSnapshot> BEHAVIOR_COMPARATOR =
             Comparator.comparingInt(BehaviorRowSnapshot::priority)
@@ -61,15 +64,13 @@ public final class BehaviorControllerSnapshotBuilder {
             throw new IllegalStateException("Behavior '%s' must implement IBehaviorInfoProvider".formatted(behavior.getClass().getName()));
         }
 
-        BehaviorDescriptor descriptor = infoProvider.getBehaviorDescriptor();
         BehaviorRuntimeInformation runtimeInformation = infoProvider.getBehaviorRuntimeInformation(villager);
 
         boolean running = behavior.getStatus() == BehaviorStatus.RUNNING;
         return BehaviorRowSnapshot.builder()
                 .behaviorId(behavior.getClass().getSimpleName())
-                .displayNameKey(descriptor.displayNameKey())
-                .displaySuffix(descriptor.displaySuffix())
-                .iconItemId(descriptor.iconItemId())
+                .displayNameKey("ui.settlements.behavior.behavior.unknown")
+                .iconItemId(DEFAULT_ICON_ITEM_ID)
                 .priority(binding.priority())
                 .uiBehaviorIndex(binding.uiBehaviorIndex())
                 .registeredSchedules(mapRegisteredSchedules(binding.registeredActivities()))

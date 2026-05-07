@@ -17,6 +17,8 @@ import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packe
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundOpenBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.handler.ClientBoundBubbleSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.handler.ClientBoundDayPlanSnapshotPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.packet.ClientBoundDayPlanSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundHeartbeatAckVillagerStatsPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundOpenVillagerStatsPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerDemandSnapshotPacketHandler;
@@ -31,6 +33,12 @@ import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.C
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsUnavailablePacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerTradeCatalogSnapshotPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ClientBoundHeartbeatAckUiPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ClientBoundOpenUiPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ClientBoundUiUnavailablePacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundHeartbeatAckUiPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundOpenUiPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundUiUnavailablePacket;
 
 @Module
 public abstract class ClientNetworkModule {
@@ -44,6 +52,26 @@ public abstract class ClientNetworkModule {
     @IntoMap
     @ClassKey(ClientBoundBubbleSnapshotPacket.class)
     abstract ClientSidePacketHandler<?> bubbleSnapshot(ClientBoundBubbleSnapshotPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundOpenUiPacket.class)
+    abstract ClientSidePacketHandler<?> openUi(ClientBoundOpenUiPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundHeartbeatAckUiPacket.class)
+    abstract ClientSidePacketHandler<?> heartbeatAckUi(ClientBoundHeartbeatAckUiPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundUiUnavailablePacket.class)
+    abstract ClientSidePacketHandler<?> unavailableUi(ClientBoundUiUnavailablePacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundDayPlanSnapshotPacket.class)
+    abstract ClientSidePacketHandler<?> dayPlanSnapshot(ClientBoundDayPlanSnapshotPacketHandler impl);
 
     @Binds
     @IntoMap

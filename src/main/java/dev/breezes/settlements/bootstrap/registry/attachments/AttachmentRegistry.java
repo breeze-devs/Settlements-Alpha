@@ -4,6 +4,8 @@ import com.mojang.serialization.Codec;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.application.economy.demand.DemandSignalCodec;
 import dev.breezes.settlements.application.economy.demand.DemandSignalState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentCodec;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -33,6 +35,12 @@ public final class AttachmentRegistry {
             "demand_signals",
             () -> AttachmentType.builder(DemandSignalState::empty)
                     .serialize(DemandSignalCodec.STATE_CODEC)
+                    .build());
+
+    public static final Supplier<AttachmentType<DayPlanAttachmentState>> VILLAGER_DAY_PLAN = REGISTRY.register(
+            "day_plan",
+            () -> AttachmentType.builder(DayPlanAttachmentState::empty)
+                    .serialize(DayPlanAttachmentCodec.STATE_CODEC)
                     .build());
 
     public static void register(IEventBus eventBus) {

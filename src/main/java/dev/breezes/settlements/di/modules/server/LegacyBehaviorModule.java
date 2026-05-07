@@ -34,7 +34,6 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
@@ -72,7 +71,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Module
-public final class BehaviorModule {
+public final class LegacyBehaviorModule {
 
     private static final int CUSTOM_WEIGHT = 10;
     private static final int CUSTOM_PRIORITY = 10;
@@ -329,107 +328,12 @@ public final class BehaviorModule {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    @Provides
-    @IntoSet
-    static BehaviorRegistration noneEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.NONE, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration armorerEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.ARMORER, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration butcherEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.BUTCHER, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration cartographerEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.CARTOGRAPHER, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration clericEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.CLERIC, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration farmerEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.FARMER, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration fishermanEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.FISHERMAN, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration fletcherEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.FLETCHER, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration leatherworkerEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.LEATHERWORKER, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration librarianEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.LIBRARIAN, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration masonEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.MASON, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration nitwitEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.NITWIT, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration shepherdEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.SHEPHERD, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration toolsmithEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.TOOLSMITH, () -> new EatFoodBehavior(hungerConfig));
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorRegistration weaponsmithEat(HungerConfig hungerConfig) {
-        return core(VillagerProfessionKey.WEAPONSMITH, () -> new EatFoodBehavior(hungerConfig));
-    }
-
     // NOTE: To register a new behavior: add a @Provides @IntoSet method here.
     // Adding a new custom profession: add the constant to VillagerProfessionKey first,
     // then use it here. Compile fails if a referenced config has no Dagger binding.
 
     private static BehaviorRegistration work(VillagerProfessionKey villagerProfessionKey, Supplier<IBehavior<BaseVillager>> behaviorFactory) {
         return registration(villagerProfessionKey, Activity.WORK, behaviorFactory);
-    }
-
-    private static BehaviorRegistration core(VillagerProfessionKey villagerProfessionKey,
-                                             Supplier<IBehavior<BaseVillager>> behaviorFactory) {
-        return registration(villagerProfessionKey, Activity.CORE, behaviorFactory);
     }
 
     private static BehaviorRegistration registration(

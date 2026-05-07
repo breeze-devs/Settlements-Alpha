@@ -13,7 +13,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
@@ -23,8 +22,6 @@ import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
-import lombok.Getter;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -42,7 +39,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 @CustomLog
 public class BreedAnimalsBehavior extends StateMachineBehavior {
@@ -74,8 +70,6 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
     private final NearbyBreedableAnimalPairExistsCondition<BaseVillager> nearbyBreedableAnimalPairExistsCondition;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
 
     @Nullable
     private ItemStack heldItem;
@@ -88,12 +82,6 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
                                 HungerConfig hungerConfig,
                                 Set<EntityType<? extends Animal>> breedableAnimalTypes) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
-
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.breed_animals")
-                .iconItemId(ResourceLocation.withDefaultNamespace("wheat"))
-                .displaySuffix(buildBreedableTypesDisplaySuffix(breedableAnimalTypes).orElse(null))
-                .build();
 
         // Create behavior preconditions
         this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(
@@ -136,8 +124,7 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
         Optional<NearbyBreedableAnimalPairExistsCondition.BreedablePair<?>> breedablePair =
                 this.nearbyBreedableAnimalPairExistsCondition.getBreedablePair();
         if (breedablePair.isEmpty()) {
-            log.warn("No breedable pair found, stopping behavior");
-            this.requestStop();
+            this.requestStop("No breedable pair found, stopping behavior");
             return;
         }
 
@@ -146,8 +133,7 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
 
         ItemStack[] breedItems = BREED_ITEMS.get(this.breedTarget1.getType());
         if (breedItems == null || breedItems.length == 0) {
-            log.warn("No configured breeding item for type '{}', stopping behavior", this.breedTarget1.getType());
-            this.requestStop();
+            this.requestStop("No configured breeding item for type %s".formatted(this.breedTarget1.getType().toString()));
             return;
         }
 
@@ -284,15 +270,4 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
             nearbyEntity.addTag(EntityTag.VILLAGE_OWNED_ANIMAL.getTag());
         }
     }
-
-    private static Optional<String> buildBreedableTypesDisplaySuffix(@Nonnull Set<EntityType<? extends Animal>> breedableAnimalTypes) {
-        String suffix = breedableAnimalTypes.stream()
-                .map(entityType -> entityType.getDescription().getString())
-                .filter(name -> !name.isBlank())
-                .distinct()
-                .sorted()
-                .collect(Collectors.joining(", "));
-        return suffix.isBlank() ? Optional.empty() : Optional.of(suffix);
-    }
-
 }

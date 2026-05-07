@@ -14,7 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.time.Ticks;
@@ -26,10 +25,8 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import dev.breezes.settlements.infrastructure.minecraft.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.LockCode;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -72,9 +69,6 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     private final SmokeRecipeAvailableCondition smokeRecipeAvailableCondition;
 
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
-
     @Nullable
     private PhysicalBlock smoker;
     @Nullable
@@ -83,12 +77,6 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
     public SmokeMeatBehavior(SmokeMeatConfig config,
                              HungerConfig hungerConfig) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
-
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.smoke_meat")
-                .iconItemId(ResourceLocation.withDefaultNamespace("smoker"))
-                .displaySuffix(null)
-                .build();
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.SMOKER));
@@ -120,14 +108,14 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
                                    @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext context) {
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
-            this.requestStop();
+            this.requestStop("No smoker block found at job site");
             return;
         }
 
         this.smoker = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
         List<SmokeMeatRecipe> validRecipes = this.smokeRecipeAvailableCondition.getValidRecipes();
         if (validRecipes.isEmpty()) {
-            this.requestStop();
+            this.requestStop("No valid smoke recipes available");
             return;
         }
 

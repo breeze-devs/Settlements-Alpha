@@ -13,13 +13,11 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -52,9 +50,6 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
     private final NearbyButcherableLivestockExistsCondition<BaseVillager> nearbyButcherableLivestockExistsCondition;
     private int butcherCountRemaining;
 
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
-
     @Nullable
     private EntityType<?> selectedAnimalType;
     @Nullable
@@ -66,11 +61,6 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
 
         this.config = config;
         Map<EntityType<?>, Integer> minimumKeepByType = parseConfiguredMinimumKeep(config.minimumKeepCount());
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.butcher_livestock")
-                .iconItemId(ResourceLocation.withDefaultNamespace("iron_axe"))
-                .displaySuffix(null)
-                .build();
 
         this.nearbyButcherableLivestockExistsCondition = NearbyButcherableLivestockExistsCondition.builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
@@ -165,7 +155,7 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
         Optional<EntityType<?>> selectedType = this.nearbyButcherableLivestockExistsCondition.getSelectedType();
         Optional<Animal> selectedTarget = this.nearbyButcherableLivestockExistsCondition.getTarget();
         if (selectedType.isEmpty() || selectedTarget.isEmpty()) {
-            this.requestStop();
+            this.requestStop("No butcherable livestock found");
             return;
         }
 

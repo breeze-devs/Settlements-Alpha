@@ -11,6 +11,7 @@ import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packe
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundHeartbeatBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundOpenBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.packet.ClientBoundDayPlanSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundHeartbeatAckVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundOpenVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerDemandSnapshotPacket;
@@ -21,6 +22,12 @@ import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.C
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundCloseVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundHeartbeatVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundOpenVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundHeartbeatAckUiPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundOpenUiPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundUiUnavailablePacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundCloseUiPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundHeartbeatUiPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundOpenUiPacket;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -37,6 +44,16 @@ public class PacketRegistry {
 
         registerClient(registrar, ClientBoundSettlementDebugPacket.ID, ClientBoundSettlementDebugPacket.CODEC);
         registerClient(registrar, ClientBoundBubbleSnapshotPacket.ID, ClientBoundBubbleSnapshotPacket.CODEC);
+
+        // Shared UiSync lifecycle packets
+        registerServer(registrar, ServerBoundOpenUiPacket.ID, ServerBoundOpenUiPacket.CODEC);
+        registerServer(registrar, ServerBoundCloseUiPacket.ID, ServerBoundCloseUiPacket.CODEC);
+        registerServer(registrar, ServerBoundHeartbeatUiPacket.ID, ServerBoundHeartbeatUiPacket.CODEC);
+
+        registerClient(registrar, ClientBoundOpenUiPacket.ID, ClientBoundOpenUiPacket.CODEC);
+        registerClient(registrar, ClientBoundHeartbeatAckUiPacket.ID, ClientBoundHeartbeatAckUiPacket.CODEC);
+        registerClient(registrar, ClientBoundUiUnavailablePacket.ID, ClientBoundUiUnavailablePacket.CODEC);
+        registerClient(registrar, ClientBoundDayPlanSnapshotPacket.ID, ClientBoundDayPlanSnapshotPacket.CODEC);
 
         // Villager behavior UI packets
         registerServer(registrar, ServerBoundOpenBehaviorControllerPacket.ID, ServerBoundOpenBehaviorControllerPacket.CODEC);

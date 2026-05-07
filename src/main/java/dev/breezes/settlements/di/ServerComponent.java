@@ -1,6 +1,9 @@
 package dev.breezes.settlements.di;
 
 import dagger.Subcomponent;
+import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
+import dev.breezes.settlements.application.ai.genetics.PersonalityDeriver;
+import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
@@ -14,21 +17,36 @@ import dev.breezes.settlements.bootstrap.event.BehaviorControllerServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
+import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerStatsServerEvents;
 import dev.breezes.settlements.di.behavior.BehaviorPackageResolver;
-import dev.breezes.settlements.di.modules.server.BehaviorModule;
+import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
+import dev.breezes.settlements.di.modules.server.LegacyBehaviorModule;
+import dev.breezes.settlements.di.modules.server.PlanningModule;
+import dev.breezes.settlements.di.modules.server.PoolModule;
 import dev.breezes.settlements.di.modules.server.ServerNetworkModule;
 import dev.breezes.settlements.di.modules.server.SettlementQueryModule;
+import dev.breezes.settlements.di.modules.server.UiSyncModule;
+import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
+import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
+import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketReceiver;
+
+import javax.inject.Provider;
 
 @ServerScope
 @Subcomponent(modules = {
         ServerNetworkModule.class,
-        BehaviorModule.class,
+        LegacyBehaviorModule.class,
+        BehaviorCatalogModule.class,
+        PoolModule.class,
+        PlanningModule.class,
         SettlementQueryModule.class,
+        UiSyncModule.class,
 })
 public interface ServerComponent {
 
@@ -44,6 +62,20 @@ public interface ServerComponent {
 
     BehaviorPackageResolver behaviorPackageResolver();
 
+    IBehaviorCatalog behaviorCatalog();
+
+    BehaviorPoolResolver behaviorPoolResolver();
+
+    IPlanGenerator planGenerator();
+
+    IWeekCycleProvider weekCycleProvider();
+
+    Provider<PlanRunnerBehavior> planRunnerBehaviorProvider();
+
+    MemoryImportanceGate memoryImportanceGate();
+
+    PersonalityDeriver personalityDeriver();
+
     ServerSidePacketReceiver serverSidePacketReceiver();
 
     BehaviorControllerServerEvents behaviorControllerServerEvents();
@@ -55,6 +87,8 @@ public interface ServerComponent {
     SettlementMetadataPersistenceServerEvents settlementMetadataPersistenceServerEvents();
 
     VillagerStatsServerEvents villagerStatsServerEvents();
+
+    UiSyncServerEvents uiSyncServerEvents();
 
     SettlementMetadataQueueService settlementMetadataQueueService();
 

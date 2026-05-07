@@ -52,7 +52,6 @@ public class BehaviorControllerScreen extends LayoutScreen {
     private static final String STAGE_NA_KEY = "ui.settlements.behavior.stage_na";
     private static final String SCHEDULE_LINE_KEY = "ui.settlements.behavior.schedule";
     private static final String COOLDOWN_KEY = "ui.settlements.behavior.cooldown";
-    private static final String ENABLE_ALL_STUB_KEY = "ui.settlements.behavior.enable_all_stub";
     private static final String BACK_KEY = "ui.settlements.behavior.back";
     private static final String CONNECTION_STALE_KEY = "ui.settlements.behavior.connection_stale";
 
@@ -277,12 +276,8 @@ public class BehaviorControllerScreen extends LayoutScreen {
     // ---- Data transformation (unchanged from original) ----
 
     private Component buildBehaviorName(@Nonnull BehaviorRowSnapshot row) {
-        var name = Component.literal("#" + row.uiBehaviorIndex() + " ")
+        return Component.literal("#" + row.uiBehaviorIndex() + " ")
                 .append(Component.translatable(row.displayNameKey()));
-        if (row.displaySuffix() != null && !row.displaySuffix().isBlank()) {
-            name = name.append(Component.literal(" " + row.displaySuffix()));
-        }
-        return name;
     }
 
     private Component buildScheduleLine(@Nonnull BehaviorRowSnapshot row) {

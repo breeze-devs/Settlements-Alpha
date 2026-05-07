@@ -18,7 +18,6 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 public abstract class StateMachineBehavior extends BaseVillagerBehavior implements IBehaviorInfoProvider {
@@ -66,7 +65,7 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior implemen
 
         this.context = new BehaviorContext(villager);
         this.onBehaviorStart(world, villager, this.context);
-        Objects.requireNonNull(this.controlStep).reset();
+        this.controlStep.reset();
     }
 
     @Override
@@ -80,9 +79,8 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior implemen
             throw new StopBehaviorException("Behavior '%s' pre-tick guard failed".formatted(this.getClass().getSimpleName()));
         }
 
-        StepResult result = Objects.requireNonNull(Objects.requireNonNull(this.controlStep).tick(context));
-        this.handleStepResult(result, Objects.requireNonNull(this.expectedEndStage),
-                Objects.requireNonNull(this.getClass().getSimpleName()));
+        StepResult result = this.controlStep.tick(context);
+        this.handleStepResult(result, this.expectedEndStage, this.getClass().getSimpleName());
     }
 
     @Override
@@ -92,7 +90,7 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior implemen
 
         this.onBehaviorStop(world, villager);
         this.context = null;
-        Objects.requireNonNull(this.controlStep).reset();
+        this.controlStep.reset();
     }
 
     protected void onBehaviorStart(@Nonnull Level world,
@@ -146,7 +144,6 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior implemen
         return true;
     }
 
-    @Nonnull
     private BehaviorContext requireContext() {
         if (this.context == null) {
             throw new StopBehaviorException("Behavior context is null");

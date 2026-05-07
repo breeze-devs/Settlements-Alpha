@@ -13,7 +13,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFullHiveExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -24,10 +23,8 @@ import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -50,8 +47,6 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
 
     private final CollectHoneyConfig config;
     private final CollectHoneyYieldDataManager yieldData;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
     private final NearbyFullHiveExistsCondition<BaseVillager> nearbyFullHiveExistsCondition;
 
     @Nullable
@@ -64,11 +59,6 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
         this.config = config;
         this.yieldData = yieldData;
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.collect_honey")
-                .iconItemId(ResourceLocation.withDefaultNamespace("honey_bottle"))
-                .displaySuffix(null)
-                .build();
         this.nearbyFullHiveExistsCondition = NearbyFullHiveExistsCondition.<BaseVillager>builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
                 .rangeVertical(config.scanRangeVertical())
@@ -127,7 +117,7 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
         if (targets.isEmpty()
                 || !inventory.containsItem(Items.GLASS_BOTTLE)
                 || !inventory.canAddItem(new ItemStack(Items.HONEY_BOTTLE))) {
-            this.requestStop();
+            this.requestStop("Precondition check at behavior start failed");
             return;
         }
 

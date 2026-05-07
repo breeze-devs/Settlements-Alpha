@@ -14,7 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -24,9 +23,7 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.cats.Settlement
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
@@ -52,8 +49,6 @@ public class TameCatBehavior extends StateMachineBehavior {
     }
 
     private final TameCatConfig config;
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
 
     private final NearbyEntityExistsCondition<BaseVillager, Cat> nearbyUntamedCatExistsCondition;
 
@@ -64,11 +59,6 @@ public class TameCatBehavior extends StateMachineBehavior {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.behavior.tame_cat")
-                .iconItemId(ResourceLocation.withDefaultNamespace("cod"))
-                .displaySuffix(null)
-                .build();
 
         this.attemptsRemaining = 0;
 
@@ -188,18 +178,18 @@ public class TameCatBehavior extends StateMachineBehavior {
                 .size();
         if (owned >= limit) {
             log.behaviorStatus("Owned cats {} >= limit {}, aborting tame", owned, limit);
-            this.requestStop();
+            this.requestStop("Owned cats greater than taming limit");
             return;
         }
 
         if (!this.nearbyUntamedCatExistsCondition.test(entity)) {
-            this.requestStop();
+            this.requestStop("No untamed cats found within range");
             return;
         }
 
         Optional<Cat> chosenCat = this.nearbyUntamedCatExistsCondition.getTargets().stream().findFirst();
         if (chosenCat.isEmpty()) {
-            this.requestStop();
+            this.requestStop("Chosen cat to tame is null");
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenCat.get()))));

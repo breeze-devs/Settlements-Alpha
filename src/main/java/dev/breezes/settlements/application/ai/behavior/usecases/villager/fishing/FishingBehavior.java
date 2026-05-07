@@ -13,7 +13,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyWaterExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -27,7 +26,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.Vil
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
-import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -68,9 +66,6 @@ public class FishingBehavior extends StateMachineBehavior {
 
     private final FishingConfig config;
 
-    @Getter
-    private final BehaviorDescriptor behaviorDescriptor;
-
     private final NearbyWaterExistsCondition<BaseVillager> nearbyWaterExistsCondition;
 
     // Runtime state
@@ -91,11 +86,6 @@ public class FishingBehavior extends StateMachineBehavior {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
-        this.behaviorDescriptor = BehaviorDescriptor.builder()
-                .displayNameKey("ui.settlements.behavior.fishing")
-                .iconItemId(ResourceLocation.withDefaultNamespace("fishing_rod"))
-                .displaySuffix(null)
-                .build();
 
         this.nearbyWaterExistsCondition = NearbyWaterExistsCondition.<BaseVillager>builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
@@ -112,7 +102,7 @@ public class FishingBehavior extends StateMachineBehavior {
         this.waterTarget = this.nearbyWaterExistsCondition.getWaterTarget().orElse(null);
         if (this.waterTarget == null) {
             log.behaviorWarn("Fishing behavior started without a water target; stopping");
-            this.requestStop();
+            this.requestStop("Fishing behavior started without a water target");
             return;
         }
 
@@ -120,7 +110,7 @@ public class FishingBehavior extends StateMachineBehavior {
         if (shorePosition.isEmpty()) {
             log.behaviorWarn("Fishing behavior started without a shore position for water target {}; stopping",
                     this.waterTarget);
-            this.requestStop();
+            this.requestStop("Fishing behavior started without a shore position");
             return;
         }
 

@@ -5,7 +5,9 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.application.ai.behavior.runtime.BaseVillagerBehavior;
 import dev.breezes.settlements.application.ai.brain.DefaultBrain;
+import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
+import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
@@ -13,12 +15,14 @@ import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
 import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
+import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.di.behavior.BehaviorPackageResolver;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
+import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
@@ -29,8 +33,10 @@ import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.time.Ticks;
-import dev.breezes.settlements.infrastructure.minecraft.ai.brain.CustomMemoryModuleType;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import lombok.CustomLog;
@@ -47,6 +53,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.sensing.Sensor;
@@ -77,12 +84,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static final double DEFAULT_MOVEMENT_SPEED = 0.5D;
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
 
-    private static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES;
-    private static final ImmutableList<SensorType<? extends Sensor<? super Villager>>> SENSOR_TYPES;
-
     private final GeneticsProfile genetics;
     private final IBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
+    private final PlanRuntimeState planRuntimeState;
     private VillagerInventory settlementsInventory;
 
     private final BubbleManager bubbleManager;
@@ -102,6 +107,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 .build();
 
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
+        this.planRuntimeState = new PlanRuntimeState();
         // VillagerPathNavigation navigation = new VillagerPathNavigation(this,
         // this.level());
         // navigation.setCanOpenDoors(true);
@@ -167,7 +173,18 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         Brain<Villager> brain = this.getBrain();
         brain.stopAll(level, this);
         this.brain = brain.copyWithoutBehaviors();
+        VillagerDayPlanAttachment.clearDayPlan(this);
+        this.planRuntimeState.reset();
         this.registerBrainGoals(this.getBrain());
+    }
+
+    @Nullable
+    public DayPlan getDayPlan() {
+        return VillagerDayPlanAttachment.getDayPlan(this);
+    }
+
+    public void setDayPlan(@Nonnull DayPlan dayPlan) {
+        VillagerDayPlanAttachment.setDayPlan(this, dayPlan);
     }
 
     /**
@@ -181,55 +198,103 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         int nextUiBehaviorIndex = 0;
         BehaviorPackageResolver resolver = SettlementsDagger.serverOrThrow().behaviorPackageResolver();
 
+        // Register core activity
         BehaviorPackageResolver.ResolvedBehaviors coreResolved = resolver.resolve(villagerProfessionKey, Activity.CORE);
-        brain.addActivity(Activity.CORE, VanillaBehaviorPackages.getCorePackage(profession, 0.5F, coreResolved.choiceBehaviors()));
+        List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> corePackage = new ArrayList<>(
+                VanillaBehaviorPackages.getCorePackage(profession, 0.5F, coreResolved.choiceBehaviors()));
+        if (!this.isBaby()) {
+            PlanRunnerBehavior planRunnerBehavior = SettlementsDagger.serverOrThrow()
+                    .planRunnerBehaviorProvider()
+                    .get();
+            PlanContextSwitcher planContextSwitcher = new PlanContextSwitcher();
+            corePackage.add(Pair.of(20, planRunnerBehavior));
+            corePackage.add(Pair.of(98, planContextSwitcher));
+        }
+        brain.addActivity(Activity.CORE, ImmutableList.copyOf(corePackage));
         nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, coreResolved.trackedBindings(), nextUiBehaviorIndex);
 
-        // Idle
-        BehaviorPackageResolver.ResolvedBehaviors idleResolved = resolver.resolve(villagerProfessionKey, Activity.IDLE);
-        brain.addActivity(Activity.IDLE, VanillaBehaviorPackages.getIdlePackage(profession, 0.5F, idleResolved.choiceBehaviors()));
-        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, idleResolved.trackedBindings(), nextUiBehaviorIndex);
-
+        // Register work or play activities
         if (this.isBaby()) {
-            // Play
-            brain.addActivity(Activity.PLAY, VanillaBehaviorPackages.getPlayPackage(0.5F));
+            nextUiBehaviorIndex = this.registerBabyBrainGoals(brain, profession, villagerProfessionKey, trackedBehaviors, nextUiBehaviorIndex, resolver);
         } else {
-            // Work
-            BehaviorPackageResolver.ResolvedBehaviors workResolved = resolver.resolve(villagerProfessionKey, Activity.WORK);
-            brain.addActivityWithConditions(Activity.WORK, VanillaBehaviorPackages.getWorkPackage(profession, 0.5F, workResolved.choiceBehaviors()),
-                    ImmutableSet.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)));
-            nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, workResolved.trackedBindings(), nextUiBehaviorIndex);
+            nextUiBehaviorIndex = this.registerAdultAmbientBrainGoals(brain, profession, villagerProfessionKey, trackedBehaviors, nextUiBehaviorIndex, resolver);
         }
 
-        // Meet
-        BehaviorPackageResolver.ResolvedBehaviors meetResolved = resolver.resolve(villagerProfessionKey, Activity.MEET);
-        brain.addActivityWithConditions(Activity.MEET, VanillaBehaviorPackages.getMeetPackage(profession, 0.5F, meetResolved.choiceBehaviors()),
-                Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
-        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, meetResolved.trackedBindings(), nextUiBehaviorIndex);
-
         // Register other activities
-        // TODO: if needed, add as tracked behaviors
-        brain.addActivity(Activity.REST, VanillaBehaviorPackages.getRestPackage(profession, 0.5F));
         brain.addActivity(Activity.PANIC, VanillaBehaviorPackages.getPanicPackage(profession, 0.5F));
         brain.addActivity(Activity.PRE_RAID, VanillaBehaviorPackages.getPreRaidPackage(profession, 0.5F));
         brain.addActivity(Activity.RAID, VanillaBehaviorPackages.getRaidPackage(profession, 0.5F));
         brain.addActivity(Activity.HIDE, VanillaBehaviorPackages.getHidePackage(profession, 0.5F));
 
+        // Core activities must be configured before the first setActiveActivityIfPossible call
+        brain.setCoreActivities(ImmutableSet.of(Activity.CORE));
+
         // Set schedule
         if (this.isBaby()) {
             brain.setSchedule(Schedule.VILLAGER_BABY);
+            brain.setDefaultActivity(Activity.IDLE);
+            brain.setActiveActivityIfPossible(Activity.IDLE);
+            brain.updateActivityFromSchedule(this.level().getDayTime(), this.level().getGameTime());
         } else {
-            brain.setSchedule(Schedule.VILLAGER_DEFAULT);
+            brain.setSchedule(ScheduleRegistry.SETTLEMENTS_SCHEDULE.get());
+            brain.setDefaultActivity(Activity.IDLE);
+            brain.setActiveActivityIfPossible(Activity.IDLE);
         }
-
-        // Configure activities
-        brain.setCoreActivities(ImmutableSet.of(Activity.CORE));
-        brain.setDefaultActivity(Activity.IDLE);
-        brain.setActiveActivityIfPossible(Activity.IDLE);
-        brain.updateActivityFromSchedule(this.level().getDayTime(), this.level().getGameTime());
 
         log.info("Registered {} custom behaviors", nextUiBehaviorIndex);
         this.trackedCustomBehaviors = trackedBehaviors;
+    }
+
+    private int registerBabyBrainGoals(Brain<Villager> brain,
+                                       VillagerProfession profession,
+                                       VillagerProfessionKey villagerProfessionKey,
+                                       List<BehaviorBinding> trackedBehaviors,
+                                       int nextUiBehaviorIndex,
+                                       BehaviorPackageResolver resolver) {
+        int nextIndex = nextUiBehaviorIndex;
+
+        // Babies stay on the vanilla schedule for Phase 1 because the plan catalog intentionally
+        // contains adult profession routines rather than child-safe play behavior.
+        BehaviorPackageResolver.ResolvedBehaviors idleResolved = resolver.resolve(villagerProfessionKey, Activity.IDLE);
+        brain.addActivity(Activity.IDLE, VanillaBehaviorPackages.getIdlePackage(profession, 0.5F, idleResolved.choiceBehaviors()));
+        nextIndex = trackBehaviors(trackedBehaviors, idleResolved.trackedBindings(), nextIndex);
+
+        brain.addActivity(Activity.PLAY, VanillaBehaviorPackages.getPlayPackage(0.5F));
+
+        BehaviorPackageResolver.ResolvedBehaviors meetResolved = resolver.resolve(villagerProfessionKey, Activity.MEET);
+        brain.addActivityWithConditions(Activity.MEET, VanillaBehaviorPackages.getMeetPackage(profession, 0.5F, meetResolved.choiceBehaviors()),
+                Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
+        nextIndex = trackBehaviors(trackedBehaviors, meetResolved.trackedBindings(), nextIndex);
+
+        brain.addActivity(Activity.REST, VanillaBehaviorPackages.getRestPackage(profession, 0.5F));
+        return nextIndex;
+    }
+
+    private int registerAdultAmbientBrainGoals(Brain<Villager> brain,
+                                               VillagerProfession profession,
+                                               VillagerProfessionKey villagerProfessionKey,
+                                               List<BehaviorBinding> trackedBehaviors,
+                                               int nextUiBehaviorIndex,
+                                               BehaviorPackageResolver resolver) {
+        float speed = 0.5F;
+        int nextIndex = nextUiBehaviorIndex;
+
+        BehaviorPackageResolver.ResolvedBehaviors workResolved = resolver.resolve(villagerProfessionKey, Activity.WORK);
+        brain.addActivityWithConditions(Activity.WORK, VanillaAmbientBehaviorPackages.getAmbientWorkPackage(profession, speed, workResolved.choiceBehaviors()),
+                Set.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)));
+        nextIndex = trackBehaviors(trackedBehaviors, workResolved.trackedBindings(), nextIndex);
+
+        BehaviorPackageResolver.ResolvedBehaviors meetResolved = resolver.resolve(villagerProfessionKey, Activity.MEET);
+        brain.addActivityWithConditions(Activity.MEET, VanillaAmbientBehaviorPackages.getAmbientMeetPackage(profession, speed, meetResolved.choiceBehaviors()),
+                Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
+        nextIndex = trackBehaviors(trackedBehaviors, meetResolved.trackedBindings(), nextIndex);
+
+        BehaviorPackageResolver.ResolvedBehaviors idleResolved = resolver.resolve(villagerProfessionKey, Activity.IDLE);
+        brain.addActivity(Activity.IDLE, VanillaAmbientBehaviorPackages.getAmbientIdlePackage(profession, speed, idleResolved.choiceBehaviors()));
+        nextIndex = trackBehaviors(trackedBehaviors, idleResolved.trackedBindings(), nextIndex);
+
+        brain.addActivity(Activity.REST, VanillaAmbientBehaviorPackages.getAmbientRestPackage(profession, speed));
+        return nextIndex;
     }
 
     private static int trackBehaviors(@Nonnull List<BehaviorBinding> trackedBehaviors,
@@ -309,7 +374,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     @Override
     protected Brain.Provider<Villager> brainProvider() {
-        return Brain.provider(MEMORY_TYPES, SENSOR_TYPES);
+        return Brain.provider(memoryTypes(), sensorTypes());
     }
 
     @Override
@@ -440,8 +505,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         itemEntity.setItem(itemstack);
     }
 
-    static {
-        MEMORY_TYPES = ImmutableList.of(
+    private static ImmutableList<MemoryModuleType<?>> memoryTypes() {
+        return ImmutableList.of(
                 MemoryModuleType.HOME,
                 MemoryModuleType.JOB_SITE,
                 MemoryModuleType.POTENTIAL_JOB_SITE,
@@ -474,11 +539,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryModuleType.GOLEM_DETECTED_RECENTLY,
 
                 // Custom memory module types starts here
-                CustomMemoryModuleType.FENCE_GATES_TO_CLOSE,
+                MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType(),
                 MemoryTypeRegistry.NEAREST_HARVESTABLE_SUGARCANE.getModuleType(),
-                MemoryTypeRegistry.INTERACT_TARGET.getModuleType());
+                MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
+                MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType());
+    }
 
-        SENSOR_TYPES = ImmutableList.of(
+    private static ImmutableList<SensorType<? extends Sensor<? super Villager>>> sensorTypes() {
+        return ImmutableList.of(
                 SensorType.NEAREST_LIVING_ENTITIES,
                 SensorType.NEAREST_PLAYERS,
                 SensorType.NEAREST_ITEMS,

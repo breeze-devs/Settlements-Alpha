@@ -1,41 +1,38 @@
 package dev.breezes.settlements.domain.ai.memory;
 
+import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
-import dev.breezes.settlements.shared.util.ResourceLocationUtil;
-import lombok.CustomLog;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 
-import javax.annotation.Nonnull;
-import java.util.Optional;
+import java.util.Set;
 
-@CustomLog
-public class MemoryTypeRegistry {
+public final class MemoryTypeRegistry {
 
-    public static final MemoryType<GlobalPos> NEAREST_HARVESTABLE_SUGARCANE = register(MemoryType.<GlobalPos>builder()
+    public static final MemoryType<GlobalPos> NEAREST_HARVESTABLE_SUGARCANE = MemoryType.<GlobalPos>builder()
             .identifier("nearest_harvestable_sugarcane")
-            .build());
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.NEAREST_HARVESTABLE_SUGARCANE)
+            .build();
 
-    public static final MemoryType<ISettlementsVillager> INTERACT_TARGET = register(MemoryType.<ISettlementsVillager>builder()
+    public static final MemoryType<ISettlementsVillager> INTERACT_TARGET = MemoryType.<ISettlementsVillager>builder()
             .identifier("interact_target")
-            .build());
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.INTERACT_TARGET)
+            .build();
+
+    public static final MemoryType<Boolean> PLAN_BEHAVIOR_ACTIVE = MemoryType.<Boolean>builder()
+            .identifier("plan_behavior_active")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.PLAN_BEHAVIOR_ACTIVE)
+            .build();
+
+    public static final MemoryType<Set<GlobalPos>> FENCE_GATES_TO_CLOSE = MemoryType.<Set<GlobalPos>>builder()
+            .identifier("fence_gates_to_close")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.FENCE_GATES_TO_CLOSE)
+            .build();
 
 //     public static final MemoryType<List<TMemoryFarmland>> OWNED_FARMLAND = register(MemoryType.<List<TMemoryFarmland>>builder()
 //             .identifier("owned_farmland")
 //             .build());
 
-    private static <T> MemoryType<T> register(@Nonnull MemoryType<T> memory) {
-        ResourceLocation location = ResourceLocationUtil.mod(memory.getIdentifier());
-        log.debug("Registering memory module {}", location.toString());
-
-        MemoryModuleType<T> module = Registry.register(BuiltInRegistries.MEMORY_MODULE_TYPE,
-                ResourceLocationUtil.mod(memory.getIdentifier()),
-                new MemoryModuleType<>(Optional.empty()));
-        memory.setModuleType(module);
-        return memory;
+    private MemoryTypeRegistry() {
     }
 
 }
