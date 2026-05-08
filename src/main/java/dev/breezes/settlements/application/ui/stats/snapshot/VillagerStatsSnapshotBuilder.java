@@ -1,12 +1,10 @@
 package dev.breezes.settlements.application.ui.stats.snapshot;
 
+import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.ActiveDemand;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
-import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorRuntimeInformation;
-import dev.breezes.settlements.application.ui.behavior.snapshot.IBehaviorInfoProvider;
+import dev.breezes.settlements.application.ui.shared.model.SchedulePhase;
 import dev.breezes.settlements.application.ui.stats.model.DemandDisplayEntry;
 import dev.breezes.settlements.application.ui.stats.model.VillagerDemandDisplaySnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerInventorySnapshot;
@@ -15,6 +13,9 @@ import dev.breezes.settlements.application.ui.stats.model.VillagerTradeCatalogSn
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
+import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
@@ -34,12 +35,12 @@ import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ServerSide
@@ -50,6 +51,7 @@ public final class VillagerStatsSnapshotBuilder {
     private final VillagerWallet villagerWallet;
     private final TradeCatalogRegistry tradeCatalogRegistry;
     private final DemandEvaluator demandEvaluator;
+    private final IBehaviorCatalog behaviorCatalog;
 
     @Nonnull
     public VillagerStatsSnapshot buildStats(@Nonnull BaseVillager villager, long gameTime) {
@@ -59,14 +61,11 @@ public final class VillagerStatsSnapshotBuilder {
 
         double[] geneValues = buildGeneValues(villager);
 
-        BlockPos homePos = extractMemoryPos(villager, MemoryModuleType.HOME);
-        BlockPos workstationPos = extractMemoryPos(villager, MemoryModuleType.JOB_SITE);
 
         Activity activity = villager.getBrain().getActiveNonCoreActivity().orElse(Activity.IDLE);
         SchedulePhase schedulePhase = mapSchedulePhase(activity);
 
-        ActiveBehaviorInfo activeBehavior = findActiveBehavior(villager);
-
+        Optional<ActiveBehaviorInfo> activeBehavior = this.findActiveBehavior(villager);
         return VillagerStatsSnapshot.builder()
                 .gameTime(gameTime)
                 .villagerEntityId(villager.getId())
@@ -76,11 +75,10 @@ public final class VillagerStatsSnapshotBuilder {
                 .currentHealth(villager.getHealth())
                 .maxHealth(villager.getMaxHealth())
                 .geneValues(geneValues)
-                .homePos(homePos)
-                .workstationPos(workstationPos)
-                .activeBehaviorNameKey(activeBehavior != null ? activeBehavior.nameKey : null)
-                .activeBehaviorStage(activeBehavior != null ? activeBehavior.stageLabel : null)
-                .activeBehaviorIconId(activeBehavior != null ? activeBehavior.iconId : null)
+                .homePos(extractMemoryPos(villager, MemoryModuleType.HOME).orElse(null))
+                .workstationPos(extractMemoryPos(villager, MemoryModuleType.JOB_SITE).orElse(null))
+                .activeBehaviorNameKey(activeBehavior.map(ActiveBehaviorInfo::nameKey).orElse(null))
+                .activeBehaviorIconId(activeBehavior.map(ActiveBehaviorInfo::iconId).orElse(null))
                 .schedulePhase(schedulePhase)
                 .reputation(0) // TODO: wire to actual villager reputation data
                 .hunger(villager.getHunger())
@@ -88,7 +86,6 @@ public final class VillagerStatsSnapshotBuilder {
                 .build();
     }
 
-    @Nonnull
     public VillagerInventorySnapshot buildInventory(@Nonnull BaseVillager villager) {
         VillagerInventory inventory = villager.getSettlementsInventory();
         SimpleContainer backpack = inventory.getBackpack();
@@ -107,13 +104,11 @@ public final class VillagerStatsSnapshotBuilder {
                 .build();
     }
 
-    @Nonnull
     public VillagerTradeCatalogSnapshot buildTradeCatalog(@Nonnull BaseVillager villager) {
         var professionKey = resolveProfessionKey(villager);
         return new VillagerTradeCatalogSnapshot(this.tradeCatalogRegistry.offersFor(professionKey));
     }
 
-    @Nonnull
     public VillagerDemandDisplaySnapshot buildDemandSnapshot(@Nonnull BaseVillager villager, long gameTime) {
         var professionKey = resolveProfessionKey(villager);
         List<ActiveDemand> activeDemands = this.demandEvaluator.resolve(villager);
@@ -146,39 +141,34 @@ public final class VillagerStatsSnapshotBuilder {
         return values;
     }
 
-    @Nonnull
     private static VillagerProfessionKey resolveProfessionKey(@Nonnull BaseVillager villager) {
         return VillagerProfessionKey.fromResourceLocation(
                 BuiltInRegistries.VILLAGER_PROFESSION.getKey(villager.getVillagerData().getProfession())
         );
     }
 
-    @Nullable
-    private static BlockPos extractMemoryPos(@Nonnull BaseVillager villager,
-                                             @Nonnull MemoryModuleType<GlobalPos> memoryType) {
+    private static Optional<BlockPos> extractMemoryPos(@Nonnull BaseVillager villager,
+                                                       @Nonnull MemoryModuleType<GlobalPos> memoryType) {
         return villager.getBrain()
                 .getMemory(memoryType)
-                .map(GlobalPos::pos)
-                .orElse(null);
+                .map(GlobalPos::pos);
     }
 
-    @Nullable
-    private static ActiveBehaviorInfo findActiveBehavior(@Nonnull BaseVillager villager) {
-        for (BehaviorBinding binding : villager.getTrackedCustomBehaviors()) {
-            IBehavior<BaseVillager> behavior = binding.behavior();
-            if (behavior.getStatus() != BehaviorStatus.RUNNING) {
-                continue;
-            }
-            if (!(behavior instanceof IBehaviorInfoProvider infoProvider)) {
-                continue;
-            }
-
-            BehaviorRuntimeInformation runtime = infoProvider.getBehaviorRuntimeInformation(villager);
-
-            return new ActiveBehaviorInfo("ui.settlements.behavior.behavior.unknown",
-                    runtime.currentStageLabel(), "minecraft:barrier");
+    private Optional<ActiveBehaviorInfo> findActiveBehavior(@Nonnull BaseVillager villager) {
+        PlanRuntimeState runtimeState = villager.getPlanRuntimeState();
+        IBehavior<BaseVillager> behavior = runtimeState.getCurrentBehavior();
+        if (behavior == null || behavior.getStatus() != BehaviorStatus.RUNNING) {
+            return Optional.empty();
         }
-        return null;
+
+        BehaviorPlanningMetadata descriptor = runtimeState.getCurrentDescriptor();
+        BehaviorDisplayMetadata displayInfo = descriptor == null
+                ? null
+                : this.behaviorCatalog.getDisplayInfo(descriptor.getKey()).orElse(null);
+
+        return Optional.of(new ActiveBehaviorInfo(
+                displayInfo != null ? displayInfo.displayNameKey() : "ui.settlements.behavior.behavior.unknown",
+                displayInfo != null ? displayInfo.iconItemId().toString() : "minecraft:barrier"));
     }
 
     private static SchedulePhase mapSchedulePhase(@Nonnull Activity activity) {
@@ -197,7 +187,7 @@ public final class VillagerStatsSnapshotBuilder {
         return SchedulePhase.UNKNOWN;
     }
 
-    private record ActiveBehaviorInfo(@Nonnull String nameKey, @Nullable String stageLabel, @Nonnull String iconId) {
+    private record ActiveBehaviorInfo(@Nonnull String nameKey, @Nonnull String iconId) {
     }
 
 }

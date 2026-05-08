@@ -3,13 +3,6 @@ package dev.breezes.settlements.infrastructure.network.core;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundBehaviorControllerSnapshotPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundBehaviorControllerUnavailablePacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundHeartbeatAckBehaviorControllerPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundOpenBehaviorControllerPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundCloseBehaviorControllerPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundHeartbeatBehaviorControllerPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundOpenBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.packet.ClientBoundDayPlanSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundHeartbeatAckVillagerStatsPacket;
@@ -54,16 +47,6 @@ public class PacketRegistry {
         registerClient(registrar, ClientBoundHeartbeatAckUiPacket.ID, ClientBoundHeartbeatAckUiPacket.CODEC);
         registerClient(registrar, ClientBoundUiUnavailablePacket.ID, ClientBoundUiUnavailablePacket.CODEC);
         registerClient(registrar, ClientBoundDayPlanSnapshotPacket.ID, ClientBoundDayPlanSnapshotPacket.CODEC);
-
-        // Villager behavior UI packets
-        registerServer(registrar, ServerBoundOpenBehaviorControllerPacket.ID, ServerBoundOpenBehaviorControllerPacket.CODEC);
-        registerServer(registrar, ServerBoundCloseBehaviorControllerPacket.ID, ServerBoundCloseBehaviorControllerPacket.CODEC);
-        registerServer(registrar, ServerBoundHeartbeatBehaviorControllerPacket.ID, ServerBoundHeartbeatBehaviorControllerPacket.CODEC);
-
-        registerClient(registrar, ClientBoundOpenBehaviorControllerPacket.ID, ClientBoundOpenBehaviorControllerPacket.CODEC);
-        registerClient(registrar, ClientBoundBehaviorControllerSnapshotPacket.ID, ClientBoundBehaviorControllerSnapshotPacket.CODEC);
-        registerClient(registrar, ClientBoundHeartbeatAckBehaviorControllerPacket.ID, ClientBoundHeartbeatAckBehaviorControllerPacket.CODEC);
-        registerClient(registrar, ClientBoundBehaviorControllerUnavailablePacket.ID, ClientBoundBehaviorControllerUnavailablePacket.CODEC);
 
         // Villager stats UI packets
         registerServer(registrar, ServerBoundOpenVillagerStatsPacket.ID, ServerBoundOpenVillagerStatsPacket.CODEC);

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ui.dayplan;
 
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorUiDisplayInfo;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.application.ui.dayplan.model.DayPlanSlotSnapshot;
 import dev.breezes.settlements.application.ui.dayplan.model.DayPlanSlotVisualStatus;
 import dev.breezes.settlements.application.ui.dayplan.model.DayPlanSnapshot;
@@ -50,7 +50,7 @@ public final class DayPlanSnapshotAssembler {
     }
 
     private DayPlanSlotSnapshot assembleSlot(@Nonnull DayPlan dayPlan, @Nonnull PlanSlot slot, int currentDayTick) {
-        BehaviorUiDisplayInfo displayInfo = resolveDisplayInfo(slot);
+        BehaviorDisplayMetadata displayInfo = resolveDisplayInfo(slot);
 
         return DayPlanSlotSnapshot.builder()
                 .behaviorKey(slot.getBehaviorKey().id())
@@ -63,9 +63,9 @@ public final class DayPlanSnapshotAssembler {
                 .build();
     }
 
-    private BehaviorUiDisplayInfo resolveDisplayInfo(@Nonnull PlanSlot slot) {
+    private BehaviorDisplayMetadata resolveDisplayInfo(@Nonnull PlanSlot slot) {
         return this.behaviorCatalog.getDisplayInfo(slot.getBehaviorKey())
-                .orElseGet(() -> BehaviorUiDisplayInfo.builder()
+                .orElseGet(() -> BehaviorDisplayMetadata.builder()
                         .displayNameKey("ui.settlements.dayplan.behavior.unknown")
                         .iconItemId(DEFAULT_ICON_ITEM_ID)
                         .build());

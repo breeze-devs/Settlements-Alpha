@@ -1,6 +1,5 @@
 package dev.breezes.settlements.domain.ai.catalog;
 
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorUiDisplayInfo;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 
@@ -26,7 +25,7 @@ public interface IBehaviorCatalog {
      */
     Optional<BehaviorPlanningMetadata> getDescriptor(BehaviorKey key);
 
-    Optional<BehaviorUiDisplayInfo> getDisplayInfo(BehaviorKey key);
+    Optional<BehaviorDisplayMetadata> getDisplayInfo(BehaviorKey key);
 
     /**
      * Creates a fresh {@link IBehavior} instance for the given behavior key.

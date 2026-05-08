@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.catalog;
 
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorUiDisplayInfo;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.di.catalog.BehaviorCatalogEntry;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class BehaviorCatalogImpl implements IBehaviorCatalog {
 
     private final Map<BehaviorKey, BehaviorPlanningMetadata> descriptors;
-    private final Map<BehaviorKey, BehaviorUiDisplayInfo> displayInfos;
+    private final Map<BehaviorKey, BehaviorDisplayMetadata> displayInfos;
     private final Map<BehaviorKey, Supplier<IBehavior<BaseVillager>>> factories;
 
     @Inject
@@ -40,7 +40,7 @@ public class BehaviorCatalogImpl implements IBehaviorCatalog {
     }
 
     @Override
-    public Optional<BehaviorUiDisplayInfo> getDisplayInfo(BehaviorKey key) {
+    public Optional<BehaviorDisplayMetadata> getDisplayInfo(BehaviorKey key) {
         return Optional.ofNullable(this.displayInfos.get(key));
     }
 

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.infrastructure.network.features.ui.stats.codec;
 
-import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
+import dev.breezes.settlements.application.ui.shared.model.SchedulePhase;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import net.minecraft.core.BlockPos;
@@ -32,7 +32,6 @@ public final class VillagerStatsSnapshotCodec {
         BlockPos workstationPos = readNullableBlockPos(buffer);
 
         String activeBehaviorNameKey = readNullableString(buffer);
-        String activeBehaviorStage = readNullableString(buffer);
         String activeBehaviorIconId = readNullableString(buffer);
 
         SchedulePhase schedulePhase = buffer.readEnum(SchedulePhase.class);
@@ -52,7 +51,6 @@ public final class VillagerStatsSnapshotCodec {
                 .homePos(homePos)
                 .workstationPos(workstationPos)
                 .activeBehaviorNameKey(activeBehaviorNameKey)
-                .activeBehaviorStage(activeBehaviorStage)
                 .activeBehaviorIconId(activeBehaviorIconId)
                 .schedulePhase(schedulePhase)
                 .reputation(reputation)
@@ -78,7 +76,6 @@ public final class VillagerStatsSnapshotCodec {
         writeNullableBlockPos(buffer, snapshot.workstationPos());
 
         writeNullableString(buffer, snapshot.activeBehaviorNameKey());
-        writeNullableString(buffer, snapshot.activeBehaviorStage());
         writeNullableString(buffer, snapshot.activeBehaviorIconId());
 
         buffer.writeEnum(snapshot.schedulePhase());

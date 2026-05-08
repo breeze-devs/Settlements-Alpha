@@ -7,14 +7,6 @@ import dagger.multibindings.IntoMap;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.debug.handler.ClientBoundSettlementDebugPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.handler.ClientBoundBehaviorControllerSnapshotPacketHandler;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.handler.ClientBoundBehaviorControllerUnavailablePacketHandler;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.handler.ClientBoundHeartbeatAckBehaviorControllerPacketHandler;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.handler.ClientBoundOpenBehaviorControllerPacketHandler;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundBehaviorControllerSnapshotPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundBehaviorControllerUnavailablePacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundHeartbeatAckBehaviorControllerPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ClientBoundOpenBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.handler.ClientBoundBubbleSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.handler.ClientBoundDayPlanSnapshotPacketHandler;
@@ -72,26 +64,6 @@ public abstract class ClientNetworkModule {
     @IntoMap
     @ClassKey(ClientBoundDayPlanSnapshotPacket.class)
     abstract ClientSidePacketHandler<?> dayPlanSnapshot(ClientBoundDayPlanSnapshotPacketHandler impl);
-
-    @Binds
-    @IntoMap
-    @ClassKey(ClientBoundBehaviorControllerSnapshotPacket.class)
-    abstract ClientSidePacketHandler<?> behaviorSnapshot(ClientBoundBehaviorControllerSnapshotPacketHandler impl);
-
-    @Binds
-    @IntoMap
-    @ClassKey(ClientBoundBehaviorControllerUnavailablePacket.class)
-    abstract ClientSidePacketHandler<?> behaviorUnavailable(ClientBoundBehaviorControllerUnavailablePacketHandler impl);
-
-    @Binds
-    @IntoMap
-    @ClassKey(ClientBoundHeartbeatAckBehaviorControllerPacket.class)
-    abstract ClientSidePacketHandler<?> behaviorHeartbeatAck(ClientBoundHeartbeatAckBehaviorControllerPacketHandler impl);
-
-    @Binds
-    @IntoMap
-    @ClassKey(ClientBoundOpenBehaviorControllerPacket.class)
-    abstract ClientSidePacketHandler<?> behaviorOpen(ClientBoundOpenBehaviorControllerPacketHandler impl);
 
     @Binds
     @IntoMap

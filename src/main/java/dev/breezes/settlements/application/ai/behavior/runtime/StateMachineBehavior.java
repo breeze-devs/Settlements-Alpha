@@ -5,9 +5,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorCo
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.model.PreconditionSummary;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorRuntimeInformation;
-import dev.breezes.settlements.application.ui.behavior.snapshot.IBehaviorInfoProvider;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.logging.ILogger;
@@ -17,10 +14,9 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Map;
 import java.util.Optional;
 
-public abstract class StateMachineBehavior extends BaseVillagerBehavior implements IBehaviorInfoProvider {
+public abstract class StateMachineBehavior extends BaseVillagerBehavior {
 
     @Nullable
     private StagedStep controlStep;
@@ -46,16 +42,6 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior implemen
         }
         this.controlStep = controlStep;
         this.expectedEndStage = expectedEndStage;
-    }
-
-    @Nonnull
-    @Override
-    public BehaviorRuntimeInformation getBehaviorRuntimeInformation(@Nonnull BaseVillager villager) {
-        return BehaviorRuntimeInformation.builder()
-                .currentStageLabel(this.getCurrentStageLabel().orElse("Unknown"))
-                .cooldownRemainingTicks(Math.toIntExact(Math.min(Integer.MAX_VALUE, this.getBehaviorCoolDown().getTicksRemainingRounded())))
-                .preconditionSummary(this.cachedPreconditionSummary())
-                .build();
     }
 
     @Override
@@ -109,32 +95,6 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior implemen
             return Optional.empty();
         }
         return Optional.ofNullable(this.controlStep.getCurrentStage().name());
-    }
-
-    /**
-     * Returns precondition status with LAST-KNOWN semantics.
-     * <p>
-     * This uses cached results from the behavior precondition evaluation cycle
-     * (see {@link AbstractBehavior#tickPreconditions(int, Level, Entity)} behavior flow),
-     * so it is not guaranteed to represent a just-in-time recomputation at the
-     * exact snapshot tick.
-     */
-    protected PreconditionSummary cachedPreconditionSummary() {
-        if (this.getPreconditions().isEmpty()) {
-            return PreconditionSummary.UNKNOWN;
-        }
-
-        Map<Class<?>, Boolean> cached = this.getLatestPreconditionEvaluationResults();
-        if (cached.isEmpty()) {
-            return PreconditionSummary.UNKNOWN;
-        }
-
-        for (Boolean passed : cached.values()) {
-            if (!Boolean.TRUE.equals(passed)) {
-                return PreconditionSummary.FAIL;
-            }
-        }
-        return PreconditionSummary.PASS;
     }
 
     protected boolean preTickGuard(int delta,

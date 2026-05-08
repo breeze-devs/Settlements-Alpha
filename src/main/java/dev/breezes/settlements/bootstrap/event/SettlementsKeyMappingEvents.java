@@ -16,7 +16,6 @@ public final class SettlementsKeyMappingEvents {
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(SettlementsKeyMappings.OPEN_VILLAGER_STATS);
-        event.register(SettlementsKeyMappings.OPEN_BEHAVIOR_CONTROLLER_DEBUG);
         event.register(SettlementsKeyMappings.OPEN_DAY_PLAN);
     }
 

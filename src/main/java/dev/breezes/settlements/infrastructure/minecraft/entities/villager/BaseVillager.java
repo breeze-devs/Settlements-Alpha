@@ -9,7 +9,6 @@ import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackag
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
 import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
@@ -17,7 +16,7 @@ import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
 import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
 import dev.breezes.settlements.di.SettlementsDagger;
-import dev.breezes.settlements.di.behavior.BehaviorPackageResolver;
+import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -25,7 +24,6 @@ import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
-import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.entities.hunger.IVillagerHunger;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
@@ -92,7 +90,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     private final BubbleManager bubbleManager;
     private final VillagerBubbleState bubbleState;
-    private volatile List<BehaviorBinding> trackedCustomBehaviors;
     @Nullable
     private ITickable hungerDrainTimer;
 
@@ -118,7 +115,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.settlementsInventory = new GeneticInventoryProvider().provideDefault();
         this.bubbleManager = new BubbleManager();
         this.bubbleState = new VillagerBubbleState();
-        this.trackedCustomBehaviors = List.of();
         this.hungerDrainTimer = null;
     }
 
@@ -193,15 +189,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private void registerBrainGoals(Brain<Villager> brain) {
         // TODO: refactor speed, instead of hard coding 0.5F make it an attribute powered by genetics
         VillagerProfession profession = this.getVillagerData().getProfession();
-        VillagerProfessionKey villagerProfessionKey = new VillagerProfessionKey(profession.name());
-        List<BehaviorBinding> trackedBehaviors = new ArrayList<>();
-        int nextUiBehaviorIndex = 0;
-        BehaviorPackageResolver resolver = SettlementsDagger.serverOrThrow().behaviorPackageResolver();
 
         // Register core activity
-        BehaviorPackageResolver.ResolvedBehaviors coreResolved = resolver.resolve(villagerProfessionKey, Activity.CORE);
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> corePackage = new ArrayList<>(
-                VanillaBehaviorPackages.getCorePackage(profession, 0.5F, coreResolved.choiceBehaviors()));
+                VanillaBehaviorPackages.getCorePackage(profession, 0.5F));
         if (!this.isBaby()) {
             PlanRunnerBehavior planRunnerBehavior = SettlementsDagger.serverOrThrow()
                     .planRunnerBehaviorProvider()
@@ -211,13 +202,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             corePackage.add(Pair.of(98, planContextSwitcher));
         }
         brain.addActivity(Activity.CORE, ImmutableList.copyOf(corePackage));
-        nextUiBehaviorIndex = trackBehaviors(trackedBehaviors, coreResolved.trackedBindings(), nextUiBehaviorIndex);
 
         // Register work or play activities
         if (this.isBaby()) {
-            nextUiBehaviorIndex = this.registerBabyBrainGoals(brain, profession, villagerProfessionKey, trackedBehaviors, nextUiBehaviorIndex, resolver);
+            this.registerBabyBrainGoals(brain, profession);
         } else {
-            nextUiBehaviorIndex = this.registerAdultAmbientBrainGoals(brain, profession, villagerProfessionKey, trackedBehaviors, nextUiBehaviorIndex, resolver);
+            this.registerAdultAmbientBrainGoals(brain, profession);
         }
 
         // Register other activities
@@ -241,70 +231,28 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             brain.setActiveActivityIfPossible(Activity.IDLE);
         }
 
-        log.info("Registered {} custom behaviors", nextUiBehaviorIndex);
-        this.trackedCustomBehaviors = trackedBehaviors;
+        log.info("Registered plan-runner driven behavior orchestration");
     }
 
-    private int registerBabyBrainGoals(Brain<Villager> brain,
-                                       VillagerProfession profession,
-                                       VillagerProfessionKey villagerProfessionKey,
-                                       List<BehaviorBinding> trackedBehaviors,
-                                       int nextUiBehaviorIndex,
-                                       BehaviorPackageResolver resolver) {
-        int nextIndex = nextUiBehaviorIndex;
-
-        // Babies stay on the vanilla schedule for Phase 1 because the plan catalog intentionally
-        // contains adult profession routines rather than child-safe play behavior.
-        BehaviorPackageResolver.ResolvedBehaviors idleResolved = resolver.resolve(villagerProfessionKey, Activity.IDLE);
-        brain.addActivity(Activity.IDLE, VanillaBehaviorPackages.getIdlePackage(profession, 0.5F, idleResolved.choiceBehaviors()));
-        nextIndex = trackBehaviors(trackedBehaviors, idleResolved.trackedBindings(), nextIndex);
-
+    private void registerBabyBrainGoals(Brain<Villager> brain,
+                                        VillagerProfession profession) {
+        // Babies stay on the vanilla schedule
+        brain.addActivity(Activity.IDLE, VanillaBehaviorPackages.getIdlePackage(0.5F));
         brain.addActivity(Activity.PLAY, VanillaBehaviorPackages.getPlayPackage(0.5F));
-
-        BehaviorPackageResolver.ResolvedBehaviors meetResolved = resolver.resolve(villagerProfessionKey, Activity.MEET);
-        brain.addActivityWithConditions(Activity.MEET, VanillaBehaviorPackages.getMeetPackage(profession, 0.5F, meetResolved.choiceBehaviors()),
+        brain.addActivityWithConditions(Activity.MEET, VanillaBehaviorPackages.getMeetPackage(profession, 0.5F),
                 Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
-        nextIndex = trackBehaviors(trackedBehaviors, meetResolved.trackedBindings(), nextIndex);
-
         brain.addActivity(Activity.REST, VanillaBehaviorPackages.getRestPackage(profession, 0.5F));
-        return nextIndex;
     }
 
-    private int registerAdultAmbientBrainGoals(Brain<Villager> brain,
-                                               VillagerProfession profession,
-                                               VillagerProfessionKey villagerProfessionKey,
-                                               List<BehaviorBinding> trackedBehaviors,
-                                               int nextUiBehaviorIndex,
-                                               BehaviorPackageResolver resolver) {
+    private void registerAdultAmbientBrainGoals(Brain<Villager> brain,
+                                                VillagerProfession profession) {
         float speed = 0.5F;
-        int nextIndex = nextUiBehaviorIndex;
-
-        BehaviorPackageResolver.ResolvedBehaviors workResolved = resolver.resolve(villagerProfessionKey, Activity.WORK);
-        brain.addActivityWithConditions(Activity.WORK, VanillaAmbientBehaviorPackages.getAmbientWorkPackage(profession, speed, workResolved.choiceBehaviors()),
+        brain.addActivityWithConditions(Activity.WORK, VanillaAmbientBehaviorPackages.getAmbientWorkPackage(profession, speed),
                 Set.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)));
-        nextIndex = trackBehaviors(trackedBehaviors, workResolved.trackedBindings(), nextIndex);
-
-        BehaviorPackageResolver.ResolvedBehaviors meetResolved = resolver.resolve(villagerProfessionKey, Activity.MEET);
-        brain.addActivityWithConditions(Activity.MEET, VanillaAmbientBehaviorPackages.getAmbientMeetPackage(profession, speed, meetResolved.choiceBehaviors()),
+        brain.addActivityWithConditions(Activity.MEET, VanillaAmbientBehaviorPackages.getAmbientMeetPackage(speed),
                 Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
-        nextIndex = trackBehaviors(trackedBehaviors, meetResolved.trackedBindings(), nextIndex);
-
-        BehaviorPackageResolver.ResolvedBehaviors idleResolved = resolver.resolve(villagerProfessionKey, Activity.IDLE);
-        brain.addActivity(Activity.IDLE, VanillaAmbientBehaviorPackages.getAmbientIdlePackage(profession, speed, idleResolved.choiceBehaviors()));
-        nextIndex = trackBehaviors(trackedBehaviors, idleResolved.trackedBindings(), nextIndex);
-
-        brain.addActivity(Activity.REST, VanillaAmbientBehaviorPackages.getAmbientRestPackage(profession, speed));
-        return nextIndex;
-    }
-
-    private static int trackBehaviors(@Nonnull List<BehaviorBinding> trackedBehaviors,
-                                      @Nonnull List<BehaviorBinding> sourceBindings,
-                                      int nextUiBehaviorIndex) {
-        int nextIndex = nextUiBehaviorIndex;
-        for (BehaviorBinding binding : sourceBindings) {
-            trackedBehaviors.add(binding.copyWithIndex(nextIndex++));
-        }
-        return nextIndex;
+        brain.addActivity(Activity.IDLE, VanillaAmbientBehaviorPackages.getAmbientIdlePackage(speed));
+        brain.addActivity(Activity.REST, VanillaAmbientBehaviorPackages.getAmbientRestPackage(speed));
     }
 
     @Override
@@ -460,14 +408,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         float baseDrain = config.drainPerInterval();
-        double behaviorModifier = this.getTrackedCustomBehaviors().stream()
-                .map(BehaviorBinding::behavior)
-                .filter(BaseVillagerBehavior.class::isInstance)
-                .map(BaseVillagerBehavior.class::cast)
-                .filter(behavior -> behavior.getStatus() == BehaviorStatus.RUNNING)
-                .mapToDouble(BaseVillagerBehavior::getHungerDrainModifier)
-                .max()
-                .orElse(1.0);
+        double behaviorModifier = 1.0;
+        IBehavior<BaseVillager> currentBehavior = this.planRuntimeState.getCurrentBehavior();
+        if (currentBehavior != null && currentBehavior.getStatus() == BehaviorStatus.RUNNING
+                && currentBehavior instanceof BaseVillagerBehavior villagerBehavior) {
+            behaviorModifier = villagerBehavior.getHungerDrainModifier();
+        }
 
         double sleepMultiplier = this.isSleeping() ? config.sleepingDrainMultiplier() : 1.0;
         this.setHunger((float) (this.getHunger() - baseDrain * behaviorModifier * sleepMultiplier));

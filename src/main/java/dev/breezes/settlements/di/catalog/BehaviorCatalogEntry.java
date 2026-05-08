@@ -1,6 +1,6 @@
 package dev.breezes.settlements.di.catalog;
 
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorUiDisplayInfo;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 @Builder
 public record BehaviorCatalogEntry(
         BehaviorPlanningMetadata descriptor,
-        BehaviorUiDisplayInfo displayInfo,
+        BehaviorDisplayMetadata displayInfo,
         Supplier<IBehavior<BaseVillager>> factory
 ) {
 }

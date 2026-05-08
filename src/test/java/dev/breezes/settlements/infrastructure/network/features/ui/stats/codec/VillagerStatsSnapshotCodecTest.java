@@ -1,14 +1,12 @@
 package dev.breezes.settlements.infrastructure.network.features.ui.stats.codec;
 
-import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
+import dev.breezes.settlements.application.ui.shared.model.SchedulePhase;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.Arrays;
 
 class VillagerStatsSnapshotCodecTest {
 
@@ -26,7 +24,6 @@ class VillagerStatsSnapshotCodecTest {
                 .homePos(new BlockPos(100, 64, -200))
                 .workstationPos(new BlockPos(105, 65, -195))
                 .activeBehaviorNameKey("ui.settlements.behavior.harvest_crops")
-                .activeBehaviorStage("Harvesting")
                 .activeBehaviorIconId("minecraft:wheat")
                 .schedulePhase(SchedulePhase.WORK)
                 .reputation(25)
@@ -49,7 +46,6 @@ class VillagerStatsSnapshotCodecTest {
         Assertions.assertEquals(input.homePos(), decoded.homePos());
         Assertions.assertEquals(input.workstationPos(), decoded.workstationPos());
         Assertions.assertEquals(input.activeBehaviorNameKey(), decoded.activeBehaviorNameKey());
-        Assertions.assertEquals(input.activeBehaviorStage(), decoded.activeBehaviorStage());
         Assertions.assertEquals(input.activeBehaviorIconId(), decoded.activeBehaviorIconId());
         Assertions.assertEquals(input.schedulePhase(), decoded.schedulePhase());
         Assertions.assertEquals(input.reputation(), decoded.reputation());
@@ -70,7 +66,6 @@ class VillagerStatsSnapshotCodecTest {
                 .homePos(null)
                 .workstationPos(null)
                 .activeBehaviorNameKey(null)
-                .activeBehaviorStage(null)
                 .activeBehaviorIconId(null)
                 .schedulePhase(SchedulePhase.IDLE)
                 .reputation(-30)
@@ -86,7 +81,6 @@ class VillagerStatsSnapshotCodecTest {
         Assertions.assertNull(decoded.homePos());
         Assertions.assertNull(decoded.workstationPos());
         Assertions.assertNull(decoded.activeBehaviorNameKey());
-        Assertions.assertNull(decoded.activeBehaviorStage());
         Assertions.assertNull(decoded.activeBehaviorIconId());
         Assertions.assertEquals(input.reputation(), decoded.reputation());
     }
@@ -106,7 +100,6 @@ class VillagerStatsSnapshotCodecTest {
                 .homePos(null)
                 .workstationPos(null)
                 .activeBehaviorNameKey(null)
-                .activeBehaviorStage(null)
                 .activeBehaviorIconId(null)
                 .schedulePhase(SchedulePhase.IDLE)
                 .reputation(0)
@@ -141,7 +134,6 @@ class VillagerStatsSnapshotCodecTest {
                     .homePos(null)
                     .workstationPos(null)
                     .activeBehaviorNameKey(null)
-                    .activeBehaviorStage(null)
                     .activeBehaviorIconId(null)
                     .schedulePhase(phase)
                     .reputation(0)

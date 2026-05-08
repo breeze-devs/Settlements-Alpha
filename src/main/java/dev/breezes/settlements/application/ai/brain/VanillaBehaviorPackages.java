@@ -66,7 +66,6 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.raid.Raid;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -84,8 +83,7 @@ public final class VanillaBehaviorPackages {
      */
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getCorePackage(
             VillagerProfession profession,
-            float speed,
-            @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> customChoiceBehaviors) {
+            float speed) {
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> coreBehaviors = new ArrayList<>();
 
         // Add default behaviors
@@ -113,10 +111,6 @@ public final class VanillaBehaviorPackages {
                 Pair.of(10, AssignProfessionFromJobSite.create()),
                 Pair.of(10, ResetProfession.create())
         ));
-
-        if (!customChoiceBehaviors.isEmpty()) {
-            coreBehaviors.add(Pair.of(4, new RunOne<>(customChoiceBehaviors)));
-        }
 
         return ImmutableList.copyOf(coreBehaviors);
     }
@@ -164,12 +158,10 @@ public final class VanillaBehaviorPackages {
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getMeetPackage(
             VillagerProfession profession,
-            float speed,
-            @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> customChoiceBehaviors) {
+            float speed) {
         // Default behaviors
         ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> behaviors = ImmutableList.of(
                 getFullLookBehavior(),
-                Pair.of(1, new RunOne<>(customChoiceBehaviors)),
                 Pair.of(2, TriggerGate.triggerOneShuffled(ImmutableList.of(
                         Pair.of(StrollAroundPoi.create(MemoryModuleType.MEETING_POINT, STROLL_SPEED_MODIFIER, 40), 2),
                         Pair.of(SocializeAtBell.create(), 2)
@@ -188,9 +180,7 @@ public final class VanillaBehaviorPackages {
     }
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getIdlePackage(
-            VillagerProfession profession,
-            float speed,
-            @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> customChoiceBehaviors) {
+            float speed) {
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> idleBehaviors = new ArrayList<>();
 
         idleBehaviors.addAll(List.of(
@@ -216,8 +206,6 @@ public final class VanillaBehaviorPackages {
                 Pair.of(new JumpOnBed(speed), 1),
                 Pair.of(new DoNothing(30, 60), 1)
         ));
-
-        idleChoiceBehaviors.addAll(customChoiceBehaviors);
 
         idleBehaviors.add(Pair.of(2, new RunOne<>(idleChoiceBehaviors)));
 

@@ -39,7 +39,6 @@ import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,8 +48,7 @@ public final class VanillaAmbientBehaviorPackages {
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getAmbientWorkPackage(
             VillagerProfession profession,
-            float speed,
-            @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> customChoiceBehaviors) {
+            float speed) {
         BehaviorControl<? super Villager> workAtPoi = profession == VillagerProfession.FARMER
                 ? new WorkAtComposter()
                 : new WorkAtPoi();
@@ -62,7 +60,6 @@ public final class VanillaAmbientBehaviorPackages {
                 Pair.of(StrollToPoi.create(MemoryModuleType.JOB_SITE, STROLL_SPEED_MODIFIER, 1, 10), 5),
                 Pair.of(StrollToPoiList.create(MemoryModuleType.SECONDARY_JOB_SITE, speed, 1, 6, MemoryModuleType.JOB_SITE), 5)
         ));
-        gatedWorkChoiceBehaviors.addAll(customChoiceBehaviors);
 
         return ImmutableList.of(
                 VanillaBehaviorPackages.getMinimalLookBehavior(),
@@ -75,7 +72,7 @@ public final class VanillaAmbientBehaviorPackages {
         );
     }
 
-    public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getAmbientRestPackage(VillagerProfession profession, float speed) {
+    public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getAmbientRestPackage(float speed) {
         return ImmutableList.of(
                 VanillaBehaviorPackages.getMinimalLookBehavior(),
                 Pair.of(2, SetWalkTargetFromBlockMemory.create(MemoryModuleType.HOME, speed, 1, 150, 1200)),
@@ -93,14 +90,9 @@ public final class VanillaAmbientBehaviorPackages {
     }
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getAmbientMeetPackage(
-            VillagerProfession profession,
-            float speed,
-            @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> customChoiceBehaviors) {
-        ArrayList<Pair<? extends BehaviorControl<? super Villager>, Integer>> gatedMeetChoiceBehaviors = new ArrayList<>(customChoiceBehaviors);
-
+            float speed) {
         return ImmutableList.of(
                 VanillaBehaviorPackages.getFullLookBehavior(),
-                Pair.of(1, AmbientBehaviors.gated(new RunOne<>(gatedMeetChoiceBehaviors))),
                 Pair.of(2, AmbientBehaviors.gated(TriggerGate.triggerOneShuffled(ImmutableList.of(
                         Pair.of(StrollAroundPoi.create(MemoryModuleType.MEETING_POINT, STROLL_SPEED_MODIFIER, 40), 2),
                         Pair.of(SocializeAtBell.create(), 2)
@@ -116,9 +108,7 @@ public final class VanillaAmbientBehaviorPackages {
     }
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getAmbientIdlePackage(
-            VillagerProfession profession,
-            float speed,
-            @Nonnull List<Pair<? extends BehaviorControl<? super Villager>, Integer>> customChoiceBehaviors) {
+            float speed) {
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> idleBehaviors = new ArrayList<>();
 
         idleBehaviors.addAll(List.of(
@@ -143,7 +133,6 @@ public final class VanillaAmbientBehaviorPackages {
                 Pair.of(new DoNothing(30, 60), 1)
         ));
 
-        idleChoiceBehaviors.addAll(customChoiceBehaviors);
         idleBehaviors.add(Pair.of(2, AmbientBehaviors.gated(new RunOne<>(idleChoiceBehaviors))));
 
         return ImmutableList.copyOf(idleBehaviors);

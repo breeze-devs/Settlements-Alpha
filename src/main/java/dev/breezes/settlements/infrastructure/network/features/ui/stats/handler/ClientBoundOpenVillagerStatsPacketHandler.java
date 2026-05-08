@@ -1,6 +1,6 @@
 package dev.breezes.settlements.infrastructure.network.features.ui.stats.handler;
 
-import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
+import dev.breezes.settlements.application.ui.shared.model.SchedulePhase;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandler;
@@ -48,7 +48,6 @@ public class ClientBoundOpenVillagerStatsPacketHandler implements ClientSidePack
                 .homePos(null)
                 .workstationPos(null)
                 .activeBehaviorNameKey(null)
-                .activeBehaviorStage(null)
                 .activeBehaviorIconId(null)
                 .schedulePhase(SchedulePhase.UNKNOWN)
                 .reputation(0)

@@ -8,20 +8,15 @@ import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.settlement.persistence.SettlementMetadataQueueService;
-import dev.breezes.settlements.application.ui.behavior.session.BehaviorControllerSessionService;
-import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorControllerSnapshotBuilder;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.stats.session.VillagerStatsSessionService;
 import dev.breezes.settlements.application.ui.stats.snapshot.VillagerStatsSnapshotBuilder;
-import dev.breezes.settlements.bootstrap.event.BehaviorControllerServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerStatsServerEvents;
-import dev.breezes.settlements.di.behavior.BehaviorPackageResolver;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
-import dev.breezes.settlements.di.modules.server.LegacyBehaviorModule;
 import dev.breezes.settlements.di.modules.server.PlanningModule;
 import dev.breezes.settlements.di.modules.server.PoolModule;
 import dev.breezes.settlements.di.modules.server.ServerNetworkModule;
@@ -31,8 +26,8 @@ import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
 import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
-import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
+import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketReceiver;
 
@@ -41,7 +36,6 @@ import javax.inject.Provider;
 @ServerScope
 @Subcomponent(modules = {
         ServerNetworkModule.class,
-        LegacyBehaviorModule.class,
         BehaviorCatalogModule.class,
         PoolModule.class,
         PlanningModule.class,
@@ -50,17 +44,11 @@ import javax.inject.Provider;
 })
 public interface ServerComponent {
 
-    BehaviorControllerSessionService behaviorControllerSessionService();
-
     VillagerStatsSessionService villagerStatsSessionService();
 
     VillagerBubbleService villagerBubbleService();
 
-    BehaviorControllerSnapshotBuilder behaviorControllerSnapshotBuilder();
-
     VillagerStatsSnapshotBuilder villagerStatsSnapshotBuilder();
-
-    BehaviorPackageResolver behaviorPackageResolver();
 
     IBehaviorCatalog behaviorCatalog();
 
@@ -77,8 +65,6 @@ public interface ServerComponent {
     PersonalityDeriver personalityDeriver();
 
     ServerSidePacketReceiver serverSidePacketReceiver();
-
-    BehaviorControllerServerEvents behaviorControllerServerEvents();
 
     PlayerSettlementTracker playerSettlementTracker();
 

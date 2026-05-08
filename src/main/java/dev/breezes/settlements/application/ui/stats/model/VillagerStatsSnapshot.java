@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ui.stats.model;
 
-import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
+import dev.breezes.settlements.application.ui.shared.model.SchedulePhase;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import lombok.Builder;
 import net.minecraft.core.BlockPos;
@@ -21,7 +21,6 @@ public record VillagerStatsSnapshot(
         @Nullable BlockPos homePos,
         @Nullable BlockPos workstationPos,
         @Nullable String activeBehaviorNameKey,
-        @Nullable String activeBehaviorStage,
         @Nullable String activeBehaviorIconId,
         @Nonnull SchedulePhase schedulePhase,
         int reputation,
