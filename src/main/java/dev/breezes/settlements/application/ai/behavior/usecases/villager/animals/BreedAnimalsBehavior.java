@@ -17,7 +17,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
 import dev.breezes.settlements.domain.tags.EntityTag;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
@@ -179,7 +179,7 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
                                               @Nonnull BreedStage nextStage,
                                               @Nonnull Supplier<Animal> targetSupplier) {
         TimeBasedStep feedStep = TimeBasedStep.builder()
-                .withTickable(Ticks.ONE.asTickable())
+                .withTickable(ClockTicks.ONE.asTickable())
                 .onStart(ctx -> {
                     Animal target = targetSupplier.get();
                     if (target == null || this.heldItem == null) {
@@ -212,7 +212,7 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
 
     private BehaviorStep createWaitingStep() {
         return TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(3).asTickable())
+                .withTickable(ClockTicks.seconds(3).asTickable())
                 .onStart(ctx -> {
                     ctx.getInitiator().clearHeldItem();
                     return StepResult.noOp();

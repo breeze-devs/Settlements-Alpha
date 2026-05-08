@@ -16,8 +16,8 @@ import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
@@ -33,7 +33,7 @@ import java.util.Optional;
 public final class TradeAcceptBehavior extends StateMachineBehavior {
 
     private static final double APPROACH_DISTANCE_SQUARED = 9.0D;
-    private static final Ticks RESPONDER_PRESENTATION_DELAY = Ticks.seconds(2);
+    private static final ClockTicks RESPONDER_PRESENTATION_DELAY = ClockTicks.seconds(2);
     private static final double TRADE_CLOSE_ENOUGH_DISTANCE = 3.0D;
 
     private final TradeSessionRegistry sessionRegistry;
@@ -47,10 +47,10 @@ public final class TradeAcceptBehavior extends StateMachineBehavior {
                                @Nonnull TradeSessionRegistry sessionRegistry,
                                @Nonnull TradeSessionPresenter tradeSessionPresenter) {
         super(log,
-                Ticks.seconds(config.acceptPreconditionCooldownSeconds()).asTickable(),
+                ClockTicks.seconds(config.acceptPreconditionCooldownSeconds()).asTickable(),
                 RandomRangeTickable.of(
-                        Ticks.seconds(config.acceptBehaviorCooldownSecondsMax()),
-                        Ticks.seconds(config.acceptBehaviorCooldownSecondsMin())),
+                        ClockTicks.seconds(config.acceptBehaviorCooldownSecondsMax()),
+                        ClockTicks.seconds(config.acceptBehaviorCooldownSecondsMin())),
                 hungerConfig);
         this.sessionRegistry = sessionRegistry;
         this.tradeSessionPresenter = tradeSessionPresenter;

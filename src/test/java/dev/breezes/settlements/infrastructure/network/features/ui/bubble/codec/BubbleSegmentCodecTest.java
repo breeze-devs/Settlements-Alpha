@@ -2,7 +2,7 @@ package dev.breezes.settlements.infrastructure.network.features.ui.bubble.codec;
 
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
@@ -30,7 +30,7 @@ class BubbleSegmentCodecTest {
                         .build(),
                 BubbleSegment.Sprite.builder()
                         .sprite(SpriteRef.SHEARS)
-                        .frameDuration(Ticks.seconds(0.5))
+                        .frameDuration(ClockTicks.seconds(0.5))
                         .build());
 
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());

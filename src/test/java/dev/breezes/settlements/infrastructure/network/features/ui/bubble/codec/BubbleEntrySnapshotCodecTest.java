@@ -4,7 +4,7 @@ import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleEntrySnapshot;
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
@@ -42,7 +42,7 @@ class BubbleEntrySnapshotCodecTest {
                                 .build(),
                         BubbleSegment.Sprite.builder()
                                 .sprite(SpriteRef.SHEARS)
-                                .frameDuration(Ticks.seconds(1))
+                                .frameDuration(ClockTicks.seconds(1))
                                 .build()))
                 .build();
 

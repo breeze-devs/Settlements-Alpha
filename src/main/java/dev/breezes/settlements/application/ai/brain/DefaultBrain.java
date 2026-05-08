@@ -4,7 +4,7 @@ import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
 import dev.breezes.settlements.domain.ai.memory.entry.IMemoryEntry;
 import dev.breezes.settlements.domain.ai.schedule.IScheduleProvider;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.Builder;
 
 import javax.annotation.Nonnull;
@@ -36,7 +36,7 @@ public class DefaultBrain implements IBrain {
     }
 
     @Override
-    public <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull IMemoryEntry<T> memory, @Nonnull Ticks expiration) {
+    public <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull IMemoryEntry<T> memory, @Nonnull ClockTicks expiration) {
 
     }
 

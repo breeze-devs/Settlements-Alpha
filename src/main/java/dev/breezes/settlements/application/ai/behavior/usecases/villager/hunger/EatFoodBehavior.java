@@ -7,8 +7,8 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -33,9 +33,9 @@ public class EatFoodBehavior extends StateMachineBehavior {
         END;
     }
 
-    private static final Ticks EATING_DURATION = Ticks.seconds(3);
-    private static final Ticks PARTICLE_MAX_INTERVAL = Ticks.of(12);
-    private static final Ticks PARTICLE_MIN_INTERVAL = Ticks.of(8);
+    private static final ClockTicks EATING_DURATION = ClockTicks.seconds(3);
+    private static final ClockTicks PARTICLE_MAX_INTERVAL = ClockTicks.of(12);
+    private static final ClockTicks PARTICLE_MIN_INTERVAL = ClockTicks.of(8);
 
     @Nullable
     private ItemStack selectedFood;
@@ -44,7 +44,7 @@ public class EatFoodBehavior extends StateMachineBehavior {
     private RandomRangeTickable particleTimer;
 
     public EatFoodBehavior(@Nonnull HungerConfig hungerConfig) {
-        super(log, Ticks.seconds(10).asTickable(), Ticks.seconds(20).asTickable(), hungerConfig);
+        super(log, ClockTicks.seconds(10).asTickable(), ClockTicks.seconds(20).asTickable(), hungerConfig);
 
         this.preconditions.add(villager -> villager.getHunger() < hungerConfig.eatPriorityThreshold());
         this.preconditions.add(villager -> this.findFirstFoodSlot(villager.getSettlementsInventory()) >= 0);

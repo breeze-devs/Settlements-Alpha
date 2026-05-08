@@ -16,7 +16,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -49,8 +49,8 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
-    private static final Ticks ITEM_INTERACTION_DURATION = Ticks.seconds(1);
-    private static final Ticks SMOKING_DURATION = Ticks.seconds(6);
+    private static final ClockTicks ITEM_INTERACTION_DURATION = ClockTicks.seconds(1);
+    private static final ClockTicks SMOKING_DURATION = ClockTicks.seconds(6);
 
     private static final List<SmokeMeatRecipe> RECIPES = List.of(
             SmokeMeatRecipe.builder().input(Items.BEEF).output(Items.COOKED_BEEF).build(),

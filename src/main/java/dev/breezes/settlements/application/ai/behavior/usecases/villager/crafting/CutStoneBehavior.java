@@ -17,7 +17,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.TransformedBlockDisplay;
@@ -47,7 +47,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
     private static final double ANIMATION_OFFSET = 0.6;
-    private static final Ticks ANIMATION_HALF_DURATION = Ticks.seconds(1.5);
+    private static final ClockTicks ANIMATION_HALF_DURATION = ClockTicks.seconds(1.5);
 
     private static final List<CutStoneRecipe> RECIPES = List.of(
             CutStoneRecipe.builder()
@@ -170,7 +170,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
 
     private BehaviorStep createCutStep() {
         TimeBasedStep setup = TimeBasedStep.builder()
-                .withTickable(Ticks.ONE.asTickable())
+                .withTickable(ClockTicks.ONE.asTickable())
                 .onEnd(ctx -> {
                     if (this.stoneCutter == null || this.initialBlockDisplay == null) {
                         return StepResult.complete();
@@ -199,7 +199,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
                 .build();
 
         TimeBasedStep transition = TimeBasedStep.builder()
-                .withTickable(Ticks.ONE.asTickable())
+                .withTickable(ClockTicks.ONE.asTickable())
                 .onEnd(ctx -> {
                     if (this.stoneCutter == null || this.finalBlockDisplay == null || this.finalMatrix == null) {
                         return StepResult.complete();

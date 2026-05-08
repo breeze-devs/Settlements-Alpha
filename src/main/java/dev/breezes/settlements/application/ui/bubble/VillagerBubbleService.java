@@ -2,7 +2,7 @@ package dev.breezes.settlements.application.ui.bubble;
 
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
 import lombok.CustomLog;
@@ -21,9 +21,9 @@ import java.util.UUID;
 @CustomLog
 public final class VillagerBubbleService {
 
-    private static final Ticks DEFAULT_BEHAVIOR_TTL_CAP = Ticks.seconds(30);
-    private static final Ticks DEFAULT_CHAT_TTL_CAP = Ticks.seconds(20);
-    private static final Ticks DEFAULT_SYSTEM_TTL_CAP = Ticks.seconds(10);
+    private static final ClockTicks DEFAULT_BEHAVIOR_TTL_CAP = ClockTicks.seconds(30);
+    private static final ClockTicks DEFAULT_CHAT_TTL_CAP = ClockTicks.seconds(20);
+    private static final ClockTicks DEFAULT_SYSTEM_TTL_CAP = ClockTicks.seconds(10);
 
     private final EnumMap<BubbleChannel, ChannelPolicy> policies;
     private final Comparator<BubbleEntry> renderComparator;
@@ -100,7 +100,7 @@ public final class VillagerBubbleService {
                                  long gameTime) {
         Optional<BubbleEntry> existing = state.getByOwner(channel, ownerKey);
         if (existing.isPresent()) {
-            Ticks ttl = clampTtl(channel, message.getTtl());
+            ClockTicks ttl = clampTtl(channel, message.getTtl());
             BubbleEntry updated = existing.get().withMessage(
                     message,
                     gameTime,
@@ -126,7 +126,7 @@ public final class VillagerBubbleService {
                                    String ownerKey,
                                    BubbleMessage message,
                                    long gameTime) {
-        Ticks ttlTicks = clampTtl(channel, message.getTtl());
+        ClockTicks ttlTicks = clampTtl(channel, message.getTtl());
         return BubbleEntry.builder()
                 .bubbleId(UUID.randomUUID())
                 .channel(channel)
@@ -138,7 +138,7 @@ public final class VillagerBubbleService {
                 .build();
     }
 
-    private Ticks clampTtl(BubbleChannel channel, Ticks requestedTtl) {
+    private ClockTicks clampTtl(BubbleChannel channel, ClockTicks requestedTtl) {
         ChannelPolicy policy = this.policies.get(channel);
         return policy.clampTtl(requestedTtl);
     }

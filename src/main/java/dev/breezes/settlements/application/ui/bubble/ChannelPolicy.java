@@ -1,16 +1,16 @@
 package dev.breezes.settlements.application.ui.bubble;
 
+import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.Builder;
 
 import javax.annotation.Nonnull;
-import dev.breezes.settlements.domain.time.Ticks;
 
 @Builder
 public record ChannelPolicy(
         int maxActive,
         @Nonnull OverflowPolicy overflowPolicy,
         int renderOrder,
-        @Nonnull Ticks defaultTtlCap
+        @Nonnull ClockTicks defaultTtlCap
 ) {
 
     public ChannelPolicy {
@@ -19,8 +19,8 @@ public record ChannelPolicy(
         }
     }
 
-    public Ticks clampTtl(@Nonnull Ticks requestedTtl) {
-        return Ticks.of(Math.min(requestedTtl.getTicks(), this.defaultTtlCap.getTicks()));
+    public ClockTicks clampTtl(@Nonnull ClockTicks requestedTtl) {
+        return ClockTicks.of(Math.min(requestedTtl.getTicks(), this.defaultTtlCap.getTicks()));
     }
 
     public enum OverflowPolicy {

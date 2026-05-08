@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ui.bubble;
 
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.Builder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
@@ -55,7 +55,7 @@ public sealed interface BubbleSegment permits BubbleSegment.Item, BubbleSegment.
 
     @Builder
     record Sprite(@Nonnull SpriteRef sprite,
-                  @Nonnull Ticks frameDuration) implements BubbleSegment {
+                  @Nonnull ClockTicks frameDuration) implements BubbleSegment {
     }
 
 }

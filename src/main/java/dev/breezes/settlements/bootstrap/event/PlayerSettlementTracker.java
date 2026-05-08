@@ -6,7 +6,7 @@ import dev.breezes.settlements.domain.settlement.query.BuildingContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementPositionContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.BuildingEnterEvent;
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.BuildingExitEvent;
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.PlayerRegionState;
@@ -36,7 +36,7 @@ import java.util.UUID;
 @CustomLog
 public final class PlayerSettlementTracker {
 
-    private static final int POLL_INTERVAL_TICKS = Ticks.seconds(1).getTicksAsInt();
+    private static final int POLL_INTERVAL_TICKS = ClockTicks.seconds(1).getTicksAsInt();
 
     private final BuildingRegistry buildingRegistry;
     private final SettlementQueryService settlementQueryService;

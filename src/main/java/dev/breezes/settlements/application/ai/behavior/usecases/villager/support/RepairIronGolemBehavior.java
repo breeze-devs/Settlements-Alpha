@@ -16,7 +16,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyDamagedIronGolemExistsCondition;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
@@ -78,7 +78,7 @@ public class RepairIronGolemBehavior extends StateMachineBehavior {
 
     private BehaviorStep createRepairStep() {
         TimeBasedStep repairTick = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(2).asTickable())
+                .withTickable(ClockTicks.seconds(2).asTickable())
                 .everyTick(ctx -> {
                     ctx.getInitiator().setHeldItem(new ItemStack(Items.IRON_INGOT));
                     return StepResult.noOp();

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ui.bubble;
 
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ class VillagerBubbleStateTest {
                 .ownerKey(ownerKey)
                 .message(BubbleMessage.builder()
                         .priority(priority)
-                        .ttl(Ticks.seconds(5))
+                        .ttl(ClockTicks.seconds(5))
                         .sourceType("test")
                         .segments(List.of(BubbleSegment.Item.iconOnly(ResourceLocation.withDefaultNamespace("wheat"))))
                         .build())

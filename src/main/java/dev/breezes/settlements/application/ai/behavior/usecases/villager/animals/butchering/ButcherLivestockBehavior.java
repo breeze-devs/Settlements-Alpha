@@ -15,7 +15,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -90,12 +90,12 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
 
     private BehaviorStep createButcherStep() {
         TimeBasedStep butcherStep = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(1).asTickable())
+                .withTickable(ClockTicks.seconds(1).asTickable())
                 .everyTick(context -> {
                     context.getInitiator().setHeldItem(Items.IRON_AXE.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(0.5), context -> {
+                .addKeyFrame(ClockTicks.seconds(0.5), context -> {
                     if (this.target == null || !this.target.isAlive()) {
                         return StepResult.complete();
                     }
@@ -120,7 +120,7 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
 
     private BehaviorStep createCollectDropsStep() {
         return TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(1).asTickable())
+                .withTickable(ClockTicks.seconds(1).asTickable())
                 .onEnd(context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
 

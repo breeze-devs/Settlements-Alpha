@@ -26,7 +26,7 @@ import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
@@ -56,7 +56,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
 
     private static final String BUBBLE_OWNER_KEY = "behavior:shear_sheep";
     private static final String DISPLAY_NAME_KEY = "ui.settlements.behavior.behavior.shear_sheep";
-    private static final Ticks BUBBLE_TTL = Ticks.seconds(30);
+    private static final ClockTicks BUBBLE_TTL = ClockTicks.seconds(30);
     private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
 
     private static final Map<DyeColor, ItemLike> WOOL_COLOR_MAP = Map.ofEntries(
@@ -122,11 +122,11 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                             .segments(List.of(
                                     BubbleSegment.Sprite.builder()
                                             .sprite(SpriteRef.SHEARS)
-                                            .frameDuration(Ticks.seconds(0.5))
+                                            .frameDuration(ClockTicks.seconds(0.5))
                                             .build(),
                                     BubbleSegment.Sprite.builder()
                                             .sprite(SpriteRef.SHEEP)
-                                            .frameDuration(Ticks.seconds(0.6))
+                                            .frameDuration(ClockTicks.seconds(0.6))
                                             .build()))
                             .build();
                     villager.upsertBubble(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY, message);
@@ -146,7 +146,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
 
     private BehaviorStep createShearSheepStep() {
         TimeBasedStep shearStep = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(1).asTickable())
+                .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(context -> {
                     this.shearCount.decrementAndGet();
                     return StepResult.noOp();
@@ -155,7 +155,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                     context.getInitiator().setHeldItem(Items.SHEARS.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(0.5), context -> {
+                .addKeyFrame(ClockTicks.seconds(0.5), context -> {
                     Optional<Sheep> sheepOptional = this.getTargetSheep(context);
                     if (sheepOptional.isEmpty()) {
                         return StepResult.complete();
@@ -174,7 +174,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                         if (woolItem == null) {
                             continue;
                         }
-                        woolItem.setPickUpDelay(Ticks.seconds(3).getTicksAsInt());
+                        woolItem.setPickUpDelay(ClockTicks.seconds(3).getTicksAsInt());
                         woolItem.setDeltaMovement(woolItem.getDeltaMovement().add(
                                 RandomUtil.randomDouble(-0.05F, 0.05F),
                                 RandomUtil.randomDouble(0F, 0.05F),

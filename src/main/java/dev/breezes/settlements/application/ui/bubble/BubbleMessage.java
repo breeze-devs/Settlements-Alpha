@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ui.bubble;
 
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -25,7 +25,7 @@ public final class BubbleMessage {
     /**
      * How long the bubble should remain visible before expiring.
      */
-    private final Ticks ttl;
+    private final ClockTicks ttl;
 
     /**
      * Stable identifier describing the subsystem or feature that produced the bubble.
@@ -40,7 +40,7 @@ public final class BubbleMessage {
     private final List<BubbleSegment> segments;
 
     public BubbleMessage(int priority,
-                         @Nonnull Ticks ttl,
+                         @Nonnull ClockTicks ttl,
                          @Nonnull String sourceType,
                          @Nonnull List<BubbleSegment> segments) {
         this.priority = priority;

@@ -10,7 +10,7 @@ import dev.breezes.settlements.application.ui.stats.session.VillagerStatsSession
 import dev.breezes.settlements.application.ui.stats.snapshot.VillagerStatsSnapshotBuilder;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerDemandSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerInventorySnapshotPacket;
@@ -35,8 +35,8 @@ import java.util.Objects;
 @CustomLog
 public final class VillagerStatsServerEvents {
 
-    private static final int STATS_SNAPSHOT_INTERVAL_TICKS = Ticks.seconds(0.5).getTicksAsInt();
-    private static final int INVENTORY_SNAPSHOT_INTERVAL_TICKS = Ticks.seconds(3).getTicksAsInt();
+    private static final int STATS_SNAPSHOT_INTERVAL_TICKS = ClockTicks.seconds(0.5).getTicksAsInt();
+    private static final int INVENTORY_SNAPSHOT_INTERVAL_TICKS = ClockTicks.seconds(3).getTicksAsInt();
 
     private final VillagerStatsSessionService sessionService;
     private final VillagerStatsSnapshotBuilder snapshotBuilder;

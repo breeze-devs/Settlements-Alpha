@@ -1,7 +1,7 @@
 package dev.breezes.settlements.infrastructure.rendering.bubbles;
 
 import dev.breezes.settlements.application.ui.bubble.BubbleEntrySnapshot;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.SpeechBubble;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.registry.SegmentComposedSpeechBubble;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
@@ -127,7 +127,7 @@ public class BubbleManager {
 
     protected Optional<SpeechBubble> createBubble(@Nonnull BubbleEntrySnapshot entry, long currentGameTime) {
         try {
-            Ticks remainingLifetime = Ticks.of(Math.max(1, entry.expireGameTime() - currentGameTime));
+            ClockTicks remainingLifetime = ClockTicks.of(Math.max(1, entry.expireGameTime() - currentGameTime));
             return Optional.of(new SegmentComposedSpeechBubble(
                     entry.bubbleId(),
                     entry.segments(),

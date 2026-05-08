@@ -10,8 +10,8 @@ import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.planning.PlanSlotStatus;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.Behavior;
@@ -28,7 +28,7 @@ import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
 
 public class PlanContextSwitcher extends Behavior<Villager> {
 
-    private static final Ticks TICK_COOLDOWN = Ticks.seconds(1);
+    private static final ClockTicks TICK_COOLDOWN = ClockTicks.seconds(1);
 
     private final ITickable tickCooldown;
 

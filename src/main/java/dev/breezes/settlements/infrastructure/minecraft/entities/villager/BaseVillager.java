@@ -28,9 +28,9 @@ import dev.breezes.settlements.domain.entities.hunger.IVillagerHunger;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
@@ -400,7 +400,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         HungerConfig config = SettlementsDagger.component().hungerConfig();
 
         if (this.hungerDrainTimer == null) {
-            this.hungerDrainTimer = Tickable.of(Ticks.seconds(config.tickIntervalSeconds()));
+            this.hungerDrainTimer = Tickable.of(ClockTicks.seconds(config.tickIntervalSeconds()));
         }
 
         if (!this.hungerDrainTimer.tickCheckAndReset(1)) {
@@ -420,7 +420,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         float hunger = this.getHunger();
         if (hunger < config.effectStartThreshold()) {
-            int effectDuration = Ticks.seconds(config.tickIntervalSeconds() + 1).getTicksAsInt();
+            int effectDuration = ClockTicks.seconds(config.tickIntervalSeconds() + 1).getTicksAsInt();
             int level = (int) Math.min(4, Math.ceil((config.effectStartThreshold() - hunger) / config.effectStartThreshold() * 4.0));
 
             this.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, effectDuration, level - 1, true, false));

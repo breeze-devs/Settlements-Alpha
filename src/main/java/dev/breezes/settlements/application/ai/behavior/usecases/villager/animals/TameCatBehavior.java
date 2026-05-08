@@ -17,7 +17,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.SettlementsCat;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -102,7 +102,7 @@ public class TameCatBehavior extends StateMachineBehavior {
 
     private BehaviorStep createTameCatStep() {
         TimeBasedStep attemptStep = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(1).asTickable())
+                .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(ctx -> {
                     this.attemptsRemaining = Math.max(0, this.attemptsRemaining - 1);
                     return StepResult.noOp();
@@ -111,7 +111,7 @@ public class TameCatBehavior extends StateMachineBehavior {
                     ctx.getInitiator().setHeldItem(Items.COD.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(0.5), ctx -> {
+                .addKeyFrame(ClockTicks.seconds(0.5), ctx -> {
                     Optional<Cat> catOptional = this.getTargetCat(ctx);
                     if (catOptional.isEmpty()) {
                         return StepResult.complete();

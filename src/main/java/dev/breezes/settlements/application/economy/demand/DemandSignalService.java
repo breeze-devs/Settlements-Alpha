@@ -3,7 +3,7 @@ package dev.breezes.settlements.application.economy.demand;
 import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -16,7 +16,7 @@ import javax.inject.Inject;
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class DemandSignalService {
 
-    private static final Ticks STALE_SIGNAL_CUTOFF = Ticks.hours(72);
+    private static final ClockTicks STALE_SIGNAL_CUTOFF = ClockTicks.hours(72);
 
     public DemandSignalSet getSignals(@Nonnull BaseVillager villager, long currentGameTime) {
         DemandSignalState currentState = villager.getData(AttachmentRegistry.VILLAGER_DEMAND_SIGNALS);

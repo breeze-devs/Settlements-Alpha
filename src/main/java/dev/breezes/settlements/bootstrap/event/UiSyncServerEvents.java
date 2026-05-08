@@ -3,7 +3,7 @@ package dev.breezes.settlements.bootstrap.event;
 import dev.breezes.settlements.application.ui.sync.UiServerChannelDefinition;
 import dev.breezes.settlements.application.ui.sync.session.UiSession;
 import dev.breezes.settlements.application.ui.sync.session.UiSessionRegistry;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundUiUnavailablePacket;
@@ -25,7 +25,7 @@ import java.util.Map;
 @CustomLog
 public final class UiSyncServerEvents {
 
-    private static final int SNAPSHOT_PUBLISH_INTERVAL_TICKS = Ticks.of(10).getTicksAsInt();
+    private static final int SNAPSHOT_PUBLISH_INTERVAL_TICKS = ClockTicks.of(10).getTicksAsInt();
 
     private final UiSessionRegistry sessionRegistry;
     private final Map<UiChannel, UiServerChannelDefinition> channelDefinitions;

@@ -17,7 +17,7 @@ import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyMilkableCowExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -78,12 +78,12 @@ public class MilkCowBehavior extends StateMachineBehavior {
 
     private BehaviorStep createMilkCowStep() {
         TimeBasedStep milkStep = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(2).asTickable())
+                .withTickable(ClockTicks.seconds(2).asTickable())
                 .onStart(context -> {
                     context.getInitiator().setHeldItem(Items.BUCKET.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(1), this::performMilk)
+                .addKeyFrame(ClockTicks.seconds(1), this::performMilk)
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
 

@@ -2,7 +2,7 @@
 //package dev.breezes.settlements.infrastructure.minecraft.ai.sensors;
 //
 //import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
-//import dev.breezes.settlements.domain.time.Ticks;
+//import dev.breezes.settlements.domain.time.ClockTicks;
 //import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 //import lombok.CustomLog;
 //import net.minecraft.core.component.DataComponents;
@@ -19,7 +19,7 @@
 //public class NeedFoodSensor extends Sensor<Villager> {
 //
 //    public NeedFoodSensor() {
-//        super(Ticks.seconds(15).getTicksAsInt());
+//        super(ClockTicks.seconds(15).getTicksAsInt());
 //    }
 //
 //    @Override

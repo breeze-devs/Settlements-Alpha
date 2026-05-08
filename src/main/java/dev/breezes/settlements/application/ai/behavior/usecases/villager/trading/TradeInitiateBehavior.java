@@ -25,8 +25,8 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
@@ -92,10 +92,10 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
                                  @Nonnull PartnerScanner partnerScanner,
                                  @Nonnull NegotiationEngine negotiationEngine) {
         super(log,
-                Ticks.seconds(config.initiatePreconditionCooldownSeconds()).asTickable(),
+                ClockTicks.seconds(config.initiatePreconditionCooldownSeconds()).asTickable(),
                 RandomRangeTickable.of(
-                        Ticks.seconds(config.initiateBehaviorCooldownSecondsMax()),
-                        Ticks.seconds(config.initiateBehaviorCooldownSecondsMin())),
+                        ClockTicks.seconds(config.initiateBehaviorCooldownSecondsMax()),
+                        ClockTicks.seconds(config.initiateBehaviorCooldownSecondsMin())),
                 hungerConfig);
         this.config = config;
 

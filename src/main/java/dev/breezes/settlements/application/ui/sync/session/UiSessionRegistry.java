@@ -2,7 +2,7 @@ package dev.breezes.settlements.application.ui.sync.session;
 
 import dev.breezes.settlements.application.ui.sync.UiServerChannelDefinition;
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundUiUnavailablePacket;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @CustomLog
 public final class UiSessionRegistry {
 
-    private static final long HEARTBEAT_TIMEOUT_TICKS = Ticks.seconds(4).getTicks();
+    private static final long HEARTBEAT_TIMEOUT_TICKS = ClockTicks.seconds(4).getTicks();
 
     private final AtomicLong sessionIdGenerator = new AtomicLong(1000L);
     private final ConcurrentHashMap<UUID, UiSession> sessionsByPlayer = new ConcurrentHashMap<>();

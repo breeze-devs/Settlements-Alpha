@@ -1,7 +1,7 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering;
 
 import dev.breezes.settlements.SettlementsMod;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.CustomLog;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -28,7 +28,7 @@ public class ButcheringDropHandler {
 
         for (ItemEntity drop : event.getDrops()) {
             drop.getPersistentData().putUUID(ButcherLivestockBehavior.RESERVED_FOR_VILLAGER_KEY, villagerUuid);
-            drop.setPickUpDelay(Ticks.seconds(10).getTicksAsInt());
+            drop.setPickUpDelay(ClockTicks.seconds(10).getTicksAsInt());
         }
     }
 

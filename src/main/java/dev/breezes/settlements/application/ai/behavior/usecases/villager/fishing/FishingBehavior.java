@@ -19,7 +19,7 @@ import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.fishing.FishCatchEntry;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.VillagerFishingHook;
@@ -176,7 +176,7 @@ public class FishingBehavior extends StateMachineBehavior {
      */
     private BehaviorStep createNavigateStep() {
         TimeBasedStep arrivedStep = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(0.5).asTickable())
+                .withTickable(ClockTicks.seconds(0.5).asTickable())
                 .onEnd(context -> StepResult.transition(FishingStage.CAST_LINE))
                 .build();
 
@@ -193,14 +193,14 @@ public class FishingBehavior extends StateMachineBehavior {
      */
     private BehaviorStep createCastLineStep() {
         return TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(1).asTickable())
+                .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(context -> {
                     ISettlementsVillager villager = context.getInitiator();
                     villager.setHeldItem(Items.FISHING_ROD.getDefaultInstance());
                     this.lookAtWater(villager);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(CAST_HOOK_DELAY_SECONDS), context -> {
+                .addKeyFrame(ClockTicks.seconds(CAST_HOOK_DELAY_SECONDS), context -> {
                     if (this.waterTarget == null) {
                         log.behaviorWarn("No water target set during cast — stopping");
                         return StepResult.fail("NO_WATER_TARGET");
@@ -218,7 +218,7 @@ public class FishingBehavior extends StateMachineBehavior {
      */
     private BehaviorStep createWaitForBiteStep() {
         return TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(config.maxWaitTimeSeconds()).asTickable())
+                .withTickable(ClockTicks.seconds(config.maxWaitTimeSeconds()).asTickable())
                 .addPeriodicStep(5, context -> {
                     if (this.activeHook != null && this.activeHook.isRemoved() && this.activeHook.isMissedWater()) {
                         if (this.castRetryCount < MAX_CAST_RETRIES) {
@@ -242,7 +242,7 @@ public class FishingBehavior extends StateMachineBehavior {
 
                     return StepResult.noOp();
                 })
-                .addPeriodicStep(Ticks.of(20).getTicksAsInt(), context -> {
+                .addPeriodicStep(ClockTicks.of(20).getTicksAsInt(), context -> {
                     this.lookAtWater(context.getInitiator());
                     return StepResult.noOp();
                 })
@@ -263,7 +263,7 @@ public class FishingBehavior extends StateMachineBehavior {
      */
     private BehaviorStep createReelInStep() {
         return TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(1.5).asTickable())
+                .withTickable(ClockTicks.seconds(1.5).asTickable())
                 .onStart(context -> {
                     // Display happy effects
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
@@ -274,7 +274,7 @@ public class FishingBehavior extends StateMachineBehavior {
                     this.lookAtWater(context.getInitiator());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(0.5), context -> {
+                .addKeyFrame(ClockTicks.seconds(0.5), context -> {
                     if (this.activeHook == null || this.activeHook.isRemoved()) {
                         return StepResult.noOp();
                     }
@@ -303,7 +303,7 @@ public class FishingBehavior extends StateMachineBehavior {
      */
     private BehaviorStep createCollectFishStep() {
         return TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(3).asTickable())
+                .withTickable(ClockTicks.seconds(3).asTickable())
                 .addPeriodicStep(5, context -> {
                     if (this.fishedEntity == null || this.fishedEntity.isRemoved()) {
                         return collectAndComplete(context);
@@ -341,8 +341,8 @@ public class FishingBehavior extends StateMachineBehavior {
             return StepResult.fail("NO_WATER_TARGET");
         }
 
-        int baseMinBiteTicks = Ticks.seconds(this.config.minWaitTimeSeconds()).getTicksAsInt();
-        int baseMaxBiteTicks = Ticks.seconds(this.config.maxWaitTimeSeconds()).getTicksAsInt();
+        int baseMinBiteTicks = ClockTicks.seconds(this.config.minWaitTimeSeconds()).getTicksAsInt();
+        int baseMaxBiteTicks = ClockTicks.seconds(this.config.maxWaitTimeSeconds()).getTicksAsInt();
 
         Expertise expertise = villager.getExpertise();
         double fishingTimeShortenScale = this.config.expertiseWaitTimeScale().getOrDefault(expertise.getConfigName(), 1.0);
@@ -351,7 +351,7 @@ public class FishingBehavior extends StateMachineBehavior {
         int minBiteTicks = Math.max(1, (int) Math.round(baseMinBiteTicks * fishingTimeShortenScale));
         int maxBiteTicks = Math.max(minBiteTicks, (int) Math.round(baseMaxBiteTicks * fishingTimeShortenScale));
         int biteTimeTicks = RandomUtil.randomInt(minBiteTicks, maxBiteTicks, true);
-        int maxLifetimeTicks = baseMaxBiteTicks + Ticks.seconds(HOOK_MAX_LIFETIME_BUFFER_SECONDS).getTicksAsInt();
+        int maxLifetimeTicks = baseMaxBiteTicks + ClockTicks.seconds(HOOK_MAX_LIFETIME_BUFFER_SECONDS).getTicksAsInt();
 
         // Calculate hook velocity
         double retryProgress = (this.castRetryCount - 1) / (double) (MAX_CAST_RETRIES - 1);

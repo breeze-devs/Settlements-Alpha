@@ -17,7 +17,7 @@ import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFullHiveExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
@@ -82,12 +82,12 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
 
     private BehaviorStep createCollectStep() {
         TimeBasedStep collectStep = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(2).asTickable())
+                .withTickable(ClockTicks.seconds(2).asTickable())
                 .onStart(context -> {
                     context.getInitiator().setHeldItem(Items.GLASS_BOTTLE.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(1), this::performHarvest)
+                .addKeyFrame(ClockTicks.seconds(1), this::performHarvest)
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
                     if (this.harvestsRemaining > 0 && this.selectFreshTarget(context.getInitiator().getMinecraftEntity(), context.getInitiator().getMinecraftEntity().level(), context)) {

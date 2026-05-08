@@ -54,15 +54,15 @@ import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.di.catalog.BehaviorCatalogEntry;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorCategory;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.WorkIntensity;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
-import dev.breezes.settlements.domain.time.GameTicks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import net.minecraft.resources.ResourceLocation;
@@ -85,14 +85,6 @@ import java.util.Set;
 @Module
 public final class BehaviorCatalogModule {
 
-    // Tick constants for estimated durations
-    private static final GameTicks TICKS_3MIN = GameTicks.minutes(3);
-    private static final GameTicks TICKS_4MIN = GameTicks.minutes(4);
-    private static final GameTicks TICKS_5MIN = GameTicks.minutes(5);
-    private static final GameTicks TICKS_6MIN = GameTicks.minutes(6);
-    private static final GameTicks TICKS_8MIN = GameTicks.minutes(8);
-    private static final GameTicks TICKS_10MIN = GameTicks.minutes(10);
-
     // =========================================================================
     // Universal
     // =========================================================================
@@ -108,7 +100,7 @@ public final class BehaviorCatalogModule {
                         .category(BehaviorCategory.SELF_CARE)
                         .intensity(WorkIntensity.NONE)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(TICKS_3MIN)
+                        .estimatedDuration(ClockTicks.seconds(5).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -143,7 +135,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
                         .requiredChannel(BehaviorChannel.SOCIAL)
-                        .estimatedDuration(TICKS_5MIN)
+                        .estimatedDuration(ClockTicks.seconds(35).asGameTicks())
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -172,7 +164,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
                         .requiredChannel(BehaviorChannel.SOCIAL)
-                        .estimatedDuration(TICKS_5MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -200,7 +192,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_5MIN)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -227,7 +219,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.HEAVY)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_6MIN)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -254,7 +246,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(TICKS_4MIN)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -277,7 +269,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.HEAVY)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_6MIN)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -301,7 +293,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_5MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -329,7 +321,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_4MIN)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -353,7 +345,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_6MIN)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -381,7 +373,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_5MIN)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -406,7 +398,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(TICKS_3MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -431,7 +423,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(TICKS_3MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -454,7 +446,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(TICKS_3MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -477,7 +469,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(TICKS_3MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -500,7 +492,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(TICKS_4MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -528,7 +520,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_5MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -552,7 +544,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_5MIN)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -577,7 +569,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(TICKS_3MIN)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -604,7 +596,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.HEAVY)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_8MIN)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -631,7 +623,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.HEAVY)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_6MIN)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -655,7 +647,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_6MIN)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -684,7 +676,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.HEAVY)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(TICKS_10MIN)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()

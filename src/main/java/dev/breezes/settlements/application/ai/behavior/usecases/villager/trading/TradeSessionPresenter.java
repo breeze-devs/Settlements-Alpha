@@ -8,7 +8,7 @@ import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.TradeMarker;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
@@ -29,7 +29,7 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class TradeSessionPresenter {
 
-    private static final Ticks BUBBLE_TTL = Ticks.seconds(2);
+    private static final ClockTicks BUBBLE_TTL = ClockTicks.seconds(2);
     private static final String TRADE_SOURCE = "trade";
 
     private final VillagerBubbleService villagerBubbleService;

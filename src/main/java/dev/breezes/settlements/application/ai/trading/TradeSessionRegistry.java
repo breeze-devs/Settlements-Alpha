@@ -1,7 +1,7 @@
 package dev.breezes.settlements.application.ai.trading;
 
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.world.item.Item;
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @CustomLog
 public final class TradeSessionRegistry {
 
-    private static final int DEADLINE_SLACK_TICKS = Ticks.seconds(2).getTicksAsInt();
+    private static final int DEADLINE_SLACK_TICKS = ClockTicks.seconds(2).getTicksAsInt();
 
     private final TradingConfig tradingConfig;
 
@@ -60,7 +60,7 @@ public final class TradeSessionRegistry {
                 .phaseEnteredGameTime(currentGameTime)
                 .build();
 
-        long inviteExpireGameTime = currentGameTime + Ticks.seconds(this.tradingConfig.inviteTimeoutSeconds()).getTicks();
+        long inviteExpireGameTime = currentGameTime + ClockTicks.seconds(this.tradingConfig.inviteTimeoutSeconds()).getTicks();
         TradeInvite invite = new TradeInvite(sessionId, initiator.getUUID(), target.getUUID(), currentGameTime, inviteExpireGameTime);
 
         putSession(session);
@@ -145,9 +145,9 @@ public final class TradeSessionRegistry {
 
     private long maxDurationTicks(@Nonnull TradeSessionPhase phase) {
         return switch (phase) {
-            case SYN_SENT -> Ticks.seconds(this.tradingConfig.inviteTimeoutSeconds()).getTicks();
-            case ESTABLISHED -> Ticks.seconds(2).getTicks();
-            case APPROACH -> Ticks.seconds(10).getTicks() + DEADLINE_SLACK_TICKS;
+            case SYN_SENT -> ClockTicks.seconds(this.tradingConfig.inviteTimeoutSeconds()).getTicks();
+            case ESTABLISHED -> ClockTicks.seconds(2).getTicks();
+            case APPROACH -> ClockTicks.seconds(10).getTicks() + DEADLINE_SLACK_TICKS;
             case OPENING_OFFER -> (this.tradingConfig.openingOfferDuration().getTicks() * 2L) + DEADLINE_SLACK_TICKS;
             case NEGOTIATING ->
                     (this.tradingConfig.negotiationRoundDuration().getTicks() * 2L * this.tradingConfig.maxNegotiationRounds())

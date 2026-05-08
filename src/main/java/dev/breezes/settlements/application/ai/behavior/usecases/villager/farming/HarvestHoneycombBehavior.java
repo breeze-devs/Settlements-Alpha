@@ -17,7 +17,7 @@ import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFullHiveExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
@@ -82,12 +82,12 @@ public class HarvestHoneycombBehavior extends StateMachineBehavior {
 
     private BehaviorStep createHarvestStep() {
         TimeBasedStep harvestStep = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(1).asTickable())
+                .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(context -> {
                     context.getInitiator().setHeldItem(Items.SHEARS.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(0.5), this::performHarvest)
+                .addKeyFrame(ClockTicks.seconds(0.5), this::performHarvest)
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
                     if (this.harvestsRemaining > 0 && this.selectFreshTarget(context.getInitiator().getMinecraftEntity(), context.getInitiator().getMinecraftEntity().level(), context)) {

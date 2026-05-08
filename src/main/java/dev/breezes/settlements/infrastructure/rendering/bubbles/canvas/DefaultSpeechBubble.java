@@ -1,10 +1,10 @@
 package dev.breezes.settlements.infrastructure.rendering.bubbles.canvas;
 
-import dev.breezes.settlements.infrastructure.rendering.bubbles.RenderParameter;
-import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.RenderParameter;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -28,7 +28,7 @@ public class DefaultSpeechBubble implements SpeechBubble {
     protected DefaultSpeechBubble(@Nonnull UUID uuid,
                                   @Nonnull BubbleBoundaryElement bubbleElement,
                                   double visibilityBlocks,
-                                  @Nonnull Ticks lifetime) {
+                                  @Nonnull ClockTicks lifetime) {
         this.bubbleId = uuid;
         this.bubbleElement = bubbleElement;
         this.visibilitySquared = Math.pow(visibilityBlocks, 2);

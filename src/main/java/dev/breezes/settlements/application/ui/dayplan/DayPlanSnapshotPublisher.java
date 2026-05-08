@@ -4,7 +4,7 @@ import dev.breezes.settlements.application.ui.dayplan.model.DayPlanSnapshot;
 import dev.breezes.settlements.application.ui.sync.UiSnapshotPublisher;
 import dev.breezes.settlements.application.ui.sync.session.UiSession;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.packet.ClientBoundDayPlanSnapshotPacket;
 import lombok.AccessLevel;
@@ -18,7 +18,7 @@ import javax.inject.Inject;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class DayPlanSnapshotPublisher implements UiSnapshotPublisher {
 
-    private static final int PUBLISH_INTERVAL_TICKS = Ticks.seconds(2).getTicksAsInt();
+    private static final int PUBLISH_INTERVAL_TICKS = ClockTicks.seconds(2).getTicksAsInt();
 
     private final DayPlanSnapshotAssembler assembler;
 

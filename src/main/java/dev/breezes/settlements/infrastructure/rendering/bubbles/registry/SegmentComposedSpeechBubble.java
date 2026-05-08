@@ -1,7 +1,7 @@
 package dev.breezes.settlements.infrastructure.rendering.bubbles.registry;
 
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.BubbleBoundaryElement;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.BubbleHorizontalCompositeElement;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.BubbleInnerElement;
@@ -16,7 +16,7 @@ public final class SegmentComposedSpeechBubble extends DefaultSpeechBubble {
     public SegmentComposedSpeechBubble(@Nonnull UUID uuid,
                                        @Nonnull List<BubbleSegment> segments,
                                        double visibilityBlocks,
-                                       @Nonnull Ticks lifetime) {
+                                       @Nonnull ClockTicks lifetime) {
         super(uuid, buildBoundary(segments), visibilityBlocks, lifetime);
     }
 

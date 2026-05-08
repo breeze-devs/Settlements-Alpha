@@ -1,9 +1,9 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.displays;
 
+import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.DisplayEntityMixin;
-import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.domain.time.Ticks;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.world.entity.Display;
@@ -71,7 +71,7 @@ public abstract class TransformedDisplay {
         this.setTransformation(newTransformation, null);
     }
 
-    public void setTransformation(@Nonnull TransformationMatrix newTransformation, @Nullable Ticks duration) {
+    public void setTransformation(@Nonnull TransformationMatrix newTransformation, @Nullable ClockTicks duration) {
         if (this.displayEntity == null) {
             log.info("TODO: change to entity-level logger"); // TODO: change to entity-level logger
             log.error("Cannot set transformation on a display that has not been spawned!");

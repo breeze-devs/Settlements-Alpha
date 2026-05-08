@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.trading;
 
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
@@ -110,20 +110,20 @@ public record TradingConfig(
         }
     }
 
-    public Ticks negotiationRoundDuration() {
-        return Ticks.seconds(this.negotiationRoundDurationSeconds);
+    public ClockTicks negotiationRoundDuration() {
+        return ClockTicks.seconds(this.negotiationRoundDurationSeconds);
     }
 
-    public Ticks openingOfferDuration() {
-        return Ticks.seconds(this.openingOfferDurationSeconds);
+    public ClockTicks openingOfferDuration() {
+        return ClockTicks.seconds(this.openingOfferDurationSeconds);
     }
 
-    public Ticks dealDuration() {
-        return Ticks.seconds(this.dealDurationSeconds);
+    public ClockTicks dealDuration() {
+        return ClockTicks.seconds(this.dealDurationSeconds);
     }
 
-    public Ticks walkawayDuration() {
-        return Ticks.seconds(this.walkawayDurationSeconds);
+    public ClockTicks walkawayDuration() {
+        return ClockTicks.seconds(this.walkawayDurationSeconds);
     }
 
 }

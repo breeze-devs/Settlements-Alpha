@@ -1,9 +1,9 @@
 package dev.breezes.settlements.infrastructure.rendering.bubbles.canvas;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleBoundingBox;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.RenderParameter;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.texture.AnimatedFrameTexture;
@@ -20,14 +20,14 @@ public class AnimatedSpriteElement implements BubbleInnerElement {
     private static final int BOUNDARY_SIZE = 12;
 
     private final AnimatedFrameTexture texture;
-    private final Ticks frameDuration;
+    private final ClockTicks frameDuration;
 
     private final AtomicInteger frameIndex;
     private final ITickable frameTickable;
 
     @Builder
     public AnimatedSpriteElement(@Nonnull AnimatedFrameTexture texture,
-                                 @Nonnull Ticks frameDuration,
+                                 @Nonnull ClockTicks frameDuration,
                                  @Nullable AtomicInteger frameIndex,
                                  @Nullable ITickable frameTickable) {
         this.texture = texture;

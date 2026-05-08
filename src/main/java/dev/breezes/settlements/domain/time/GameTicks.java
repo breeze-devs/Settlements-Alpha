@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 /**
  * Game-time duration expressed in Minecraft ticks.
  * <p>
- * Unlike {@link Ticks}, which measures real-world elapsed ticks (20 per real second),
+ * Unlike {@link ClockTicks}, which measures real-world elapsed ticks (20 per real second),
  * this class expresses durations in terms of in-game clock time, where one game hour
  * equals 1,000 ticks (one Minecraft day = 24,000 ticks = 20 real minutes).
  * <p>
@@ -53,6 +53,10 @@ public class GameTicks {
 
     public int getAsGameHours() {
         return this.ticks / TICKS_PER_GAME_HOUR;
+    }
+
+    public ClockTicks asClockTicks() {
+        return ClockTicks.of(this.getTicksAsInt());
     }
 
 }

@@ -21,7 +21,7 @@ import dev.breezes.settlements.domain.enchanting.SpecializationProfile;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -97,8 +97,8 @@ public class EnchantItemBehavior extends StateMachineBehavior {
         // TODO: we can also make 'golden' particles/animations if rolling a max level enchants or something good
         // TODO: to do this, we need to determine the enchantment result at the start of the behavior, so we can animate accordingly
         TimeBasedStep actionStep = TimeBasedStep.builder()
-                .withTickable(Ticks.seconds(10).asTickable())
-                .addPeriodicStep(Ticks.of(10).getTicksAsInt(), context -> {
+                .withTickable(ClockTicks.seconds(10).asTickable())
+                .addPeriodicStep(ClockTicks.of(10).getTicksAsInt(), context -> {
                     if (this.enchantingTablePos == null) {
                         return StepResult.noOp();
                     }
@@ -111,7 +111,7 @@ public class EnchantItemBehavior extends StateMachineBehavior {
 
                     return StepResult.noOp();
                 })
-                .addKeyFrame(Ticks.seconds(8), this::performEnchant)
+                .addKeyFrame(ClockTicks.seconds(8), this::performEnchant)
                 .onEnd(context -> StepResult.complete())
                 .build();
 

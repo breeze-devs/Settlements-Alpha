@@ -1,7 +1,7 @@
 package dev.breezes.settlements.presentation.ui.sync;
 
 import dev.breezes.settlements.di.ClientScope;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundHeartbeatUiPacket;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
@@ -18,9 +18,9 @@ import java.util.Optional;
 @NoArgsConstructor(onConstructor_ = @Inject)
 public final class UiClientState {
 
-    private static final int HEARTBEAT_INTERVAL_TICKS = Ticks.seconds(2).getTicksAsInt();
-    private static final int SNAPSHOT_STALE_THRESHOLD_TICKS = Ticks.seconds(4).getTicksAsInt();
-    private static final int HEARTBEAT_ACK_STALE_THRESHOLD_TICKS = Ticks.seconds(6).getTicksAsInt();
+    private static final int HEARTBEAT_INTERVAL_TICKS = ClockTicks.seconds(2).getTicksAsInt();
+    private static final int SNAPSHOT_STALE_THRESHOLD_TICKS = ClockTicks.seconds(4).getTicksAsInt();
+    private static final int HEARTBEAT_ACK_STALE_THRESHOLD_TICKS = ClockTicks.seconds(6).getTicksAsInt();
 
     private long activeSessionId = -1L;
     @Nullable

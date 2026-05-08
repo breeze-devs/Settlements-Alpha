@@ -1,8 +1,8 @@
 package dev.breezes.settlements.application.ai.behavior.workflow.steps;
 
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
-import dev.breezes.settlements.domain.time.Ticks;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
@@ -152,7 +152,7 @@ public class TimeBasedStep extends AbstractStep {
             return this;
         }
 
-        public Builder addKeyFrame(@Nonnull Ticks elapsed, @Nonnull BehaviorStep step) {
+        public Builder addKeyFrame(@Nonnull ClockTicks elapsed, @Nonnull BehaviorStep step) {
             this.keyFrames.put(elapsed.getTicks(), step);
             return this;
         }

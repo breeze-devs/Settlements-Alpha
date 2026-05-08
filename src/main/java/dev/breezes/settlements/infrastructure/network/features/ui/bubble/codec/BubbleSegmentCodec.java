@@ -2,7 +2,7 @@ package dev.breezes.settlements.infrastructure.network.features.ui.bubble.codec;
 
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 
@@ -35,7 +35,7 @@ public final class BubbleSegmentCodec {
                     .build();
             case TYPE_SPRITE -> BubbleSegment.Sprite.builder()
                     .sprite(SpriteRef.valueOf(buffer.readUtf(MAX_SPRITE_NAME_LENGTH)))
-                    .frameDuration(Ticks.of(buffer.readVarLong()))
+                    .frameDuration(ClockTicks.of(buffer.readVarLong()))
                     .build();
             default -> throw new IllegalArgumentException("Unknown bubble segment type");
         };

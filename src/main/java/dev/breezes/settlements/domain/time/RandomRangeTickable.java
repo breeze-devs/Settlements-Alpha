@@ -19,11 +19,11 @@ public class RandomRangeTickable extends Tickable {
         this.reset();
     }
 
-    public static RandomRangeTickable of(@Nonnull Ticks maxTicks, @Nonnull Ticks minTicks) {
+    public static RandomRangeTickable of(@Nonnull ClockTicks maxTicks, @Nonnull ClockTicks minTicks) {
         return new RandomRangeTickable(maxTicks.getTicks(), minTicks.getTicks());
     }
 
-    public static RandomRangeTickable of(@Nonnull Ticks maxTicks) {
+    public static RandomRangeTickable of(@Nonnull ClockTicks maxTicks) {
         return new RandomRangeTickable(maxTicks.getTicks(), maxTicks.getTicks());
     }
 

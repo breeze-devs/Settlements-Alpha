@@ -14,7 +14,7 @@ public class Tickable implements ITickable {
         this(baseTicks, baseTicks);
     }
 
-    public static Tickable of(@Nonnull Ticks baseTicks) {
+    public static Tickable of(@Nonnull ClockTicks baseTicks) {
         return new Tickable(baseTicks.getTicks());
     }
 
@@ -61,9 +61,9 @@ public class Tickable implements ITickable {
     @Override
     public String getRemainingCooldownsAsPrettyString() {
         long remainingTicks = Math.round(Math.max(currentTicks, 0));
-        long totalSeconds = remainingTicks / Ticks.TICKS_PER_SECOND;
-        long minutes = totalSeconds / Ticks.SECONDS_PER_MINUTE;
-        long seconds = totalSeconds % Ticks.SECONDS_PER_MINUTE;
+        long totalSeconds = remainingTicks / ClockTicks.TICKS_PER_SECOND;
+        long minutes = totalSeconds / ClockTicks.SECONDS_PER_MINUTE;
+        long seconds = totalSeconds % ClockTicks.SECONDS_PER_MINUTE;
         return String.format("%02d:%02d", minutes, seconds);
     }
 

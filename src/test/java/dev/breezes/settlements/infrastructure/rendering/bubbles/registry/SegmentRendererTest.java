@@ -2,7 +2,7 @@ package dev.breezes.settlements.infrastructure.rendering.bubbles.registry;
 
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleBoundingBox;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.AnimatedSpriteElement;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.BubbleInnerElement;
@@ -29,7 +29,7 @@ class SegmentRendererTest {
     void sprite_returnsAnimatedSpriteElement() {
         BubbleInnerElement element = SegmentRenderer.toElement(BubbleSegment.Sprite.builder()
                 .sprite(SpriteRef.SHEARS)
-                .frameDuration(Ticks.seconds(0.5))
+                .frameDuration(ClockTicks.seconds(0.5))
                 .build());
 
         Assertions.assertInstanceOf(AnimatedSpriteElement.class, element);

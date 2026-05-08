@@ -31,7 +31,7 @@ import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.settlement.query.BuildingContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementPositionContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
-import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.generation.debug.GenerationResultSerializer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.TransformedBlockDisplay;
@@ -102,7 +102,7 @@ public class TestCommand {
     private static final String ARG_OWNER_KEY = "owner_key";
     private static final String ARG_BUBBLE_ID = "bubble_id";
 
-    private static final Ticks TEST_BUBBLE_TTL = Ticks.seconds(10);
+    private static final ClockTicks TEST_BUBBLE_TTL = ClockTicks.seconds(10);
     private static final int SETTLEMENT_DEBUG_MIN_Y_OFFSET = -5;
     private static final int SETTLEMENT_DEBUG_MAX_Y_OFFSET = 30;
     private static final int GENERATION_SURVEY_PADDING = 30;
@@ -651,7 +651,7 @@ public class TestCommand {
                     2.6000f, 0.0000f, 0.0000f, 0.1000f,
                     0.0000f, 0.5657f, -0.5657f, 0.1000f,
                     0.0000f, 0.5657f, 0.5657f, 0.1000f,
-                    0.0000f, 0.0000f, 0.0000f, 1.0000f), Ticks.seconds(2));
+                    0.0000f, 0.0000f, 0.0000f, 1.0000f), ClockTicks.seconds(2));
         }, 2 * 1000, TimeUnit.MILLISECONDS);
 
         executor.schedule(display::remove, 10 * 1000, TimeUnit.MILLISECONDS);
@@ -683,11 +683,11 @@ public class TestCommand {
                     .segments(List.of(
                             BubbleSegment.Sprite.builder()
                                     .sprite(SpriteRef.SHEARS)
-                                    .frameDuration(Ticks.seconds(0.5))
+                                    .frameDuration(ClockTicks.seconds(0.5))
                                     .build(),
                             BubbleSegment.Sprite.builder()
                                     .sprite(SpriteRef.SHEEP)
-                                    .frameDuration(Ticks.seconds(0.6))
+                                    .frameDuration(ClockTicks.seconds(0.6))
                                     .build()))
                     .build();
         };
