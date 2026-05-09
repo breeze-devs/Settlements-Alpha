@@ -1,11 +1,7 @@
 package dev.breezes.settlements.domain.inventory;
 
-import dev.breezes.settlements.shared.util.NbtTags;
 import lombok.Builder;
 import lombok.Getter;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -15,8 +11,6 @@ import net.minecraft.world.level.Level;
 import java.util.Optional;
 
 public class VillagerInventory {
-
-    private static final String NBT_TAG = NbtTags.of("villager_inventory");
 
     @Getter
     private final int backpackSize;
@@ -169,19 +163,6 @@ public class VillagerInventory {
         this.offHand = (newItem == null || newItem.isEmpty()) ? ItemStack.EMPTY : newItem.copy();
         this.inventoryVersion++;
         return previous.isEmpty() ? Optional.empty() : Optional.of(previous);
-    }
-
-    /*
-     * Serialization & deserialization to NBT tags
-     */
-    public void writeInventoryToTag(CompoundTag nbtTag, HolderLookup.Provider levelRegistry) {
-        nbtTag.put(NBT_TAG, this.backpack.createTag(levelRegistry));
-    }
-
-    public void readInventoryFromTag(CompoundTag tag, HolderLookup.Provider levelRegistry) {
-        if (tag.contains(NBT_TAG, Tag.TAG_LIST)) {
-            this.backpack.fromTag(tag.getList(NBT_TAG, Tag.TAG_COMPOUND), levelRegistry);
-        }
     }
 
 }

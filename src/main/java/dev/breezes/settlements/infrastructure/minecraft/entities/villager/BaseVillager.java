@@ -33,6 +33,7 @@ import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
@@ -43,11 +44,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -65,6 +69,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.neoforged.neoforge.common.Tags;
 
 import javax.annotation.Nonnull;
@@ -81,11 +86,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     private static final double DEFAULT_MOVEMENT_SPEED = 0.5D;
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
+    private static final int STARTING_BREAD_STACKS = 2;
+    private static final int STARTING_BREAD_PER_STACK = 64;
 
     private final GeneticsProfile genetics;
     private final IBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
     private final PlanRuntimeState planRuntimeState;
+    @Nullable
     private VillagerInventory settlementsInventory;
 
     private final BubbleManager bubbleManager;
@@ -111,8 +119,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         // navigation.setCanFloat(true);
         // this.navigation = navigation;
 
-        // Initialize custom inventory
-        this.settlementsInventory = new GeneticInventoryProvider().provideDefault();
         this.bubbleManager = new BubbleManager();
         this.bubbleState = new VillagerBubbleState();
         this.hungerDrainTimer = null;
@@ -125,6 +131,33 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 .build();
     }
 
+    private void addStartingFood(@Nonnull VillagerInventory inventory) {
+        for (int i = 0; i < STARTING_BREAD_STACKS; i++) {
+            inventory.addItem(new ItemStack(Items.BREAD, STARTING_BREAD_PER_STACK));
+        }
+    }
+
+    public VillagerInventory getSettlementsInventory() {
+        if (this.settlementsInventory == null) {
+            throw new IllegalStateException("Inventory accessed before creation");
+        }
+
+        return this.settlementsInventory;
+    }
+
+    @Override
+    public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level,
+                                        @Nonnull DifficultyInstance difficulty,
+                                        @Nonnull MobSpawnType spawnType,
+                                        @Nullable SpawnGroupData spawnGroupData) {
+        SpawnGroupData finalizedSpawnData = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
+        if (this.settlementsInventory == null) {
+            this.settlementsInventory = this.geneticInventoryProvider().provide(this.genetics);
+            this.addStartingFood(this.settlementsInventory);
+        }
+        return finalizedSpawnData;
+    }
+
     @Override
     public void addAdditionalSaveData(@Nonnull CompoundTag nbtTag) {
         super.addAdditionalSaveData(nbtTag);
@@ -132,7 +165,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         log.debug("Saving villager genetic profile");
         this.genetics.save(nbtTag);
 
-        this.settlementsInventory.writeInventoryToTag(nbtTag, this.registryAccess());
+        VillagerInventoryAttachment.saveFrom(this, this.getSettlementsInventory());
     }
 
     @Override
@@ -146,8 +179,17 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.genetics.load(nbtTag);
 
         log.debug("Loading villager inventory");
-        this.settlementsInventory = new GeneticInventoryProvider().provide(this.genetics);
-        this.settlementsInventory.readInventoryFromTag(nbtTag, this.registryAccess());
+        this.settlementsInventory = this.geneticInventoryProvider().provide(this.genetics);
+        boolean loadedInventory = VillagerInventoryAttachment.loadInto(this, this.settlementsInventory);
+        if (!loadedInventory) {
+            // No persisted attachment state exists yet, so seed the default starting inventory.
+            this.addStartingFood(this.settlementsInventory);
+        }
+    }
+
+    private GeneticInventoryProvider geneticInventoryProvider() {
+        // Minecraft controls entity construction via EntityType, so constructor injection is not possible here.
+        return SettlementsDagger.serverOrThrow().geneticInventoryProvider();
     }
 
     @Override

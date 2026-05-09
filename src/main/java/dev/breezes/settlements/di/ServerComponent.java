@@ -17,6 +17,7 @@ import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServ
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerStatsServerEvents;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
+import dev.breezes.settlements.di.modules.server.InventoryModule;
 import dev.breezes.settlements.di.modules.server.PlanningModule;
 import dev.breezes.settlements.di.modules.server.PoolModule;
 import dev.breezes.settlements.di.modules.server.ServerNetworkModule;
@@ -25,6 +26,7 @@ import dev.breezes.settlements.di.modules.server.UiSyncModule;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
 import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
+import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
@@ -39,6 +41,7 @@ import javax.inject.Provider;
         BehaviorCatalogModule.class,
         PoolModule.class,
         PlanningModule.class,
+        InventoryModule.class,
         SettlementQueryModule.class,
         UiSyncModule.class,
 })
@@ -63,6 +66,8 @@ public interface ServerComponent {
     MemoryImportanceGate memoryImportanceGate();
 
     PersonalityDeriver personalityDeriver();
+
+    GeneticInventoryProvider geneticInventoryProvider();
 
     ServerSidePacketReceiver serverSidePacketReceiver();
 

@@ -11,7 +11,7 @@ public record HungerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "tick_interval_seconds",
                 description = "How often hunger drains in seconds.",
-                defaultValue = 10,
+                defaultValue = 30,
                 min = 1,
                 max = 3600)
         int tickIntervalSeconds,
@@ -29,7 +29,7 @@ public record HungerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "sleeping_drain_multiplier",
                 description = "Multiplier applied while the villager is sleeping.",
-                defaultValue = 0.25f,
+                defaultValue = 0.15f,
                 min = 0.0f,
                 max = 10.0f)
         float sleepingDrainMultiplier,
