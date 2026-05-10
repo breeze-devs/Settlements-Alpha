@@ -9,13 +9,10 @@ import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.settlement.persistence.SettlementMetadataQueueService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
-import dev.breezes.settlements.application.ui.stats.session.VillagerStatsSessionService;
-import dev.breezes.settlements.application.ui.stats.snapshot.VillagerStatsSnapshotBuilder;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
-import dev.breezes.settlements.bootstrap.event.VillagerStatsServerEvents;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
 import dev.breezes.settlements.di.modules.server.InventoryModule;
 import dev.breezes.settlements.di.modules.server.PlanningModule;
@@ -47,11 +44,7 @@ import javax.inject.Provider;
 })
 public interface ServerComponent {
 
-    VillagerStatsSessionService villagerStatsSessionService();
-
     VillagerBubbleService villagerBubbleService();
-
-    VillagerStatsSnapshotBuilder villagerStatsSnapshotBuilder();
 
     IBehaviorCatalog behaviorCatalog();
 
@@ -76,8 +69,6 @@ public interface ServerComponent {
     RegionSubtitleHandler regionSubtitleHandler();
 
     SettlementMetadataPersistenceServerEvents settlementMetadataPersistenceServerEvents();
-
-    VillagerStatsServerEvents villagerStatsServerEvents();
 
     UiSyncServerEvents uiSyncServerEvents();
 

@@ -24,7 +24,6 @@ public final class ServerLifecycleEvents {
         NeoForge.EVENT_BUS.register(serverComponent.playerSettlementTracker());
         NeoForge.EVENT_BUS.register(serverComponent.regionSubtitleHandler());
         NeoForge.EVENT_BUS.register(serverComponent.settlementMetadataPersistenceServerEvents());
-        NeoForge.EVENT_BUS.register(serverComponent.villagerStatsServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.uiSyncServerEvents());
     }
 
@@ -37,7 +36,6 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.playerSettlementTracker());
             NeoForge.EVENT_BUS.unregister(serverComponent.regionSubtitleHandler());
             NeoForge.EVENT_BUS.unregister(serverComponent.settlementMetadataPersistenceServerEvents());
-            NeoForge.EVENT_BUS.unregister(serverComponent.villagerStatsServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.uiSyncServerEvents());
         }
 

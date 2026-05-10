@@ -20,4 +20,7 @@ public interface UiSnapshotPublisher {
               long gameTime,
               long dayTime);
 
+    default void onSessionClosed(@Nonnull UiSession session) {
+    }
+
 }

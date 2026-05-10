@@ -11,19 +11,13 @@ import dev.breezes.settlements.infrastructure.network.features.ui.bubble.handler
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.handler.ClientBoundDayPlanSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.packet.ClientBoundDayPlanSnapshotPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundHeartbeatAckVillagerStatsPacketHandler;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundOpenVillagerStatsPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerDemandSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerInventorySnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerStatsSnapshotPacketHandler;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerStatsUnavailablePacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.handler.ClientBoundVillagerTradeCatalogSnapshotPacketHandler;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundHeartbeatAckVillagerStatsPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundOpenVillagerStatsPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerDemandSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerInventorySnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsSnapshotPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsUnavailablePacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerTradeCatalogSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ClientBoundHeartbeatAckUiPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ClientBoundOpenUiPacketHandler;
@@ -84,20 +78,5 @@ public abstract class ClientNetworkModule {
     @IntoMap
     @ClassKey(ClientBoundVillagerDemandSnapshotPacket.class)
     abstract ClientSidePacketHandler<?> demandSnapshot(ClientBoundVillagerDemandSnapshotPacketHandler impl);
-
-    @Binds
-    @IntoMap
-    @ClassKey(ClientBoundVillagerStatsUnavailablePacket.class)
-    abstract ClientSidePacketHandler<?> statsUnavailable(ClientBoundVillagerStatsUnavailablePacketHandler impl);
-
-    @Binds
-    @IntoMap
-    @ClassKey(ClientBoundHeartbeatAckVillagerStatsPacket.class)
-    abstract ClientSidePacketHandler<?> statsHeartbeatAck(ClientBoundHeartbeatAckVillagerStatsPacketHandler impl);
-
-    @Binds
-    @IntoMap
-    @ClassKey(ClientBoundOpenVillagerStatsPacket.class)
-    abstract ClientSidePacketHandler<?> statsOpen(ClientBoundOpenVillagerStatsPacketHandler impl);
 
 }

@@ -9,7 +9,8 @@ import dev.breezes.settlements.application.ui.stats.model.VillagerTradeCatalogSn
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
 import dev.breezes.settlements.domain.entities.Expertise;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundCloseVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundCloseUiPacket;
 import dev.breezes.settlements.presentation.ui.framework.Elements;
 import dev.breezes.settlements.presentation.ui.framework.Insets;
 import dev.breezes.settlements.presentation.ui.framework.LayoutScreen;
@@ -19,6 +20,7 @@ import dev.breezes.settlements.presentation.ui.framework.SizeConstraint;
 import dev.breezes.settlements.presentation.ui.framework.StackLayout;
 import dev.breezes.settlements.presentation.ui.framework.UIElement;
 import dev.breezes.settlements.presentation.ui.framework.WidgetElement;
+import dev.breezes.settlements.presentation.ui.sync.UiClientState;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
 import dev.breezes.settlements.shared.util.StringUtil;
 import lombok.CustomLog;
@@ -79,6 +81,8 @@ public class VillagerStatsScreen extends LayoutScreen {
     private static final String WALLET_KEY = "ui.settlements.stats.wallet";
     private static final String TRADES_OFFERS_KEY = "ui.settlements.stats.trades.offers";
     private static final String TRADES_DEMANDS_KEY = "ui.settlements.stats.trades.demands";
+    private static final String LOADING_KEY = "ui.settlements.stats.loading";
+    private static final String UNAVAILABLE_KEY = "ui.settlements.stats.unavailable";
     private static final String DEFAULT_VILLAGER_NAME = "Villager";
 
     // Static fallback icons
@@ -88,7 +92,9 @@ public class VillagerStatsScreen extends LayoutScreen {
 
     @Getter
     private final long sessionId;
-    private final VillagerStatsClientState villagerStatsClientState;
+    private final UiClientState uiClientState;
+    private final int villagerEntityId;
+    @Nullable
     private VillagerStatsSnapshot statsSnapshot;
     @Nullable
     private VillagerInventorySnapshot inventorySnapshot;
@@ -96,8 +102,6 @@ public class VillagerStatsScreen extends LayoutScreen {
     private VillagerTradeCatalogSnapshot tradeCatalogSnapshot;
     @Nullable
     private VillagerDemandDisplaySnapshot latestDemandSnapshot;
-    @Nullable
-    private Component unavailableMessage;
 
     private final HexChartRenderer hexChartRenderer;
     @Nullable
@@ -129,22 +133,22 @@ public class VillagerStatsScreen extends LayoutScreen {
     private Component cachedWalletText;
 
     public VillagerStatsScreen(long sessionId,
-                               @Nonnull VillagerStatsSnapshot statsSnapshot,
-                               @Nonnull VillagerStatsClientState villagerStatsClientState) {
+                               @Nonnull UiClientState uiClientState,
+                               int villagerEntityId) {
         super(Component.translatable(TITLE_KEY));
 
         this.sessionId = sessionId;
-        this.villagerStatsClientState = villagerStatsClientState;
-        this.statsSnapshot = statsSnapshot;
+        this.uiClientState = uiClientState;
+        this.villagerEntityId = villagerEntityId;
+        this.statsSnapshot = null;
         this.inventorySnapshot = null;
         this.tradeCatalogSnapshot = null;
         this.latestDemandSnapshot = null;
-        this.unavailableMessage = null;
         this.hexChartRenderer = new HexChartRenderer();
-        this.cachedWorkstationIcon = getWorkstationIcon(statsSnapshot.professionKey());
-        this.cachedActivityIcon = resolveActivityIcon(statsSnapshot.activeBehaviorIconId());
+        this.cachedWorkstationIcon = new ItemStack(Items.CRAFTING_TABLE);
+        this.cachedActivityIcon = FALLBACK_ACTIVITY_ICON;
 
-        rebuildCachedComponents(statsSnapshot);
+        rebuildLoadingCachedComponents();
     }
 
     @Nonnull
@@ -178,7 +182,7 @@ public class VillagerStatsScreen extends LayoutScreen {
     public void tick() {
         super.tick();
 
-        this.villagerStatsClientState.tickHeartbeatIfNeeded(this.sessionId);
+        this.uiClientState.tickHeartbeatIfNeeded(this.sessionId);
     }
 
     @Override
@@ -189,8 +193,8 @@ public class VillagerStatsScreen extends LayoutScreen {
     @Override
     public void removed() {
         if (this.sessionId > 0) {
-            PacketDistributor.sendToServer(new ServerBoundCloseVillagerStatsPacket(this.sessionId));
-            this.villagerStatsClientState.clearSession(this.sessionId);
+            PacketDistributor.sendToServer(new ServerBoundCloseUiPacket(UiChannel.VILLAGER_STATS, this.sessionId));
+            this.uiClientState.clearSession(this.sessionId);
         }
 
         super.removed();
@@ -198,7 +202,6 @@ public class VillagerStatsScreen extends LayoutScreen {
 
     public void applyStatsSnapshot(@Nonnull VillagerStatsSnapshot snapshot) {
         this.statsSnapshot = snapshot;
-        this.unavailableMessage = null;
         this.cachedWorkstationIcon = getWorkstationIcon(snapshot.professionKey());
         this.cachedActivityIcon = resolveActivityIcon(snapshot.activeBehaviorIconId());
 
@@ -237,10 +240,6 @@ public class VillagerStatsScreen extends LayoutScreen {
         if (this.demandsList != null) {
             this.demandsList.rebuildRows();
         }
-    }
-
-    public void markUnavailable(@Nonnull Component message) {
-        this.unavailableMessage = message;
     }
 
     private void rebuildCachedComponents(@Nonnull VillagerStatsSnapshot snapshot) {
@@ -291,6 +290,19 @@ public class VillagerStatsScreen extends LayoutScreen {
         }
     }
 
+    private void rebuildLoadingCachedComponents() {
+        Component loading = Component.translatable(LOADING_KEY);
+        this.cachedReputationText = loading;
+        this.cachedReputationColor = theme.subtleTextColor();
+        this.cachedActivityText = loading;
+        this.cachedActivityTextColor = theme.subtleTextColor();
+        this.cachedHomeText = loading;
+        this.cachedHomeTextColor = theme.subtleTextColor();
+        this.cachedWorkText = loading;
+        this.cachedWorkTextColor = theme.subtleTextColor();
+        this.cachedWalletText = loading;
+    }
+
     // ---- Body ----
 
     private UIElement buildBody() {
@@ -327,11 +339,17 @@ public class VillagerStatsScreen extends LayoutScreen {
     }
 
     private Component getVillagerNameComponent() {
+        if (this.statsSnapshot == null) {
+            return Component.translatable(LOADING_KEY);
+        }
         String name = this.statsSnapshot.villagerName();
         return Component.literal(name != null ? name : DEFAULT_VILLAGER_NAME);
     }
 
     private Component getExpertiseProfessionComponent() {
+        if (this.statsSnapshot == null) {
+            return Component.literal("--");
+        }
         String profKey = this.statsSnapshot.professionKey();
         if (VillagerStatsUtil.isUnemployed(profKey)) {
             return Component.translatable(UNEMPLOYED_KEY);
@@ -350,24 +368,32 @@ public class VillagerStatsScreen extends LayoutScreen {
     private UIElement buildVillagerModelArea() {
         // Performance note: Entity model rendering is the most expensive element.
         // Candidate for framebuffer caching if profiling shows issues.
-        return new VillagerModelElement(() -> this.statsSnapshot.villagerEntityId(), theme);
+        return new VillagerModelElement(() -> this.villagerEntityId, theme);
     }
 
     private UIElement buildHpBar() {
-        this.hpBarElement = new HpBarElement(theme, statsSnapshot.currentHealth(), statsSnapshot.maxHealth());
+        float currentHealth = this.statsSnapshot == null ? 0.0F : this.statsSnapshot.currentHealth();
+        float maxHealth = this.statsSnapshot == null ? 1.0F : this.statsSnapshot.maxHealth();
+        this.hpBarElement = new HpBarElement(theme, currentHealth, maxHealth);
         return this.hpBarElement;
     }
 
     private UIElement buildHungerBar() {
-        this.hungerBarElement = new HungerBarElement(theme, statsSnapshot.hunger());
+        this.hungerBarElement = new HungerBarElement(theme, this.statsSnapshot == null ? 0 : this.statsSnapshot.hunger());
         return this.hungerBarElement;
     }
 
     private UIElement buildHexChart() {
         return Elements.custom(SizeConstraint.FILL, SizeConstraint.weightedMax(1, MAX_HEX_CHART_HEIGHT),
-                (graphics, bounds, mouseX, mouseY, partialTick) ->
-                        hexChartRenderer.render(graphics, bounds, mouseX, mouseY, this.font,
-                                this.statsSnapshot.geneValues(), theme));
+                (graphics, bounds, mouseX, mouseY, partialTick) -> {
+                    if (this.statsSnapshot == null) {
+                        graphics.drawCenteredString(this.font, Component.translatable(LOADING_KEY),
+                                bounds.x() + bounds.width() / 2, bounds.y() + bounds.height() / 2 - 4, theme.subtleTextColor());
+                        return;
+                    }
+                    hexChartRenderer.render(graphics, bounds, mouseX, mouseY, this.font,
+                            this.statsSnapshot.geneValues(), theme);
+                });
     }
 
     private UIElement buildReputation() {
@@ -375,7 +401,7 @@ public class VillagerStatsScreen extends LayoutScreen {
             graphics.drawString(this.font, this.cachedReputationText, bounds.x(), bounds.y(), this.cachedReputationColor, false);
 
             // Hover: show numeric value
-            if (bounds.contains(mouseX, mouseY)) {
+            if (this.statsSnapshot != null && bounds.contains(mouseX, mouseY)) {
                 int rep = this.statsSnapshot.reputation();
                 String sign = rep >= 0 ? "+" : "";
                 graphics.renderTooltip(this.font, Component.literal(sign + rep), mouseX, mouseY);
@@ -734,8 +760,8 @@ public class VillagerStatsScreen extends LayoutScreen {
         Component disconnectedStatus = Component.translatable(CONNECTION_DISCONNECTED_KEY);
 
         return Elements.custom(SizeConstraint.WRAP, SizeConstraint.fixed(12), (graphics, bounds, mouseX, mouseY, partialTick) -> {
-            boolean stale = this.villagerStatsClientState.isSnapshotUpdateStale(this.sessionId)
-                    || this.villagerStatsClientState.isHeartbeatAckStale(this.sessionId);
+            boolean stale = this.uiClientState.isSnapshotUpdateStale(this.sessionId)
+                    || this.uiClientState.isHeartbeatAckStale(this.sessionId);
 
             int labelWidth = this.font.width(connectionLabel);
             graphics.drawString(this.font, connectionLabel, bounds.x(), bounds.y(), theme.textColor(), false);
@@ -766,13 +792,16 @@ public class VillagerStatsScreen extends LayoutScreen {
 
     private UIElement buildUnavailableOverlay() {
         return Elements.custom(SizeConstraint.FILL, SizeConstraint.FILL, (graphics, bounds, mouseX, mouseY, partialTick) -> {
-            if (this.unavailableMessage == null) {
+            if (!this.uiClientState.isSessionTerminalUnavailable()) {
                 return;
             }
+            Component message = this.uiClientState.unavailableReasonKey()
+                    .map(Component::translatable)
+                    .orElseGet(() -> Component.translatable(UNAVAILABLE_KEY));
             graphics.fill(bounds.x() + 8, bounds.y() + 8, bounds.right() - 8, bounds.bottom() - FOOTER_HEIGHT - 8, theme.overlayColor());
             graphics.drawCenteredString(
                     this.font,
-                    this.unavailableMessage,
+                    message,
                     bounds.x() + bounds.width() / 2,
                     bounds.y() + bounds.height() / 2 - 4,
                     theme.errorColor()

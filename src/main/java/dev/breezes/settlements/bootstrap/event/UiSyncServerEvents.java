@@ -56,7 +56,7 @@ public final class UiSyncServerEvents {
             if (!(entity instanceof BaseVillager villager) || !villager.isAlive() || villager.isRemoved()) {
                 PacketDistributor.sendToPlayer(player,
                         new ClientBoundUiUnavailablePacket(session.getChannel(), session.getSessionId(), definition.getDefaultUnavailableReasonKey()));
-                this.sessionRegistry.closeSession(session.getPlayerUuid(), session.getSessionId());
+                this.sessionRegistry.closeSession(session.getPlayerUuid(), session.getSessionId(), this.channelDefinitions);
                 continue;
             }
 
@@ -67,7 +67,7 @@ public final class UiSyncServerEvents {
     @SubscribeEvent
     public void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         this.sessionRegistry.getSession(event.getEntity().getUUID())
-                .ifPresent(session -> this.sessionRegistry.closeSession(session.getPlayerUuid(), session.getSessionId()));
+                .ifPresent(session -> this.sessionRegistry.closeSession(session.getPlayerUuid(), session.getSessionId(), this.channelDefinitions));
     }
 
 }

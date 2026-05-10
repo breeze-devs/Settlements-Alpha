@@ -7,6 +7,7 @@ import dev.breezes.settlements.application.ui.sync.UiClientChannelDefinition;
 import dev.breezes.settlements.di.UiChannelKey;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.presentation.ui.dayplan.DayPlanScreenOpener;
+import dev.breezes.settlements.presentation.ui.stats.VillagerStatsScreenOpener;
 
 @Module
 public abstract class UiSyncClientModule {
@@ -17,6 +18,16 @@ public abstract class UiSyncClientModule {
     static UiClientChannelDefinition dayPlan(DayPlanScreenOpener screenOpener) {
         return UiClientChannelDefinition.builder()
                 .channel(UiChannel.DAY_PLAN)
+                .screenOpener(screenOpener)
+                .build();
+    }
+
+    @Provides
+    @IntoMap
+    @UiChannelKey(UiChannel.VILLAGER_STATS)
+    static UiClientChannelDefinition villagerStats(VillagerStatsScreenOpener screenOpener) {
+        return UiClientChannelDefinition.builder()
+                .channel(UiChannel.VILLAGER_STATS)
                 .screenOpener(screenOpener)
                 .build();
     }

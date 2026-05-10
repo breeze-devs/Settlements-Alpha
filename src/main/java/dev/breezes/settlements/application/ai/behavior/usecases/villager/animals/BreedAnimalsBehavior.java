@@ -106,11 +106,13 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
                         BreedStage.FEED_FIRST, this.createFeedTargetStep(
                                 "first",
                                 BreedStage.FEED_SECOND,
-                                () -> this.breedTarget1),
+                                () -> this.breedTarget1,
+                                () -> this.breedTarget2),
                         BreedStage.FEED_SECOND, this.createFeedTargetStep(
                                 "second",
                                 BreedStage.WAITING_FOR_BREEDING,
-                                () -> this.breedTarget2),
+                                () -> this.breedTarget2,
+                                null),
                         BreedStage.WAITING_FOR_BREEDING, this.createWaitingStep()))
                 .nextStage(BreedStage.END)
                 .onEnd(ctx -> StepResult.noOp())
@@ -177,7 +179,8 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
 
     private BehaviorStep createFeedTargetStep(@Nonnull String label,
                                               @Nonnull BreedStage nextStage,
-                                              @Nonnull Supplier<Animal> targetSupplier) {
+                                              @Nonnull Supplier<Animal> targetSupplier,
+                                              @Nullable Supplier<Animal> nextTargetSupplier) {
         TimeBasedStep feedStep = TimeBasedStep.builder()
                 .withTickable(ClockTicks.ONE.asTickable())
                 .onStart(ctx -> {
@@ -186,7 +189,6 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    ctx.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(target)));
                     ctx.getInitiator().setHeldItem(this.heldItem);
                     return StepResult.noOp();
                 })
@@ -198,6 +200,15 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
                     }
 
                     target.setInLove(null);
+
+                    // Pre-load the next stage's target into context so StayCloseStep
+                    // navigates to the correct animal on its very first tick
+                    if (nextTargetSupplier != null) {
+                        Animal nextTarget = nextTargetSupplier.get();
+                        if (nextTarget != null) {
+                            ctx.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(nextTarget)));
+                        }
+                    }
 
                     return StepResult.transition(nextStage);
                 })

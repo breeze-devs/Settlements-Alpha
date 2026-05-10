@@ -1,12 +1,9 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.SettlementsMod;
-import dev.breezes.settlements.di.SettlementsDagger;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundCloseVillagerStatsPacket;
-import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundOpenVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
+import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundOpenUiPacket;
 import dev.breezes.settlements.presentation.ui.keybindings.SettlementsKeyMappings;
-import dev.breezes.settlements.presentation.ui.stats.VillagerStatsClientState;
-import dev.breezes.settlements.presentation.ui.stats.VillagerStatsScreen;
 import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -35,15 +32,6 @@ public final class VillagerStatsClientGameEvents {
             return;
         }
 
-        VillagerStatsClientState villagerStatsClientState = SettlementsDagger.client().villagerStatsClientState();
-
-        // If the stats screen was closed unexpectedly but the session state was not cleared, clean it up
-        if (villagerStatsClientState.hasActiveSession() && !(minecraft.screen instanceof VillagerStatsScreen)) {
-            long sessionId = villagerStatsClientState.activeSessionId();
-            villagerStatsClientState.forceClearSession();
-            PacketDistributor.sendToServer(new ServerBoundCloseVillagerStatsPacket(sessionId));
-        }
-
         while (SettlementsKeyMappings.OPEN_VILLAGER_STATS.consumeClick()) {
             if (minecraft.screen != null) {
                 continue;
@@ -55,7 +43,7 @@ public final class VillagerStatsClientGameEvents {
                 continue;
             }
 
-            PacketDistributor.sendToServer(new ServerBoundOpenVillagerStatsPacket(hitResult.get().getEntity().getId()));
+            PacketDistributor.sendToServer(new ServerBoundOpenUiPacket(UiChannel.VILLAGER_STATS, hitResult.get().getEntity().getId()));
             break;
         }
     }

@@ -5,7 +5,9 @@ import dagger.Provides;
 import dagger.multibindings.IntoMap;
 import dev.breezes.settlements.application.ui.dayplan.DayPlanSessionValidator;
 import dev.breezes.settlements.application.ui.dayplan.DayPlanSnapshotPublisher;
+import dev.breezes.settlements.application.ui.stats.VillagerStatsSnapshotPublisher;
 import dev.breezes.settlements.application.ui.sync.UiServerChannelDefinition;
+import dev.breezes.settlements.application.ui.sync.UiSessionValidator;
 import dev.breezes.settlements.di.UiChannelKey;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 
@@ -21,6 +23,18 @@ public abstract class UiSyncModule {
                 .channel(UiChannel.DAY_PLAN)
                 .defaultUnavailableReasonKey("ui.settlements.dayplan.unavailable")
                 .validator(validator)
+                .snapshotPublisher(publisher)
+                .build();
+    }
+
+    @Provides
+    @IntoMap
+    @UiChannelKey(UiChannel.VILLAGER_STATS)
+    static UiServerChannelDefinition villagerStats(VillagerStatsSnapshotPublisher publisher) {
+        return UiServerChannelDefinition.builder()
+                .channel(UiChannel.VILLAGER_STATS)
+                .defaultUnavailableReasonKey("ui.settlements.stats.unavailable")
+                .validator(UiSessionValidator.ALWAYS_VALID)
                 .snapshotPublisher(publisher)
                 .build();
     }

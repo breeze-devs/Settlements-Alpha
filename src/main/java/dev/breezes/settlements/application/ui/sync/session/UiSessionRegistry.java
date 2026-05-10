@@ -69,10 +69,16 @@ public final class UiSessionRegistry {
                 .orElse(true);
     }
 
-    public void closeSession(@Nonnull UUID playerUuid, long sessionId) {
-        this.sessionsByPlayer.computeIfPresent(playerUuid, (uuid, currentSession) ->
-                currentSession.getSessionId() == sessionId ? null : currentSession
-        );
+    public void closeSession(@Nonnull UUID playerUuid,
+                             long sessionId,
+                             @Nonnull Map<UiChannel, UiServerChannelDefinition> channelDefinitions) {
+        this.sessionsByPlayer.computeIfPresent(playerUuid, (uuid, currentSession) -> {
+            if (currentSession.getSessionId() != sessionId) {
+                return currentSession;
+            }
+            getDefinition(currentSession, channelDefinitions).getSnapshotPublisher().onSessionClosed(currentSession);
+            return null;
+        });
     }
 
     public void recordHeartbeat(@Nonnull UUID playerUuid, long sessionId, long gameTime) {
@@ -128,6 +134,7 @@ public final class UiSessionRegistry {
             }
 
             log.debug("Removed ui sessionId={} channel={} player={}", session.getSessionId(), session.getChannel(), session.getPlayerUuid());
+            getDefinition(session, channelDefinitions).getSnapshotPublisher().onSessionClosed(session);
             if (player != null) {
                 PacketDistributor.sendToPlayer(player,
                         new ClientBoundUiUnavailablePacket(session.getChannel(), session.getSessionId(), unavailableReasonKey));
