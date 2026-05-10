@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.planning;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorCategory;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
+import dev.breezes.settlements.domain.ai.catalog.WeightedBehavior;
 import dev.breezes.settlements.domain.ai.catalog.WorkIntensity;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.DayPlanActivityBlock;
@@ -19,6 +20,8 @@ import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.time.GameTicks;
 import dev.breezes.settlements.domain.time.TimeOfDay;
+import dev.breezes.settlements.shared.util.RandomUtil;
+import lombok.CustomLog;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -28,6 +31,7 @@ import java.util.List;
 /**
  * Produces a villager's daily plan using deterministic heuristics
  */
+@CustomLog
 public class HeuristicPlanGenerator implements IPlanGenerator {
 
     // Anchors are real game-tick positions (0 = 06:00 AM) used for creating slots with absolute times.
@@ -43,7 +47,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
     @Override
     public DayPlan generate(PlanGenerationContext context) {
         // availableBehaviors is pre-filtered by profession by BehaviorPoolResolver; rest-day policy is applied by PlannerPalette
-        List<BehaviorPlanningMetadata> availableBehaviors = context.availableBehaviors();
+        List<WeightedBehavior> availableBehaviors = context.availableBehaviors();
         ScheduleProfile schedule = context.scheduleProfile();
         RestDayPolicy restDayPolicy = context.restDayPolicy();
 
@@ -167,12 +171,10 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
 
     private void addWorkDaySlots(List<PlanSlot> slots, PlanGenerationContext context, PlannerPalette palette,
                                  int workStartLinear, int workEndLinear, int lunchLinear, int epoch) {
-        List<BehaviorPlanningMetadata> workBehaviors = palette.workBehaviors();
+        List<WeightedBehavior> workBehaviors = palette.workBehaviors();
         if (workBehaviors.isEmpty()) {
             return;
         }
-
-        int targetCount = this.computeWorkSlotCount(context.genetics(), workBehaviors.size());
 
         int minEndLinear = workStartLinear + MINIMUM_SLOT_SPACING_TICKS;
 
@@ -182,21 +184,20 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
 
         int endLinear = Math.clamp(workEndLinear, minEndLinear, maxEndLinear);
 
-        List<BehaviorPlanningMetadata> ordered = this.rotateByProfession(workBehaviors, context.profession(), context.gameDay());
-        this.addDistributedBehaviorSlots(slots, ordered, targetCount, workStartLinear, endLinear, 70, epoch,
+        this.packWindow(slots, workBehaviors, workStartLinear, endLinear, 70, epoch, true,
+                behavior -> 1.0D,
                 "Profession work block selected by the deterministic heuristic planner.");
     }
 
     private void addRestDaySlots(List<PlanSlot> slots, PlanGenerationContext context, RestDayPolicy policy,
                                  PlannerPalette palette, int epoch) {
-        List<BehaviorPlanningMetadata> restOptions = palette.restDayCandidates(policy);
-        int targetCount = 2 + this.socialBonus(context.genetics());
+        List<WeightedBehavior> restOptions = palette.availableBehaviors();
         // Wake is always linear=0, so 40 minutes after wake is simply the 40-min offset.
         int firstOpenLinear = GameTicks.minutes(40).getTicksAsInt();
         int endLinear = toLinear(LUNCH_TICK, epoch) - 500;
 
-        this.addDistributedBehaviorSlots(slots, restOptions,
-                targetCount, firstOpenLinear, endLinear, 55, epoch,
+        this.packWindow(slots, restOptions, firstOpenLinear, endLinear, 55, epoch, false,
+                behavior -> restDayMultiplier(behavior.descriptor(), policy),
                 "Rest days favor low-intensity, social, and leisure behaviors.");
     }
 
@@ -206,47 +207,117 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         int afternoonEndLinear = Math.min(
                 toLinear(DINNER_TICK, epoch) - 500,
                 toLinear(TimeOfDay.AT_16_30.getTick(), epoch));
-        List<BehaviorPlanningMetadata> candidates = context.dayType() == PlanDayType.REST_DAY
-                ? palette.restDayCandidates(policy)
-                : palette.afternoonCandidates(context.genetics());
+        List<WeightedBehavior> candidates = palette.afternoonCandidates(context.genetics());
 
-        int targetCount = context.dayType() == PlanDayType.REST_DAY ? 3 : 2 + this.socialBonus(context.genetics());
-        // Use gameDay+1 as the rotation seed so afternoon ordering differs from the morning block on the same day.
-        List<BehaviorPlanningMetadata> orderedCandidates = context.dayType() == PlanDayType.REST_DAY
-                ? candidates
-                : this.rotateByProfession(candidates, context.profession(), context.gameDay() + 1);
-        this.addDistributedBehaviorSlots(slots, orderedCandidates,
-                targetCount, afternoonStartLinear, afternoonEndLinear, 50, epoch,
+        EffectiveWeightMultiplier multiplier = context.dayType() == PlanDayType.REST_DAY
+                ? behavior -> restDayMultiplier(behavior.descriptor(), policy)
+                : behavior -> 1.0D;
+        this.packWindow(slots, candidates, afternoonStartLinear, afternoonEndLinear, 50, epoch, true, multiplier,
                 "Afternoon slots mix remaining duties with decompression and social time.");
     }
 
     /**
-     * Distributes {@code targetCount} slots evenly across the linear range {@code [startLinear, endLinear]}.
-     * All range arithmetic is performed in linear (epoch-relative) space; real game ticks are recovered
-     * via {@link #fromLinear} before slot creation. Behaviors are taken in order with wrap-around.
+     * Fills a linear window with repeated behavior slots according to effective weights.
+     * <p>
+     * Weight math stays floating-point until Hamilton allocation so rest-day multipliers can reduce
+     * heavy work without deleting light work through premature rounding.
      */
-    private void addDistributedBehaviorSlots(List<PlanSlot> slots, List<BehaviorPlanningMetadata> behaviors,
-                                             int targetCount, int startLinear, int endLinear, int priority,
-                                             int epoch, String reason) {
-        if (behaviors.isEmpty() || targetCount <= 0 || endLinear < startLinear) {
+    private void packWindow(List<PlanSlot> slots, List<WeightedBehavior> pool, int startLinear, int endLinear,
+                            int priority, int epoch, boolean enforceMinOne,
+                            EffectiveWeightMultiplier multiplier, String reason) {
+        if (pool.isEmpty() || endLinear <= startLinear) {
             return;
         }
 
-        // Cannot schedule more slots than requested, nor more than are available for variety.
-        int count = Math.min(targetCount, behaviors.size());
-        int spacing = Math.max(MINIMUM_SLOT_SPACING_TICKS, (endLinear - startLinear) / count);
-        for (int index = 0; index < count; index++) {
-            BehaviorPlanningMetadata behavior = behaviors.get(index % behaviors.size());
-            int linearStart = Math.min(endLinear, startLinear + (index * spacing));
+        List<AllocationCandidate> candidates = pool.stream()
+                .map(behavior -> new AllocationCandidate(behavior, Math.max(0.0D, behavior.weight() * multiplier.apply(behavior))))
+                .filter(candidate -> candidate.effectiveWeight() > 0.0D)
+                .toList();
+        double totalEffectiveWeight = candidates.stream()
+                .mapToDouble(AllocationCandidate::effectiveWeight)
+                .sum();
+        if (totalEffectiveWeight <= 0.0D) {
+            log.behaviorWarn("packWindow skipped: zero total effective weight");
+            return;
+        }
+
+        int windowLength = endLinear - startLinear;
+        double weightedAverageDuration = candidates.stream()
+                .mapToDouble(candidate -> durationTicks(candidate.behavior()) * candidate.effectiveWeight())
+                .sum() / totalEffectiveWeight;
+        int capacity = Math.max(1, (int) (windowLength / Math.max(1.0D, weightedAverageDuration)));
+
+        List<AllocatedBehavior> allocation = this.allocateHamilton(candidates, totalEffectiveWeight, capacity, enforceMinOne);
+        ArrayList<WeightedBehavior> packed = new ArrayList<>();
+        for (AllocatedBehavior allocated : allocation) {
+            for (int count = 0; count < allocated.count(); count++) {
+                packed.add(allocated.behavior());
+            }
+        }
+        RandomUtil.shuffle(packed);
+
+        int cursor = startLinear;
+        int emitted = 0;
+        for (WeightedBehavior behavior : packed) {
+            int duration = durationTicks(behavior);
+            if (cursor + duration > endLinear) {
+                continue;
+            }
             slots.add(PlanSlot.builder()
-                    .startTick(clampTick(fromLinear(linearStart, epoch)))
-                    .behaviorKey(behavior.getKey())
-                    .priority(Math.max(0, priority - index))
+                    .startTick(clampTick(fromLinear(cursor, epoch)))
+                    .behaviorKey(behavior.key())
+                    .priority(Math.max(0, priority - emitted))
                     .flexible(true)
-                    .estimatedDurationTicks(Math.max(1, behavior.getEstimatedDuration().getTicksAsInt()))
+                    .estimatedDurationTicks(duration)
                     .reason(reason)
                     .build());
+            emitted++;
+            cursor += Math.max(duration, MINIMUM_SLOT_SPACING_TICKS);
+            if (cursor >= endLinear) {
+                return;
+            }
         }
+    }
+
+    private List<AllocatedBehavior> allocateHamilton(List<AllocationCandidate> candidates, double totalEffectiveWeight,
+                                                     int capacity, boolean enforceMinOne) {
+        List<MutableAllocation> allocations = new ArrayList<>();
+        int allocatedCount = 0;
+        for (AllocationCandidate candidate : candidates) {
+            double rawShare = (candidate.effectiveWeight() / totalEffectiveWeight) * capacity;
+            int floorShare = (int) Math.floor(rawShare);
+            int count = enforceMinOne && candidate.behavior().weight() > 0 ? Math.max(1, floorShare) : floorShare;
+            allocations.add(new MutableAllocation(candidate.behavior(), count, rawShare - floorShare));
+            allocatedCount += count;
+        }
+
+        if (allocatedCount > capacity) {
+            // When many positive entries compete for a tiny window, trim smallest shares first so capacity remains meaningful.
+            allocations.sort(Comparator.<MutableAllocation>comparingDouble(MutableAllocation::remainder)
+                    .thenComparing(allocation -> allocation.behavior().key().id()));
+            int overage = allocatedCount - capacity;
+            for (MutableAllocation allocation : allocations) {
+                if (overage <= 0) {
+                    break;
+                }
+                if (allocation.count() > 0) {
+                    allocation.decrement();
+                    overage--;
+                }
+            }
+        } else if (allocatedCount < capacity) {
+            allocations.sort(Comparator.<MutableAllocation>comparingDouble(MutableAllocation::remainder).reversed()
+                    .thenComparing(allocation -> allocation.behavior().key().id()));
+            int remaining = capacity - allocatedCount;
+            for (int index = 0; index < remaining; index++) {
+                allocations.get(index % allocations.size()).increment();
+            }
+        }
+
+        return allocations.stream()
+                .filter(allocation -> allocation.count() > 0)
+                .map(allocation -> new AllocatedBehavior(allocation.behavior(), allocation.count()))
+                .toList();
     }
 
     /**
@@ -280,68 +351,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
     }
 
     /**
-     * How many work slots to fill in the morning block.
-     * High WIL and AGI each add one extra slot, capped by how many distinct work behaviors are available.
-     */
-    private int computeWorkSlotCount(GeneticsProfile genetics, int availableWorkCount) {
-        int baseCount = 2;
-        if (genetics.getGeneValue(GeneType.WILL) > 0.7) {
-            baseCount++;
-        }
-        if (genetics.getGeneValue(GeneType.AGILITY) > 0.7) {
-            baseCount++;
-        }
-
-        // TODO: [agent] this is not necessarily true, also we should add work-idle behavior
-        // Clamp to [1, baseCount]: cannot exceed available behaviors (variety), must schedule at least one.
-        return Math.clamp(availableWorkCount, 1, baseCount);
-    }
-
-    /**
-     * Returns 1–2 extra social slots for high-CHA villagers, 0 for low-CHA.
-     * Used to increase gossip / trade presence on both work and rest afternoons.
-     */
-    private int socialBonus(GeneticsProfile genetics) {
-        double charisma = genetics.getGeneValue(GeneType.CHARISMA);
-        if (charisma > 0.75) {
-            return 2;
-        }
-        if (charisma > 0.45) {
-            return 1;
-        }
-        return 0;
-    }
-
-    /**
-     * Returns {@code behaviors} in a deterministic but day-varying order.
-     * <p>
-     * Using profession hash + game day as a rotation offset means:
-     * <ul>
-     *   <li>The same villager sees the same order every time the plan is regenerated for a given day
-     *       (reproducible, no RNG drift).</li>
-     *   <li>Different professions or different days start from a different behavior, avoiding the
-     *       monotony of always executing behaviors in the same alphabetical sequence.</li>
-     * </ul>
-     * Sorting by key id before rotating ensures the rotation is stable across catalog changes
-     * that don't alter keys.
-     */
-    private List<BehaviorPlanningMetadata> rotateByProfession(List<BehaviorPlanningMetadata> behaviors,
-                                                              VillagerProfessionKey profession, long gameDay) {
-        if (behaviors.size() <= 1) {
-            return behaviors;
-        }
-
-        List<BehaviorPlanningMetadata> sorted = behaviors.stream()
-                .sorted(Comparator.comparing(b -> b.getKey().id()))
-                .toList();
-        int offset = Math.floorMod(profession.id().hashCode() + Long.hashCode(gameDay), sorted.size());
-        List<BehaviorPlanningMetadata> rotated = new ArrayList<>(sorted.size());
-        rotated.addAll(sorted.subList(offset, sorted.size()));
-        rotated.addAll(sorted.subList(0, offset));
-        return rotated;
-    }
-
-    /**
      * Converts a real game tick to a linear offset from {@code epoch}, wrapping correctly across
      * the 24 000-tick day boundary. Used so all range arithmetic in the generator stays monotonic.
      */
@@ -360,18 +369,42 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         return Math.floorMod(tick, TimeOfDay.TICKS_PER_DAY);
     }
 
+    private static int durationTicks(WeightedBehavior behavior) {
+        return Math.max(1, behavior.descriptor().getEstimatedDuration().getTicksAsInt());
+    }
+
+    private static double restDayMultiplier(BehaviorPlanningMetadata behavior, RestDayPolicy policy) {
+        if (behavior.getCategory() == BehaviorCategory.SOCIAL) {
+            return policy.socialMultiplier();
+        }
+        if (behavior.getCategory() == BehaviorCategory.SELF_CARE) {
+            return policy.selfCareMultiplier();
+        }
+        if (behavior.getCategory() == BehaviorCategory.LEISURE) {
+            return policy.leisureMultiplier();
+        }
+        if (behavior.getCategory() == BehaviorCategory.WORK && behavior.getIntensity() == WorkIntensity.LIGHT) {
+            return policy.lightWorkMultiplier();
+        }
+        if (behavior.getCategory() == BehaviorCategory.WORK && behavior.getIntensity() == WorkIntensity.HEAVY) {
+            return policy.heavyWorkMultiplier();
+        }
+        return 0.0D;
+    }
+
     /**
      * Encapsulates behavior filtering and key resolution for a single plan generation call.
      * All methods are pure queries over the provided behavior list — no state is mutated.
      * <p>
      * The list is pre-filtered for profession by {@code BehaviorPoolResolver}.
-     * Rest-day policy filtering is applied here via {@link #restDayCandidates}.
+     * Rest-day policy weighting is applied inside {@link #packWindow} so fractional multipliers
+     * are preserved until allocation.
      */
-    private record PlannerPalette(List<BehaviorPlanningMetadata> availableBehaviors) {
+    private record PlannerPalette(List<WeightedBehavior> availableBehaviors) {
 
-        List<BehaviorPlanningMetadata> workBehaviors() {
+        List<WeightedBehavior> workBehaviors() {
             return this.availableBehaviors.stream()
-                    .filter(behavior -> behavior.getCategory() == BehaviorCategory.WORK)
+                    .filter(behavior -> behavior.descriptor().getCategory() == BehaviorCategory.WORK)
                     .toList();
         }
 
@@ -379,19 +412,21 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
          * Afternoon candidates ordered by social preference: social-first for high-CHA villagers,
          * social-last for low-CHA — then light work, then leisure fills the remainder.
          */
-        List<BehaviorPlanningMetadata> afternoonCandidates(GeneticsProfile genetics) {
+        List<WeightedBehavior> afternoonCandidates(GeneticsProfile genetics) {
             boolean socialPreference = genetics.getGeneValue(GeneType.CHARISMA) >= 0.45;
-            List<BehaviorPlanningMetadata> social = this.byCategory(BehaviorCategory.SOCIAL);
-            List<BehaviorPlanningMetadata> leisure = this.byCategory(BehaviorCategory.LEISURE);
-            List<BehaviorPlanningMetadata> lightWork = this.workBehaviors().stream()
-                    .filter(behavior -> behavior.getIntensity() == WorkIntensity.LIGHT)
+            List<WeightedBehavior> social = this.byCategory(BehaviorCategory.SOCIAL);
+            List<WeightedBehavior> selfCare = this.byCategory(BehaviorCategory.SELF_CARE);
+            List<WeightedBehavior> leisure = this.byCategory(BehaviorCategory.LEISURE);
+            List<WeightedBehavior> lightWork = this.workBehaviors().stream()
+                    .filter(behavior -> behavior.descriptor().getIntensity() == WorkIntensity.LIGHT)
                     .toList();
 
-            List<BehaviorPlanningMetadata> candidates = new ArrayList<>();
+            List<WeightedBehavior> candidates = new ArrayList<>();
             if (socialPreference) {
                 candidates.addAll(social);
             }
             candidates.addAll(lightWork);
+            candidates.addAll(selfCare);
             candidates.addAll(leisure);
             if (!socialPreference) {
                 candidates.addAll(social);
@@ -399,45 +434,55 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
             return candidates;
         }
 
-        /**
-         * Rest-day candidates ranked by policy weight, computed once to avoid O(n log n) recomputation
-         * during sorting. Behaviors with zero (or negative) weight are excluded.
-         */
-        List<BehaviorPlanningMetadata> restDayCandidates(RestDayPolicy policy) {
-            record Weighted(BehaviorPlanningMetadata behavior, float weight) {
-            }
+        private List<WeightedBehavior> byCategory(BehaviorCategory category) {
             return this.availableBehaviors.stream()
-                    .map(behavior -> new Weighted(behavior, this.restDayWeight(behavior, policy)))
-                    .filter(w -> w.weight() > 0.0F)
-                    .sorted(Comparator.<Weighted, Float>comparing(Weighted::weight, Comparator.reverseOrder())
-                            .thenComparing(w -> w.behavior().getKey().id()))
-                    .map(Weighted::behavior)
+                    .filter(behavior -> behavior.descriptor().getCategory() == category)
                     .toList();
         }
 
-        private List<BehaviorPlanningMetadata> byCategory(BehaviorCategory category) {
-            return this.availableBehaviors.stream()
-                    .filter(behavior -> behavior.getCategory() == category)
-                    .toList();
+    }
+
+    @FunctionalInterface
+    private interface EffectiveWeightMultiplier {
+        double apply(WeightedBehavior behavior);
+    }
+
+    private record AllocationCandidate(WeightedBehavior behavior, double effectiveWeight) {
+    }
+
+    private record AllocatedBehavior(WeightedBehavior behavior, int count) {
+    }
+
+    private static final class MutableAllocation {
+
+        private final WeightedBehavior behavior;
+        private int count;
+        private final double remainder;
+
+        private MutableAllocation(WeightedBehavior behavior, int count, double remainder) {
+            this.behavior = behavior;
+            this.count = count;
+            this.remainder = remainder;
         }
 
-        private float restDayWeight(BehaviorPlanningMetadata behavior, RestDayPolicy policy) {
-            if (behavior.getCategory() == BehaviorCategory.SOCIAL) {
-                return policy.socialMultiplier();
-            }
-            if (behavior.getCategory() == BehaviorCategory.SELF_CARE) {
-                return policy.selfCareMultiplier();
-            }
-            if (behavior.getCategory() == BehaviorCategory.LEISURE) {
-                return policy.leisureMultiplier();
-            }
-            if (behavior.getCategory() == BehaviorCategory.WORK && behavior.getIntensity() == WorkIntensity.LIGHT) {
-                return policy.lightWorkMultiplier();
-            }
-            if (behavior.getCategory() == BehaviorCategory.WORK && behavior.getIntensity() == WorkIntensity.HEAVY) {
-                return policy.heavyWorkMultiplier();
-            }
-            return 0.0F;
+        private WeightedBehavior behavior() {
+            return this.behavior;
+        }
+
+        private int count() {
+            return this.count;
+        }
+
+        private double remainder() {
+            return this.remainder;
+        }
+
+        private void increment() {
+            this.count++;
+        }
+
+        private void decrement() {
+            this.count--;
         }
 
     }

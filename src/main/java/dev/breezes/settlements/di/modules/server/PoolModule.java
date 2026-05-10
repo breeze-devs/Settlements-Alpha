@@ -16,6 +16,9 @@ import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
  * Universal behaviors (eat, wander, rest, trade) are not listed here — they are
  * merged in automatically by {@code BehaviorPoolResolver}.
  * <p>
+ * PoolEntry weights are relative routine-planning preferences. Default weight 1 means normal
+ * presence; larger weights make a behavior appear more often in packed schedule windows.
+ * <p>
  * To add a new profession: add one {@code @Provides @IntoSet} method returning a
  * {@link ProfessionBehaviorPool}. To give an existing profession a new behavior: add
  * the {@link BehaviorKey} constant to the relevant method below.
@@ -83,7 +86,7 @@ public final class PoolModule {
     static ProfessionBehaviorPool fishermanPool() {
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.FISHERMAN)
-                .entry(PoolEntry.of(BehaviorKey.FISHING))
+                .entry(PoolEntry.of(BehaviorKey.FISHING, 5))
                 .entry(PoolEntry.of(BehaviorKey.TAME_CAT))
                 .build();
     }

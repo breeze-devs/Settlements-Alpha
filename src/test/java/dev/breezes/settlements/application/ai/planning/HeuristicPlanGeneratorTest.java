@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.planning;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorCategory;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
+import dev.breezes.settlements.domain.ai.catalog.WeightedBehavior;
 import dev.breezes.settlements.domain.ai.catalog.WorkIntensity;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.DayPlanActivityBlock;
@@ -18,6 +19,7 @@ import dev.breezes.settlements.domain.genetics.Gene;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.time.GameTicks;
+import dev.breezes.settlements.domain.time.TimeOfDay;
 import org.junit.jupiter.api.Test;
 
 import java.util.EnumMap;
@@ -95,14 +97,76 @@ class HeuristicPlanGeneratorTest {
 
     @Test
     void generate_restDayUsesMultipliersToPreferNonHeavyWork() {
+        // Arrange
         DayPlan plan = this.generator.generate(context(VillagerProfessionKey.FARMER, PlanDayType.REST_DAY,
                 genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
 
         List<BehaviorKey> behaviorKeys = keys(plan);
+        long heavyWorkSlots = behaviorKeys.stream()
+                .filter(BehaviorKey.HARVEST_SUGARCANE::equals)
+                .count();
+        long lightWorkSlots = behaviorKeys.stream()
+                .filter(BehaviorKey.MILK_COW::equals)
+                .count();
 
+        // Assert
         assertTrue(behaviorKeys.contains(BehaviorKey.of("gossip")));
-        assertFalse(behaviorKeys.contains(BehaviorKey.HARVEST_SUGARCANE));
+        assertTrue(lightWorkSlots >= heavyWorkSlots);
         assertNoObsoleteIdleSlots(plan);
+    }
+
+    @Test
+    void generate_restDayMorningIncludesSocialOrSelfCareCandidates() {
+        // Arrange
+        DayPlan plan = this.generator.generate(context(VillagerProfessionKey.FARMER, PlanDayType.REST_DAY,
+                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
+
+        // Act
+        List<BehaviorKey> morningFlexibleKeys = plan.getSlots().stream()
+                .filter(PlanSlot::isFlexible)
+                .filter(slot -> slot.getStartTick() < TimeOfDay.AT_12_00.getTick())
+                .map(PlanSlot::getBehaviorKey)
+                .toList();
+
+        // Assert
+        assertTrue(morningFlexibleKeys.stream().anyMatch(key -> key.equals(BehaviorKey.of("gossip"))
+                        || key.equals(BehaviorKey.EAT_FOOD)),
+                "Rest-day morning should include boosted social/self-care candidates, not only work behaviors.");
+    }
+
+    @Test
+    void generate_workDayAllowsRepeatedSlotsToFillWorkWindow() {
+        // Arrange
+        DayPlan plan = this.generator.generate(context(VillagerProfessionKey.FISHERMAN, PlanDayType.WORK_DAY,
+                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
+
+        // Act
+        long fishingSlots = keys(plan).stream()
+                .filter(BehaviorKey.FISHING::equals)
+                .count();
+
+        // Assert
+        assertTrue(fishingSlots > 1, "Packed work windows should allow repeated primary behavior slots.");
+    }
+
+    @Test
+    void generate_fishermanWeightMakesFishingDominantOverTameCat() {
+        // Arrange
+        DayPlan plan = this.generator.generate(context(VillagerProfessionKey.FISHERMAN, PlanDayType.WORK_DAY,
+                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
+
+        // Act
+        List<BehaviorKey> behaviorKeys = keys(plan);
+        long fishingSlots = behaviorKeys.stream()
+                .filter(BehaviorKey.FISHING::equals)
+                .count();
+        long tameCatSlots = behaviorKeys.stream()
+                .filter(BehaviorKey.TAME_CAT::equals)
+                .count();
+
+        // Assert
+        assertTrue(fishingSlots > tameCatSlots,
+                "FISHING has weight 5 and should dominate TAME_CAT's default weight 1.");
     }
 
     @Test
@@ -244,8 +308,8 @@ class HeuristicPlanGeneratorTest {
                 .toList();
     }
 
-    private static List<BehaviorPlanningMetadata> descriptorsFor(VillagerProfessionKey profession,
-                                                                 List<BehaviorPlanningMetadata> descriptors) {
+    private static List<WeightedBehavior> descriptorsFor(VillagerProfessionKey profession,
+                                                         List<BehaviorPlanningMetadata> descriptors) {
         Set<BehaviorKey> universalKeys = Set.of(
                 BehaviorKey.EAT_FOOD,
                 BehaviorKey.of("gossip")
@@ -257,7 +321,7 @@ class HeuristicPlanGeneratorTest {
         } else if (VillagerProfessionKey.LIBRARIAN.equals(profession)) {
             professionKeys = Set.of(BehaviorKey.ENCHANT_ITEM, BehaviorKey.of("organize_books"));
         } else if (VillagerProfessionKey.FISHERMAN.equals(profession)) {
-            professionKeys = Set.of(BehaviorKey.FISHING);
+            professionKeys = Set.of(BehaviorKey.FISHING, BehaviorKey.TAME_CAT);
         } else if (VillagerProfessionKey.SHEPHERD.equals(profession)) {
             professionKeys = Set.of(BehaviorKey.SHEAR_SHEEP);
         } else if (VillagerProfessionKey.BUTCHER.equals(profession)) {
@@ -275,7 +339,15 @@ class HeuristicPlanGeneratorTest {
 
         return descriptors.stream()
                 .filter(descriptor -> allowedKeys.contains(descriptor.getKey()))
+                .map(descriptor -> new WeightedBehavior(descriptor, weightFor(profession, descriptor.getKey())))
                 .toList();
+    }
+
+    private static int weightFor(VillagerProfessionKey profession, BehaviorKey key) {
+        if (VillagerProfessionKey.FISHERMAN.equals(profession) && BehaviorKey.FISHING.equals(key)) {
+            return 5;
+        }
+        return 1;
     }
 
     private static void assertHasMealsOnly(DayPlan plan) {
@@ -309,6 +381,7 @@ class HeuristicPlanGeneratorTest {
                 descriptor(BehaviorKey.ENCHANT_ITEM, BehaviorCategory.WORK, WorkIntensity.HEAVY),
                 descriptor(BehaviorKey.of("organize_books"), BehaviorCategory.WORK, WorkIntensity.LIGHT),
                 descriptor(BehaviorKey.FISHING, BehaviorCategory.WORK, WorkIntensity.HEAVY),
+                descriptor(BehaviorKey.TAME_CAT, BehaviorCategory.WORK, WorkIntensity.LIGHT),
                 descriptor(BehaviorKey.SHEAR_SHEEP, BehaviorCategory.WORK, WorkIntensity.LIGHT),
                 descriptor(BehaviorKey.SMOKE_MEAT, BehaviorCategory.WORK, WorkIntensity.HEAVY),
                 descriptor(BehaviorKey.CUT_STONE, BehaviorCategory.WORK, WorkIntensity.HEAVY),

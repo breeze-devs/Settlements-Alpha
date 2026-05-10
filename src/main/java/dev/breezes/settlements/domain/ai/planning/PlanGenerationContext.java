@@ -1,6 +1,6 @@
 package dev.breezes.settlements.domain.ai.planning;
 
-import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
+import dev.breezes.settlements.domain.ai.catalog.WeightedBehavior;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
@@ -22,7 +22,7 @@ public record PlanGenerationContext(
         ScheduleProfile scheduleProfile,
         RestDayPolicy restDayPolicy,
         PlanDayType dayType,
-        List<BehaviorPlanningMetadata> availableBehaviors,
+        List<WeightedBehavior> availableBehaviors,
         long gameDay
 ) {
 }
