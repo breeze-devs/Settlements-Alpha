@@ -8,8 +8,10 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public final class MemoryModuleTypeRegistry {
@@ -31,6 +33,10 @@ public final class MemoryModuleTypeRegistry {
 
     public static final Supplier<MemoryModuleType<Set<GlobalPos>>> FENCE_GATES_TO_CLOSE = REGISTRY.register(
             "fence_gates_to_close",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<UUID>>> OWNED_WOLVES = REGISTRY.register(
+            "owned_wolves",
             () -> new MemoryModuleType<>(Optional.empty()));
 
     private MemoryModuleTypeRegistry() {

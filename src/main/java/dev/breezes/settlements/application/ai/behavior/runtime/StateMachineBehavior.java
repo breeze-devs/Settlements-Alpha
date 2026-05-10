@@ -4,37 +4,36 @@ import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedSte
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
-import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.time.ITickable;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.logging.ILogger;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.BehaviorConfigurationCrashReport;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Optional;
 
-public abstract class StateMachineBehavior extends BaseVillagerBehavior {
+public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainEntity> extends AbstractBehavior<T> {
 
     @Nullable
-    private StagedStep controlStep;
+    private StagedStep<T> controlStep;
 
     @Nullable
     private StageKey expectedEndStage;
 
     @Nullable
-    private BehaviorContext context;
+    private BehaviorContext<T> context;
 
     protected StateMachineBehavior(@Nonnull ILogger log,
                                    @Nonnull ITickable preconditionCheckCooldown,
-                                   @Nonnull ITickable behaviorCoolDown,
-                                   @Nonnull HungerConfig hungerConfig) {
-        super(log, preconditionCheckCooldown, behaviorCoolDown, hungerConfig);
+                                   @Nonnull ITickable behaviorCoolDown) {
+        super(log, preconditionCheckCooldown, behaviorCoolDown);
     }
 
-    protected final void initializeStateMachine(@Nonnull StagedStep controlStep,
+    protected final void initializeStateMachine(@Nonnull StagedStep<T> controlStep,
                                                 @Nonnull StageKey expectedEndStage) {
         if (this.controlStep != null || this.expectedEndStage != null) {
             crashInvalidConfiguration("StateMachineBehavior for '%s' was initialized more than once"
@@ -46,22 +45,22 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior {
 
     @Override
     public final void doStart(@Nonnull Level world,
-                              @Nonnull BaseVillager villager) {
+                              @Nonnull T entity) {
         this.requireInitialized();
 
-        this.context = new BehaviorContext(villager);
-        this.onBehaviorStart(world, villager, this.context);
+        this.context = new BehaviorContext<>(entity);
+        this.onBehaviorStart(world, entity, this.context);
         this.controlStep.reset();
     }
 
     @Override
     public final void tickBehavior(int delta,
                                    @Nonnull Level world,
-                                   @Nonnull BaseVillager villager) {
+                                   @Nonnull T entity) {
         this.requireInitialized();
 
-        BehaviorContext context = this.requireContext();
-        if (!this.preTickGuard(delta, world, villager, context)) {
+        BehaviorContext<T> context = this.requireContext();
+        if (!this.preTickGuard(delta, world, entity, context)) {
             throw new StopBehaviorException("Behavior '%s' pre-tick guard failed".formatted(this.getClass().getSimpleName()));
         }
 
@@ -71,22 +70,22 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior {
 
     @Override
     public final void doStop(@Nonnull Level world,
-                             @Nonnull BaseVillager villager) {
+                             @Nonnull T entity) {
         this.requireInitialized();
 
-        this.onBehaviorStop(world, villager);
+        this.onBehaviorStop(world, entity);
         this.context = null;
         this.controlStep.reset();
     }
 
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull T entity,
+                                   @Nonnull BehaviorContext<T> context) {
         // Empty by default, optionally overrideable by concrete behaviors
     }
 
     protected void onBehaviorStop(@Nonnull Level world,
-                                  @Nonnull BaseVillager villager) {
+                                  @Nonnull T entity) {
         // Empty by default, optionally overrideable by concrete behaviors
     }
 
@@ -99,12 +98,12 @@ public abstract class StateMachineBehavior extends BaseVillagerBehavior {
 
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
-                                   @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull T entity,
+                                   @Nonnull BehaviorContext<T> context) {
         return true;
     }
 
-    private BehaviorContext requireContext() {
+    private BehaviorContext<T> requireContext() {
         if (this.context == null) {
             throw new StopBehaviorException("Behavior context is null");
         }

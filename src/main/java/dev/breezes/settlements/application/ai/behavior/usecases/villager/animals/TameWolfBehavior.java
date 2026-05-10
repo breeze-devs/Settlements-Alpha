@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -16,6 +16,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -33,12 +34,14 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @CustomLog
-public class TameWolfBehaviorV2 extends StateMachineBehavior {
+public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
@@ -54,8 +57,7 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
 
     private int attemptsRemaining;
 
-    public TameWolfBehaviorV2(TameWolfConfig config,
-                              HungerConfig hungerConfig) {
+    public TameWolfBehavior(TameWolfConfig config, HungerConfig hungerConfig) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
@@ -95,9 +97,9 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
 
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
-                .name("TameWolfBehaviorV2")
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
+                .name("TameWolfBehavior")
                 .initialStage(TameStage.TAME_WOLF)
                 .stageStepMap(Map.of(TameStage.TAME_WOLF, this.createTameWolfStep()))
                 .nextStage(TameStage.END)
@@ -105,8 +107,8 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createTameWolfStep() {
-        TimeBasedStep attemptStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createTameWolfStep() {
+        TimeBasedStep<BaseVillager> attemptStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(ctx -> {
                     // Consume one attempt when we start the action window
@@ -148,6 +150,7 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
                         settlementsWolf.setTame(true, true);
                         settlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
                         settlementsWolf.setCollarColor(DyeColor.LIME);
+                        this.rememberOwnedWolf(ctx.getInitiator().getMinecraftEntity(), settlementsWolf);
 
                         log.behaviorStatus("Successfully tamed wolf {}", settlementsWolf.getUUID());
 
@@ -177,9 +180,9 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.5)
-                .navigateStep(new NavigateToTargetStep(0.55f, 2))
+                .navigateStep(new NavigateToTargetStep<>(0.55f, 2))
                 .actionStep(attemptStep)
                 .build();
     }
@@ -187,7 +190,7 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
 
         // Enforce wolf ownership limit per expertise
         Expertise expertise = entity.getExpertise();
@@ -223,7 +226,7 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
         entity.clearHeldItem();
     }
 
-    private Optional<Wolf> getTargetWolf(@Nonnull BehaviorContext context) {
+    private Optional<Wolf> getTargetWolf(@Nonnull BehaviorContext<BaseVillager> context) {
         return TargetQueries.firstEntity(context, EntityType.WOLF, Wolf.class);
     }
 
@@ -234,5 +237,19 @@ public class TameWolfBehaviorV2 extends StateMachineBehavior {
             // Fallback using getOwner, if available
             return wolf.getOwner() != null && wolf.getOwner().getUUID().equals(villager.getUUID());
         }
+    }
+
+    private void rememberOwnedWolf(@Nonnull BaseVillager villager, @Nonnull SettlementsWolf wolf) {
+        List<UUID> ownedWolfIds = villager.getBrain()
+                .getMemory(MemoryTypeRegistry.OWNED_WOLVES.getModuleType())
+                .orElse(List.of());
+
+        if (ownedWolfIds.contains(wolf.getUUID())) {
+            return;
+        }
+
+        List<UUID> updatedOwnedWolfIds = new ArrayList<>(ownedWolfIds);
+        updatedOwnedWolfIds.add(wolf.getUUID());
+        villager.getBrain().setMemory(MemoryTypeRegistry.OWNED_WOLVES.getModuleType(), List.copyOf(updatedOwnedWolfIds));
     }
 }

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class HarvestHoneycombBehavior extends StateMachineBehavior {
+public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
     private enum HarvestStage implements StageKey {
         HARVEST_HONEYCOMB,
@@ -71,8 +71,8 @@ public class HarvestHoneycombBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("HarvestHoneycombBehavior")
                 .initialStage(HarvestStage.HARVEST_HONEYCOMB)
                 .stageStepMap(Map.of(HarvestStage.HARVEST_HONEYCOMB, this.createHarvestStep()))
@@ -80,8 +80,8 @@ public class HarvestHoneycombBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createHarvestStep() {
-        TimeBasedStep harvestStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createHarvestStep() {
+        TimeBasedStep<BaseVillager> harvestStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(context -> {
                     context.getInitiator().setHeldItem(Items.SHEARS.getDefaultInstance());
@@ -97,9 +97,9 @@ public class HarvestHoneycombBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep(0.55f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.55f, 1))
                 .actionStep(harvestStep)
                 .build();
     }
@@ -107,7 +107,7 @@ public class HarvestHoneycombBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         Expertise expertise = entity.getExpertise();
         this.harvestsRemaining = this.config.expertiseHarvestLimit().getOrDefault(expertise.getConfigName(), 1);
 
@@ -130,7 +130,7 @@ public class HarvestHoneycombBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.targetHivePos != null;
     }
 
@@ -145,7 +145,7 @@ public class HarvestHoneycombBehavior extends StateMachineBehavior {
 
     private boolean selectFreshTarget(@Nonnull BaseVillager villager,
                                       @Nonnull Level world,
-                                      @Nonnull BehaviorContext context) {
+                                      @Nonnull BehaviorContext<BaseVillager> context) {
         if (!this.nearbyFullHiveExistsCondition.test(villager)) {
             return false;
         }
@@ -166,7 +166,7 @@ public class HarvestHoneycombBehavior extends StateMachineBehavior {
         return true;
     }
 
-    private StepResult performHarvest(@Nonnull BehaviorContext context) {
+    private StepResult performHarvest(@Nonnull BehaviorContext<BaseVillager> context) {
         if (this.targetHivePos == null) {
             this.harvestsRemaining = 0;
             return StepResult.noOp();

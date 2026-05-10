@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class FishingBehavior extends StateMachineBehavior {
+public class FishingBehavior extends VillagerStateMachineBehavior {
 
     private static final double NAVIGATION_CLOSE_ENOUGH_DISTANCE = 5.0;
     private static final float NAVIGATION_SPEED = 0.5f;
@@ -98,7 +98,7 @@ public class FishingBehavior extends StateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         this.waterTarget = this.nearbyWaterExistsCondition.getWaterTarget().orElse(null);
         if (this.waterTarget == null) {
             log.behaviorWarn("Fishing behavior started without a water target; stopping");
@@ -146,7 +146,7 @@ public class FishingBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.activeHook == null) {
             return true;
         }
@@ -156,8 +156,8 @@ public class FishingBehavior extends StateMachineBehavior {
         return this.activeHook.isMissedWater() && this.castRetryCount < MAX_CAST_RETRIES;
     }
 
-    private StagedStep createControlStep() {
-        return StagedStep.builder()
+    private StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("FishingBehavior")
                 .initialStage(FishingStage.NAVIGATE_TO_WATER)
                 .stageStepMap(Map.of(
@@ -174,15 +174,15 @@ public class FishingBehavior extends StateMachineBehavior {
     /**
      * Walk to the shore position, wait half a second, then cast.
      */
-    private BehaviorStep createNavigateStep() {
-        TimeBasedStep arrivedStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createNavigateStep() {
+        TimeBasedStep<BaseVillager> arrivedStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(0.5).asTickable())
                 .onEnd(context -> StepResult.transition(FishingStage.CAST_LINE))
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(NAVIGATION_CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep(NAVIGATION_SPEED, NAVIGATION_COMPLETION_DISTANCE))
+                .navigateStep(new NavigateToTargetStep<>(NAVIGATION_SPEED, NAVIGATION_COMPLETION_DISTANCE))
                 .actionStep(arrivedStep)
                 .build();
     }
@@ -191,8 +191,8 @@ public class FishingBehavior extends StateMachineBehavior {
      * Hold rod, spawn hook aimed at water, play cast sound.
      * Placeholder for animation (no-op); transitions to WAIT_FOR_BITE.
      */
-    private BehaviorStep createCastLineStep() {
-        return TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createCastLineStep() {
+        return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(context -> {
                     ISettlementsVillager villager = context.getInitiator();
@@ -216,8 +216,8 @@ public class FishingBehavior extends StateMachineBehavior {
      * Wait for the hook's catchingFish() logic to signal a bite.
      * Polls hasBitten() every 5 ticks. Times out after maxWaitTimeSeconds.
      */
-    private BehaviorStep createWaitForBiteStep() {
-        return TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createWaitForBiteStep() {
+        return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(config.maxWaitTimeSeconds()).asTickable())
                 .addPeriodicStep(5, context -> {
                     if (this.activeHook != null && this.activeHook.isRemoved() && this.activeHook.isMissedWater()) {
@@ -261,8 +261,8 @@ public class FishingBehavior extends StateMachineBehavior {
      * Reel hook, spawn flying visual entity, clear rod.
      * Placeholder for animation (no-op); transitions to COLLECT_FISH.
      */
-    private BehaviorStep createReelInStep() {
-        return TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createReelInStep() {
+        return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1.5).asTickable())
                 .onStart(context -> {
                     // Display happy effects
@@ -301,8 +301,8 @@ public class FishingBehavior extends StateMachineBehavior {
      * Wait for the visual fish entity to arrive near the villager, then
      * store the corresponding fish item in the villager's inventory.
      */
-    private BehaviorStep createCollectFishStep() {
-        return TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createCollectFishStep() {
+        return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(3).asTickable())
                 .addPeriodicStep(5, context -> {
                     if (this.fishedEntity == null || this.fishedEntity.isRemoved()) {
@@ -370,7 +370,7 @@ public class FishingBehavior extends StateMachineBehavior {
         return StepResult.noOp();
     }
 
-    private StepResult collectAndComplete(@Nonnull BehaviorContext context) {
+    private StepResult collectAndComplete(@Nonnull BehaviorContext<BaseVillager> context) {
         if (this.caughtItem != null && !this.caughtItem.isEmpty()) {
             VillagerInventory inventory = context.getInitiator().getSettlementsInventory();
             inventory.addItem(this.caughtItem);

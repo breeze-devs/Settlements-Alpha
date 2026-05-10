@@ -12,7 +12,7 @@ import dev.breezes.settlements.infrastructure.config.annotations.maps.MapEntry;
 import java.util.Map;
 
 /**
- * Configuration Record for the ShearSheepBehaviorV2.
+ * Configuration Record for the ShearSheepBehavior.
  * <p>
  * This Record is processed by RecordConfigProcessor at startup to generate
  * the corresponding TOML config file and populate ConfigFactory.

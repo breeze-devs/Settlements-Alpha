@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractSt
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.BehaviorConfigurationCrashReport;
 import lombok.Builder;
@@ -19,28 +20,28 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 @CustomLog
-public class StagedStep extends AbstractStep {
+public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
-    private final Map<StageKey, BehaviorStep> stageStepMap;
+    private final Map<StageKey, BehaviorStep<T>> stageStepMap;
     private final StageKey startingStage;
     private final StageKey initialActionStage;
     private final StageKey nextStage; // Stage to transition to after this StagedStep completes
 
     @Nullable
-    private final BehaviorStep onStart;
+    private final BehaviorStep<T> onStart;
     @Nullable
-    private final BehaviorStep onEnd;
+    private final BehaviorStep<T> onEnd;
 
     @Getter
     private StageKey currentStage;
 
     @Builder
     private StagedStep(@Nonnull String name,
-                       @Nonnull Map<StageKey, BehaviorStep> stageStepMap,
+                       @Nonnull Map<StageKey, BehaviorStep<T>> stageStepMap,
                        @Nonnull StageKey initialStage,
                        @Nonnull StageKey nextStage,
-                       @Nullable BehaviorStep onStart,
-                       @Nullable BehaviorStep onEnd) {
+                       @Nullable BehaviorStep<T> onStart,
+                       @Nullable BehaviorStep<T> onEnd) {
         super("StagedStep[%s]".formatted(name));
         if (stageStepMap.isEmpty()) {
             crashInvalidConfiguration("Staged step must have at least one stage");
@@ -62,7 +63,7 @@ public class StagedStep extends AbstractStep {
         this.onEnd = onEnd;
     }
 
-    protected StepResult onStart(@Nonnull BehaviorContext context) {
+    protected StepResult onStart(@Nonnull BehaviorContext<T> context) {
         log.behaviorStatus("Starting {} ({})", this.getName(), this.getUuid());
         if (this.onStart != null) {
             StepResult result = this.onStart.tick(context);
@@ -74,8 +75,8 @@ public class StagedStep extends AbstractStep {
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext context) {
-        BehaviorStep step = this.stageStepMap.get(this.currentStage);
+    public StepResult tick(@Nonnull BehaviorContext<T> context) {
+        BehaviorStep<T> step = this.stageStepMap.get(this.currentStage);
         if (step == null) {
             log.error("Missing step for stage: {} in {} ({})", this.currentStage.name(), this.getName(), this.getUuid());
             return StepResult.abort("MISSING_STEP", new IllegalStateException("Missing step for stage: " + this.currentStage.name()));
@@ -104,7 +105,7 @@ public class StagedStep extends AbstractStep {
         return StepResult.noOp();
     }
 
-    protected void onEnd(@Nonnull BehaviorContext context) {
+    protected void onEnd(@Nonnull BehaviorContext<T> context) {
         log.behaviorStatus("Ending {} ({})", this.getName(), this.getUuid());
         if (this.onEnd != null) {
             this.onEnd.tick(context);
@@ -121,18 +122,18 @@ public class StagedStep extends AbstractStep {
             this.onEnd.reset();
         }
 
-        for (BehaviorStep step : this.stageStepMap.values()) {
+        for (BehaviorStep<T> step : this.stageStepMap.values()) {
             step.reset();
         }
     }
 
-    private void validate(@Nonnull Map<StageKey, BehaviorStep> stageStepMap,
-                          @Nullable BehaviorStep onStart,
-                          @Nullable BehaviorStep onEnd) {
-        Map<BehaviorStep, StageKey> seenByIdentity = new IdentityHashMap<>();
-        for (Map.Entry<StageKey, BehaviorStep> entry : stageStepMap.entrySet()) {
+    private void validate(@Nonnull Map<StageKey, BehaviorStep<T>> stageStepMap,
+                          @Nullable BehaviorStep<T> onStart,
+                          @Nullable BehaviorStep<T> onEnd) {
+        Map<BehaviorStep<T>, StageKey> seenByIdentity = new IdentityHashMap<>();
+        for (Map.Entry<StageKey, BehaviorStep<T>> entry : stageStepMap.entrySet()) {
             StageKey stage = entry.getKey();
-            BehaviorStep step = entry.getValue();
+            BehaviorStep<T> step = entry.getValue();
             if (step == null) {
                 crashInvalidConfiguration("Stage '%s' has a null step".formatted(stage.name()));
             }

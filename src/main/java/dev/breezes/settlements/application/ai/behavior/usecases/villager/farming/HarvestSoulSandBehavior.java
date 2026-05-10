@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class HarvestSoulSandBehavior extends StateMachineBehavior {
+public class HarvestSoulSandBehavior extends VillagerStateMachineBehavior {
 
     private enum HarvestStage implements StageKey {
         HARVEST_SOUL_SAND,
@@ -67,8 +67,8 @@ public class HarvestSoulSandBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("HarvestSoulSandBehavior")
                 .initialStage(HarvestStage.HARVEST_SOUL_SAND)
                 .stageStepMap(Map.of(HarvestStage.HARVEST_SOUL_SAND, this.createHarvestStep()))
@@ -77,10 +77,10 @@ public class HarvestSoulSandBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createHarvestStep() {
-        return StayCloseStep.builder()
+    private BehaviorStep<BaseVillager> createHarvestStep() {
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.0)
-                .navigateStep(new NavigateToTargetStep(0.5f, 0))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 0))
                 .actionStep(ctx -> {
                     if (this.netherWartPos == null) {
                         return StepResult.complete();
@@ -115,7 +115,7 @@ public class HarvestSoulSandBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         this.timeWorkedSoFar = 0;
 
         this.validSoulSandAroundVillager = new ArrayList<>(this.nearbySoulSandExistsCondition.getTargets());

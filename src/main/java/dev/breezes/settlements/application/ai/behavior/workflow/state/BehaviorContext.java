@@ -1,7 +1,7 @@
 package dev.breezes.settlements.application.ai.behavior.workflow.state;
 
-import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import lombok.Getter;
 
 import javax.annotation.Nonnull;
@@ -14,14 +14,14 @@ import java.util.Optional;
  * - the initiator (entity) of the behavior
  * - the states (facts) for the behavior
  */
-public class BehaviorContext {
+public class BehaviorContext<T extends ISettlementsBrainEntity> {
 
     @Getter
-    private final ISettlementsVillager initiator;
+    private final T initiator;
 
     private final Map<BehaviorStateType, BehaviorState> states;
 
-    public BehaviorContext(@Nonnull ISettlementsVillager initiator) {
+    public BehaviorContext(@Nonnull T initiator) {
         this.initiator = initiator;
         this.states = new EnumMap<>(BehaviorStateType.class);
     }

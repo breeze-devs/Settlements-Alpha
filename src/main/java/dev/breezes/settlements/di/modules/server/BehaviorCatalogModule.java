@@ -5,11 +5,11 @@ import dagger.Provides;
 import dagger.multibindings.IntoSet;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepBehaviorV2;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfBehaviorV2;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
@@ -527,7 +527,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey("ui.settlements.behavior.behavior.tame_wolf")
                         .iconItemId(ResourceLocation.withDefaultNamespace("bone"))
                         .build())
-                .factory(() -> new TameWolfBehaviorV2(config, hungerConfig))
+                .factory(() -> new TameWolfBehavior(config, hungerConfig))
                 .build();
     }
 
@@ -576,7 +576,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey("ui.settlements.behavior.behavior.shear_sheep")
                         .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
                         .build())
-                .factory(() -> new ShearSheepBehaviorV2(config, hungerConfig, demandSignalService))
+                .factory(() -> new ShearSheepBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 

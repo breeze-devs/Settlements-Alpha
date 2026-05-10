@@ -3,7 +3,7 @@ package dev.breezes.settlements.infrastructure.minecraft.entities.villager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
-import dev.breezes.settlements.application.ai.behavior.runtime.BaseVillagerBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.brain.DefaultBrain;
 import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
@@ -15,6 +15,7 @@ import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
 import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
+import dev.breezes.settlements.bootstrap.registry.sensors.SensorTypeRegistry;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
@@ -447,7 +448,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         double behaviorModifier = 1.0;
         IBehavior<BaseVillager> currentBehavior = this.planRuntimeState.getCurrentBehavior();
         if (currentBehavior != null && currentBehavior.getStatus() == BehaviorStatus.RUNNING
-                && currentBehavior instanceof BaseVillagerBehavior villagerBehavior) {
+                && currentBehavior instanceof VillagerStateMachineBehavior villagerBehavior) {
             behaviorModifier = villagerBehavior.getHungerDrainModifier();
         }
 
@@ -524,7 +525,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType(),
                 MemoryTypeRegistry.NEAREST_HARVESTABLE_SUGARCANE.getModuleType(),
                 MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
-                MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType());
+                MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType(),
+                MemoryTypeRegistry.OWNED_WOLVES.getModuleType());
     }
 
     private static ImmutableList<SensorType<? extends Sensor<? super Villager>>> sensorTypes() {
@@ -537,7 +539,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 SensorType.VILLAGER_HOSTILES,
                 SensorType.VILLAGER_BABIES,
                 SensorType.SECONDARY_POIS,
-                SensorType.GOLEM_DETECTED
+                SensorType.GOLEM_DETECTED,
+                SensorTypeRegistry.OWNED_PETS_SENSOR.get()
         );
     }
 

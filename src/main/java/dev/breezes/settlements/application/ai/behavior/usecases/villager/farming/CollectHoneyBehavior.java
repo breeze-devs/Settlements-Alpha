@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class CollectHoneyBehavior extends StateMachineBehavior {
+public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
 
     private enum CollectStage implements StageKey {
         COLLECT_HONEY,
@@ -71,8 +71,8 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), CollectStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("CollectHoneyBehavior")
                 .initialStage(CollectStage.COLLECT_HONEY)
                 .stageStepMap(Map.of(CollectStage.COLLECT_HONEY, this.createCollectStep()))
@@ -80,8 +80,8 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createCollectStep() {
-        TimeBasedStep collectStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createCollectStep() {
+        TimeBasedStep<BaseVillager> collectStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(2).asTickable())
                 .onStart(context -> {
                     context.getInitiator().setHeldItem(Items.GLASS_BOTTLE.getDefaultInstance());
@@ -97,9 +97,9 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep(0.55f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.55f, 1))
                 .actionStep(collectStep)
                 .build();
     }
@@ -107,7 +107,7 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         Expertise expertise = entity.getExpertise();
         this.harvestsRemaining = this.config.expertiseHarvestLimit().getOrDefault(expertise.getConfigName(), 1);
 
@@ -130,7 +130,7 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.targetHivePos != null;
     }
 
@@ -145,7 +145,7 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
 
     private boolean selectFreshTarget(@Nonnull BaseVillager villager,
                                       @Nonnull Level world,
-                                      @Nonnull BehaviorContext context) {
+                                      @Nonnull BehaviorContext<BaseVillager> context) {
         if (!this.nearbyFullHiveExistsCondition.test(villager)) {
             return false;
         }
@@ -166,7 +166,7 @@ public class CollectHoneyBehavior extends StateMachineBehavior {
         return true;
     }
 
-    private StepResult performHarvest(@Nonnull BehaviorContext context) {
+    private StepResult performHarvest(@Nonnull BehaviorContext<BaseVillager> context) {
         if (this.targetHivePos == null) {
             this.harvestsRemaining = 0;
             return StepResult.noOp();

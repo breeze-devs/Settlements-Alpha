@@ -1,12 +1,12 @@
 package dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete;
 
-import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.ConditionalStep;
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import lombok.Builder;
 import lombok.CustomLog;
 
@@ -20,21 +20,21 @@ import javax.annotation.Nullable;
  * Otherwise, the action step is executed.
  */
 @CustomLog
-public class StayCloseStep extends ConditionalStep {
+public class StayCloseStep<T extends ISettlementsBrainEntity> extends ConditionalStep<T> {
 
     @Builder
-    public StayCloseStep(double closeEnoughDistance, @Nonnull NavigateToTargetStep navigateStep, @Nonnull BehaviorStep actionStep) {
+    public StayCloseStep(double closeEnoughDistance, @Nonnull NavigateToTargetStep<T> navigateStep, @Nonnull BehaviorStep<T> actionStep) {
         super(context -> isCloseEnough(context, closeEnoughDistance * closeEnoughDistance),
                 actionStep, navigateStep);
     }
 
-    private static boolean isCloseEnough(@Nullable BehaviorContext context, double closeEnoughDistanceSquared) {
+    private static <T extends ISettlementsBrainEntity> boolean isCloseEnough(@Nullable BehaviorContext<T> context, double closeEnoughDistanceSquared) {
         if (context == null) {
             log.behaviorWarn("Behavior context is null");
             return false;
         }
 
-        ISettlementsVillager initiator = context.getInitiator();
+        T initiator = context.getInitiator();
         return context.getState(BehaviorStateType.TARGET, TargetState.class)
                 .flatMap(TargetState::getFirst)
                 .map(Targetable::getLocation)

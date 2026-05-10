@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorCo
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.time.Tickable;
 import lombok.Builder;
 
@@ -12,7 +13,7 @@ import javax.annotation.Nonnull;
 /**
  * A step that waits for a fixed amount of time before transitioning to the next stage
  */
-public class WaitStep extends AbstractStep {
+public class WaitStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
     private final Tickable waitTime;
     private final StageKey nextStage;
@@ -25,7 +26,7 @@ public class WaitStep extends AbstractStep {
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext context) {
+    public StepResult tick(@Nonnull BehaviorContext<T> context) {
         if (waitTime.tickCheckAndReset(1)) {
             return StepResult.transition(nextStage);
         }

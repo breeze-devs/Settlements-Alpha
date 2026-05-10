@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class MilkCowBehavior extends StateMachineBehavior {
+public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
     private enum MilkStage implements StageKey {
         MILK_COW,
@@ -67,8 +67,8 @@ public class MilkCowBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), MilkStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("MilkCowBehavior")
                 .initialStage(MilkStage.MILK_COW)
                 .stageStepMap(Map.of(MilkStage.MILK_COW, this.createMilkCowStep()))
@@ -76,8 +76,8 @@ public class MilkCowBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createMilkCowStep() {
-        TimeBasedStep milkStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createMilkCowStep() {
+        TimeBasedStep<BaseVillager> milkStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(2).asTickable())
                 .onStart(context -> {
                     context.getInitiator().setHeldItem(Items.BUCKET.getDefaultInstance());
@@ -105,9 +105,9 @@ public class MilkCowBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep(0.55f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.55f, 1))
                 .actionStep(milkStep)
                 .build();
     }
@@ -115,7 +115,7 @@ public class MilkCowBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         Expertise expertise = entity.getExpertise();
         this.milkCountRemaining = this.config.expertiseMilkLimit().getOrDefault(expertise.getConfigName(), 1);
 
@@ -139,7 +139,7 @@ public class MilkCowBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.target != null && this.target.isAlive();
     }
 
@@ -153,7 +153,7 @@ public class MilkCowBehavior extends StateMachineBehavior {
         this.milkCountRemaining = 0;
     }
 
-    private StepResult performMilk(@Nonnull BehaviorContext context) {
+    private StepResult performMilk(@Nonnull BehaviorContext<BaseVillager> context) {
         if (this.target == null || !this.target.isAlive() || this.target.isBaby()) {
             this.milkCountRemaining = 0;
             return StepResult.noOp();

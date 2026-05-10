@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class BlastOreBehavior extends StateMachineBehavior {
+public class BlastOreBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
@@ -97,8 +97,8 @@ public class BlastOreBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), BlastStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("BlastOreBehavior")
                 .initialStage(BlastStage.BLAST_ORE)
                 .stageStepMap(Map.of(
@@ -111,7 +111,7 @@ public class BlastOreBehavior extends StateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
             this.requestStop("No blast furnace block found at job site");
             return;
@@ -134,7 +134,7 @@ public class BlastOreBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.blastFurnace != null && this.blastFurnace.is(Blocks.BLAST_FURNACE);
     }
 
@@ -157,8 +157,8 @@ public class BlastOreBehavior extends StateMachineBehavior {
         this.currentRecipe = null;
     }
 
-    private BehaviorStep createBlastStep() {
-        TimeBasedStep setup = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createBlastStep() {
+        TimeBasedStep<BaseVillager> setup = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ITEM_INTERACTION_DURATION.asTickable())
                 .onStart(ctx -> {
                     if (this.currentRecipe == null || this.blastFurnace == null) {
@@ -187,7 +187,7 @@ public class BlastOreBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        TimeBasedStep blasting = TimeBasedStep.builder()
+        TimeBasedStep<BaseVillager> blasting = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(BLASTING_DURATION.asTickable())
                 .onEnd(ctx -> {
                     if (this.blastFurnace == null || this.currentRecipe == null) {
@@ -204,7 +204,7 @@ public class BlastOreBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        TimeBasedStep takeOut = TimeBasedStep.builder()
+        TimeBasedStep<BaseVillager> takeOut = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ITEM_INTERACTION_DURATION.asTickable())
                 .onEnd(ctx -> {
                     ctx.getInitiator().clearHeldItem();
@@ -212,10 +212,10 @@ public class BlastOreBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep(0.5f, 1))
-                .actionStep(new SequencedStep("BlastOreBehavior.sequence", List.of(setup, blasting, takeOut)))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
+                .actionStep(new SequencedStep<>("BlastOreBehavior.sequence", List.of(setup, blasting, takeOut)))
                 .build();
     }
 

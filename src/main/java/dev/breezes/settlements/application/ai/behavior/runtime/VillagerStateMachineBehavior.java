@@ -9,14 +9,14 @@ import lombok.Getter;
 import javax.annotation.Nonnull;
 
 @Getter
-public abstract class BaseVillagerBehavior extends AbstractBehavior<BaseVillager> {
+public abstract class VillagerStateMachineBehavior extends StateMachineBehavior<BaseVillager> {
 
     private final HungerConfig hungerConfig;
 
-    protected BaseVillagerBehavior(@Nonnull ILogger log,
-                                   @Nonnull ITickable preconditionCheckCooldown,
-                                   @Nonnull ITickable behaviorCoolDown,
-                                   @Nonnull HungerConfig hungerConfig) {
+    protected VillagerStateMachineBehavior(@Nonnull ILogger log,
+                                           @Nonnull ITickable preconditionCheckCooldown,
+                                           @Nonnull ITickable behaviorCoolDown,
+                                           @Nonnull HungerConfig hungerConfig) {
         super(log, preconditionCheckCooldown, behaviorCoolDown);
         this.hungerConfig = hungerConfig;
     }

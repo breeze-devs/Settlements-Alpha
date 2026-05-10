@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 
 @CustomLog
-public class EatFoodBehavior extends StateMachineBehavior {
+public class EatFoodBehavior extends VillagerStateMachineBehavior {
 
     private enum EatStage implements StageKey {
         EATING,
@@ -57,8 +57,8 @@ public class EatFoodBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), EatStage.END);
     }
 
-    private StagedStep createControlStep() {
-        return StagedStep.builder()
+    private StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("EatFoodBehavior")
                 .initialStage(EatStage.EATING)
                 .stageStepMap(Map.of(EatStage.EATING, this.createEatingStep()))
@@ -66,8 +66,8 @@ public class EatFoodBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private TimeBasedStep createEatingStep() {
-        return TimeBasedStep.builder()
+    private TimeBasedStep<BaseVillager> createEatingStep() {
+        return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(EATING_DURATION.asTickable())
                 .onStart(context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();

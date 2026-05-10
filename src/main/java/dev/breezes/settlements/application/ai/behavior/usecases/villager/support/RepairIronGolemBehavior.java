@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.support;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class RepairIronGolemBehavior extends StateMachineBehavior {
+public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
@@ -66,8 +66,8 @@ public class RepairIronGolemBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), RepairStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("RepairIronGolemBehavior")
                 .initialStage(RepairStage.REPAIR_GOLEM)
                 .stageStepMap(Map.of(RepairStage.REPAIR_GOLEM, this.createRepairStep()))
@@ -76,8 +76,8 @@ public class RepairIronGolemBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createRepairStep() {
-        TimeBasedStep repairTick = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createRepairStep() {
+        TimeBasedStep<BaseVillager> repairTick = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(2).asTickable())
                 .everyTick(ctx -> {
                     ctx.getInitiator().setHeldItem(new ItemStack(Items.IRON_INGOT));
@@ -103,9 +103,9 @@ public class RepairIronGolemBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
                 .actionStep(repairTick)
                 .build();
     }
@@ -113,7 +113,7 @@ public class RepairIronGolemBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         List<IronGolem> targets = this.nearbyDamagedIronGolemExistsCondition.getTargets();
         if (targets.isEmpty()) {
             this.requestStop("No damaged iron golem found within range");
@@ -129,7 +129,7 @@ public class RepairIronGolemBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.targetToRepair != null
                 && this.targetToRepair.isAlive()
                 && this.targetToRepair.getHealth() < this.targetToRepair.getMaxHealth() * this.config.repairHpPercentage();

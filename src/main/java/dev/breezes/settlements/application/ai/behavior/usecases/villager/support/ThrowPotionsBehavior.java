@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.support;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class ThrowPotionsBehavior extends StateMachineBehavior {
+public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 4;
 
@@ -66,8 +66,8 @@ public class ThrowPotionsBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), ThrowStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("ThrowPotionsBehavior")
                 .initialStage(ThrowStage.THROW_POTION)
                 .stageStepMap(Map.of(ThrowStage.THROW_POTION, this.createThrowStep()))
@@ -76,10 +76,10 @@ public class ThrowPotionsBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createThrowStep() {
-        return StayCloseStep.builder()
+    private BehaviorStep<BaseVillager> createThrowStep() {
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep(0.5f, 3))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 3))
                 .actionStep(ctx -> {
                     if (this.targetToThrow == null || this.potionToThrow == null) {
                         return StepResult.fail("Target or potion is null");
@@ -108,7 +108,7 @@ public class ThrowPotionsBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
 
         double currentHpPercentage = Double.MAX_VALUE;
         for (Entity entity : this.nearbyFriendlyNeedsPotionCondition.getFriendlyNeedsPotionMap().keySet()) {
@@ -139,7 +139,7 @@ public class ThrowPotionsBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.targetToThrow != null && this.targetToThrow.isAlive();
     }
 

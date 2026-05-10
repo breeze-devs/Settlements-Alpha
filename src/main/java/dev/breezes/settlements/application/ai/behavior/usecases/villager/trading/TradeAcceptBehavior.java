@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.trading;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @CustomLog
-public final class TradeAcceptBehavior extends StateMachineBehavior {
+public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
 
     private static final double APPROACH_DISTANCE_SQUARED = 9.0D;
     private static final ClockTicks RESPONDER_PRESENTATION_DELAY = ClockTicks.seconds(2);
@@ -57,12 +57,12 @@ public final class TradeAcceptBehavior extends StateMachineBehavior {
 
         this.preconditions.add(this.hasTradeToMirror());
         this.initializeStateMachine(
-                StagedStep.builder()
+                StagedStep.<BaseVillager>builder()
                         .name("TradeAcceptBehavior")
                         .initialStage(MirrorStage.MIRROR)
-                        .stageStepMap(Map.of(MirrorStage.MIRROR, StayCloseStep.builder()
+                        .stageStepMap(Map.of(MirrorStage.MIRROR, StayCloseStep.<BaseVillager>builder()
                                 .closeEnoughDistance(TRADE_CLOSE_ENOUGH_DISTANCE)
-                                .navigateStep(new NavigateToTargetStep(0.5f, 2))
+                                .navigateStep(new NavigateToTargetStep<>(0.5f, 2))
                                 .actionStep(this::mirror)
                                 .build()))
                         .nextStage(MirrorStage.CLOSED)
@@ -73,7 +73,7 @@ public final class TradeAcceptBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         long currentGameTime = world.getGameTime();
         if (this.sessionRegistry.hasInviteFor(villager.getUUID())) {
             this.sessionRegistry.acceptInvite(villager.getUUID(), currentGameTime);
@@ -100,7 +100,7 @@ public final class TradeAcceptBehavior extends StateMachineBehavior {
                 || this.sessionRegistry.getActiveSession(villager.getUUID()).isPresent();
     }
 
-    private StepResult mirror(@Nonnull BehaviorContext context) {
+    private StepResult mirror(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager self = context.getInitiator().getMinecraftEntity();
         TradeSession session = this.sessionRegistry.getActiveSession(self.getUUID()).orElse(null);
         if (session == null) {

@@ -14,23 +14,17 @@ public class WolfFollowOwnerGoal extends FollowOwnerGoal {
 
     @Override
     public boolean canUse() {
-        // Don't follow owner if fetching
-        if (this.wolf.isStopFollowOwner()) {
+        if (this.wolf.isFollowOwnerLocked()) {
             return false;
         }
-
-        // Otherwise, use super's decision
         return super.canUse();
     }
 
     @Override
     public boolean canContinueToUse() {
-        // Don't follow owner if fetching
-        if (this.wolf.isStopFollowOwner()) {
+        if (this.wolf.isFollowOwnerLocked()) {
             return false;
         }
-
-        // Otherwise, use super's decision
         return super.canContinueToUse();
     }
 }

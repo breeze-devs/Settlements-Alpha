@@ -4,7 +4,9 @@ import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistr
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import net.minecraft.core.GlobalPos;
 
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 public final class MemoryTypeRegistry {
 
@@ -26,6 +28,11 @@ public final class MemoryTypeRegistry {
     public static final MemoryType<Set<GlobalPos>> FENCE_GATES_TO_CLOSE = MemoryType.<Set<GlobalPos>>builder()
             .identifier("fence_gates_to_close")
             .moduleTypeSupplier(MemoryModuleTypeRegistry.FENCE_GATES_TO_CLOSE)
+            .build();
+
+    public static final MemoryType<List<UUID>> OWNED_WOLVES = MemoryType.<List<UUID>>builder()
+            .identifier("owned_wolves")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.OWNED_WOLVES)
             .build();
 
 //     public static final MemoryType<List<TMemoryFarmland>> OWNED_FARMLAND = register(MemoryType.<List<TMemoryFarmland>>builder()

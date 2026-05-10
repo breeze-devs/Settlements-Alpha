@@ -1,19 +1,19 @@
 package dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete;
 
-import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.world.location.Location;
 import lombok.Builder;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
-public class NavigateToTargetStep extends AbstractStep {
+public class NavigateToTargetStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
     private final float speed;
     private final int completionDistance;
@@ -26,15 +26,12 @@ public class NavigateToTargetStep extends AbstractStep {
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext context) {
-        ISettlementsVillager initiator = context.getInitiator();
+    public StepResult tick(@Nonnull BehaviorContext<T> context) {
+        T initiator = context.getInitiator();
 
-        // TODO: Don't navigate if already navigating
-        // TODO: this is causing the villager to run back to the workstation due to vanilla logic
-        // TODO: re-enable this check after fixing the issue
-//        if (initiator.getNavigationManager().isNavigating()) {
-//            return StepResult.noOp();
-//        }
+        if (initiator.getNavigationManager().isNavigating()) {
+            return StepResult.noOp();
+        }
 
         Optional<Location> target = context.getState(BehaviorStateType.TARGET, TargetState.class)
                 .flatMap(TargetState::getFirst)

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class HarvestOreBehavior extends StateMachineBehavior {
+public class HarvestOreBehavior extends VillagerStateMachineBehavior {
 
     private enum HarvestStage implements StageKey {
         HARVEST_ORE,
@@ -60,8 +60,8 @@ public class HarvestOreBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), HarvestOreBehavior.HarvestStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("HarvestOreBehavior")
                 .initialStage(HarvestOreBehavior.HarvestStage.HARVEST_ORE)
                 .stageStepMap(Map.of(HarvestOreBehavior.HarvestStage.HARVEST_ORE, this.createHarvestStep()))
@@ -69,10 +69,10 @@ public class HarvestOreBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createHarvestStep() {
-        return StayCloseStep.builder()
+    private BehaviorStep<BaseVillager> createHarvestStep() {
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.5)
-                .navigateStep(new NavigateToTargetStep(0.5f, 2))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 2))
                 .actionStep(context -> {
                     if (this.orePos == null) {
                         return StepResult.complete();
@@ -93,7 +93,7 @@ public class HarvestOreBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         this.timeWorkedSoFar = 0;
 
         this.validOresAroundVillager = new ArrayList<>(this.nearbyOreExistsCondition.getTargets());

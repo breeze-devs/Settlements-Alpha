@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class TameCatBehavior extends StateMachineBehavior {
+public class TameCatBehavior extends VillagerStateMachineBehavior {
 
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
@@ -90,8 +90,8 @@ public class TameCatBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), TameStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("TameCatBehavior")
                 .initialStage(TameStage.TAME_CAT)
                 .stageStepMap(Map.of(TameStage.TAME_CAT, this.createTameCatStep()))
@@ -100,8 +100,8 @@ public class TameCatBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createTameCatStep() {
-        TimeBasedStep attemptStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createTameCatStep() {
+        TimeBasedStep<BaseVillager> attemptStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(ctx -> {
                     this.attemptsRemaining = Math.max(0, this.attemptsRemaining - 1);
@@ -158,9 +158,9 @@ public class TameCatBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.5)
-                .navigateStep(new NavigateToTargetStep(0.55f, 2))
+                .navigateStep(new NavigateToTargetStep<>(0.55f, 2))
                 .actionStep(attemptStep)
                 .build();
     }
@@ -168,7 +168,7 @@ public class TameCatBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         Expertise expertise = entity.getExpertise();
         int limit = this.config.expertiseCatLimit().getOrDefault(expertise.getConfigName(), 1);
 
@@ -201,7 +201,7 @@ public class TameCatBehavior extends StateMachineBehavior {
         entity.clearHeldItem();
     }
 
-    private Optional<Cat> getTargetCat(@Nonnull BehaviorContext context) {
+    private Optional<Cat> getTargetCat(@Nonnull BehaviorContext<BaseVillager> context) {
         return TargetQueries.firstEntity(context, EntityType.CAT, Cat.class);
     }
 

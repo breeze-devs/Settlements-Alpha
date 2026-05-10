@@ -27,7 +27,9 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -36,14 +38,14 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity {
     private final IBrain settlementsBrain;
     private final INavigationManager<SettlementsCat> navigationManager;
 
-    @Deprecated
-    private boolean stopFollowOwner;
+    private final Set<Class<?>> followOwnerLocks;
 
     public SettlementsCat(EntityType<? extends Cat> entityType, Level level) {
         super(entityType, level);
 
         this.settlementsBrain = DefaultBrain.builder().build();
         this.navigationManager = new VanillaBasicNavigationManager<>(this);
+        this.followOwnerLocks = new HashSet<>();
 
         this.initGoals();
 
@@ -67,6 +69,22 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity {
         serverLevel.addFreshEntityWithPassengers(cat);
 
         return cat;
+    }
+
+    public void lockFollowOwner(@Nonnull Class<?> owner) {
+        this.followOwnerLocks.add(owner);
+    }
+
+    public void unlockFollowOwner(@Nonnull Class<?> owner) {
+        this.followOwnerLocks.remove(owner);
+    }
+
+    public boolean isFollowOwnerLocked() {
+        return !this.followOwnerLocks.isEmpty();
+    }
+
+    public boolean isFollowOwnerLockedBy(@Nonnull Class<?> owner) {
+        return this.followOwnerLocks.contains(owner);
     }
 
     private void initGoals() {

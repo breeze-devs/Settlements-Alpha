@@ -14,7 +14,7 @@ public class CatFollowOwnerGoal extends FollowOwnerGoal {
 
     @Override
     public boolean canUse() {
-        if (this.cat.isStopFollowOwner()) {
+        if (this.cat.isFollowOwnerLocked()) {
             return false;
         }
         return super.canUse();
@@ -22,7 +22,7 @@ public class CatFollowOwnerGoal extends FollowOwnerGoal {
 
     @Override
     public boolean canContinueToUse() {
-        if (this.cat.isStopFollowOwner()) {
+        if (this.cat.isFollowOwnerLocked()) {
             return false;
         }
         return super.canContinueToUse();

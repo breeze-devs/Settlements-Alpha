@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Behavior that makes villagers shear nearby sheep
  */
 @CustomLog
-public class ShearSheepBehaviorV2 extends StateMachineBehavior {
+public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
     private static final String BUBBLE_OWNER_KEY = "behavior:shear_sheep";
     private static final String DISPLAY_NAME_KEY = "ui.settlements.behavior.behavior.shear_sheep";
@@ -88,9 +88,9 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
     private final AtomicInteger shearCount;
 
-    public ShearSheepBehaviorV2(@Nonnull ShearSheepConfig config,
-                                @Nonnull HungerConfig hungerConfig,
-                                @Nonnull DemandSignalService demandSignalService) {
+    public ShearSheepBehavior(@Nonnull ShearSheepConfig config,
+                              @Nonnull HungerConfig hungerConfig,
+                              @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
         this.config = config;
@@ -108,9 +108,9 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), ShearStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
-                .name("ShearSheepBehaviorV2")
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
+                .name("ShearSheepBehavior")
                 .onStart(context -> {
                     log.behaviorStatus("Creating speech bubble");
                     ISettlementsVillager villager = context.getInitiator();
@@ -144,8 +144,8 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createShearSheepStep() {
-        TimeBasedStep shearStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createShearSheepStep() {
+        TimeBasedStep<BaseVillager> shearStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(context -> {
                     this.shearCount.decrementAndGet();
@@ -207,9 +207,9 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep(0.55f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.55f, 1))
                 .actionStep(shearStep)
                 .build();
     }
@@ -217,7 +217,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
 
         Expertise expertise = context.getInitiator().getMinecraftEntity().getExpertise();
         int limit = config.expertiseShearLimit().get(expertise.getConfigName());
@@ -247,7 +247,7 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
         return false;
     }
 
-    private Optional<Sheep> getTargetSheep(@Nonnull BehaviorContext context) {
+    private Optional<Sheep> getTargetSheep(@Nonnull BehaviorContext<BaseVillager> context) {
         return TargetQueries.firstEntity(context, EntityType.SHEEP, Sheep.class);
     }
 

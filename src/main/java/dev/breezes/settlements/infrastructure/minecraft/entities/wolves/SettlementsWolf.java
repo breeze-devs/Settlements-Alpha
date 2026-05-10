@@ -1,20 +1,22 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.wolves;
 
-import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
+import dev.breezes.settlements.application.ai.brain.DefaultBrain;
+import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
+import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.domain.exceptions.SpawnFailedException;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfSitWhenOrderedToGoal;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.LevelMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.WolfMixin;
-import dev.breezes.settlements.application.ai.brain.DefaultBrain;
-import dev.breezes.settlements.domain.ai.brain.IBrain;
-import dev.breezes.settlements.domain.exceptions.SpawnFailedException;
-import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaBasicNavigationManager;
-import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
@@ -30,7 +32,11 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @CustomLog
@@ -39,12 +45,9 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     private final IBrain settlementsBrain;
     private final INavigationManager<SettlementsWolf> navigationManager;
+    private final List<IBehavior<SettlementsWolf>> wolfBehaviors;
 
-    /**
-     * TODO: we should use navigation manager or brain/goals/behavior to control wolf movement
-     */
-    @Deprecated
-    private boolean stopFollowOwner;
+    private final Set<Class<?>> followOwnerLocks;
 
     public SettlementsWolf(EntityType<? extends Wolf> entityType, Level level) {
         super(entityType, level);
@@ -52,6 +55,8 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
         this.settlementsBrain = DefaultBrain.builder()
                 .build(); // TODO: implement
         this.navigationManager = new VanillaBasicNavigationManager<>(this);
+        this.wolfBehaviors = new ArrayList<>();
+        this.followOwnerLocks = new HashSet<>();
 
         // Initialize goals
         this.initGoals();
@@ -62,13 +67,38 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
             this.setOwnerUUID(UUID.randomUUID());
             ((WolfMixin) this).invokeSetCollarColor(DyeColor.WHITE);
         }
+    }
 
-        // Set step height to 1.5 (able to cross fences)
-//        this.maxUpStep() = 1.5F;
+    public void lockFollowOwner(@Nonnull Class<?> owner) {
+        this.followOwnerLocks.add(owner);
+    }
 
-//        this.stopFollowOwner = false;
-//        this.lookLocked = false;
-//        this.movementLocked = false;
+    public void unlockFollowOwner(@Nonnull Class<?> owner) {
+        this.followOwnerLocks.remove(owner);
+    }
+
+    public boolean isFollowOwnerLocked() {
+        return !this.followOwnerLocks.isEmpty();
+    }
+
+    public boolean isFollowOwnerLockedBy(@Nonnull Class<?> owner) {
+        return this.followOwnerLocks.contains(owner);
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+
+        for (IBehavior<SettlementsWolf> behavior : this.wolfBehaviors) {
+            if (behavior.getStatus() == BehaviorStatus.RUNNING) {
+                behavior.tick(1, this.level(), this);
+                break;
+            }
+            if (behavior.tickPreconditions(1, this.level(), this)) {
+                behavior.start(this.level(), this);
+                break;
+            }
+        }
     }
 
     public static SettlementsWolf spawn(@Nonnull Location location) {
@@ -121,7 +151,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     @Override
     public IBrain getSettlementsBrain() {
-        return null;
+        return this.settlementsBrain;
     }
 
     @Override
@@ -137,6 +167,12 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
     @Override
     public int getNetworkingId() {
         return this.getId();
+    }
+
+    @Override
+    public void dropLeash(boolean sendPacket, boolean dropItem) {
+        // Never drop leash item to prevent giving players free leads
+        super.dropLeash(sendPacket, false);
     }
 
 }

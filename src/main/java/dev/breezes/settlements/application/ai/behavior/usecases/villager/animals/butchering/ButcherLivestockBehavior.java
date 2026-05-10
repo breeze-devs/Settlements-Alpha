@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -36,7 +36,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 @CustomLog
-public class ButcherLivestockBehavior extends StateMachineBehavior {
+public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
     private enum ButcherStage implements StageKey {
         BUTCHER_TARGET,
@@ -77,8 +77,8 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), ButcherStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("ButcherLivestockBehavior")
                 .initialStage(ButcherStage.BUTCHER_TARGET)
                 .stageStepMap(Map.of(
@@ -88,8 +88,8 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createButcherStep() {
-        TimeBasedStep butcherStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createButcherStep() {
+        TimeBasedStep<BaseVillager> butcherStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .everyTick(context -> {
                     context.getInitiator().setHeldItem(Items.IRON_AXE.getDefaultInstance());
@@ -111,15 +111,15 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep(0.55f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.55f, 1))
                 .actionStep(butcherStep)
                 .build();
     }
 
-    private BehaviorStep createCollectDropsStep() {
-        return TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createCollectDropsStep() {
+        return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onEnd(context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
@@ -147,7 +147,7 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         Expertise expertise = entity.getExpertise();
         int limit = this.config.expertiseButcherLimit().getOrDefault(expertise.getConfigName(), 1);
         this.butcherCountRemaining = limit;
@@ -168,7 +168,7 @@ public class ButcherLivestockBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.target != null && this.selectedAnimalType != null;
     }
 

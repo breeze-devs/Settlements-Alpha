@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.behavior.workflow.steps;
 
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import lombok.Getter;
 
 import javax.annotation.Nonnull;
@@ -9,7 +10,7 @@ import java.util.UUID;
 /**
  * Defines the contract for a step in a behavior
  */
-public abstract class AbstractStep implements BehaviorStep {
+public abstract class AbstractStep<T extends ISettlementsBrainEntity> implements BehaviorStep<T> {
 
     @Getter
     private final String name;
@@ -24,6 +25,6 @@ public abstract class AbstractStep implements BehaviorStep {
     /**
      * Executes step logic for one tick and returning the result
      */
-    public abstract StepResult tick(@Nonnull BehaviorContext context);
+    public abstract StepResult tick(@Nonnull BehaviorContext<T> context);
 
 }

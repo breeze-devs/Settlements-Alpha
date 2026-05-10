@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.behavior.workflow.steps;
 
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.BehaviorConfigurationCrashReport;
 
@@ -24,12 +25,12 @@ import java.util.Set;
  * <p>
  * When the final child completes, this step returns {@link StepResult.Complete}.
  */
-public class SequencedStep extends AbstractStep {
+public class SequencedStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
-    private final List<BehaviorStep> steps;
+    private final List<BehaviorStep<T>> steps;
     private int currentStepIndex;
 
-    public SequencedStep(@Nonnull String name, @Nonnull List<BehaviorStep> steps) {
+    public SequencedStep(@Nonnull String name, @Nonnull List<BehaviorStep<T>> steps) {
         super("SequencedStep[%s]".formatted(name));
 
         if (steps.isEmpty()) {
@@ -43,12 +44,12 @@ public class SequencedStep extends AbstractStep {
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext context) {
+    public StepResult tick(@Nonnull BehaviorContext<T> context) {
         if (this.currentStepIndex >= this.steps.size()) {
             return StepResult.complete();
         }
 
-        BehaviorStep currentStep = this.steps.get(this.currentStepIndex);
+        BehaviorStep<T> currentStep = this.steps.get(this.currentStepIndex);
         StepResult result = currentStep.tick(context);
 
         if (result instanceof StepResult.NoOp) {
@@ -71,8 +72,8 @@ public class SequencedStep extends AbstractStep {
     public void reset() {
         this.currentStepIndex = 0;
 
-        Set<BehaviorStep> visited = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (BehaviorStep step : this.steps) {
+        Set<BehaviorStep<T>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (BehaviorStep<T> step : this.steps) {
             if (!visited.add(step)) {
                 continue;
             }
@@ -80,10 +81,10 @@ public class SequencedStep extends AbstractStep {
         }
     }
 
-    private void validate(@Nonnull List<BehaviorStep> steps) {
-        Map<BehaviorStep, Integer> seenByIdentity = new IdentityHashMap<>();
+    private void validate(@Nonnull List<BehaviorStep<T>> steps) {
+        Map<BehaviorStep<T>, Integer> seenByIdentity = new IdentityHashMap<>();
         for (int i = 0; i < steps.size(); i++) {
-            BehaviorStep step = steps.get(i);
+            BehaviorStep<T> step = steps.get(i);
             if (step == null) {
                 crashInvalidConfiguration("SequencedStep contains a null child step at index '%s'".formatted(i));
             }

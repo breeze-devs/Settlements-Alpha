@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class SmokeMeatBehavior extends StateMachineBehavior {
+public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
@@ -91,8 +91,8 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), SmokeStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("SmokeMeatBehavior")
                 .initialStage(SmokeStage.SMOKE_MEAT)
                 .stageStepMap(Map.of(
@@ -106,7 +106,7 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
             this.requestStop("No smoker block found at job site");
             return;
@@ -129,7 +129,7 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.smoker != null && this.smoker.is(Blocks.SMOKER);
     }
 
@@ -152,8 +152,8 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
         this.currentRecipe = null;
     }
 
-    private BehaviorStep createSmokeStep() {
-        TimeBasedStep setup = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createSmokeStep() {
+        TimeBasedStep<BaseVillager> setup = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ITEM_INTERACTION_DURATION.asTickable())
                 .onStart(ctx -> {
                     if (this.currentRecipe == null || this.smoker == null) {
@@ -182,7 +182,7 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        TimeBasedStep smoking = TimeBasedStep.builder()
+        TimeBasedStep<BaseVillager> smoking = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(SMOKING_DURATION.asTickable())
                 .onEnd(ctx -> {
                     if (this.smoker == null || this.currentRecipe == null) {
@@ -199,7 +199,7 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        TimeBasedStep takeOut = TimeBasedStep.builder()
+        TimeBasedStep<BaseVillager> takeOut = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ITEM_INTERACTION_DURATION.asTickable())
                 .onEnd(ctx -> {
                     ctx.getInitiator().clearHeldItem();
@@ -207,10 +207,10 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep(0.5f, 1))
-                .actionStep(new SequencedStep("SmokeMeatBehavior.sequence", List.of(setup, smoking, takeOut)))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
+                .actionStep(new SequencedStep<>("SmokeMeatBehavior.sequence", List.of(setup, smoking, takeOut)))
                 .build();
     }
 

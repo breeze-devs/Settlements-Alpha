@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -41,7 +41,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 @CustomLog
-public class BreedAnimalsBehavior extends StateMachineBehavior {
+public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
     private static final ItemStack WHEAT = new ItemStack(Items.WHEAT);
     private static final ItemStack CARROT = new ItemStack(Items.CARROT);
@@ -98,8 +98,8 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), BreedStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("BreedAnimalsBehavior")
                 .initialStage(BreedStage.FEED_FIRST)
                 .stageStepMap(Map.of(
@@ -122,7 +122,7 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         Optional<NearbyBreedableAnimalPairExistsCondition.BreedablePair<?>> breedablePair =
                 this.nearbyBreedableAnimalPairExistsCondition.getBreedablePair();
         if (breedablePair.isEmpty()) {
@@ -147,7 +147,7 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.breedTarget1 != null
                 && this.breedTarget2 != null
                 && this.breedTarget1.isAlive()
@@ -177,11 +177,11 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
         this.breedTarget2 = null;
     }
 
-    private BehaviorStep createFeedTargetStep(@Nonnull String label,
-                                              @Nonnull BreedStage nextStage,
-                                              @Nonnull Supplier<Animal> targetSupplier,
-                                              @Nullable Supplier<Animal> nextTargetSupplier) {
-        TimeBasedStep feedStep = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createFeedTargetStep(@Nonnull String label,
+                                                            @Nonnull BreedStage nextStage,
+                                                            @Nonnull Supplier<Animal> targetSupplier,
+                                                            @Nullable Supplier<Animal> nextTargetSupplier) {
+        TimeBasedStep<BaseVillager> feedStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.ONE.asTickable())
                 .onStart(ctx -> {
                     Animal target = targetSupplier.get();
@@ -214,15 +214,15 @@ public class BreedAnimalsBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
                 .actionStep(feedStep)
                 .build();
     }
 
-    private BehaviorStep createWaitingStep() {
-        return TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createWaitingStep() {
+        return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(3).asTickable())
                 .onStart(ctx -> {
                     ctx.getInitiator().clearHeldItem();

@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class EnchantItemBehavior extends StateMachineBehavior {
+public class EnchantItemBehavior extends VillagerStateMachineBehavior {
 
     private enum EnchantStage implements StageKey {
         ENCHANT_ITEM,
@@ -83,8 +83,8 @@ public class EnchantItemBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), EnchantStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("EnchantItemBehavior")
                 .initialStage(EnchantStage.ENCHANT_ITEM)
                 .stageStepMap(Map.of(EnchantStage.ENCHANT_ITEM, this.createEnchantStep()))
@@ -92,11 +92,11 @@ public class EnchantItemBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createEnchantStep() {
+    private BehaviorStep<BaseVillager> createEnchantStep() {
         // TODO: we can make the animations more detailed (e.g. more ench particles) as villager expertise level goes up
         // TODO: we can also make 'golden' particles/animations if rolling a max level enchants or something good
         // TODO: to do this, we need to determine the enchantment result at the start of the behavior, so we can animate accordingly
-        TimeBasedStep actionStep = TimeBasedStep.builder()
+        TimeBasedStep<BaseVillager> actionStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(10).asTickable())
                 .addPeriodicStep(ClockTicks.of(10).getTicksAsInt(), context -> {
                     if (this.enchantingTablePos == null) {
@@ -115,9 +115,9 @@ public class EnchantItemBehavior extends StateMachineBehavior {
                 .onEnd(context -> StepResult.complete())
                 .build();
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
                 .actionStep(actionStep)
                 .build();
     }
@@ -125,7 +125,7 @@ public class EnchantItemBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         this.enchantingTablePos = this.nearbyEnchantingTableCondition.getTargets().getFirst();
         if (this.enchantingTablePos == null) {
             log.behaviorError("Unable to find enchanting table position");
@@ -148,7 +148,7 @@ public class EnchantItemBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.enchantingTablePos == null || !(world.getBlockState(this.enchantingTablePos).is(Blocks.ENCHANTING_TABLE))) {
             log.behaviorError("Invalid enchanting table position: {}", this.enchantingTablePos);
             return false;
@@ -166,7 +166,7 @@ public class EnchantItemBehavior extends StateMachineBehavior {
         this.targetSlot = -1;
     }
 
-    private StepResult performEnchant(@Nonnull BehaviorContext context) {
+    private StepResult performEnchant(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager villager = context.getInitiator().getMinecraftEntity();
         Level world = villager.level();
         VillagerInventory inventory = villager.getSettlementsInventory();

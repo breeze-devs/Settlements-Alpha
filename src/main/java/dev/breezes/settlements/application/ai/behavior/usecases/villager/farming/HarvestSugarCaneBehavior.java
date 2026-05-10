@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class HarvestSugarCaneBehavior extends StateMachineBehavior {
+public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
 
     private enum HarvestStage implements StageKey {
         HARVEST_SUGAR_CANE,
@@ -57,8 +57,8 @@ public class HarvestSugarCaneBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("HarvestSugarCaneBehavior")
                 .initialStage(HarvestStage.HARVEST_SUGAR_CANE)
                 .stageStepMap(Map.of(HarvestStage.HARVEST_SUGAR_CANE, this.createHarvestStep()))
@@ -67,10 +67,10 @@ public class HarvestSugarCaneBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep createHarvestStep() {
-        return StayCloseStep.builder()
+    private BehaviorStep<BaseVillager> createHarvestStep() {
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.0)
-                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
                 .actionStep(context -> {
                     if (this.sugarCanePos == null) {
                         return StepResult.complete();
@@ -86,7 +86,7 @@ public class HarvestSugarCaneBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         this.timeWorkedSoFar = 0;
 
         this.validSugarCaneAroundVillager = new ArrayList<>(this.nearbySugarCaneExistsCondition.getTargets());

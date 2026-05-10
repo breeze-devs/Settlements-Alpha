@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.trading;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -42,7 +42,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @CustomLog
-public final class TradeInitiateBehavior extends StateMachineBehavior {
+public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
 
     public enum Stage implements StageKey {
         SCAN_AND_INVITE,
@@ -117,7 +117,7 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         this.activeDemand = null;
         this.activeSessionId = null;
         this.tradeExecuted = false;
@@ -177,8 +177,8 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
         });
     }
 
-    private StagedStep createControlStep() {
-        return StagedStep.builder()
+    private StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("TradeInitiateBehavior")
                 .initialStage(Stage.SCAN_AND_INVITE)
                 .stageStepMap(Map.of(
@@ -186,9 +186,9 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
                         Stage.WAIT_FOR_ACCEPT, this::waitForAccept,
                         Stage.APPROACH, this::approach,
                         Stage.OPENING_OFFER, this::openingOffer,
-                        Stage.NEGOTIATE, StayCloseStep.builder()
+                        Stage.NEGOTIATE, StayCloseStep.<BaseVillager>builder()
                                 .closeEnoughDistance(TRADE_CLOSE_ENOUGH_DISTANCE)
-                                .navigateStep(new NavigateToTargetStep(0.5f, 2))
+                                .navigateStep(new NavigateToTargetStep<>(0.5f, 2))
                                 .actionStep(this::negotiate)
                                 .build(),
                         Stage.DEAL, this::deal,
@@ -198,7 +198,7 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
                 .build();
     }
 
-    private StepResult scanAndInvite(@Nonnull BehaviorContext context) {
+    private StepResult scanAndInvite(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager buyer = context.getInitiator().getMinecraftEntity();
         if (this.pendingCandidate == null) {
             return StepResult.complete();
@@ -227,7 +227,7 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
         return StepResult.transition(Stage.WAIT_FOR_ACCEPT);
     }
 
-    private StepResult waitForAccept(@Nonnull BehaviorContext context) {
+    private StepResult waitForAccept(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager buyer = context.getInitiator().getMinecraftEntity();
         Optional<TradeSession> session = this.currentSession(buyer);
         if (session.isEmpty()) {
@@ -242,7 +242,7 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
         return StepResult.transition(Stage.APPROACH);
     }
 
-    private StepResult approach(@Nonnull BehaviorContext context) {
+    private StepResult approach(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager buyer = context.getInitiator().getMinecraftEntity();
         TradeSession session = this.currentSession(buyer).orElse(null);
         if (session == null) {
@@ -263,7 +263,7 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
         return StepResult.transition(Stage.OPENING_OFFER);
     }
 
-    private StepResult openingOffer(@Nonnull BehaviorContext context) {
+    private StepResult openingOffer(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager buyer = context.getInitiator().getMinecraftEntity();
         TradeSession session = this.currentSession(buyer).orElse(null);
         if (session == null) {
@@ -282,7 +282,7 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
         return StepResult.transition(Stage.NEGOTIATE);
     }
 
-    private StepResult negotiate(@Nonnull BehaviorContext context) {
+    private StepResult negotiate(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager buyer = context.getInitiator().getMinecraftEntity();
         TradeSession session = this.currentSession(buyer).orElse(null);
         if (session == null) {
@@ -331,7 +331,7 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
         return StepResult.noOp();
     }
 
-    private StepResult deal(@Nonnull BehaviorContext context) {
+    private StepResult deal(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager buyer = context.getInitiator().getMinecraftEntity();
         TradeSession session = this.currentSession(buyer).orElse(null);
         if (session == null) {
@@ -346,7 +346,7 @@ public final class TradeInitiateBehavior extends StateMachineBehavior {
         return StepResult.complete();
     }
 
-    private StepResult walkAway(@Nonnull BehaviorContext context) {
+    private StepResult walkAway(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager buyer = context.getInitiator().getMinecraftEntity();
         TradeSession session = this.currentSession(buyer).orElse(null);
         if (session == null) {

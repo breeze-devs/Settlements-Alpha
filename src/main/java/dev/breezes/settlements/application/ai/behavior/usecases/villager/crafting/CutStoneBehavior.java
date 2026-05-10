@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting;
 
-import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 @CustomLog
-public class CutStoneBehavior extends StateMachineBehavior {
+public class CutStoneBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
@@ -98,8 +98,8 @@ public class CutStoneBehavior extends StateMachineBehavior {
         this.initializeStateMachine(this.createControlStep(), CutStage.END);
     }
 
-    protected StagedStep createControlStep() {
-        return StagedStep.builder()
+    protected StagedStep<BaseVillager> createControlStep() {
+        return StagedStep.<BaseVillager>builder()
                 .name("CutStoneBehavior")
                 .initialStage(CutStage.CUT_STONE)
                 .stageStepMap(Map.of(CutStage.CUT_STONE, this.createCutStep()))
@@ -111,7 +111,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
             this.requestStop("No stone-cutter block found at job site");
             return;
@@ -145,7 +145,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager entity,
-                                   @Nonnull BehaviorContext context) {
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
         return this.stoneCutter != null && this.stoneCutter.is(Blocks.STONECUTTER);
     }
 
@@ -168,8 +168,8 @@ public class CutStoneBehavior extends StateMachineBehavior {
         this.finalMatrix = null;
     }
 
-    private BehaviorStep createCutStep() {
-        TimeBasedStep setup = TimeBasedStep.builder()
+    private BehaviorStep<BaseVillager> createCutStep() {
+        TimeBasedStep<BaseVillager> setup = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.ONE.asTickable())
                 .onEnd(ctx -> {
                     if (this.stoneCutter == null || this.initialBlockDisplay == null) {
@@ -184,7 +184,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        TimeBasedStep initialCut = TimeBasedStep.builder()
+        TimeBasedStep<BaseVillager> initialCut = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ANIMATION_HALF_DURATION.asTickable())
                 .everyTick(ctx -> {
                     if (this.stoneCutter == null || this.currentRecipe == null) {
@@ -198,7 +198,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        TimeBasedStep transition = TimeBasedStep.builder()
+        TimeBasedStep<BaseVillager> transition = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.ONE.asTickable())
                 .onEnd(ctx -> {
                     if (this.stoneCutter == null || this.finalBlockDisplay == null || this.finalMatrix == null) {
@@ -217,7 +217,7 @@ public class CutStoneBehavior extends StateMachineBehavior {
                 })
                 .build();
 
-        TimeBasedStep finalCut = TimeBasedStep.builder()
+        TimeBasedStep<BaseVillager> finalCut = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ANIMATION_HALF_DURATION.asTickable())
                 .everyTick(ctx -> {
                     if (this.stoneCutter == null || this.currentRecipe == null) {
@@ -232,12 +232,12 @@ public class CutStoneBehavior extends StateMachineBehavior {
                 .onEnd(ctx -> StepResult.complete())
                 .build();
 
-        SequencedStep sequence = new SequencedStep("CutStoneBehavior.sequence",
+        SequencedStep<BaseVillager> sequence = new SequencedStep<>("CutStoneBehavior.sequence",
                 List.of(setup, initialCut, transition, finalCut));
 
-        return StayCloseStep.builder()
+        return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep(0.5f, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
                 .actionStep(sequence)
                 .build();
     }
