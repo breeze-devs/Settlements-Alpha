@@ -1,10 +1,7 @@
 package dev.breezes.settlements.domain.genetics;
 
-import dev.breezes.settlements.shared.util.NbtTags;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
@@ -18,8 +15,6 @@ import java.util.Optional;
  */
 @CustomLog
 public class GeneticsProfile {
-
-    private static final String GENETICS_NBT_TAG = NbtTags.of("genetics");
 
     private final Map<GeneType, Gene> genes;
 
@@ -81,30 +76,6 @@ public class GeneticsProfile {
         }
         return child;
 
-    }
-
-    public void save(CompoundTag nbtTag) {
-        CompoundTag geneticsTag = new CompoundTag();
-        this.genes.forEach((type, gene) -> geneticsTag.putDouble(type.name(), gene.value()));
-        nbtTag.put(GENETICS_NBT_TAG, geneticsTag);
-        log.debug("Successfully saved genetic tags: {}", this.genes);
-    }
-
-    public void load(CompoundTag nbtTag) {
-        if (!nbtTag.contains(GENETICS_NBT_TAG, Tag.TAG_COMPOUND)) {
-            log.warn("Genetics NBT tag {} does not exist", GENETICS_NBT_TAG);
-            return;
-        }
-
-        CompoundTag geneticsTag = nbtTag.getCompound(GENETICS_NBT_TAG);
-        this.genes.clear();
-
-        for (GeneType type : GeneType.VALUES) {
-            if (geneticsTag.contains(type.name(), Tag.TAG_DOUBLE)) {
-                this.genes.put(type, new Gene(geneticsTag.getDouble(type.name())));
-            }
-        }
-        log.debug("Successfully loaded genetic tags: {}", this.genes);
     }
 
 }

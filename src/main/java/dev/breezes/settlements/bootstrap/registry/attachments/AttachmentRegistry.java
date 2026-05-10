@@ -7,6 +7,8 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentCodec;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentState;
 import net.neoforged.bus.api.IEventBus;
@@ -49,6 +51,12 @@ public final class AttachmentRegistry {
             "villager_inventory",
             () -> AttachmentType.builder(VillagerInventoryAttachmentState::empty)
                     .serialize(VillagerInventoryAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    public static final Supplier<AttachmentType<VillagerGeneticsAttachmentState>> VILLAGER_GENETICS = REGISTRY.register(
+            "villager_genetics",
+            () -> AttachmentType.builder(VillagerGeneticsAttachmentState::empty)
+                    .serialize(VillagerGeneticsAttachmentCodec.STATE_CODEC)
                     .build());
 
     public static void register(IEventBus eventBus) {

@@ -32,6 +32,7 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
@@ -162,23 +163,16 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     public void addAdditionalSaveData(@Nonnull CompoundTag nbtTag) {
         super.addAdditionalSaveData(nbtTag);
 
-        log.debug("Saving villager genetic profile");
-        this.genetics.save(nbtTag);
-
+        VillagerGeneticsAttachment.saveFrom(this, this.genetics);
         VillagerInventoryAttachment.saveFrom(this, this.getSettlementsInventory());
     }
 
     @Override
     public void load(@Nonnull CompoundTag nbtTag) {
         super.load(nbtTag);
-//        if (nbtTag.contains("SettlementsName")) {
-//            this.settlementName = nbtTag.getString("SettlementsName");
-//        }
+        VillagerGeneticsAttachment.loadInto(this, this.genetics);
 
-        log.debug("Loading villager genetic profile");
-        this.genetics.load(nbtTag);
-
-        log.debug("Loading villager inventory");
+        // Load inventory
         this.settlementsInventory = this.geneticInventoryProvider().provide(this.genetics);
         boolean loadedInventory = VillagerInventoryAttachment.loadInto(this, this.settlementsInventory);
         if (!loadedInventory) {
