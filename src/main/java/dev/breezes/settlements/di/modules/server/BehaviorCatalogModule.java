@@ -34,6 +34,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.RingBellBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;
@@ -295,7 +297,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
@@ -712,6 +714,30 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("lead"))
                         .build())
                 .factory(() -> new WalkDogBehavior(config, hungerConfig))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry ringBell(RingBellConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.RING_BELL)
+                        .displayName("Ring Bell")
+                        .description("Ring a nearby village bell for no productive reason")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey("ui.settlements.behavior.behavior.ring_bell")
+                        .iconItemId(ResourceLocation.withDefaultNamespace("bell"))
+                        .build())
+                .factory(() -> new RingBellBehavior(config, hungerConfig))
                 .build();
     }
 

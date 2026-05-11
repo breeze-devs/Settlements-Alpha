@@ -2,13 +2,10 @@ package dev.breezes.settlements.di.modules;
 
 import dagger.Module;
 import dagger.Provides;
-import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
-import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
@@ -20,9 +17,13 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.RingBellConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
+import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 
@@ -71,6 +72,12 @@ public final class ConfigModule {
     @Singleton
     static WalkDogConfig walkDogConfig() {
         return ConfigFactory.create(WalkDogConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static RingBellConfig ringBellConfig() {
+        return ConfigFactory.create(RingBellConfig.class);
     }
 
     @Provides

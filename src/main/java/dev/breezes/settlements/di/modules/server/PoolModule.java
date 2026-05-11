@@ -132,9 +132,9 @@ public final class PoolModule {
     @Provides
     @IntoSet
     static ProfessionBehaviorPool nitwitPool() {
-        // Nitwits have no work behaviors — their plans are leisure and social only.
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.NITWIT)
+                .entry(PoolEntry.of(BehaviorKey.RING_BELL))
                 .build();
     }
 

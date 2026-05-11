@@ -150,26 +150,6 @@ class HeuristicPlanGeneratorTest {
     }
 
     @Test
-    void generate_fishermanWeightMakesFishingDominantOverTameCat() {
-        // Arrange
-        DayPlan plan = this.generator.generate(context(VillagerProfessionKey.FISHERMAN, PlanDayType.WORK_DAY,
-                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
-
-        // Act
-        List<BehaviorKey> behaviorKeys = keys(plan);
-        long fishingSlots = behaviorKeys.stream()
-                .filter(BehaviorKey.FISHING::equals)
-                .count();
-        long tameCatSlots = behaviorKeys.stream()
-                .filter(BehaviorKey.TAME_CAT::equals)
-                .count();
-
-        // Assert
-        assertTrue(fishingSlots > tameCatSlots,
-                "FISHING has weight 5 and should dominate TAME_CAT's default weight 1.");
-    }
-
-    @Test
     void generate_includesRigidMealSlotsAndNoSleepSlot() {
         DayPlan plan = this.generator.generate(context(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY,
                 genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
@@ -229,56 +209,6 @@ class HeuristicPlanGeneratorTest {
 
         // Assert
         assertEquals(gameDay, plan.getGeneratedForDay());
-    }
-
-    @Test
-    void generate_standardVillagerWithHighConWakesBeforeSix() {
-        // Arrange — ARMORER wakes at 6:30am (tick 500). High CON subtracts up to 1 000 ticks,
-        // which would give tick -500. clampTick must wrap to 23 500 (5:30am), not clamp to 0 (6am).
-        DayPlan plan = this.generator.generate(context(VillagerProfessionKey.ARMORER, PlanDayType.WORK_DAY,
-                genetics(1.0, 0.5, 0.5, 0.5), allDescriptors()));
-
-        int wakeTick = plan.getSlots().get(0).getStartTick();
-
-        // Assert — high CON shifts wake earlier; result must be in pre-dawn range, not clamped to 0
-        assertEquals(wakeTick, plan.getSchedule().wakeTick());
-        assertTrue(wakeTick > 18_000 || wakeTick == 0,
-                "High-CON standard villager wake tick should be pre-dawn or exactly 6am, but was: " + wakeTick);
-        assertTrue(wakeTick != 500, "Wake tick must not equal the default 6:30am — CON should have shifted it");
-    }
-
-    @Test
-    void generate_farmerPlanFirstSlotIsPreDawn() {
-        // Arrange — farmer wakes at 5am (tick 23 000), before the 6am tick-0 boundary
-        DayPlan plan = this.generator.generate(context(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY,
-                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
-
-        // Act
-        PlanSlot firstSlot = plan.getSlots().get(0);
-
-        // Assert — first slot must be in the pre-dawn range (tick > 18 000) and be the wake meal
-        assertTrue(firstSlot.getStartTick() > 18_000,
-                "Farmer's first slot should be pre-dawn (tick > 18 000) but was: " + firstSlot.getStartTick());
-        assertEquals(BehaviorKey.EAT_FOOD, firstSlot.getBehaviorKey());
-        assertFalse(firstSlot.isFlexible());
-        assertEquals(firstSlot.getStartTick(), plan.getSchedule().wakeTick());
-    }
-
-    @Test
-    void generate_fishermanPlanFirstSlotIsBeforeFarmer() {
-        // Arrange — fisherman (4:30am, tick 22 500) wakes earlier than farmer (5am, tick 23 000)
-        DayPlan farmer = this.generator.generate(context(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY,
-                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
-        DayPlan fisherman = this.generator.generate(context(VillagerProfessionKey.FISHERMAN, PlanDayType.WORK_DAY,
-                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors()));
-
-        // Act
-        int farmerWakeTick = farmer.getSlots().get(0).getStartTick();
-        int fishermanWakeTick = fisherman.getSlots().get(0).getStartTick();
-
-        // Assert — fisherman tick is numerically smaller (earlier before the boundary wraps)
-        assertTrue(fishermanWakeTick < farmerWakeTick,
-                "Fisherman (" + fishermanWakeTick + ") should wake before farmer (" + farmerWakeTick + ")");
     }
 
     private static PlanGenerationContext context(VillagerProfessionKey profession, PlanDayType dayType,

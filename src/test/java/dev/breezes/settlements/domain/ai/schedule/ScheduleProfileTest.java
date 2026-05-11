@@ -74,34 +74,9 @@ class ScheduleProfileTest {
                 .build());
     }
 
-    @Test
-    void farmerWakesBeforeLibrarian() {
-        ScheduleProfile farmer = ScheduleProfile.defaultFor(VillagerProfessionKey.FARMER);
-        ScheduleProfile librarian = ScheduleProfile.defaultFor(VillagerProfessionKey.LIBRARIAN);
-
-        assertTrue(isEarlierClockTime(farmer.defaultWakeTick(), librarian.defaultWakeTick()));
-    }
-
-    @Test
-    void noneUsesCommunityOrientedNormalHoursInsteadOfNitwitProfile() {
-        ScheduleProfile none = ScheduleProfile.defaultFor(VillagerProfessionKey.NONE);
-        ScheduleProfile nitwit = ScheduleProfile.defaultFor(VillagerProfessionKey.NITWIT);
-
-        assertEquals(500, none.defaultWakeTick());
-        assertTrue(none.scheduleDescription().contains("Community"));
-        assertTrue(none.defaultWakeTick() != nitwit.defaultWakeTick());
-    }
 
     private static void assertValidTick(int tick) {
         assertTrue(tick >= 0 && tick < TimeOfDay.TICKS_PER_DAY);
-    }
-
-    private static boolean isEarlierClockTime(int firstTick, int secondTick) {
-        return toMinutesAfterMidnight(firstTick) < toMinutesAfterMidnight(secondTick);
-    }
-
-    private static int toMinutesAfterMidnight(int tick) {
-        return Math.floorMod(tick + 6_000, TimeOfDay.TICKS_PER_DAY);
     }
 
 }

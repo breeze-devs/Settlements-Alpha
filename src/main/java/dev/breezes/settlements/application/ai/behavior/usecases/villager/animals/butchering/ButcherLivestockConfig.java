@@ -77,11 +77,11 @@ public record ButcherLivestockConfig(
                 description = "Map of animal entity id to the minimum nearby count to keep before butchering surplus. Also acts as the allow-list of butcherable animal types.",
                 deserializer = "StringToInteger",
                 defaultValue = {
-                        @MapEntry(key = "minecraft:cow", value = "2"),
-                        @MapEntry(key = "minecraft:sheep", value = "4"),
-                        @MapEntry(key = "minecraft:chicken", value = "2"),
-                        @MapEntry(key = "minecraft:pig", value = "2"),
-                        @MapEntry(key = "minecraft:rabbit", value = "2")
+                        @MapEntry(key = "minecraft:cow", value = "4"),
+                        @MapEntry(key = "minecraft:sheep", value = "6"),
+                        @MapEntry(key = "minecraft:chicken", value = "4"),
+                        @MapEntry(key = "minecraft:pig", value = "3"),
+                        @MapEntry(key = "minecraft:rabbit", value = "4")
                 })
         Map<String, Integer> minimumKeepCount,
 
@@ -91,11 +91,11 @@ public record ButcherLivestockConfig(
                 description = "Map of villager expertise level to the maximum number of animals they can butcher in one session.",
                 deserializer = "StringToInteger",
                 defaultValue = {
-                        @MapEntry(key = "novice", value = "1"),
-                        @MapEntry(key = "apprentice", value = "2"),
-                        @MapEntry(key = "journeyman", value = "3"),
-                        @MapEntry(key = "expert", value = "4"),
-                        @MapEntry(key = "master", value = "5")
+                        @MapEntry(key = "novice", value = "3"),
+                        @MapEntry(key = "apprentice", value = "5"),
+                        @MapEntry(key = "journeyman", value = "8"),
+                        @MapEntry(key = "expert", value = "12"),
+                        @MapEntry(key = "master", value = "20")
                 })
         Map<String, Integer> expertiseButcherLimit
 ) implements BehaviorTimingConfig {
