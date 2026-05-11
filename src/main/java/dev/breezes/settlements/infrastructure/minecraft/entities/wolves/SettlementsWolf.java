@@ -1,7 +1,10 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.wolves;
 
+import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.ai.brain.DefaultBrain;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
@@ -60,6 +63,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
         // Initialize goals
         this.initGoals();
+        this.initBehaviors();
 
         // If not tamed by a villager, set as tamed by a random UUID to prevent players from taming it
         if (this.getOwnerUUID() == null) {
@@ -125,6 +129,11 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
         // Add target to all mobs that are hostile to villagers
         ISettlementsVillager.getEnemyClasses()
                 .forEach(enemy -> this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, enemy, true)));
+    }
+
+    private void initBehaviors() {
+        WolfWalkConfig wolfWalkConfig = SettlementsDagger.serverOrThrow().wolfWalkConfig();
+        this.wolfBehaviors.add(new WolfWalkBehavior(wolfWalkConfig));
     }
 
     @Override

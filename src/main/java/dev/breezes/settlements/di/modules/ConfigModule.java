@@ -2,6 +2,8 @@ package dev.breezes.settlements.di.modules;
 
 import dagger.Module;
 import dagger.Provides;
+import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatConfig;
@@ -57,6 +59,18 @@ public final class ConfigModule {
     @Singleton
     static TameWolfConfig tameWolfConfig() {
         return ConfigFactory.create(TameWolfConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static WolfWalkConfig wolfWalkConfig() {
+        return ConfigFactory.create(WolfWalkConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static WalkDogConfig walkDogConfig() {
+        return ConfigFactory.create(WalkDogConfig.class);
     }
 
     @Provides

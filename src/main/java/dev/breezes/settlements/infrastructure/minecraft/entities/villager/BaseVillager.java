@@ -32,6 +32,7 @@ import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
@@ -166,12 +167,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         VillagerGeneticsAttachment.saveFrom(this, this.genetics);
         VillagerInventoryAttachment.saveFrom(this, this.getSettlementsInventory());
+        VillagerBrainAttachment.saveFrom(this);
     }
 
     @Override
     public void load(@Nonnull CompoundTag nbtTag) {
         super.load(nbtTag);
         VillagerGeneticsAttachment.loadInto(this, this.genetics);
+        VillagerBrainAttachment.loadInto(this);
 
         // Load inventory
         this.settlementsInventory = this.geneticInventoryProvider().provide(this.genetics);

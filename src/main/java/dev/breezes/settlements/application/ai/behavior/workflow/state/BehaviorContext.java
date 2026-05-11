@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.behavior.workflow.state;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import lombok.Getter;
+import net.minecraft.server.level.ServerLevel;
 
 import javax.annotation.Nonnull;
 import java.util.EnumMap;
@@ -39,6 +40,10 @@ public class BehaviorContext<T extends ISettlementsBrainEntity> {
 
     public void clearState(@Nonnull BehaviorStateType type) {
         this.states.remove(type);
+    }
+
+    public ServerLevel getLevel() {
+        return (ServerLevel) this.initiator.getMinecraftEntity().level();
     }
 
 }

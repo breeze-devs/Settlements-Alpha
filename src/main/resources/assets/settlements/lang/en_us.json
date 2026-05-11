@@ -57,6 +57,7 @@
   "ui.settlements.behavior.behavior.eat_food": "Eat Meal",
   "ui.settlements.behavior.behavior.trade_accept": "Accept Trade",
   "ui.settlements.behavior.behavior.trade_initiate": "Initiate Trade",
+  "ui.settlements.behavior.behavior.walk_dog": "Walk Dog",
   "ui.settlements.stats.title": "VILLAGER STATS",
   "ui.settlements.stats.health": "Health: ",
   "ui.settlements.stats.hunger": "Hunger: ",

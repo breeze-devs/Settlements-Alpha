@@ -78,6 +78,7 @@ public final class PoolModule {
                 .entry(PoolEntry.of(BehaviorKey.BREED_CHICKENS))
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))
                 .entry(PoolEntry.of(BehaviorKey.TAME_CAT))
+                .entry(PoolEntry.of(BehaviorKey.WALK_DOG))
                 .build();
     }
 
@@ -153,6 +154,7 @@ public final class PoolModule {
                 .profession(VillagerProfessionKey.SHEPHERD)
                 .entry(PoolEntry.of(BehaviorKey.SHEAR_SHEEP))
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))
+                .entry(PoolEntry.of(BehaviorKey.WALK_DOG))
                 .build();
     }
 

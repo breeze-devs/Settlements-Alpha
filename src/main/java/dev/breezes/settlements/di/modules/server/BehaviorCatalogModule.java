@@ -34,6 +34,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
@@ -684,6 +686,32 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("enchanting_table"))
                         .build())
                 .factory(() -> new EnchantItemBehavior(config, hungerConfig, enchantmentEngine))
+                .build();
+    }
+
+    // =========================================================================
+    // Idle / Leisure
+    // =========================================================================
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry walkDog(WalkDogConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.WALK_DOG)
+                        .displayName("Walk Dog")
+                        .description("Take a tamed wolf for a leisurely walk around the village")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .estimatedDuration(ClockTicks.seconds(60).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey("ui.settlements.behavior.behavior.walk_dog")
+                        .iconItemId(ResourceLocation.withDefaultNamespace("lead"))
+                        .build())
+                .factory(() -> new WalkDogBehavior(config, hungerConfig))
                 .build();
     }
 

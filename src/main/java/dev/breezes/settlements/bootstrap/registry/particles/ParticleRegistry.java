@@ -43,6 +43,10 @@ public class ParticleRegistry {
         blockCrack(location, state, 3, 0.4, 0.4, 0.4, 0.0D);
     }
 
+    public static void digBlockCrack(@Nonnull Location location, @Nonnull BlockState state) {
+        blockCrack(location, state, 6, 0.35, 0.15, 0.35, 0.0D);
+    }
+
     public static <T extends ParticleOptions> void displayCircle(@Nonnull T particleType,
                                                                  @Nonnull Location center,
                                                                  double radius,

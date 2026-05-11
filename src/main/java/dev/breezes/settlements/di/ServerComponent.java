@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
 import dev.breezes.settlements.application.ai.genetics.PersonalityDeriver;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
+import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.settlement.persistence.SettlementMetadataQueueService;
@@ -86,6 +87,9 @@ public interface ServerComponent {
 
     // Exposed for VillagerFishingHook (non-injectable Minecraft entity, server-only)
     FishCatchDataManager fishCatchDataManager();
+
+    // Exposed for SettlementsWolf (non-injectable Minecraft entity, server-only)
+    WolfWalkConfig wolfWalkConfig();
 
     @Subcomponent.Factory
     interface Factory {

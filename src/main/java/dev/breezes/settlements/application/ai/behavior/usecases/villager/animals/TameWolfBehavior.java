@@ -243,13 +243,10 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
         List<UUID> ownedWolfIds = villager.getBrain()
                 .getMemory(MemoryTypeRegistry.OWNED_WOLVES.getModuleType())
                 .orElse(List.of());
-
-        if (ownedWolfIds.contains(wolf.getUUID())) {
-            return;
-        }
-
+        log.behaviorStatus("Remembering tamed wolf {}", wolf.getUUID());
         List<UUID> updatedOwnedWolfIds = new ArrayList<>(ownedWolfIds);
         updatedOwnedWolfIds.add(wolf.getUUID());
         villager.getBrain().setMemory(MemoryTypeRegistry.OWNED_WOLVES.getModuleType(), List.copyOf(updatedOwnedWolfIds));
     }
+
 }

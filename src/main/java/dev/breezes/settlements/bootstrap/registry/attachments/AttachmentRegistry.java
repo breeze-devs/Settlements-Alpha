@@ -7,6 +7,8 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentCodec;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentCodec;
@@ -51,6 +53,12 @@ public final class AttachmentRegistry {
             "villager_inventory",
             () -> AttachmentType.builder(VillagerInventoryAttachmentState::empty)
                     .serialize(VillagerInventoryAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    public static final Supplier<AttachmentType<VillagerBrainAttachmentState>> VILLAGER_BRAIN = REGISTRY.register(
+            "villager_brain",
+            () -> AttachmentType.builder(VillagerBrainAttachmentState::empty)
+                    .serialize(VillagerBrainAttachmentCodec.STATE_CODEC)
                     .build());
 
     public static final Supplier<AttachmentType<VillagerGeneticsAttachmentState>> VILLAGER_GENETICS = REGISTRY.register(
