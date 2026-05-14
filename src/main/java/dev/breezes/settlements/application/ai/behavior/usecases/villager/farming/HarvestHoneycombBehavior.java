@@ -52,11 +52,13 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
     @Nullable
     private BlockPos targetHivePos;
     private int harvestsRemaining;
+    private boolean shouldRewardExperience;
 
     public HarvestHoneycombBehavior(@Nonnull HarvestHoneycombConfig config,
                                     @Nonnull HungerConfig hungerConfig,
                                     @Nonnull HarvestHoneycombYieldDataManager yieldData) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
         this.config = config;
         this.yieldData = yieldData;
         this.nearbyFullHiveExistsCondition = NearbyFullHiveExistsCondition.<BaseVillager>builder()
@@ -106,14 +108,15 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        Expertise expertise = entity.getExpertise();
+        Expertise expertise = villager.getExpertise();
         this.harvestsRemaining = this.config.expertiseHarvestLimit().getOrDefault(expertise.getConfigName(), 1);
+        this.shouldRewardExperience = false;
 
         // Precondition scan already ran, pull from its cached results
         List<BlockPos> targets = this.nearbyFullHiveExistsCondition.getTargets();
-        VillagerInventory inventory = entity.getSettlementsInventory();
+        VillagerInventory inventory = villager.getSettlementsInventory();
         if (targets.isEmpty()
                 || !inventory.containsItem(Items.SHEARS)
                 || !inventory.canAddItem(new ItemStack(Items.HONEYCOMB))) {
@@ -129,18 +132,23 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
     @Override
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         return this.targetHivePos != null;
     }
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world,
-                                  @Nonnull BaseVillager entity) {
-        entity.clearHeldItem();
-        entity.getNavigationManager().stop();
+                                  @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.clearHeldItem();
+        villager.getNavigationManager().stop();
         this.targetHivePos = null;
         this.harvestsRemaining = 0;
+        this.shouldRewardExperience = false;
     }
 
     private boolean selectFreshTarget(@Nonnull BaseVillager villager,
@@ -194,6 +202,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
         level.setBlockAndUpdate(this.targetHivePos, state.setValue(BeehiveBlock.HONEY_LEVEL, 0));
         SoundRegistry.HARVEST_HONEYCOMB.playGlobally(Location.of(this.targetHivePos, level), SoundSource.BLOCKS);
         this.harvestsRemaining--;
+        this.shouldRewardExperience = true;
         return StepResult.noOp();
     }
 

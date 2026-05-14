@@ -63,7 +63,8 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
     public EnchantItemBehavior(@Nonnull EnchantItemConfig config,
                                @Nonnull HungerConfig hungerConfig,
                                @Nonnull EnchantmentEngine enchantmentEngine) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.config = config;
 
@@ -196,6 +197,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         inventory.addItem(enchantedItem);
 
         world.playSound(null, this.enchantingTablePos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
+        this.rewardExperience(villager);
         return StepResult.noOp();
     }
 

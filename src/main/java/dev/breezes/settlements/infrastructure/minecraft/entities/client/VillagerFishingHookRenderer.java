@@ -42,7 +42,7 @@ public class VillagerFishingHookRenderer extends EntityRenderer<VillagerFishingH
     // Threshold past which the line vibrates to sell the "fish struggling" beat.
     private static final float TENSION_VIBRATION_THRESHOLD = 0.9F;
     private static final float TENSION_VIBRATION_FREQUENCY = 0.8F;
-    private static final float TENSION_VIBRATION_AMPLITUDE = 0.05F;
+    private static final float TENSION_VIBRATION_AMPLITUDE = 0.1F;
 
     public VillagerFishingHookRenderer(EntityRendererProvider.Context context) {
         super(context);

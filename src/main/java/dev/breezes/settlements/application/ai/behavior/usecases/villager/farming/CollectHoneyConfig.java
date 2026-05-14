@@ -76,7 +76,15 @@ public record CollectHoneyConfig(
                         @MapEntry(key = "expert", value = "8"),
                         @MapEntry(key = "master", value = "10")
                 })
-        Map<String, Integer> expertiseHarvestLimit
+        Map<String, Integer> expertiseHarvestLimit,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 2,
+                min = 0)
+        int experienceReward
 ) implements BehaviorTimingConfig {
 
     public CollectHoneyConfig {

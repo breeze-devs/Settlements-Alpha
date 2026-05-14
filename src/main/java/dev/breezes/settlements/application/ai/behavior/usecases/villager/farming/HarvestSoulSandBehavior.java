@@ -49,10 +49,12 @@ public class HarvestSoulSandBehavior extends VillagerStateMachineBehavior {
     private int timeWorkedSoFar;
     private List<BlockPos> validSoulSandAroundVillager;
     private final NearbySoulSandExistsCondition<BaseVillager> nearbySoulSandExistsCondition;
+    private boolean shouldRewardExperience;
 
     public HarvestSoulSandBehavior(HarvestSoulSandConfig config,
                                    HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.nearbySoulSandExistsCondition = NearbySoulSandExistsCondition.builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
@@ -63,6 +65,7 @@ public class HarvestSoulSandBehavior extends VillagerStateMachineBehavior {
         this.netherWartPos = null;
         this.timeWorkedSoFar = 0;
         this.validSoulSandAroundVillager = new ArrayList<>();
+        this.shouldRewardExperience = false;
 
         this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
     }
@@ -93,6 +96,7 @@ public class HarvestSoulSandBehavior extends VillagerStateMachineBehavior {
                     Block wartBlock = wartBlockState.getBlock();
                     if (wartBlock instanceof NetherWartBlock) {
                         level.destroyBlock(this.netherWartPos, true, villager);
+                        this.shouldRewardExperience = true;
                     }
 
                     if (villager.hasItemInInventory(Items.NETHER_WART)) {
@@ -104,6 +108,7 @@ public class HarvestSoulSandBehavior extends VillagerStateMachineBehavior {
                             level.gameEvent(GameEvent.BLOCK_PLACE, this.netherWartPos, GameEvent.Context.of(villager, defaultWartState));
                             level.playSound(null, this.netherWartPos.getX(), this.netherWartPos.getY(), this.netherWartPos.getZ(),
                                     SoundEvents.NETHER_WART_PLANTED, SoundSource.BLOCKS, 1.0F, 1.0F);
+                            this.shouldRewardExperience = true;
                         }
                     }
 
@@ -114,9 +119,10 @@ public class HarvestSoulSandBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         this.timeWorkedSoFar = 0;
+        this.shouldRewardExperience = false;
 
         this.validSoulSandAroundVillager = new ArrayList<>(this.nearbySoulSandExistsCondition.getTargets());
         if (this.validSoulSandAroundVillager.isEmpty()) {
@@ -125,7 +131,7 @@ public class HarvestSoulSandBehavior extends VillagerStateMachineBehavior {
         }
 
         this.netherWartPos = this.getRandomPosition(world);
-        while (world.getBlockState(this.netherWartPos).isAir() && !entity.hasItemInInventory(Items.NETHER_WART)) {
+        while (world.getBlockState(this.netherWartPos).isAir() && !villager.hasItemInInventory(Items.NETHER_WART)) {
             this.validSoulSandAroundVillager.remove(this.netherWartPos);
             if (this.validSoulSandAroundVillager.isEmpty()) {
                 this.requestStop("No more soul sand to harvest");
@@ -144,19 +150,24 @@ public class HarvestSoulSandBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world,
-                                  @Nonnull BaseVillager entity) {
-        entity.getNavigationManager().stop();
+                                  @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.getNavigationManager().stop();
         this.timeWorkedSoFar = 0;
         this.netherWartPos = null;
         this.validSoulSandAroundVillager = new ArrayList<>();
+        this.shouldRewardExperience = false;
     }
 
     @Override
     public boolean tickContinueConditions(int delta,
                                           @Nonnull Level world,
-                                          @Nonnull BaseVillager entity) {
+                                          @Nonnull BaseVillager villager) {
         this.timeWorkedSoFar += delta;
-        return super.tickContinueConditions(delta, world, entity) && this.timeWorkedSoFar < 400;
+        return super.tickContinueConditions(delta, world, villager) && this.timeWorkedSoFar < 400;
     }
 
 }

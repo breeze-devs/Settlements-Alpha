@@ -41,6 +41,7 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHung
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
+import dev.breezes.settlements.infrastructure.minecraft.mixins.VillagerMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import dev.breezes.settlements.shared.util.SyncedDataWrapper;
@@ -420,6 +421,15 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     @Override
     protected Brain.Provider<Villager> brainProvider() {
         return Brain.provider(memoryTypes(), sensorTypes());
+    }
+
+    public void gainExperience(int amount) {
+        this.setVillagerXp(this.getVillagerXp() + amount);
+        VillagerMixin mixin = (VillagerMixin) this;
+        if (mixin.invokeShouldIncreaseLevel()) {
+            mixin.setIncreaseProfessionLevelOnUpdate(true);
+            mixin.setUpdateMerchantTimer(ClockTicks.seconds(2).getTicksAsInt());
+        }
     }
 
     @Override

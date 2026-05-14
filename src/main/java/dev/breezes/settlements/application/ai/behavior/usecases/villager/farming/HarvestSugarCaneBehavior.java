@@ -39,10 +39,12 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
     private int timeWorkedSoFar;
     private List<BlockPos> validSugarCaneAroundVillager;
     private final NearbySugarCaneExistsCondition<BaseVillager> nearbySugarCaneExistsCondition;
+    private boolean shouldRewardExperience;
 
     public HarvestSugarCaneBehavior(HarvestSugarCaneConfig config,
                                     HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.nearbySugarCaneExistsCondition = NearbySugarCaneExistsCondition.builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
@@ -53,6 +55,7 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
         this.sugarCanePos = null;
         this.timeWorkedSoFar = 0;
         this.validSugarCaneAroundVillager = new ArrayList<>();
+        this.shouldRewardExperience = false;
 
         this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
     }
@@ -78,6 +81,7 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
 
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
                     villager.level().destroyBlock(this.sugarCanePos, true, villager);
+                    this.shouldRewardExperience = true;
                     return StepResult.complete();
                 })
                 .build();
@@ -85,9 +89,10 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         this.timeWorkedSoFar = 0;
+        this.shouldRewardExperience = false;
 
         this.validSugarCaneAroundVillager = new ArrayList<>(this.nearbySugarCaneExistsCondition.getTargets());
         if (this.validSugarCaneAroundVillager.isEmpty()) {
@@ -106,16 +111,21 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
     }
 
     @Override
-    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        entity.getNavigationManager().stop();
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.getNavigationManager().stop();
         this.timeWorkedSoFar = 0;
         this.sugarCanePos = null;
         this.validSugarCaneAroundVillager = new ArrayList<>();
+        this.shouldRewardExperience = false;
     }
 
     @Override
-    public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
+    public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
         this.timeWorkedSoFar += delta;
-        return super.tickContinueConditions(delta, world, entity) && this.timeWorkedSoFar < 400;
+        return super.tickContinueConditions(delta, world, villager) && this.timeWorkedSoFar < 400;
     }
 }

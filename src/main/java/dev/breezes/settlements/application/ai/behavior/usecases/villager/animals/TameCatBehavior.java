@@ -53,14 +53,17 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
     private final NearbyEntityExistsCondition<BaseVillager, Cat> nearbyUntamedCatExistsCondition;
 
     private int attemptsRemaining;
+    private boolean shouldRewardExperience;
 
     public TameCatBehavior(TameCatConfig config,
                            HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.config = config;
 
         this.attemptsRemaining = 0;
+        this.shouldRewardExperience = false;
 
         this.nearbyUntamedCatExistsCondition = new NearbyEntityExistsCondition<>(
                 config.scanRangeHorizontal(),
@@ -135,6 +138,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                         settlementsCat.setTame(true, true);
                         settlementsCat.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
                         settlementsCat.setCollarColor(DyeColor.LIME);
+                        this.shouldRewardExperience = true;
 
                         log.behaviorStatus("Successfully tamed cat {}", settlementsCat.getUUID());
                         return StepResult.complete();
@@ -167,14 +171,14 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        Expertise expertise = entity.getExpertise();
+        Expertise expertise = villager.getExpertise();
         int limit = this.config.expertiseCatLimit().getOrDefault(expertise.getConfigName(), 1);
 
-        int owned = entity.level().getEntitiesOfClass(Cat.class,
-                        entity.getBoundingBox().inflate(48, 16, 48),
-                        cat -> cat.isTame() && ownerMatches(entity, cat))
+        int owned = villager.level().getEntitiesOfClass(Cat.class,
+                        villager.getBoundingBox().inflate(48, 16, 48),
+                        cat -> cat.isTame() && ownerMatches(villager, cat))
                 .size();
         if (owned >= limit) {
             log.behaviorStatus("Owned cats {} >= limit {}, aborting tame", owned, limit);
@@ -182,7 +186,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        if (!this.nearbyUntamedCatExistsCondition.test(entity)) {
+        if (!this.nearbyUntamedCatExistsCondition.test(villager)) {
             this.requestStop("No untamed cats found within range");
             return;
         }
@@ -194,11 +198,17 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenCat.get()))));
         this.attemptsRemaining = MAX_TAME_ATTEMPTS;
+        this.shouldRewardExperience = false;
     }
 
     @Override
-    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        entity.clearHeldItem();
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.clearHeldItem();
+        this.shouldRewardExperience = false;
     }
 
     private Optional<Cat> getTargetCat(@Nonnull BehaviorContext<BaseVillager> context) {

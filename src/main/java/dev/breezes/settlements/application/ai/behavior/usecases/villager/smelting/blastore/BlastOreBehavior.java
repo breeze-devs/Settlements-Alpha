@@ -81,7 +81,8 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
 
     public BlastOreBehavior(BlastOreConfig config,
                             HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));
@@ -208,6 +209,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ITEM_INTERACTION_DURATION.asTickable())
                 .onEnd(ctx -> {
                     ctx.getInitiator().clearHeldItem();
+                    this.rewardExperience(ctx.getInitiator().getMinecraftEntity());
                     return StepResult.complete();
                 })
                 .build();

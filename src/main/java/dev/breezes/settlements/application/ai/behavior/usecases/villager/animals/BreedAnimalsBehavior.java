@@ -77,11 +77,13 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
     private Animal breedTarget1;
     @Nullable
     private Animal breedTarget2;
+    private boolean shouldRewardExperience;
 
     public BreedAnimalsBehavior(BreedAnimalsConfig config,
                                 HungerConfig hungerConfig,
                                 Set<EntityType<? extends Animal>> breedableAnimalTypes) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         // Create behavior preconditions
         this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(
@@ -94,6 +96,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         this.heldItem = null;
         this.breedTarget1 = null;
         this.breedTarget2 = null;
+        this.shouldRewardExperience = false;
 
         this.initializeStateMachine(this.createControlStep(), BreedStage.END);
     }
@@ -132,6 +135,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
         this.breedTarget1 = breedablePair.get().getFirst();
         this.breedTarget2 = breedablePair.get().getSecond();
+        this.shouldRewardExperience = false;
 
         ItemStack[] breedItems = BREED_ITEMS.get(this.breedTarget1.getType());
         if (breedItems == null || breedItems.length == 0) {
@@ -175,6 +179,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         this.heldItem = null;
         this.breedTarget1 = null;
         this.breedTarget2 = null;
+        this.shouldRewardExperience = false;
     }
 
     private BehaviorStep<BaseVillager> createFeedTargetStep(@Nonnull String label,
@@ -246,7 +251,12 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
                     return StepResult.noOp();
                 })
-                .onEnd(ctx -> StepResult.complete())
+                .onEnd(ctx -> {
+                    if (this.shouldRewardExperience) {
+                        this.rewardExperience(ctx.getInitiator().getMinecraftEntity());
+                    }
+                    return StepResult.complete();
+                })
                 .build();
     }
 
@@ -269,6 +279,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         SoundRegistry.FEED_ANIMAL.playGlobally(targetLocation, SoundSource.NEUTRAL);
 
         log.behaviorStatus("Fed {} animal", label);
+        this.shouldRewardExperience = true;
         return StepResult.noOp();
     }
 

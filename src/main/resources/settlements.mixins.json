@@ -9,6 +9,7 @@
     "DisplayEntityMixin",
     "CatMixin",
     "WolfMixin",
+    "VillagerMixin",
     "LevelMixin"
   ],
   "client": [

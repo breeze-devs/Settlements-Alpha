@@ -17,5 +17,11 @@ public class GeneralConfig {
             defaultValue = "settlements-lock-key")
     public static String globalLockKey;
 
+    @BooleanConfig(type = ConfigurationType.GENERAL,
+            identifier = "disable_natural_experience_gain",
+            description = "Disables villager experience gained naturally from successful behaviors",
+            defaultValue = false)
+    public static boolean disableNaturalExperienceGain;
+
 
 }

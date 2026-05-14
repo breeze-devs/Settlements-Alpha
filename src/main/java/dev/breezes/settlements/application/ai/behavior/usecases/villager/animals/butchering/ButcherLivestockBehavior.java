@@ -55,10 +55,12 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
     private EntityType<?> selectedAnimalType;
     @Nullable
     private Animal target;
+    private boolean shouldRewardExperience;
 
     public ButcherLivestockBehavior(@Nonnull ButcherLivestockConfig config,
                                     @Nonnull HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.config = config;
         Map<EntityType<?>, Integer> minimumKeepByType = parseConfiguredMinimumKeep(config.minimumKeepCount());
@@ -74,6 +76,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         this.butcherCountRemaining = 0;
         this.selectedAnimalType = null;
         this.target = null;
+        this.shouldRewardExperience = false;
 
         this.initializeStateMachine(this.createControlStep(), ButcherStage.END);
     }
@@ -108,6 +111,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
                     this.performButcher(this.target, context.getInitiator().getMinecraftEntity());
                     this.butcherCountRemaining--;
+                    this.shouldRewardExperience = true;
 
                     return StepResult.noOp();
                 })
@@ -158,6 +162,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         Expertise expertise = entity.getExpertise();
         int limit = this.config.expertiseButcherLimit().getOrDefault(expertise.getConfigName(), 1);
         this.butcherCountRemaining = limit;
+        this.shouldRewardExperience = false;
 
         Optional<EntityType<?>> selectedType = this.nearbyButcherableLivestockExistsCondition.getSelectedType();
         Optional<Animal> selectedTarget = this.nearbyButcherableLivestockExistsCondition.getTarget();
@@ -180,14 +185,19 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
     }
 
     @Override
-    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        entity.getNavigationManager().stop();
-        entity.clearHeldItem();
-        entity.setMotion(AnimationArchetype.IDLE);
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.getNavigationManager().stop();
+        villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
 
         this.target = null;
         this.selectedAnimalType = null;
         this.butcherCountRemaining = 0;
+        this.shouldRewardExperience = false;
     }
 
     private void performButcher(@Nonnull Animal target,

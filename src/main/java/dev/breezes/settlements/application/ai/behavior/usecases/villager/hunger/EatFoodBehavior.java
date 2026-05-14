@@ -17,6 +17,8 @@ import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -132,10 +134,9 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
         if (food != null) {
             int nutrition = food.nutrition();
             float hungerRestored = Math.min(nutrition / 20.0f, 1.0f - villager.getHunger());
-            float healAmount = 2.0f + (nutrition * 0.5f);
 
             villager.setHunger(villager.getHunger() + hungerRestored);
-            villager.heal(healAmount);
+            villager.addEffect(new MobEffectInstance(MobEffects.REGENERATION, ClockTicks.seconds(nutrition * 5).getTicksAsInt(), 0, true, true));
         }
 
         villager.getSettlementsInventory().consumeFromSlot(this.selectedFoodSlot, 1);

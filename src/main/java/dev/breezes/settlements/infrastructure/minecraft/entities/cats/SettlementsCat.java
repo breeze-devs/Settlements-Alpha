@@ -90,7 +90,7 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity {
     private void initGoals() {
         this.goalSelector.removeAllGoals(goal -> goal instanceof SitWhenOrderedToGoal || goal instanceof FollowOwnerGoal);
         this.goalSelector.addGoal(1, new CatSitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(6, new CatFollowOwnerGoal(this, 1.0D, 10.0F, 2.0F));
+        this.goalSelector.addGoal(6, new CatFollowOwnerGoal(this, 1.0D, 25.0F, 2.0F));
     }
 
     @Override

@@ -46,10 +46,12 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
     @Nullable
     private Cow target;
     private int milkCountRemaining;
+    private boolean shouldRewardExperience;
 
     public MilkCowBehavior(@Nonnull MilkCowConfig config,
                            @Nonnull HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.config = config;
 
@@ -63,6 +65,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
         this.target = null;
         this.milkCountRemaining = 0;
+        this.shouldRewardExperience = false;
 
         this.initializeStateMachine(this.createControlStep(), MilkStage.END);
     }
@@ -114,10 +117,11 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        Expertise expertise = entity.getExpertise();
+        Expertise expertise = villager.getExpertise();
         this.milkCountRemaining = this.config.expertiseMilkLimit().getOrDefault(expertise.getConfigName(), 1);
+        this.shouldRewardExperience = false;
 
         List<Cow> targets = this.nearbyMilkableCowExistsCondition.getTargets();
         if (targets.isEmpty()) {
@@ -125,8 +129,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        if (!entity.getSettlementsInventory().containsItem(Items.BUCKET)
-                || !entity.getSettlementsInventory().canAddItem(new ItemStack(Items.MILK_BUCKET))) {
+        if (!villager.getSettlementsInventory().containsItem(Items.BUCKET)
+                || !villager.getSettlementsInventory().canAddItem(new ItemStack(Items.MILK_BUCKET))) {
             this.requestStop("Not enough buckets in inventory or inventory is full");
             return;
         }
@@ -138,19 +142,24 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
     @Override
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         return this.target != null && this.target.isAlive();
     }
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world,
-                                  @Nonnull BaseVillager entity) {
-        entity.getNavigationManager().stop();
-        entity.clearHeldItem();
+                                  @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.getNavigationManager().stop();
+        villager.clearHeldItem();
 
         this.target = null;
         this.milkCountRemaining = 0;
+        this.shouldRewardExperience = false;
     }
 
     private StepResult performMilk(@Nonnull BehaviorContext<BaseVillager> context) {
@@ -172,6 +181,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
         inventory.addItem(milkBucketStack);
         this.milkCountRemaining--;
+        this.shouldRewardExperience = true;
 
         return StepResult.noOp();
     }

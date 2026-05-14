@@ -42,10 +42,12 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
     private int timeWorkedSoFar;
     private List<BlockPos> validOresAroundVillager;
     private final NearbyOreExistsCondition<BaseVillager> nearbyOreExistsCondition;
+    private boolean shouldRewardExperience;
 
     public HarvestOreBehavior(HarvestOreConfig config,
                               HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.nearbyOreExistsCondition = NearbyOreExistsCondition.builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
@@ -56,6 +58,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
         this.orePos = null;
         this.timeWorkedSoFar = 0;
         this.validOresAroundVillager = new ArrayList<>();
+        this.shouldRewardExperience = false;
 
         this.initializeStateMachine(this.createControlStep(), HarvestOreBehavior.HarvestStage.END);
     }
@@ -85,6 +88,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
                     replaceBlock = (replaceBlock.is(Tags.Blocks.ORES_IN_GROUND_STONE)) ? Blocks.COBBLESTONE.defaultBlockState() : Blocks.COBBLED_DEEPSLATE.defaultBlockState();
                     level.destroyBlock(this.orePos, true, villager);
                     level.setBlockAndUpdate(orePos, replaceBlock);
+                    this.shouldRewardExperience = true;
                     return StepResult.complete();
                 })
                 .build();
@@ -92,9 +96,10 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         this.timeWorkedSoFar = 0;
+        this.shouldRewardExperience = false;
 
         this.validOresAroundVillager = new ArrayList<>(this.nearbyOreExistsCondition.getTargets());
         if (this.validOresAroundVillager.isEmpty()) {
@@ -113,16 +118,21 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
     }
 
     @Override
-    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        entity.getNavigationManager().stop();
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.getNavigationManager().stop();
         this.timeWorkedSoFar = 0;
         this.orePos = null;
         this.validOresAroundVillager = new ArrayList<>();
+        this.shouldRewardExperience = false;
     }
 
     @Override
-    public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
+    public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
         this.timeWorkedSoFar += delta;
-        return super.tickContinueConditions(delta, world, entity) && this.timeWorkedSoFar < 400;
+        return super.tickContinueConditions(delta, world, villager) && this.timeWorkedSoFar < 400;
     }
 }

@@ -48,10 +48,12 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
     @Nullable
     private IronGolem targetToRepair;
     private int remainingRepairAttempts;
+    private boolean shouldRewardExperience;
 
     public RepairIronGolemBehavior(RepairIronGolemConfig config,
                                    HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.config = config;
 
@@ -62,6 +64,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         // Initialize variables
         this.targetToRepair = null;
         this.remainingRepairAttempts = 0;
+        this.shouldRewardExperience = false;
 
         this.initializeStateMachine(this.createControlStep(), RepairStage.END);
     }
@@ -90,6 +93,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
                     double healAmount = RandomUtil.randomDouble(3, 8);
                     this.targetToRepair.heal((float) healAmount);
+                    this.shouldRewardExperience = true;
 
                     Location targetLocation = Location.fromEntity(this.targetToRepair, false);
                     SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(targetLocation, SoundSource.NEUTRAL);
@@ -112,7 +116,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         List<IronGolem> targets = this.nearbyDamagedIronGolemExistsCondition.getTargets();
         if (targets.isEmpty()) {
@@ -122,13 +126,14 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
         this.targetToRepair = targets.getFirst();
         this.remainingRepairAttempts = RandomUtil.randomInt(1, 3, true); // TODO: this could be based on inventory, e.g. iron ingot count
+        this.shouldRewardExperience = false;
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToRepair))));
     }
 
     @Override
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         return this.targetToRepair != null
                 && this.targetToRepair.isAlive()
@@ -137,10 +142,15 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         this.targetToRepair = null;
         this.remainingRepairAttempts = 0;
+        this.shouldRewardExperience = false;
     }
 
 }

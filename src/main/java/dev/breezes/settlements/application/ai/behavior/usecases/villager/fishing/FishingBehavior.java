@@ -87,7 +87,8 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
 
     public FishingBehavior(@Nonnull FishingConfig config,
                            @Nonnull HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.config = config;
 
@@ -417,6 +418,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
         if (this.caughtItem != null && !this.caughtItem.isEmpty()) {
             VillagerInventory inventory = context.getInitiator().getSettlementsInventory();
             inventory.addItem(this.caughtItem);
+            this.rewardExperience(context.getInitiator().getMinecraftEntity());
             SoundRegistry.ITEM_POP_IN.playGlobally(
                     Location.fromEntity(context.getInitiator().getMinecraftEntity(), false),
                     SoundSource.NEUTRAL);

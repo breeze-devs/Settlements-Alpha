@@ -75,7 +75,15 @@ public record TameCatConfig(
                         @MapEntry(key = "expert", value = "1"),
                         @MapEntry(key = "master", value = "2")
                 })
-        Map<String, Integer> expertiseCatLimit
+        Map<String, Integer> expertiseCatLimit,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 2,
+                min = 0)
+        int experienceReward
 ) implements BehaviorTimingConfig {
 
     public TameCatConfig {

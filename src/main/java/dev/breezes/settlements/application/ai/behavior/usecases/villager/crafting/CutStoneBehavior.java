@@ -80,7 +80,8 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
 
     public CutStoneBehavior(CutStoneConfig config,
                             HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER));
@@ -229,7 +230,10 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
                     SoundRegistry.STONE_CUTTER_WORKING.playGlobally(location, SoundSource.BLOCKS);
                     return StepResult.noOp();
                 })
-                .onEnd(ctx -> StepResult.complete())
+                .onEnd(ctx -> {
+                    this.rewardExperience(ctx.getInitiator().getMinecraftEntity());
+                    return StepResult.complete();
+                })
                 .build();
 
         SequencedStep<BaseVillager> sequence = new SequencedStep<>("CutStoneBehavior.sequence",

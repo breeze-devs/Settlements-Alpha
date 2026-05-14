@@ -94,7 +94,15 @@ public record FishingConfig(
                         @MapEntry(key = "expert", value = "0.8"),
                         @MapEntry(key = "master", value = "0.7")
                 })
-        Map<String, Double> expertiseWaitTimeScale
+        Map<String, Double> expertiseWaitTimeScale,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 1,
+                min = 0)
+        int experienceReward
 
 ) implements BehaviorTimingConfig {
 

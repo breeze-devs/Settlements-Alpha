@@ -76,7 +76,15 @@ public record MilkCowConfig(
                         @MapEntry(key = "expert", value = "2"),
                         @MapEntry(key = "master", value = "3")
                 })
-        Map<String, Integer> expertiseMilkLimit) implements BehaviorTimingConfig {
+        Map<String, Integer> expertiseMilkLimit,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 1,
+                min = 0)
+        int experienceReward) implements BehaviorTimingConfig {
 
     public MilkCowConfig {
         BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,

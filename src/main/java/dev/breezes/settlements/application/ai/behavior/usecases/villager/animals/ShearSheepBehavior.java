@@ -87,15 +87,18 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
     private final AtomicInteger shearCount;
+    private boolean shouldRewardExperience;
 
     public ShearSheepBehavior(@Nonnull ShearSheepConfig config,
                               @Nonnull HungerConfig hungerConfig,
                               @Nonnull DemandSignalService demandSignalService) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.config = config;
         this.demandSignalService = demandSignalService;
         this.shearCount = new AtomicInteger(0);
+        this.shouldRewardExperience = false;
 
         // Create behavior preconditions
         this.nearbyShearableSheepExistsCondition = NearbyShearableSheepExistsCondition.builder()
@@ -182,6 +185,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                         woolItems.add(woolItem);
                     }
                     context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(woolItems));
+                    this.shouldRewardExperience = true;
                     return StepResult.noOp();
                 })
                 .onEnd(context -> {
@@ -216,15 +220,16 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
 
         Expertise expertise = context.getInitiator().getMinecraftEntity().getExpertise();
         int limit = config.expertiseShearLimit().get(expertise.getConfigName());
         this.shearCount.set(limit);
+        this.shouldRewardExperience = false;
         log.behaviorStatus("Villager is '{}' level, maximum shear count is {}", expertise.toString(), limit);
 
-        if (!this.ensureShearsAvailable(entity)) {
+        if (!this.ensureShearsAvailable(villager)) {
             this.requestStop("No shears available");
             return;
         }
@@ -233,6 +238,17 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                 .map(Targetable::fromEntity)
                 .toList();
         context.setState(BehaviorStateType.TARGET, TargetState.of(targets));
+    }
+
+    @Override
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.getNavigationManager().stop();
+        villager.clearHeldItem();
+        this.shouldRewardExperience = false;
     }
 
     private boolean ensureShearsAvailable(@Nonnull BaseVillager villager) {

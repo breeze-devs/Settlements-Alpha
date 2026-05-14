@@ -39,7 +39,15 @@ public record CutStoneConfig(
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
                 defaultValue = 60,
                 min = 1)
-        int behaviorCooldownMax
+        int behaviorCooldownMax,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 1,
+                min = 0)
+        int experienceReward
 ) implements BehaviorTimingConfig {
 
     public CutStoneConfig {

@@ -75,7 +75,15 @@ public record TameWolfConfig(
                         @MapEntry(key = "expert", value = "2"),
                         @MapEntry(key = "master", value = "3")
                 })
-        Map<String, Integer> expertiseWolfLimit
+        Map<String, Integer> expertiseWolfLimit,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 2,
+                min = 0)
+        int experienceReward
 ) implements BehaviorTimingConfig {
 
     public TameWolfConfig {

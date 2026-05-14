@@ -57,7 +57,15 @@ public record EnchantItemConfig(
                 defaultValue = 4,
                 min = 1,
                 max = 16)
-        int scanRangeVertical
+        int scanRangeVertical,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 4,
+                min = 0)
+        int experienceReward
 ) implements BehaviorTimingConfig {
 
     public EnchantItemConfig {

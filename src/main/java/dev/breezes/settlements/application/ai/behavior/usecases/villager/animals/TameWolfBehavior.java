@@ -56,13 +56,16 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
     private final NearbyEntityExistsCondition<BaseVillager, Wolf> nearbyUntamedWolfExistsCondition;
 
     private int attemptsRemaining;
+    private boolean shouldRewardExperience;
 
     public TameWolfBehavior(TameWolfConfig config, HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         this.config = config;
 
         this.attemptsRemaining = 0;
+        this.shouldRewardExperience = false;
 
         // Precondition: at least one untamed wolf nearby
         this.nearbyUntamedWolfExistsCondition = new NearbyEntityExistsCondition<>(
@@ -151,6 +154,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                         settlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
                         settlementsWolf.setCollarColor(DyeColor.LIME);
                         this.rememberOwnedWolf(ctx.getInitiator().getMinecraftEntity(), settlementsWolf);
+                        this.shouldRewardExperience = true;
 
                         log.behaviorStatus("Successfully tamed wolf {}", settlementsWolf.getUUID());
 
@@ -189,17 +193,17 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
 
         // Enforce wolf ownership limit per expertise
-        Expertise expertise = entity.getExpertise();
+        Expertise expertise = villager.getExpertise();
         int limit = this.config.expertiseWolfLimit().getOrDefault(expertise.getConfigName(), 1);
 
         // TODO: this logic should be replaced by memory-based systems and a direct level entity get if alive
-        int owned = entity.level().getEntitiesOfClass(Wolf.class,
-                        entity.getBoundingBox().inflate(48, 16, 48),
-                        wolf -> wolf.isTame() && ownerMatches(entity, wolf))
+        int owned = villager.level().getEntitiesOfClass(Wolf.class,
+                        villager.getBoundingBox().inflate(48, 16, 48),
+                        wolf -> wolf.isTame() && ownerMatches(villager, wolf))
                 .size();
         if (owned >= limit) {
             log.behaviorStatus("Owned wolves {} >= limit {}, aborting tame", owned, limit);
@@ -207,7 +211,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        if (!this.nearbyUntamedWolfExistsCondition.test(entity)) {
+        if (!this.nearbyUntamedWolfExistsCondition.test(villager)) {
             this.requestStop("No untamed wolves found within range");
             return;
         }
@@ -219,11 +223,17 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenWolf.get()))));
         this.attemptsRemaining = MAX_TAME_ATTEMPTS;
+        this.shouldRewardExperience = false;
     }
 
     @Override
-    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
-        entity.clearHeldItem();
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.shouldRewardExperience) {
+            this.rewardExperience(villager);
+        }
+
+        villager.clearHeldItem();
+        this.shouldRewardExperience = false;
     }
 
     private Optional<Wolf> getTargetWolf(@Nonnull BehaviorContext<BaseVillager> context) {

@@ -10,5 +10,7 @@ public class BehaviorConfigConstants {
     public static final String BEHAVIOR_COOLDOWN_MIN_DESCRIPTION = "Minimum behavior cooldown time (in seconds)";
     public static final String BEHAVIOR_COOLDOWN_MAX_IDENTIFIER = "behavior_cooldown_max";
     public static final String BEHAVIOR_COOLDOWN_MAX_DESCRIPTION = "Maximum behavior cooldown time (in seconds)";
+    public static final String EXPERIENCE_REWARD_IDENTIFIER = "experience_reward";
+    public static final String EXPERIENCE_REWARD_DESCRIPTION = "Villager experience awarded when the behavior completes successfully";
 
 }

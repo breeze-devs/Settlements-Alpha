@@ -124,7 +124,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
         // Replace default standby & follow goals
         this.goalSelector.removeAllGoals((goal -> goal instanceof SitWhenOrderedToGoal || goal instanceof FollowOwnerGoal));
         this.goalSelector.addGoal(2, new WolfSitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(6, new WolfFollowOwnerGoal(this, 1.0D, 10.0F, 2.0F));
+        this.goalSelector.addGoal(6, new WolfFollowOwnerGoal(this, 1.0D, 15.0F, 2.0F));
 
         // Add target to all mobs that are hostile to villagers
         ISettlementsVillager.getEnemyClasses()

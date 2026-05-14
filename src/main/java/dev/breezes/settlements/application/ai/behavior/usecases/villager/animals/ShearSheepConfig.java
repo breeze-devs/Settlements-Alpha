@@ -83,7 +83,15 @@ public record ShearSheepConfig(
                         @MapEntry(key = "expert", value = "7"),
                         @MapEntry(key = "master", value = "10")
                 })
-        Map<String, Integer> expertiseShearLimit) implements BehaviorTimingConfig {
+        Map<String, Integer> expertiseShearLimit,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 2,
+                min = 0)
+        int experienceReward) implements BehaviorTimingConfig {
 
     public ShearSheepConfig {
         BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,

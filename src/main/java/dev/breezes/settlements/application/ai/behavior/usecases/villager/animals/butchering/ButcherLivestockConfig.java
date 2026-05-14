@@ -97,7 +97,15 @@ public record ButcherLivestockConfig(
                         @MapEntry(key = "expert", value = "12"),
                         @MapEntry(key = "master", value = "20")
                 })
-        Map<String, Integer> expertiseButcherLimit
+        Map<String, Integer> expertiseButcherLimit,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
+                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
+                defaultValue = 1,
+                min = 0)
+        int experienceReward
 ) implements BehaviorTimingConfig {
 
     public ButcherLivestockConfig {

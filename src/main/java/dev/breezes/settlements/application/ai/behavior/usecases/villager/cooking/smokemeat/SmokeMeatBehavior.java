@@ -76,7 +76,8 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
 
     public SmokeMeatBehavior(SmokeMeatConfig config,
                              HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.SMOKER));
@@ -203,6 +204,7 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ITEM_INTERACTION_DURATION.asTickable())
                 .onEnd(ctx -> {
                     ctx.getInitiator().clearHeldItem();
+                    this.rewardExperience(ctx.getInitiator().getMinecraftEntity());
                     return StepResult.complete();
                 })
                 .build();

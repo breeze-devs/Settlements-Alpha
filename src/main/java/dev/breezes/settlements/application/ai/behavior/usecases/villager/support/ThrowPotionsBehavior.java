@@ -53,7 +53,8 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
 
     public ThrowPotionsBehavior(ThrowPotionsConfig config,
                                 HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                config.experienceReward());
 
         // Preconditions to this behavior
         this.nearbyFriendlyNeedsPotionCondition = new NearbyFriendlyNeedsPotionCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical(), config.minimumPlayerReputation());
@@ -99,6 +100,7 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
 
                     villager.level().addFreshEntity(potionEntity);
                     villager.clearHeldItem();
+                    this.rewardExperience(villager);
 
                     return StepResult.complete();
                 })
@@ -138,7 +140,7 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
     @Override
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         return this.targetToThrow != null && this.targetToThrow.isAlive();
     }
