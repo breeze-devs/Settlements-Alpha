@@ -21,6 +21,8 @@ public final class SettlementsDagger {
     private static ServerComponent serverComponent;
     @Nullable
     private static ClientComponent clientComponent;
+    @Nullable
+    private static ClientSessionComponent clientSessionComponent;
 
     public static void initialize(@Nonnull SettlementsComponent settlementsComponent) {
         if (component != null) {
@@ -44,6 +46,14 @@ public final class SettlementsDagger {
         }
 
         clientComponent = settlementsClientComponent;
+    }
+
+    public static void initializeClientSession(@Nonnull ClientSessionComponent settlementsClientSessionComponent) {
+        if (clientSessionComponent != null) {
+            log.warn("Overwriting previously initialized ClientSessionComponent (clearClientSession may have been missed)");
+        }
+
+        clientSessionComponent = settlementsClientSessionComponent;
     }
 
     @Nonnull
@@ -78,8 +88,26 @@ public final class SettlementsDagger {
         return clientComponent;
     }
 
+    @Nonnull
+    public static ClientSessionComponent clientSessionOrThrow() {
+        if (clientSessionComponent == null) {
+            throw new IllegalStateException("ClientSessionComponent has not been initialized yet");
+        }
+
+        return clientSessionComponent;
+    }
+
+    @Nullable
+    public static ClientSessionComponent clientSessionOrNull() {
+        return clientSessionComponent;
+    }
+
     public static void clearServer() {
         serverComponent = null;
+    }
+
+    public static void clearClientSession() {
+        clientSessionComponent = null;
     }
 
 }

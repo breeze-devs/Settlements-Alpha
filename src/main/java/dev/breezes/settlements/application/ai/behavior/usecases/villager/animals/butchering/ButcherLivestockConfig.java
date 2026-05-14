@@ -68,7 +68,7 @@ public record ButcherLivestockConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "require_village_owned_tag",
                 description = "Whether only village-owned animals can be butchered.",
-                defaultValue = true)
+                defaultValue = false)
         boolean requireVillageOwnedTag,
 
         @MapConfig(

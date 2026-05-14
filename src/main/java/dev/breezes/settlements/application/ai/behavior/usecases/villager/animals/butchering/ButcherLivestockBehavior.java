@@ -14,6 +14,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -90,13 +91,18 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createButcherStep() {
         TimeBasedStep<BaseVillager> butcherStep = TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.seconds(1).asTickable())
-                .everyTick(context -> {
-                    context.getInitiator().setHeldItem(Items.IRON_AXE.getDefaultInstance());
+                .withTickable(ClockTicks.seconds(2).asTickable())
+                .onStart(context -> {
+                    BaseVillager villager = context.getInitiator();
+                    villager.setHeldItem(Items.IRON_AXE.getDefaultInstance());
+
+                    // Start the swing before the action frame so the gameplay effect lands on the visual impact.
+                    context.getInitiator().setMotion(AnimationArchetype.SWING_HEAVY);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.seconds(0.5), context -> {
+                .addKeyFrame(ClockTicks.seconds(1), context -> {
                     if (this.target == null || !this.target.isAlive()) {
+                        context.getInitiator().setMotion(AnimationArchetype.IDLE);
                         return StepResult.complete();
                     }
 
@@ -107,6 +113,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                 })
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
+                    context.getInitiator().setMotion(AnimationArchetype.IDLE);
                     return StepResult.transition(ButcherStage.COLLECT_DROPS);
                 })
                 .build();
@@ -176,6 +183,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
         entity.getNavigationManager().stop();
         entity.clearHeldItem();
+        entity.setMotion(AnimationArchetype.IDLE);
 
         this.target = null;
         this.selectedAnimalType = null;

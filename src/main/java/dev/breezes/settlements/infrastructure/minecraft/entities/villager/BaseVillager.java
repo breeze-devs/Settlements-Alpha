@@ -23,10 +23,12 @@ import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.entities.hunger.IVillagerHunger;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import dev.breezes.settlements.domain.inventory.EquipmentSlot;
 import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -41,9 +43,12 @@ import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanCo
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
+import dev.breezes.settlements.shared.util.SyncedDataWrapper;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -91,6 +96,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
     private static final int STARTING_BREAD_STACKS = 2;
     private static final int STARTING_BREAD_PER_STACK = 64;
+    private static final SyncedDataWrapper<Byte> DATA_MOTION_ARCHETYPE = SyncedDataWrapper.<Byte>builder()
+            .entityClass(BaseVillager.class)
+            .serializer(EntityDataSerializers.BYTE)
+            .defaultValue(AnimationArchetype.IDLE.toNetworkByte())
+            .build();
 
     private final GeneticsProfile genetics;
     private final IBrain settlementsBrain;
@@ -134,6 +144,20 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 .build();
     }
 
+    @Override
+    protected void defineSynchedData(@Nonnull SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        DATA_MOTION_ARCHETYPE.define(builder);
+    }
+
+    public void setMotion(@Nonnull AnimationArchetype archetype) {
+        DATA_MOTION_ARCHETYPE.set(this.entityData, archetype.toNetworkByte());
+    }
+
+    public AnimationArchetype getMotion() {
+        return AnimationArchetype.fromNetworkByte(DATA_MOTION_ARCHETYPE.get(this.entityData));
+    }
+
     private void addStartingFood(@Nonnull VillagerInventory inventory) {
         for (int i = 0; i < STARTING_BREAD_STACKS; i++) {
             inventory.addItem(new ItemStack(Items.BREAD, STARTING_BREAD_PER_STACK));
@@ -146,6 +170,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         return this.settlementsInventory;
+    }
+
+    public boolean hasSettlementsInventory() {
+        return this.settlementsInventory != null;
     }
 
     @Override
@@ -297,16 +325,31 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     @Override
     public Optional<ItemStack> getHeldItem() {
-        return Optional.of(this.getItemInHand(InteractionHand.MAIN_HAND));
+        if (this.settlementsInventory != null && this.settlementsInventory.getMainHand().isPresent()) {
+            return this.settlementsInventory.getMainHand();
+        }
+
+        // TODO: deprecate vanilla
+        ItemStack vanillaMainHand = this.getItemInHand(InteractionHand.MAIN_HAND);
+        return vanillaMainHand.isEmpty() ? Optional.empty() : Optional.of(vanillaMainHand);
     }
 
     @Override
     public void setHeldItem(@Nonnull ItemStack itemStack) {
+        // TODO: deprecate vanilla
         this.setItemInHand(InteractionHand.MAIN_HAND, itemStack);
+        if (this.settlementsInventory != null) {
+            this.settlementsInventory.setEquipped(EquipmentSlot.MAIN_HAND, itemStack);
+        }
     }
 
+    @Override
     public void clearHeldItem() {
+        // TODO: deprecate vanilla
         this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        if (this.settlementsInventory != null) {
+            this.settlementsInventory.setEquipped(EquipmentSlot.MAIN_HAND, ItemStack.EMPTY);
+        }
     }
 
     @Override

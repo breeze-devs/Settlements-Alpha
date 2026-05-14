@@ -8,17 +8,22 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
-public class VillagerInventory {
+public class VillagerInventory implements IVillagerEquipment {
 
     @Getter
     private final int backpackSize;
     @Getter
     private final SimpleContainer backpack;
 
-    private ItemStack mainHand;
-    private ItemStack offHand;
+    private final EnumMap<EquipmentSlot, ItemStack> equipped;
 
     @Getter
     private int inventoryVersion;
@@ -28,17 +33,49 @@ public class VillagerInventory {
         this.backpackSize = backpackSize;
         this.backpack = new SimpleContainer(backpackSize);
 
-        this.mainHand = ItemStack.EMPTY;
-        this.offHand = ItemStack.EMPTY;
+        this.equipped = new EnumMap<>(EquipmentSlot.class);
         this.inventoryVersion = 0;
     }
 
     public Optional<ItemStack> getMainHand() {
-        return this.mainHand.isEmpty() ? Optional.empty() : Optional.of(this.mainHand);
+        return this.getEquipped(EquipmentSlot.MAIN_HAND);
     }
 
     public Optional<ItemStack> getOffHand() {
-        return this.offHand.isEmpty() ? Optional.empty() : Optional.of(this.offHand);
+        return this.getEquipped(EquipmentSlot.OFF_HAND);
+    }
+
+    @Override
+    public Optional<ItemStack> getEquipped(@Nonnull EquipmentSlot slot) {
+        ItemStack equippedStack = this.equipped.get(slot);
+        return equippedStack == null || equippedStack.isEmpty() ? Optional.empty() : Optional.of(equippedStack);
+    }
+
+    public Optional<ItemStack> setEquipped(@Nonnull EquipmentSlot slot, @Nullable ItemStack newItem) {
+        ItemStack previous = this.equipped.get(slot);
+
+        if (newItem == null || newItem.isEmpty()) {
+            this.equipped.remove(slot);
+        } else {
+            // The loadout owns its stored stacks so behavior code cannot mutate equipment by retaining a reference.
+            this.equipped.put(slot, newItem.copy());
+        }
+
+        this.inventoryVersion++;
+        return previous == null || previous.isEmpty() ? Optional.empty() : Optional.of(previous);
+    }
+
+    @Override
+    public Set<EquipmentSlot> occupiedSlots() {
+        EnumSet<EquipmentSlot> occupiedSlots = EnumSet.noneOf(EquipmentSlot.class);
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            ItemStack stack = this.equipped.get(slot);
+            if (stack != null && !stack.isEmpty()) {
+                occupiedSlots.add(slot);
+            }
+        }
+
+        return Collections.unmodifiableSet(occupiedSlots);
     }
 
     /**
@@ -149,20 +186,14 @@ public class VillagerInventory {
      * Sets main-hand item, returning the previous item if present
      */
     public Optional<ItemStack> setMainHand(ItemStack newItem) {
-        ItemStack previous = this.mainHand;
-        this.mainHand = (newItem == null || newItem.isEmpty()) ? ItemStack.EMPTY : newItem.copy();
-        this.inventoryVersion++;
-        return previous.isEmpty() ? Optional.empty() : Optional.of(previous);
+        return this.setEquipped(EquipmentSlot.MAIN_HAND, newItem);
     }
 
     /**
      * Sets off-hand item, returning the previous item if present
      */
     public Optional<ItemStack> setOffHand(ItemStack newItem) {
-        ItemStack previous = this.offHand;
-        this.offHand = (newItem == null || newItem.isEmpty()) ? ItemStack.EMPTY : newItem.copy();
-        this.inventoryVersion++;
-        return previous.isEmpty() ? Optional.empty() : Optional.of(previous);
+        return this.setEquipped(EquipmentSlot.OFF_HAND, newItem);
     }
 
 }
