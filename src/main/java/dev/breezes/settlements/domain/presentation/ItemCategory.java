@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.presentation;
 
+import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.FishingRodItem;
 import net.minecraft.world.item.HoeItem;
@@ -64,6 +65,9 @@ public enum ItemCategory {
         }
         if (stack.is(Items.SPYGLASS)) {
             return SPYGLASS;
+        }
+        if (stack.is(ItemRegistry.VILLAGER_FISHING_ROD.get())) {
+            return FISHING_ROD;
         }
 
         return GENERIC;

@@ -101,6 +101,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             .serializer(EntityDataSerializers.BYTE)
             .defaultValue(AnimationArchetype.IDLE.toNetworkByte())
             .build();
+    private static final SyncedDataWrapper<Boolean> DATA_BOBBER_DEPLOYED = SyncedDataWrapper.<Boolean>builder()
+            .entityClass(BaseVillager.class)
+            .serializer(EntityDataSerializers.BOOLEAN)
+            .defaultValue(false)
+            .build();
 
     private final GeneticsProfile genetics;
     private final IBrain settlementsBrain;
@@ -148,6 +153,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     protected void defineSynchedData(@Nonnull SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         DATA_MOTION_ARCHETYPE.define(builder);
+        DATA_BOBBER_DEPLOYED.define(builder);
     }
 
     public void setMotion(@Nonnull AnimationArchetype archetype) {
@@ -156,6 +162,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     public AnimationArchetype getMotion() {
         return AnimationArchetype.fromNetworkByte(DATA_MOTION_ARCHETYPE.get(this.entityData));
+    }
+
+    public void setBobberDeployed(boolean deployed) {
+        DATA_BOBBER_DEPLOYED.set(this.entityData, deployed);
+    }
+
+    public boolean isBobberDeployed() {
+        return DATA_BOBBER_DEPLOYED.get(this.entityData);
     }
 
     private void addStartingFood(@Nonnull VillagerInventory inventory) {

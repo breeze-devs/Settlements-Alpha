@@ -40,14 +40,18 @@ public final class InMemoryAttachmentDisplayProfileRegistry implements Attachmen
             profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, category), handTool);
         }
 
-        // Axes get their own profile because the socket is rig-level calibration, while blade alignment
-        // is category-level presentation tuning that should not accidentally rotate every hand-held tool.
-        AttachmentDisplayProfile axe = AttachmentDisplayProfile.builder()
+        // Declare custom model display profile overrides
+        profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.AXE), AttachmentDisplayProfile.builder()
                 .translation(new Vec3(0.0, -0.15, -0.1))
                 .rotation(new Vector3f(new Vector3f((float) Math.toRadians(-15), 0.0F, 0.0F)))
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
-                .build();
-        profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.AXE), axe);
+                .build());
+
+        profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.FISHING_ROD), AttachmentDisplayProfile.builder()
+                .translation(new Vec3(0.0, -0.25, -0.0))
+                .rotation(new Vector3f(new Vector3f((float) Math.toRadians(-50), 0.0F, 0.0F)))
+                .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                .build());
 
         return InMemoryAttachmentDisplayProfileRegistry.builder()
                 .profilesByKey(profiles)

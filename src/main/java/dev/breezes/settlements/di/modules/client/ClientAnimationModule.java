@@ -10,6 +10,7 @@ import dev.breezes.settlements.domain.animation.AnimationLibrary;
 import dev.breezes.settlements.domain.animation.AnimationResolver;
 import dev.breezes.settlements.domain.animation.ButcheringAnimations;
 import dev.breezes.settlements.domain.animation.DefaultAnimationResolver;
+import dev.breezes.settlements.domain.animation.FishingAnimations;
 import dev.breezes.settlements.domain.animation.InMemoryAnimationLibrary;
 import dev.breezes.settlements.domain.presentation.ItemCategory;
 
@@ -25,8 +26,15 @@ public abstract class ClientAnimationModule {
     @ClientSessionScope
     static AnimationLibrary animationLibrary() {
         return InMemoryAnimationLibrary.builder()
-                .animations(Map.of(
-                        AnimationKey.of(AnimationArchetype.SWING_HEAVY, ItemCategory.AXE), ButcheringAnimations.swingHeavyAxe()))
+                .animations(Map.ofEntries(
+                        Map.entry(AnimationKey.of(AnimationArchetype.SWING_HEAVY, ItemCategory.AXE),
+                                ButcheringAnimations.swingHeavyAxe()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.CAST, ItemCategory.FISHING_ROD),
+                                FishingAnimations.cast()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.REEL_OUT, ItemCategory.FISHING_ROD),
+                                FishingAnimations.jigFight()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.REEL_IN, ItemCategory.FISHING_ROD),
+                                FishingAnimations.reelYank())))
                 .build();
     }
 
