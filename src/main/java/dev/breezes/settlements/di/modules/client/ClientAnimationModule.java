@@ -12,6 +12,7 @@ import dev.breezes.settlements.domain.animation.ButcheringAnimations;
 import dev.breezes.settlements.domain.animation.DefaultAnimationResolver;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
 import dev.breezes.settlements.domain.animation.InMemoryAnimationLibrary;
+import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.presentation.ItemCategory;
 
 import java.util.Map;
@@ -34,7 +35,9 @@ public abstract class ClientAnimationModule {
                         Map.entry(AnimationKey.of(AnimationArchetype.REEL_OUT, ItemCategory.FISHING_ROD),
                                 FishingAnimations.jigFight()),
                         Map.entry(AnimationKey.of(AnimationArchetype.REEL_IN, ItemCategory.FISHING_ROD),
-                                FishingAnimations.reelYank())))
+                                FishingAnimations.reelYank()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.INTERACT, ItemCategory.GENERIC),
+                                InteractAnimations.interact())))
                 .build();
     }
 

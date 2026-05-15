@@ -15,6 +15,8 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFullHiveExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -87,9 +89,10 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ClockTicks.seconds(2).asTickable())
                 .onStart(context -> {
                     context.getInitiator().setHeldItem(Items.GLASS_BOTTLE.getDefaultInstance());
+                    context.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.seconds(1), this::performHarvest)
+                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), this::performHarvest)
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
                     if (this.harvestsRemaining > 0 && this.selectFreshTarget(context.getInitiator().getMinecraftEntity(), context.getInitiator().getMinecraftEntity().level(), context)) {
@@ -145,6 +148,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         }
 
         villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
         villager.getNavigationManager().stop();
         this.targetHivePos = null;
         this.harvestsRemaining = 0;

@@ -21,9 +21,9 @@ public final class AttachmentDisplayProfile {
     @Nullable
     private final ItemDisplayContext displayContextOverride;
 
-    public static AttachmentDisplayProfile identity() {
+    public static AttachmentDisplayProfile generic() {
         return AttachmentDisplayProfile.builder()
-                .translation(Vec3.ZERO)
+                .translation(new Vec3(0, -0.1, 0))
                 .rotation(new Vector3f())
                 .scale(DEFAULT_SCALE)
                 .build();

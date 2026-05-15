@@ -19,7 +19,7 @@ class VillagerAnimatorTest {
         VillagerAnimator animator = new VillagerAnimator(resolver);
 
         // Act
-        animator.onArchetypeChanged(AnimationArchetype.SWING_HEAVY, AnimationSelectionContext.generic(), 20L);
+        animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 1, AnimationSelectionContext.generic(), 20L);
         AnimationFrame frame = animator.sample(20L, 0.0F);
 
         // Assert
@@ -35,10 +35,10 @@ class VillagerAnimatorTest {
                 AnimationArchetype.HOLD_TOOL_VERTICAL, constantAnimation("hold", 10.0F, 0),
                 AnimationArchetype.SWING_HEAVY, constantAnimation("swing", 20.0F, 4)));
         VillagerAnimator animator = new VillagerAnimator(resolver);
-        animator.onArchetypeChanged(AnimationArchetype.HOLD_TOOL_VERTICAL, AnimationSelectionContext.generic(), 0L);
+        animator.onMotionChanged(AnimationArchetype.HOLD_TOOL_VERTICAL, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Act
-        animator.onArchetypeChanged(AnimationArchetype.SWING_HEAVY, AnimationSelectionContext.generic(), 10L);
+        animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 2, AnimationSelectionContext.generic(), 10L);
         AnimationFrame frame = animator.sample(12L, 0.0F);
 
         // Assert
@@ -53,10 +53,10 @@ class VillagerAnimatorTest {
                 AnimationArchetype.HOLD_TOOL_VERTICAL, constantAnimation("hold", 10.0F, 0),
                 AnimationArchetype.SWING_HEAVY, animation("swing", 4, List.of())));
         VillagerAnimator animator = new VillagerAnimator(resolver);
-        animator.onArchetypeChanged(AnimationArchetype.HOLD_TOOL_VERTICAL, AnimationSelectionContext.generic(), 0L);
+        animator.onMotionChanged(AnimationArchetype.HOLD_TOOL_VERTICAL, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Act
-        animator.onArchetypeChanged(AnimationArchetype.SWING_HEAVY, AnimationSelectionContext.generic(), 10L);
+        animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 2, AnimationSelectionContext.generic(), 10L);
         AnimationFrame frame = animator.sample(12L, 0.0F);
 
         // Assert

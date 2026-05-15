@@ -47,7 +47,7 @@ class InMemoryAttachmentDisplayProfileRegistryTest {
     }
 
     @Test
-    void get_fallsBackToIdentityWhenNoSlotProfileExists() {
+    void get_fallsBackToGenericWhenNoSlotProfileExists() {
         // Arrange
         InMemoryAttachmentDisplayProfileRegistry registry = InMemoryAttachmentDisplayProfileRegistry.builder()
                 .profilesByKey(Map.of())

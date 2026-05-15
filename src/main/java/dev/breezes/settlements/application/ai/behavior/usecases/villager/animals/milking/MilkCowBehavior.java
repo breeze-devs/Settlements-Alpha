@@ -15,6 +15,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyMilkableCowExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -84,6 +85,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ClockTicks.seconds(2).asTickable())
                 .onStart(context -> {
                     context.getInitiator().setHeldItem(Items.BUCKET.getDefaultInstance());
+                    context.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
                     return StepResult.noOp();
                 })
                 .addKeyFrame(ClockTicks.seconds(1), this::performMilk)
@@ -156,6 +158,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
 
         this.target = null;
         this.milkCountRemaining = 0;

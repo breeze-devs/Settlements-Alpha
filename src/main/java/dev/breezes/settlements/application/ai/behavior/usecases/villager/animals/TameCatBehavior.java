@@ -16,6 +16,8 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -108,13 +110,11 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(ctx -> {
                     this.attemptsRemaining = Math.max(0, this.attemptsRemaining - 1);
-                    return StepResult.noOp();
-                })
-                .everyTick(ctx -> {
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
                     ctx.getInitiator().setHeldItem(Items.COD.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.seconds(0.5), ctx -> {
+                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), ctx -> {
                     Optional<Cat> catOptional = this.getTargetCat(ctx);
                     if (catOptional.isEmpty()) {
                         return StepResult.complete();
@@ -208,6 +208,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
         }
 
         villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
         this.shouldRewardExperience = false;
     }
 

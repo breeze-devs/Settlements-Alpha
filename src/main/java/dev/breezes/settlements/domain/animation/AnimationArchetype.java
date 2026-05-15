@@ -15,6 +15,7 @@ public enum AnimationArchetype {
     TILL_UP,
     POINT,
     CELEBRATE,
+    INTERACT,
     ;
 
     private static final AnimationArchetype[] VALUES = values();

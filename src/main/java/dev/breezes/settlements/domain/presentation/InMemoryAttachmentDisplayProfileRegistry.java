@@ -14,7 +14,7 @@ import java.util.Map;
 
 public final class InMemoryAttachmentDisplayProfileRegistry implements AttachmentDisplayProfileRegistry {
 
-    private static final AttachmentDisplayProfile IDENTITY = AttachmentDisplayProfile.identity();
+    private static final AttachmentDisplayProfile IDENTITY = AttachmentDisplayProfile.generic();
 
     private final Map<AttachmentDisplayProfileKey, AttachmentDisplayProfile> profilesByKey;
 

@@ -16,6 +16,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
@@ -152,6 +153,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         villager.getNavigationManager().stop();
         this.setFurnaceLitState(false);
         villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
         this.setFurnaceLockState(false);
 
         this.blastFurnace = null;
@@ -172,6 +174,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     }
 
                     ctx.getInitiator().setHeldItem(this.currentRecipe.createInputStack());
+                    villager.triggerMotion(AnimationArchetype.INTERACT);
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
@@ -180,6 +183,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     }
 
                     ctx.getInitiator().clearHeldItem();
+                    ctx.getInitiator().getMinecraftEntity().setMotion(AnimationArchetype.IDLE);
                     this.setFurnaceLitState(true);
                     Location location = this.blastFurnace.getLocation(true).add(0, 0.5, 0, false);
                     location.displayParticles(ParticleTypes.LAVA, 5, 0.3, 0.3, 0.3, 0.1);
@@ -200,6 +204,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     this.storeOrDropOutput(villager, this.currentRecipe);
 
                     ctx.getInitiator().setHeldItem(this.currentRecipe.createOutputStack());
+                    villager.triggerMotion(AnimationArchetype.INTERACT);
                     SoundRegistry.ITEM_POP_OUT.playGlobally(this.blastFurnace.getLocation(true).add(0, 0.5, 0, false), SoundSource.BLOCKS);
                     return StepResult.noOp();
                 })

@@ -14,6 +14,8 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBlockExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -71,7 +73,11 @@ public class RingBellBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createRingBellStep() {
         TimeBasedStep<BaseVillager> actionStep = TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.ONE.asTickable())
+                .withTickable(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS).asTickable())
+                .onStart(context -> {
+                    context.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
+                    return StepResult.noOp();
+                })
                 .onEnd(context -> {
                     if (this.bellPos == null) {
                         return StepResult.complete();
@@ -121,6 +127,7 @@ public class RingBellBehavior extends VillagerStateMachineBehavior {
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
+        villager.setMotion(AnimationArchetype.IDLE);
         this.bellPos = null;
     }
 

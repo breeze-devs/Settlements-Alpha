@@ -12,6 +12,8 @@ public final class VillagerAnimator {
     private final AnimationResolver animationResolver;
     @Getter
     private AnimationArchetype lastSeenArchetype;
+    @Getter
+    private byte lastSeenGeneration;
     private AnimationSelectionContext lastResolvedContext;
     private KeyframeAnimation currentAnimation;
     private long currentStartGameTime;
@@ -22,15 +24,17 @@ public final class VillagerAnimator {
     public VillagerAnimator(@Nonnull AnimationResolver animationResolver) {
         this.animationResolver = animationResolver;
         this.lastSeenArchetype = AnimationArchetype.IDLE;
+        this.lastSeenGeneration = 0;
         this.lastResolvedContext = AnimationSelectionContext.generic();
         this.currentAnimation = animationResolver.resolve(AnimationArchetype.IDLE, AnimationSelectionContext.generic());
         this.currentStartGameTime = 0L;
     }
 
-    public void onArchetypeChanged(@Nonnull AnimationArchetype newArchetype,
-                                   @Nonnull AnimationSelectionContext context,
-                                   long gameTime) {
-        if (newArchetype == this.lastSeenArchetype) {
+    public void onMotionChanged(@Nonnull AnimationArchetype newArchetype,
+                                byte newGeneration,
+                                @Nonnull AnimationSelectionContext context,
+                                long gameTime) {
+        if (newArchetype == this.lastSeenArchetype && newGeneration == this.lastSeenGeneration) {
             return;
         }
 
@@ -39,10 +43,11 @@ public final class VillagerAnimator {
         this.currentAnimation = this.animationResolver.resolve(newArchetype, context);
         this.currentStartGameTime = gameTime;
         this.lastSeenArchetype = newArchetype;
+        this.lastSeenGeneration = newGeneration;
         this.lastResolvedContext = context;
 
-        log.debug("VillagerAnimator: archetype change {} -> {} (context: {}), resolved '{}' [blend in: {} ticks, loop: {}]",
-                this.outgoingAnimation.getId(), newArchetype,
+        log.debug("VillagerAnimator: motion change {} -> {} (gen={}, context: {}), resolved '{}' [blend in: {} ticks, loop: {}]",
+                this.outgoingAnimation.getId(), newArchetype, newGeneration,
                 context.mainHandCategory(),
                 this.currentAnimation.getId(),
                 this.currentAnimation.getBlendInTicks(),

@@ -84,13 +84,14 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
                 .clientAnimatorRegistry()
                 .getOrCreate(villager);
         AnimationArchetype currentMotion = villager.getMotion();
+        byte currentGeneration = villager.getMotionGeneration();
         long gameTime = villager.level().getGameTime();
 
-        if (animator.getLastSeenArchetype() != currentMotion) {
+        if (animator.getLastSeenArchetype() != currentMotion || animator.getLastSeenGeneration() != currentGeneration) {
             AnimationSelectionContext ctx = selectionContext(villager);
-            log.debug("Renderer: entity {} archetype {} -> {} (main hand: {})",
-                    villager.getId(), animator.getLastSeenArchetype(), currentMotion, ctx.mainHandCategory());
-            animator.onArchetypeChanged(currentMotion, ctx, gameTime);
+            log.debug("Renderer: entity {} motion {} -> {} (gen={}, main hand: {})",
+                    villager.getId(), animator.getLastSeenArchetype(), currentMotion, currentGeneration, ctx.mainHandCategory());
+            animator.onMotionChanged(currentMotion, currentGeneration, ctx, gameTime);
         } else {
             // Re-evaluate context every frame so item category changes caused by the 1-frame
             // equipment-sync lag after archetype sync are caught and resolved correctly.

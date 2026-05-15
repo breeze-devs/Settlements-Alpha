@@ -102,6 +102,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             .serializer(EntityDataSerializers.BYTE)
             .defaultValue(AnimationArchetype.IDLE.toNetworkByte())
             .build();
+    private static final SyncedDataWrapper<Byte> DATA_MOTION_GENERATION = SyncedDataWrapper.<Byte>builder()
+            .entityClass(BaseVillager.class)
+            .serializer(EntityDataSerializers.BYTE)
+            .defaultValue((byte) 0)
+            .build();
     private static final SyncedDataWrapper<Boolean> DATA_BOBBER_DEPLOYED = SyncedDataWrapper.<Boolean>builder()
             .entityClass(BaseVillager.class)
             .serializer(EntityDataSerializers.BOOLEAN)
@@ -154,15 +159,50 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     protected void defineSynchedData(@Nonnull SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         DATA_MOTION_ARCHETYPE.define(builder);
+        DATA_MOTION_GENERATION.define(builder);
         DATA_BOBBER_DEPLOYED.define(builder);
     }
 
+    /**
+     * Sets the continuous animation state for this entity.
+     * <p>
+     * This method is <b>idempotent</b>. Setting the same archetype repeatedly
+     * (e.g., every tick) will not interrupt or restart the current animation cycle.
+     * Use this for continuous, looping states where the animation should persist
+     * smoothly until a new state is applied.
+     * <p>
+     * <b>Examples:</b> {@code IDLE}, {@code WALK}, {@code HOLDING}
+     *
+     * @param archetype The continuous animation state to apply.
+     * @see #triggerMotion(AnimationArchetype) for one-shot actions.
+     */
     public void setMotion(@Nonnull AnimationArchetype archetype) {
+        DATA_MOTION_ARCHETYPE.set(this.entityData, archetype.toNetworkByte());
+    }
+
+    /**
+     * Triggers a discrete, one-shot animation, forcing it to play from the beginning.
+     * <p>
+     * Unlike {@link #setMotion(AnimationArchetype)}, calling this method will <i>always</i>
+     * force the client to restart the animation from frame 0, even if the requested archetype
+     * is the same as the current one.
+     * <p>
+     * <b>Examples:</b> {@code SWING_HEAVY}, {@code INTERACT}, {@code CELEBRATE}
+     *
+     * @param archetype The one-shot animation to trigger.
+     */
+    public void triggerMotion(@Nonnull AnimationArchetype archetype) {
+        // Generation counter intentionally wraps from 127 to -128 on overflow
+        DATA_MOTION_GENERATION.set(this.entityData, (byte) (DATA_MOTION_GENERATION.get(this.entityData) + 1));
         DATA_MOTION_ARCHETYPE.set(this.entityData, archetype.toNetworkByte());
     }
 
     public AnimationArchetype getMotion() {
         return AnimationArchetype.fromNetworkByte(DATA_MOTION_ARCHETYPE.get(this.entityData));
+    }
+
+    public byte getMotionGeneration() {
+        return DATA_MOTION_GENERATION.get(this.entityData);
     }
 
     public void setBobberDeployed(boolean deployed) {

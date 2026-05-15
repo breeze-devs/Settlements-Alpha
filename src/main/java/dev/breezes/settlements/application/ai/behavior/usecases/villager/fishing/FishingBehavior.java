@@ -205,7 +205,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ClockTicks.of(FishingAnimations.CAST_DURATION_TICKS).asTickable())
                 .onStart(context -> {
                     ISettlementsVillager villager = context.getInitiator();
-                    villager.getMinecraftEntity().setMotion(AnimationArchetype.CAST);
+                    context.getInitiator().triggerMotion(AnimationArchetype.CAST);
                     villager.setHeldItem(ItemRegistry.VILLAGER_FISHING_ROD.get().getDefaultInstance());
                     this.lookAtWater(villager);
                     return StepResult.noOp();
@@ -306,7 +306,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ClockTicks.of(FishingAnimations.REEL_DURATION_TICKS).asTickable())
                 .onStart(context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
-                    villager.setMotion(AnimationArchetype.REEL_IN);
+                    villager.triggerMotion(AnimationArchetype.REEL_IN);
                     this.lookAtWater(context.getInitiator());
                     return StepResult.noOp();
                 })

@@ -22,6 +22,8 @@ import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
@@ -152,13 +154,11 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(context -> {
                     this.shearCount.decrementAndGet();
-                    return StepResult.noOp();
-                })
-                .everyTick(context -> {
+                    context.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
                     context.getInitiator().setHeldItem(Items.SHEARS.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.seconds(0.5), context -> {
+                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), context -> {
                     Optional<Sheep> sheepOptional = this.getTargetSheep(context);
                     if (sheepOptional.isEmpty()) {
                         return StepResult.complete();
@@ -248,6 +248,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
         this.shouldRewardExperience = false;
     }
 

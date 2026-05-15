@@ -17,6 +17,8 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -116,13 +118,11 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                 .onStart(ctx -> {
                     // Consume one attempt when we start the action window
                     this.attemptsRemaining = Math.max(0, this.attemptsRemaining - 1);
-                    return StepResult.noOp();
-                })
-                .everyTick(ctx -> {
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
                     ctx.getInitiator().setHeldItem(Items.BONE.getDefaultInstance());
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.seconds(0.5), ctx -> {
+                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), ctx -> {
                     Optional<Wolf> wolfOptional = this.getTargetWolf(ctx);
                     if (wolfOptional.isEmpty()) {
                         return StepResult.complete();
@@ -233,6 +233,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
         }
 
         villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
         this.shouldRewardExperience = false;
     }
 

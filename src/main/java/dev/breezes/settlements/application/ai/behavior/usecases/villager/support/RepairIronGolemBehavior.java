@@ -16,6 +16,8 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyDamagedIronGolemExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -82,11 +84,12 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createRepairStep() {
         TimeBasedStep<BaseVillager> repairTick = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(2).asTickable())
-                .everyTick(ctx -> {
+                .onStart(ctx -> {
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
                     ctx.getInitiator().setHeldItem(new ItemStack(Items.IRON_INGOT));
                     return StepResult.noOp();
                 })
-                .onEnd(ctx -> {
+                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), ctx -> {
                     if (this.targetToRepair == null || !this.targetToRepair.isAlive()) {
                         return StepResult.complete();
                     }
@@ -148,6 +151,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
         this.targetToRepair = null;
         this.remainingRepairAttempts = 0;
         this.shouldRewardExperience = false;

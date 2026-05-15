@@ -15,6 +15,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.ButcheringAnimations;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -94,16 +95,16 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createButcherStep() {
         TimeBasedStep<BaseVillager> butcherStep = TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.seconds(2).asTickable())
+                .withTickable(ClockTicks.of(ButcheringAnimations.SWING_DURATION_TICKS).asTickable())
                 .onStart(context -> {
                     BaseVillager villager = context.getInitiator();
                     villager.setHeldItem(Items.IRON_AXE.getDefaultInstance());
 
                     // Start the swing before the action frame so the gameplay effect lands on the visual impact.
-                    context.getInitiator().setMotion(AnimationArchetype.SWING_HEAVY);
+                    context.getInitiator().triggerMotion(AnimationArchetype.SWING_HEAVY);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.seconds(1), context -> {
+                .addKeyFrame(ClockTicks.of(ButcheringAnimations.SWING_IMPACT_TICKS), context -> {
                     if (this.target == null || !this.target.isAlive()) {
                         context.getInitiator().setMotion(AnimationArchetype.IDLE);
                         return StepResult.complete();

@@ -16,6 +16,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -162,6 +163,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
 
         if (this.breedTarget1 != null) {
             this.claimNearbyBabyAnimals(villager, this.breedTarget1.getType());
@@ -195,6 +197,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
                     }
 
                     ctx.getInitiator().setHeldItem(this.heldItem);
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
