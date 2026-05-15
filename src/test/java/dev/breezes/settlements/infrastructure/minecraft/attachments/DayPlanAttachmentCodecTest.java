@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DayPlanAttachmentCodecTest {
 
@@ -28,7 +27,7 @@ class DayPlanAttachmentCodecTest {
                 .slot(pendingSlot)
                 .slot(completedSlot)
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(42L)
+                .wakeAtAbsoluteTick(47_000L)
                 .status(PlanStatus.ACTIVE)
                 .currentSlotIndex(1)
                 .schedule(schedule(23_000))
@@ -46,7 +45,7 @@ class DayPlanAttachmentCodecTest {
 
         // Assert
         assertEquals(PlanDayType.WORK_DAY, decoded.getDayType());
-        assertEquals(42L, decoded.getGeneratedForDay());
+        assertEquals(47_000L, decoded.getWakeAtAbsoluteTick());
         assertEquals(1, decoded.getCurrentSlotIndex());
         assertEquals(23_000, decoded.getDayStartTick());
         assertEquals(23_000, decoded.getSchedule().wakeTick());
@@ -64,7 +63,7 @@ class DayPlanAttachmentCodecTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(BehaviorKey.HARVEST_SUGARCANE, 2_000, PlanSlotStatus.ACTIVE))
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(7L)
+                .wakeAtAbsoluteTick(7L)
                 .schedule(schedule(0))
                 .status(PlanStatus.SUSPENDED)
                 .build();

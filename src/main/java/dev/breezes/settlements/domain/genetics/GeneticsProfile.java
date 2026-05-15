@@ -55,6 +55,10 @@ public class GeneticsProfile {
         return Collections.unmodifiableMap(this.genes);
     }
 
+    public GeneticsProfile copy() {
+        return new GeneticsProfile(this.genes);
+    }
+
     /**
      * Create a new child profile by crossing over this profile with the other parent.
      */

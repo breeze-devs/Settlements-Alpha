@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HeuristicPlanGeneratorTest {
 
-    private final HeuristicPlanGenerator generator = new HeuristicPlanGenerator();
+    private final HeuristicPlanGenerator generator = new HeuristicPlanGenerator(new WakeTickResolver());
 
     @Test
     void generate_producesValidWorkDayPlanForEveryDefaultProfession() {
@@ -198,17 +198,17 @@ class HeuristicPlanGeneratorTest {
     }
 
     @Test
-    void generate_usesContextGameDayAsGeneratedForDay() {
+    void generate_usesContextWakeAtAbsoluteTick() {
         // Arrange
-        long gameDay = 47L;
+        long wakeAtAbsoluteTick = 47_000L;
         PlanGenerationContext context = context(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY,
-                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors(), gameDay);
+                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors(), wakeAtAbsoluteTick);
 
         // Act
         DayPlan plan = this.generator.generate(context);
 
         // Assert
-        assertEquals(gameDay, plan.getGeneratedForDay());
+        assertEquals(wakeAtAbsoluteTick, plan.getWakeAtAbsoluteTick());
     }
 
     private static PlanGenerationContext context(VillagerProfessionKey profession, PlanDayType dayType,
@@ -220,7 +220,7 @@ class HeuristicPlanGeneratorTest {
     private static PlanGenerationContext context(VillagerProfessionKey profession, PlanDayType dayType,
                                                  GeneticsProfile genetics,
                                                  List<BehaviorPlanningMetadata> descriptors,
-                                                 long gameDay) {
+                                                 long wakeAtAbsoluteTick) {
         return PlanGenerationContext.builder()
                 .profession(profession)
                 .genetics(genetics)
@@ -228,7 +228,7 @@ class HeuristicPlanGeneratorTest {
                 .restDayPolicy(RestDayPolicy.defaultFor(profession))
                 .dayType(dayType)
                 .availableBehaviors(descriptorsFor(profession, descriptors))
-                .gameDay(gameDay)
+                .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
                 .build();
     }
 

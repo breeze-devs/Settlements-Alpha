@@ -1,10 +1,10 @@
 package dev.breezes.settlements.application.ui.dayplan;
 
-import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.application.ui.dayplan.model.DayPlanSlotSnapshot;
 import dev.breezes.settlements.application.ui.dayplan.model.DayPlanSlotVisualStatus;
 import dev.breezes.settlements.application.ui.dayplan.model.DayPlanSnapshot;
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
@@ -39,7 +39,7 @@ public final class DayPlanSnapshotAssembler {
                 .toList();
 
         return DayPlanSnapshot.builder()
-                .dayNumber(dayPlan.getGeneratedForDay())
+                .dayNumber(dayPlan.getAuthoredDayNumber())
                 .dayType(dayPlan.getDayType())
                 .currentTime(formatTime(currentDayTick))
                 .planStatus(dayPlan.getStatus())

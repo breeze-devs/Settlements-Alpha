@@ -248,6 +248,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     }
 
     @Override
+    public void remove(@Nonnull RemovalReason reason) {
+        this.planRuntimeState.clearPendingGeneration();
+        super.remove(reason);
+    }
+
+    @Override
     public void refreshBrain(@Nonnull ServerLevel level) {
         Brain<Villager> brain = this.getBrain();
         brain.stopAll(level, this);

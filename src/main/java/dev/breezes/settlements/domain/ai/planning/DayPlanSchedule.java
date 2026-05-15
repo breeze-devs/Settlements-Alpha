@@ -6,6 +6,8 @@ import lombok.Singular;
 
 import java.util.List;
 
+import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
+
 @Builder
 public record DayPlanSchedule(
         int wakeTick,
@@ -20,6 +22,10 @@ public record DayPlanSchedule(
         if (!TimeOfDay.isValidTick(bedtimeTick)) {
             throw new IllegalArgumentException("bedtimeTick must be between 0 and 23999");
         }
+    }
+
+    public int authoredDayDurationTicks() {
+        return Math.floorMod(this.bedtimeTick - this.wakeTick, TICKS_PER_DAY);
     }
 
 }

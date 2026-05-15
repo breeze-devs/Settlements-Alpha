@@ -79,7 +79,7 @@ public class PlanRunnerBehavior extends Behavior<Villager> {
 
         if (activeActivity.isEmpty() || !MANAGED_ACTIVITIES.contains(activeActivity.get())) {
             this.planRunner.suspendIfActive(level, baseVillager);
-            this.planRunner.ensurePlanForCurrentDay(level, baseVillager);
+            this.planRunner.ensureValidPlan(level, baseVillager);
             return;
         }
 

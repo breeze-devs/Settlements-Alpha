@@ -1,11 +1,11 @@
 package dev.breezes.settlements.di;
 
 import dagger.Subcomponent;
+import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
 import dev.breezes.settlements.application.ai.genetics.PersonalityDeriver;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
-import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.settlement.persistence.SettlementMetadataQueueService;
@@ -32,6 +32,7 @@ import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructur
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketReceiver;
 
 import javax.inject.Provider;
+import java.util.concurrent.ExecutorService;
 
 @ServerScope
 @Subcomponent(modules = {
@@ -84,6 +85,8 @@ public interface ServerComponent {
     SettlementStructureLocator settlementStructureLocator();
 
     TradeSessionRegistry tradeSessionRegistry();
+
+    ExecutorService planGenerationExecutor();
 
     // Exposed for VillagerFishingHook (non-injectable Minecraft entity, server-only)
     FishCatchDataManager fishCatchDataManager();

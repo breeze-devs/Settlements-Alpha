@@ -7,7 +7,9 @@ import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
+import dev.breezes.settlements.domain.ai.planning.IAsyncPlanGenerator;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
+import dev.breezes.settlements.domain.ai.planning.IWakeTickResolver;
 import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
 import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.planning.PlanSlotStatus;
@@ -17,6 +19,7 @@ import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
 import lombok.AccessLevel;
@@ -26,8 +29,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
 
@@ -39,32 +44,48 @@ import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public class PlanRunner {
 
-    private static final String RESET_REASON_GAME_DAY_ROLLOVER = "gameDay rollover";
+    private static final String RESET_REASON_MISSING_PLAN = "missing plan";
+    private static final String RESET_REASON_MISSING_SUCCESSOR = "missing successor plan";
+    private static final String RESET_REASON_ASYNC_OVERRUN = "async plan generation overrun";
     private static final String RESET_REASON_BACKWARD_JUMP = "backward dayTime jump";
     private static final String RESET_REASON_BACKWARD_WHILE_UNLOADED = "backward dayTime jump while unloaded";
 
     private final IBehaviorCatalog catalog;
     private final BehaviorPoolResolver behaviorPoolResolver;
     private final IPlanGenerator planGenerator;
+    private final IAsyncPlanGenerator asyncPlanGenerator;
     private final IWeekCycleProvider weekCycleProvider;
+    private final IWakeTickResolver wakeTickResolver;
 
     public void tick(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
         PlanRuntimeState runtime = villager.getPlanRuntimeState();
         long dayTime = level.getDayTime();
         int dayTick = currentDayTick(dayTime);
-        long gameDay = currentGameDay(dayTime);
         DeltaResult delta = runtime.advanceClock(dayTime);
 
-        DayPlan plan = villager.getDayPlan();
-        if (plan == null || plan.getGeneratedForDay() != gameDay) {
-            // Plans are scoped to a Minecraft gameDay; carrying old-day intent into a new day desynchronizes meals and work blocks.
-            plan = this.hardReset(level, villager, runtime, gameDay, dayTick, dayTime, RESET_REASON_GAME_DAY_ROLLOVER, delta);
+        this.drainPendingArrivals(runtime, villager);
+        DayPlan adopted = this.adoptPendingIfReady(villager, runtime, dayTime);
+        DayPlan plan = adopted != null ? adopted : villager.getDayPlan();
+
+        if (this.shouldFallbackFromAsyncOverrun(runtime, dayTime)) {
+            runtime.cancelPendingFuture();
+            plan = this.hardReset(level, villager, runtime, dayTime, RESET_REASON_ASYNC_OVERRUN, delta);
         } else if (delta.backwardJump()) {
             // Backward jumps invalidate chronological slot ordering, so retrying the existing cursor would replay future intent in the past.
-            plan = this.hardReset(level, villager, runtime, gameDay, dayTick, dayTime, RESET_REASON_BACKWARD_JUMP, delta);
+            plan = this.hardReset(level, villager, runtime, dayTime, RESET_REASON_BACKWARD_JUMP, delta);
+        } else if (plan == null) {
+            plan = this.hardReset(level, villager, runtime, dayTime, RESET_REASON_MISSING_PLAN, delta);
+        } else if (runtime.isPlanExhausted()) {
+            // Once exhausted, generation/adoption owns progress; ticking slots here just repeats cleanup work.
+            return;
+        } else if (this.isPlanOverdue(plan, dayTime)) {
+            log.behaviorWarn("Plan overdue backstop fired for villager {}: dayTime={}, wakeAtAbsoluteTick={}",
+                    villager.getUUID(), dayTime, plan.getWakeAtAbsoluteTick());
+            this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
+            return;
         } else if (delta.firstTick() && detectOnLoadBackward(plan, dayTick, plan.getDayStartTick())) {
             // Runtime clocks are transient across reloads; persisted slot order is the only reliable signal for unloaded time travel.
-            plan = this.hardReset(level, villager, runtime, gameDay, dayTick, dayTime, RESET_REASON_BACKWARD_WHILE_UNLOADED, delta);
+            plan = this.hardReset(level, villager, runtime, dayTime, RESET_REASON_BACKWARD_WHILE_UNLOADED, delta);
         } else if (delta.deltaTicks() == 0) {
             // Frozen daylight should freeze planned behavior too, otherwise villagers drift through schedules while the world clock is paused.
             return;
@@ -73,39 +94,51 @@ public class PlanRunner {
             runSeekLoop(plan, dayTick, plan.getDayStartTick());
         }
 
-        if (plan.isExhausted()) {
-            plan.markStatus(PlanStatus.COMPLETED);
-            this.clearPlanActiveMemory(villager);
-            runtime.clearCurrentBehavior();
+        if (plan.isExhausted() || plan.getCurrentSlot().isEmpty()) {
+            this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
             return;
         }
 
-        Optional<PlanSlot> currentSlot = plan.getCurrentSlot();
-        if (currentSlot.isEmpty()) {
-            plan.markStatus(PlanStatus.COMPLETED);
-            this.clearPlanActiveMemory(villager);
-            runtime.clearCurrentBehavior();
-            return;
-        }
-
-        this.tickSlot(level, villager, plan, currentSlot.get(), runtime, delta.deltaTicks(), dayTick, plan.getDayStartTick());
+        this.tickSlot(level, villager, plan, plan.getCurrentSlot().get(), runtime,
+                delta.deltaTicks(), dayTick, plan.getDayStartTick());
     }
 
-    public void ensurePlanForCurrentDay(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
+    public void ensureValidPlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
         PlanRuntimeState runtime = villager.getPlanRuntimeState();
         long dayTime = level.getDayTime();
-        long gameDay = currentGameDay(dayTime);
-        DayPlan plan = villager.getDayPlan();
-        if (plan != null && plan.getGeneratedForDay() == gameDay) {
+        this.drainPendingArrivals(runtime, villager);
+        DayPlan plan = this.adoptPendingIfReady(villager, runtime, dayTime);
+        if (plan == null) {
+            plan = villager.getDayPlan();
+        }
+        if (plan != null && !this.isPlanOverdue(plan, dayTime)) {
             return;
         }
 
-        // REST can span the game-day boundary; prepare the new authored day without linear-time seeking from pre-wake ticks.
-        this.forceStop(level, villager);
-        runtime.reset(dayTime);
-        this.regeneratePlan(level, villager, gameDay);
-        log.behaviorStatus("Plan regenerated for villager {} during unmanaged activity: gameDay={}, dayTime={}",
-                villager.getUUID(), gameDay, dayTime);
+        DayPlan pendingNextPlan = runtime.getPendingNextPlan();
+        if (shouldWaitForPendingPlan(pendingNextPlan, dayTime)) {
+            return;
+        }
+
+        if (plan != null && pendingNextPlan == null) {
+            long nextWakeAtAbsoluteTick = this.nextWakeAtAbsoluteTick(villager, dayTime, plan.getWakeAtAbsoluteTick());
+            if (dayTime < nextWakeAtAbsoluteTick) {
+                this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
+                return;
+            }
+        }
+
+        String resetReason = plan == null ? RESET_REASON_MISSING_PLAN : RESET_REASON_MISSING_SUCCESSOR;
+        this.hardReset(level, villager, runtime, dayTime, resetReason,
+                DeltaResult.builder()
+                        .deltaTicks(1)
+                        .backwardJump(false)
+                        .firstTick(false)
+                        .rawDelta(0L)
+                        .previousDayTime(runtime.getPreviousPlanTickDayTime())
+                        .build());
+        log.behaviorStatus("Plan regenerated for villager {} during unmanaged activity: dayTime={}",
+                villager.getUUID(), dayTime);
     }
 
     public void suspendIfActive(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
@@ -218,23 +251,29 @@ public class PlanRunner {
         }
     }
 
-    private DayPlan generatePlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, long gameDay) {
+    private DayPlan generatePlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, long wakeAtAbsoluteTick) {
+        return this.planGenerator.generate(this.createGenerationContext(villager, wakeAtAbsoluteTick));
+    }
+
+    private PlanGenerationContext createGenerationContext(@Nonnull BaseVillager villager, long wakeAtAbsoluteTick) {
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerProfessionKey professionKey = new VillagerProfessionKey(profession.name());
-        PlanDayType dayType = this.weekCycleProvider.getDayType(gameDay);
-        return this.planGenerator.generate(PlanGenerationContext.builder()
+        long authoredDayNumber = wakeAtAbsoluteTick / TICKS_PER_DAY;
+        PlanDayType dayType = this.weekCycleProvider.getDayType(authoredDayNumber);
+        return PlanGenerationContext.builder()
                 .profession(professionKey)
-                .genetics(villager.getGenetics())
+                .genetics(villager.getGenetics().copy())
                 .scheduleProfile(ScheduleProfile.defaultFor(professionKey))
                 .restDayPolicy(RestDayPolicy.defaultFor(professionKey))
                 .dayType(dayType)
                 .availableBehaviors(this.behaviorPoolResolver.resolve(professionKey))
-                .gameDay(gameDay)
-                .build());
+                .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
+                .build();
     }
 
-    private DayPlan regeneratePlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, long gameDay) {
-        DayPlan newPlan = this.generatePlan(level, villager, gameDay);
+    private DayPlan regeneratePlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, long dayTime) {
+        long wakeAtAbsoluteTick = currentWakeAtOrBefore(villager, dayTime);
+        DayPlan newPlan = this.generatePlan(level, villager, wakeAtAbsoluteTick);
         villager.setDayPlan(newPlan);
         return newPlan;
     }
@@ -242,8 +281,6 @@ public class PlanRunner {
     private DayPlan hardReset(@Nonnull ServerLevel level,
                               @Nonnull BaseVillager villager,
                               @Nonnull PlanRuntimeState runtime,
-                              long gameDay,
-                              int dayTick,
                               long dayTime,
                               @Nonnull String reason,
                               @Nonnull DeltaResult delta) {
@@ -256,26 +293,147 @@ public class PlanRunner {
 
         this.forceStop(level, villager);
         runtime.reset(dayTime);
-        DayPlan newPlan = this.regeneratePlan(level, villager, gameDay);
-        runSeekLoop(newPlan, dayTick, newPlan.getDayStartTick());
+        DayPlan newPlan = this.regeneratePlan(level, villager, dayTime);
+        runSeekLoop(newPlan, currentDayTick(dayTime), newPlan.getDayStartTick());
 
-        this.logHardReset(villager, gameDay, dayTime, reason, delta);
+        this.logHardReset(villager, dayTime, reason, delta);
         return newPlan;
     }
 
     private void logHardReset(@Nonnull BaseVillager villager,
-                              long gameDay,
                               long dayTime,
                               @Nonnull String reason,
                               @Nonnull DeltaResult delta) {
-        if (RESET_REASON_GAME_DAY_ROLLOVER.equals(reason)) {
-            log.behaviorStatus("Plan hard reset for villager {}: reason={}, gameDay={}, dayTime={}, previousDayTime={}, rawDelta={}",
-                    villager.getUUID(), reason, gameDay, dayTime, delta.previousDayTime(), delta.rawDelta());
+        if (RESET_REASON_MISSING_PLAN.equals(reason) || RESET_REASON_MISSING_SUCCESSOR.equals(reason)) {
+            log.behaviorStatus("Plan hard reset for villager {}: reason={}, dayTime={}, previousDayTime={}, rawDelta={}",
+                    villager.getUUID(), reason, dayTime, delta.previousDayTime(), delta.rawDelta());
             return;
         }
 
-        log.behaviorWarn("Plan hard reset for villager {}: reason={}, gameDay={}, dayTime={}, previousDayTime={}, rawDelta={}",
-                villager.getUUID(), reason, gameDay, dayTime, delta.previousDayTime(), delta.rawDelta());
+        log.behaviorWarn("Plan hard reset for villager {}: reason={}, dayTime={}, previousDayTime={}, rawDelta={}",
+                villager.getUUID(), reason, dayTime, delta.previousDayTime(), delta.rawDelta());
+    }
+
+    private void drainPendingArrivals(@Nonnull PlanRuntimeState runtime, @Nonnull BaseVillager villager) {
+        DayPlan arrived;
+        while ((arrived = runtime.getPendingArrivals().poll()) != null) {
+            runtime.setPendingNextPlan(arrived);
+            runtime.clearPendingFuture();
+        }
+
+        CompletableFuture<DayPlan> future = runtime.getPendingFuture();
+        if (future != null && future.isCompletedExceptionally() && runtime.getPendingNextPlan() == null) {
+            // Failed workers cannot touch villager state; fallback generation runs here on the server thread.
+            long wakeAtAbsoluteTick = runtime.getPendingFutureWakeAtAbsoluteTick();
+            DayPlan fallback = this.planGenerator.generate(this.createGenerationContext(villager, wakeAtAbsoluteTick));
+            runtime.setPendingNextPlan(fallback);
+            runtime.clearPendingFuture();
+            log.behaviorWarn("Async plan generation failed for villager {}; sync fallback installed",
+                    villager.getUUID());
+        }
+    }
+
+    @Nullable
+    private DayPlan adoptPendingIfReady(@Nonnull BaseVillager villager, @Nonnull PlanRuntimeState runtime, long dayTime) {
+        DayPlan pending = runtime.getPendingNextPlan();
+        if (pending == null || dayTime < pending.getWakeAtAbsoluteTick()) {
+            return null;
+        }
+
+        villager.setDayPlan(pending);
+        runtime.reset(dayTime);
+        log.behaviorStatus("Plan adopted pre-generated plan at scheduled wake for villager {}: wakeAtAbsoluteTick={}",
+                villager.getUUID(), pending.getWakeAtAbsoluteTick());
+        return pending;
+    }
+
+    private void submitNextPlanAsync(@Nonnull ServerLevel level,
+                                     @Nonnull BaseVillager villager,
+                                     @Nonnull PlanRuntimeState runtime,
+                                     @Nonnull DayPlan currentPlan) {
+        if (runtime.getPendingNextPlan() != null || runtime.getPendingFuture() != null) {
+            return;
+        }
+
+        long dayTime = level.getDayTime();
+        long nextWakeAtAbsoluteTick = this.nextWakeAtAbsoluteTick(villager, dayTime, currentPlan.getWakeAtAbsoluteTick());
+        PlanGenerationContext context = this.createGenerationContext(villager, nextWakeAtAbsoluteTick);
+        CompletableFuture<DayPlan> future = this.asyncPlanGenerator.generateAsync(context);
+        runtime.setPendingFuture(future);
+        runtime.setPendingFutureSubmittedAtDayTime(dayTime);
+        runtime.setPendingFutureWakeAtAbsoluteTick(nextWakeAtAbsoluteTick);
+        future.whenComplete((plan, error) -> {
+            if (error != null) {
+                log.behaviorWarn("Async plan generation failed for villager {}: {}", villager.getUUID(), error.toString());
+                return;
+            }
+            runtime.getPendingArrivals().offer(plan);
+        });
+        log.behaviorStatus("Submitted async next-plan generation for villager {}: wakeAtAbsoluteTick={}",
+                villager.getUUID(), nextWakeAtAbsoluteTick);
+    }
+
+    private void completeExpiredPlanAndSubmitSuccessor(@Nonnull ServerLevel level,
+                                                       @Nonnull BaseVillager villager,
+                                                       @Nonnull PlanRuntimeState runtime,
+                                                       @Nonnull DayPlan plan) {
+        plan.markStatus(PlanStatus.COMPLETED);
+        this.clearPlanActiveMemory(villager);
+        runtime.clearCurrentBehavior();
+        if (!runtime.isPlanExhausted()) {
+            runtime.markPlanExhausted();
+            this.submitNextPlanAsync(level, villager, runtime, plan);
+        }
+    }
+
+    private boolean shouldFallbackFromAsyncOverrun(@Nonnull PlanRuntimeState runtime, long dayTime) {
+        CompletableFuture<DayPlan> pendingFuture = runtime.getPendingFuture();
+        DayPlan pendingNextPlan = runtime.getPendingNextPlan();
+        return pendingFuture != null
+                && !pendingFuture.isDone()
+                && pendingNextPlan == null
+                && runtime.isPlanExhausted()
+                && dayTime >= runtime.getPendingFutureWakeAtAbsoluteTick();
+    }
+
+    @VisibleForTesting
+    static boolean shouldWaitForPendingPlan(@Nullable DayPlan pendingNextPlan, long dayTime) {
+        return pendingNextPlan != null && dayTime < pendingNextPlan.getWakeAtAbsoluteTick();
+    }
+
+    private boolean isPlanOverdue(@Nonnull DayPlan plan, long dayTime) {
+        // Backstop for stuck slots or interrupt overflow where natural cursor exhaustion never fires.
+        return dayTime >= plan.getWakeAtAbsoluteTick() + plan.getSchedule().authoredDayDurationTicks();
+    }
+
+    private long currentWakeAtOrBefore(@Nonnull BaseVillager villager, long dayTime) {
+        long dayStart = floorToDay(dayTime);
+        long candidate = dayStart + this.wakeTickForDay(villager, dayStart / TICKS_PER_DAY);
+        if (candidate > dayTime) {
+            long previousDayStart = dayStart - TICKS_PER_DAY;
+            return Math.max(0L,
+                    previousDayStart + this.wakeTickForDay(villager, previousDayStart / TICKS_PER_DAY));
+        }
+        return candidate;
+    }
+
+    private long nextWakeAtAbsoluteTick(@Nonnull BaseVillager villager, long dayTime, long currentWakeAtAbsoluteTick) {
+        long dayStart = floorToDay(dayTime);
+        long candidate = dayStart + this.wakeTickForDay(villager, dayStart / TICKS_PER_DAY);
+        if (candidate <= currentWakeAtAbsoluteTick) {
+            long nextDayStart = dayStart + TICKS_PER_DAY;
+            return nextDayStart + this.wakeTickForDay(villager, nextDayStart / TICKS_PER_DAY);
+        }
+        return candidate;
+    }
+
+    private int wakeTickForDay(@Nonnull BaseVillager villager, long authoredDayNumber) {
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        VillagerProfessionKey professionKey = new VillagerProfessionKey(profession.name());
+        ScheduleProfile scheduleProfile = ScheduleProfile.defaultFor(professionKey);
+        PlanDayType dayType = this.weekCycleProvider.getDayType(authoredDayNumber);
+        GeneticsProfile genetics = villager.getGenetics();
+        return this.wakeTickResolver.resolveWakeTick(scheduleProfile, genetics, dayType);
     }
 
     @VisibleForTesting
@@ -343,9 +501,8 @@ public class PlanRunner {
         return Math.floorMod(dayTime, TICKS_PER_DAY);
     }
 
-    @VisibleForTesting
-    static long currentGameDay(long dayTime) {
-        return dayTime / TICKS_PER_DAY;
+    private static long floorToDay(long dayTime) {
+        return Math.floorDiv(dayTime, TICKS_PER_DAY) * TICKS_PER_DAY;
     }
 
 }

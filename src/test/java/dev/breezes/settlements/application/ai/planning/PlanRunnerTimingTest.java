@@ -107,7 +107,7 @@ class PlanRunnerTimingTest {
         DayPlan plan = DayPlan.builder()
                 .slot(firstRestDaySlot)
                 .dayType(PlanDayType.REST_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule(authoredDayStart))
                 .dayStartTick(authoredDayStart)
                 .build();
@@ -127,7 +127,7 @@ class PlanRunnerTimingTest {
                 .slot(slot(4_000, 600, PlanSlotStatus.COMPLETED))
                 .slot(slot(9_000, 600, PlanSlotStatus.PENDING))
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .currentSlotIndex(1)
                 .build();
@@ -145,7 +145,7 @@ class PlanRunnerTimingTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(4_000, 600, PlanSlotStatus.PENDING))
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .currentSlotIndex(0)
                 .build();
@@ -163,16 +163,57 @@ class PlanRunnerTimingTest {
         assertThrows(IllegalArgumentException.class, () -> DayPlan.builder()
                 .slot(slot(23_700, 500, PlanSlotStatus.PENDING))
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .dayStartTick(0)
                 .build());
     }
 
+    @Test
+    void shouldWaitForPendingPlan_returnsTrueBeforePendingWake() {
+        // Arrange
+        DayPlan pendingPlan = DayPlan.builder()
+                .dayType(PlanDayType.WORK_DAY)
+                .wakeAtAbsoluteTick(84_325L)
+                .schedule(schedule())
+                .build();
+
+        // Act
+        boolean shouldWait = PlanRunner.shouldWaitForPendingPlan(pendingPlan, 83_490L);
+
+        // Assert
+        assertTrue(shouldWait);
+    }
+
+    @Test
+    void shouldWaitForPendingPlan_returnsFalseWhenPendingWakeArrived() {
+        // Arrange
+        DayPlan pendingPlan = DayPlan.builder()
+                .dayType(PlanDayType.WORK_DAY)
+                .wakeAtAbsoluteTick(84_325L)
+                .schedule(schedule())
+                .build();
+
+        // Act
+        boolean shouldWait = PlanRunner.shouldWaitForPendingPlan(pendingPlan, 84_325L);
+
+        // Assert
+        assertFalse(shouldWait);
+    }
+
+    @Test
+    void shouldWaitForPendingPlan_returnsFalseWithoutPendingPlan() {
+        // Arrange, Act
+        boolean shouldWait = PlanRunner.shouldWaitForPendingPlan(null, 83_490L);
+
+        // Assert
+        assertFalse(shouldWait);
+    }
+
     private static DayPlan plan(PlanSlot... slots) {
         DayPlan.DayPlanBuilder builder = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule());
         for (PlanSlot slot : slots) {
             builder.slot(slot);

@@ -14,6 +14,8 @@ import java.util.List;
  * Immutable input bundle supplied to {@link IPlanGenerator#generate} when constructing a plan.
  * <p>
  * Contains everything a generator needs to produce a contextually appropriate {@link DayPlan}.
+ * Values must be immutable or detached snapshots because async generators may consume this context
+ * away from Minecraft's server thread.
  */
 @Builder
 public record PlanGenerationContext(
@@ -23,6 +25,11 @@ public record PlanGenerationContext(
         RestDayPolicy restDayPolicy,
         PlanDayType dayType,
         List<WeightedBehavior> availableBehaviors,
-        long gameDay
+        long wakeAtAbsoluteTick
 ) {
+
+    public PlanGenerationContext {
+        availableBehaviors = List.copyOf(availableBehaviors);
+    }
+
 }

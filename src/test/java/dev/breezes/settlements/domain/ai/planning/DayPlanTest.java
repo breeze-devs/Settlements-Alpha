@@ -19,15 +19,31 @@ class DayPlanTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot)
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(12L)
+                .wakeAtAbsoluteTick(49_000L)
                 .schedule(schedule())
                 .build();
 
         assertEquals(List.of(slot), plan.getSlots());
         assertEquals(PlanStatus.PENDING, plan.getStatus());
         assertEquals(PlanDayType.WORK_DAY, plan.getDayType());
-        assertEquals(12L, plan.getGeneratedForDay());
+        assertEquals(49_000L, plan.getWakeAtAbsoluteTick());
+        assertEquals(2L, plan.getAuthoredDayNumber());
         assertEquals(0, plan.getCurrentSlotIndex());
+    }
+
+    @Test
+    void schedule_returnsAuthoredDayDurationAcrossMidnight() {
+        // Arrange
+        DayPlanSchedule schedule = DayPlanSchedule.builder()
+                .wakeTick(23_000)
+                .bedtimeTick(12_000)
+                .build();
+
+        // Act
+        int duration = schedule.authoredDayDurationTicks();
+
+        // Assert
+        assertEquals(13_000, duration);
     }
 
     @Test
@@ -41,7 +57,7 @@ class DayPlanTest {
                 .slot(early)
                 .slot(middle)
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .build();
 
@@ -62,7 +78,7 @@ class DayPlanTest {
                 .slot(postDawn)
                 .slot(preDawn)
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule(epoch))
                 .dayStartTick(epoch)
                 .build();
@@ -79,7 +95,7 @@ class DayPlanTest {
                 .slot(first)
                 .slot(slot(BehaviorKey.TRADE_INITIATE, 2_000))
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .build();
 
@@ -91,7 +107,7 @@ class DayPlanTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(BehaviorKey.EAT_FOOD, 1_000))
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .build();
 
@@ -105,7 +121,7 @@ class DayPlanTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(BehaviorKey.EAT_FOOD, 1_000))
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .build();
 
@@ -119,7 +135,7 @@ class DayPlanTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(BehaviorKey.EAT_FOOD, 1_000))
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .build();
 
@@ -139,7 +155,7 @@ class DayPlanTest {
                 .slot(second)
                 .slot(third)
                 .dayType(PlanDayType.WORK_DAY)
-                .generatedForDay(1L)
+                .wakeAtAbsoluteTick(1L)
                 .schedule(schedule())
                 .build();
 

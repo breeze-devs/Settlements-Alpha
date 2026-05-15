@@ -52,7 +52,7 @@ public final class DayPlanAttachmentCodec {
             instance.group(
                     PLAN_SLOT_CODEC.listOf().fieldOf("slots").forGetter(DayPlan::getSlots),
                     PLAN_DAY_TYPE_CODEC.fieldOf("dayType").forGetter(DayPlan::getDayType),
-                    Codec.LONG.fieldOf("generatedForDay").forGetter(DayPlan::getGeneratedForDay),
+                    Codec.LONG.fieldOf("wakeAtAbsoluteTick").forGetter(DayPlan::getWakeAtAbsoluteTick),
                     DAY_PLAN_SCHEDULE_CODEC.fieldOf("schedule").forGetter(DayPlan::getSchedule),
                     PLAN_STATUS_CODEC.optionalFieldOf("status", PlanStatus.PENDING)
                             .forGetter(plan -> normalizePlanStatus(plan.getStatus())),

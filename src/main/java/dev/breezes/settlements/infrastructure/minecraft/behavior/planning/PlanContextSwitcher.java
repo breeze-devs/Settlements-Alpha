@@ -92,11 +92,7 @@ public class PlanContextSwitcher extends Behavior<Villager> {
     }
 
     private Optional<DayPlan> currentPlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
-        DayPlan plan = villager.getDayPlan();
-        if (plan == null || plan.getGeneratedForDay() != level.getDayTime() / TICKS_PER_DAY) {
-            return Optional.empty();
-        }
-        return Optional.of(plan);
+        return Optional.ofNullable(villager.getDayPlan());
     }
 
     private Optional<Activity> activeSlotActivity(@Nonnull DayPlan currentPlan, @Nonnull PlanRuntimeState runtime) {

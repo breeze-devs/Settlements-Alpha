@@ -15,7 +15,7 @@ import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
 
 /**
  * An ordered sequence of {@link PlanSlot}s defining a villager's intended activity
- * schedule for a single game day.
+ * schedule for a single authored day.
  * <p>
  * Slots are executed in index order by the plan runner. The plan tracks its own
  * {@link PlanStatus} and current slot index as mutable state.
@@ -29,7 +29,7 @@ public class DayPlan {
     private final List<PlanSlot> slots;
 
     private final PlanDayType dayType;
-    private final long generatedForDay;
+    private final long wakeAtAbsoluteTick;
     private final DayPlanSchedule schedule;
 
     /**
@@ -47,7 +47,7 @@ public class DayPlan {
     @Builder
     public DayPlan(@Nonnull @Singular List<PlanSlot> slots,
                    PlanDayType dayType,
-                   long generatedForDay,
+                   long wakeAtAbsoluteTick,
                    @Nonnull DayPlanSchedule schedule,
                    @Nullable PlanStatus status,
                    int currentSlotIndex,
@@ -60,9 +60,13 @@ public class DayPlan {
                 .sorted(Comparator.comparingInt(s -> Math.floorMod(s.getStartTick() - dayStartTick, TICKS_PER_DAY)))
                 .toList();
         this.dayType = dayType;
-        this.generatedForDay = generatedForDay;
+        this.wakeAtAbsoluteTick = wakeAtAbsoluteTick;
         this.status = status == null ? PlanStatus.PENDING : status;
         this.currentSlotIndex = currentSlotIndex;
+    }
+
+    public long getAuthoredDayNumber() {
+        return this.wakeAtAbsoluteTick / TICKS_PER_DAY;
     }
 
     public Optional<PlanSlot> getCurrentSlot() {
@@ -108,7 +112,7 @@ public class DayPlan {
     }
 
     private static void validateSchedule(DayPlanSchedule schedule) {
-        int bedtimeLinear = Math.floorMod(schedule.bedtimeTick() - schedule.wakeTick(), TICKS_PER_DAY);
+        int bedtimeLinear = schedule.authoredDayDurationTicks();
         if (bedtimeLinear == 0) {
             throw new IllegalArgumentException("bedtimeTick must be after wakeTick in authored-day space");
         }

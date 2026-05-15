@@ -10,6 +10,7 @@ import dev.breezes.settlements.domain.ai.planning.DayPlanActivityBlock;
 import dev.breezes.settlements.domain.ai.planning.DayPlanActivityContext;
 import dev.breezes.settlements.domain.ai.planning.DayPlanSchedule;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
+import dev.breezes.settlements.domain.ai.planning.IWakeTickResolver;
 import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
 import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
@@ -21,6 +22,8 @@ import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.time.GameTicks;
 import dev.breezes.settlements.domain.time.TimeOfDay;
 import dev.breezes.settlements.shared.util.RandomUtil;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 
 import javax.inject.Inject;
@@ -32,6 +35,7 @@ import java.util.List;
  * Produces a villager's daily plan using deterministic heuristics
  */
 @CustomLog
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public class HeuristicPlanGenerator implements IPlanGenerator {
 
     // Anchors are real game-tick positions (0 = 06:00 AM) used for creating slots with absolute times.
@@ -40,9 +44,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
 
     private static final int MINIMUM_SLOT_SPACING_TICKS = GameTicks.minutes(20).getTicksAsInt();
 
-    @Inject
-    public HeuristicPlanGenerator() {
-    }
+    private final IWakeTickResolver wakeTickResolver;
 
     @Override
     public DayPlan generate(PlanGenerationContext context) {
@@ -100,7 +102,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         return DayPlan.builder()
                 .slots(slots)
                 .dayType(context.dayType())
-                .generatedForDay(context.gameDay())
+                .wakeAtAbsoluteTick(context.wakeAtAbsoluteTick())
                 .schedule(daySchedule)
                 .dayStartTick(epoch)
                 .build();
@@ -329,12 +331,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
      * professions. {@link DayPlan} handles cross-boundary ordering via its {@code dayStartTick} epoch.
      */
     private int computeWakeTick(ScheduleProfile schedule, GeneticsProfile genetics, PlanDayType dayType) {
-        int wakeTick = schedule.defaultWakeTick();
-        if (dayType == PlanDayType.REST_DAY) {
-            wakeTick += GameTicks.hours(1).getTicksAsInt();
-        }
-        wakeTick += (int) ((0.5 - genetics.getGeneValue(GeneType.CONSTITUTION)) * GameTicks.minutes(60).getTicksAsInt());
-        return clampTick(wakeTick);
+        return this.wakeTickResolver.resolveWakeTick(schedule, genetics, dayType);
     }
 
     /**
