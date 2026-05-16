@@ -15,6 +15,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
@@ -581,6 +583,29 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
                         .build())
                 .factory(() -> new ShearSheepBehavior(config, hungerConfig, demandSignalService))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry washWolf(WashWolfConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.WASH_WOLF)
+                        .displayName("Wash Dog")
+                        .description("Wash and dry an owned dog")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(10).asGameTicks())
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey("ui.settlements.behavior.behavior.wash_wolf")
+                        .iconItemId(ResourceLocation.withDefaultNamespace("water_bucket"))
+                        .build())
+                .factory(() -> new WashWolfBehavior(config, hungerConfig))
                 .build();
     }
 

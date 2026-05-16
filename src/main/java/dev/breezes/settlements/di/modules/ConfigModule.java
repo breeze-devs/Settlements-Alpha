@@ -8,6 +8,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
@@ -60,6 +61,12 @@ public final class ConfigModule {
     @Singleton
     static TameWolfConfig tameWolfConfig() {
         return ConfigFactory.create(TameWolfConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static WashWolfConfig washWolfConfig() {
+        return ConfigFactory.create(WashWolfConfig.class);
     }
 
     @Provides

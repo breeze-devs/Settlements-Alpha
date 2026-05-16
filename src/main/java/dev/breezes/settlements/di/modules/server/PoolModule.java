@@ -79,6 +79,7 @@ public final class PoolModule {
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))
                 .entry(PoolEntry.of(BehaviorKey.TAME_CAT))
                 .entry(PoolEntry.of(BehaviorKey.WALK_DOG))
+                .entry(PoolEntry.of(BehaviorKey.WASH_WOLF))
                 .build();
     }
 
@@ -155,6 +156,7 @@ public final class PoolModule {
                 .entry(PoolEntry.of(BehaviorKey.SHEAR_SHEEP))
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))
                 .entry(PoolEntry.of(BehaviorKey.WALK_DOG))
+                .entry(PoolEntry.of(BehaviorKey.WASH_WOLF))
                 .build();
     }
 

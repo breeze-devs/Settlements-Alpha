@@ -22,6 +22,8 @@ import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaBasicN
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import lombok.CustomLog;
 import lombok.Getter;
+import lombok.Setter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -46,11 +48,16 @@ import java.util.UUID;
 @Getter
 public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
+    private static final String DIRTY_NBT_KEY = "Dirty";
+
     private final IBrain settlementsBrain;
     private final INavigationManager<SettlementsWolf> navigationManager;
     private final List<IBehavior<SettlementsWolf>> wolfBehaviors;
 
     private final Set<Class<?>> followOwnerLocks;
+
+    @Setter
+    private boolean dirty;
 
     public SettlementsWolf(EntityType<? extends Wolf> entityType, Level level) {
         super(entityType, level);
@@ -60,6 +67,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
         this.navigationManager = new VanillaBasicNavigationManager<>(this);
         this.wolfBehaviors = new ArrayList<>();
         this.followOwnerLocks = new HashSet<>();
+        this.dirty = false;
 
         // Initialize goals
         this.initGoals();
@@ -87,6 +95,18 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     public boolean isFollowOwnerLockedBy(@Nonnull Class<?> owner) {
         return this.followOwnerLocks.contains(owner);
+    }
+
+    @Override
+    public void addAdditionalSaveData(@Nonnull CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putBoolean(DIRTY_NBT_KEY, this.dirty);
+    }
+
+    @Override
+    public void readAdditionalSaveData(@Nonnull CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        this.dirty = tag.getBoolean(DIRTY_NBT_KEY);
     }
 
     @Override
