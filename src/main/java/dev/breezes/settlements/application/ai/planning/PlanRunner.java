@@ -202,6 +202,8 @@ public class PlanRunner {
 
         Optional<IBehavior<BaseVillager>> maybeBehavior = this.catalog.createBehavior(slot.getBehaviorKey());
         if (maybeBehavior.isEmpty()) {
+            log.behaviorWarn("Plan slot skipped for villager {}: behavior '{}' missing from catalog",
+                    villager.getUUID(), slot.getBehaviorKey());
             slot.markStatus(PlanSlotStatus.SKIPPED);
             this.clearPlanActiveMemory(villager);
             plan.advanceSlot();
@@ -214,6 +216,8 @@ public class PlanRunner {
 
         if (!behavior.tickPreconditions(1, level, villager)) {
             if (slot.isFlexible()) {
+                log.behaviorStatus("Plan slot skipped for villager {}: behavior '{}' preconditions not met",
+                        villager.getUUID(), slot.getBehaviorKey());
                 slot.markStatus(PlanSlotStatus.SKIPPED);
                 this.clearPlanActiveMemory(villager);
                 plan.advanceSlot();

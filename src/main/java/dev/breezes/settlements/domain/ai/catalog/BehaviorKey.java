@@ -45,6 +45,7 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey TAME_CAT = new BehaviorKey("tame_cat");
     public static final BehaviorKey TAME_WOLF = new BehaviorKey("tame_wolf");
     public static final BehaviorKey WASH_WOLF = new BehaviorKey("wash_wolf");
+    public static final BehaviorKey FEED_WOLF = new BehaviorKey("feed_wolf");
 
     // ---- Idle / Leisure ----
     public static final BehaviorKey WALK_DOG = new BehaviorKey("walk_dog");

@@ -13,6 +13,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.feeding.FeedWolfBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.feeding.FeedWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfBehavior;
@@ -585,6 +587,29 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
                         .build())
                 .factory(() -> new ShearSheepBehavior(config, hungerConfig, demandSignalService))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry feedWolf(FeedWolfConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.FEED_WOLF)
+                        .displayName("Feed Wolf")
+                        .description("Offer meat to a nearby owned wolf to restore its health")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(10).asGameTicks())
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey("ui.settlements.behavior.behavior.feed_wolf")
+                        .iconItemId(ResourceLocation.withDefaultNamespace("cooked_beef"))
+                        .build())
+                .factory(() -> new FeedWolfBehavior(config, hungerConfig))
                 .build();
     }
 

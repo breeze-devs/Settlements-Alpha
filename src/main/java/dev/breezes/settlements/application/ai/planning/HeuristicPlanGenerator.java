@@ -28,6 +28,7 @@ import lombok.CustomLog;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -293,10 +294,12 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
             allocatedCount += count;
         }
 
+        // Pre-shuffle so equal remainders break ties randomly under stable sort, instead of by alphabetical key id.
+        Collections.shuffle(allocations, RandomUtil.RANDOM);
+
         if (allocatedCount > capacity) {
             // When many positive entries compete for a tiny window, trim smallest shares first so capacity remains meaningful.
-            allocations.sort(Comparator.<MutableAllocation>comparingDouble(MutableAllocation::remainder)
-                    .thenComparing(allocation -> allocation.behavior().key().id()));
+            allocations.sort(Comparator.comparingDouble(MutableAllocation::remainder));
             int overage = allocatedCount - capacity;
             for (MutableAllocation allocation : allocations) {
                 if (overage <= 0) {
@@ -308,8 +311,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                 }
             }
         } else if (allocatedCount < capacity) {
-            allocations.sort(Comparator.<MutableAllocation>comparingDouble(MutableAllocation::remainder).reversed()
-                    .thenComparing(allocation -> allocation.behavior().key().id()));
+            allocations.sort(Comparator.comparingDouble(MutableAllocation::remainder).reversed());
             int remaining = capacity - allocatedCount;
             for (int index = 0; index < remaining; index++) {
                 allocations.get(index % allocations.size()).increment();
