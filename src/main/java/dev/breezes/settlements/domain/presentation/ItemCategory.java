@@ -26,6 +26,7 @@ public enum ItemCategory {
     TORCH,
     LANTERN,
     SPYGLASS,
+    MAP,
     GENERIC;
 
     public static ItemCategory of(@Nonnull ItemStack stack) {
@@ -65,6 +66,9 @@ public enum ItemCategory {
         }
         if (stack.is(Items.SPYGLASS)) {
             return SPYGLASS;
+        }
+        if (stack.is(Items.MAP) || stack.is(Items.FILLED_MAP)) {
+            return MAP;
         }
         if (stack.is(ItemRegistry.VILLAGER_FISHING_ROD.get())) {
             return FISHING_ROD;

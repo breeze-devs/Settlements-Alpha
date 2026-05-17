@@ -14,12 +14,12 @@ class DefaultAnimationResolverTest {
         // Arrange
         KeyframeAnimation animation = mock(KeyframeAnimation.class);
         AnimationLibrary library = mock(AnimationLibrary.class);
-        when(library.resolve(AnimationArchetype.SWING_LIGHT, ItemCategory.SWORD)).thenReturn(animation);
+        when(library.resolve(AnimationArchetype.SWING_HEAVY, ItemCategory.SWORD)).thenReturn(animation);
         DefaultAnimationResolver resolver = new DefaultAnimationResolver(library);
 
         // Act
         KeyframeAnimation resolved = resolver.resolve(
-                AnimationArchetype.SWING_LIGHT,
+                AnimationArchetype.SWING_HEAVY,
                 new AnimationSelectionContext(ItemCategory.SWORD));
 
         // Assert

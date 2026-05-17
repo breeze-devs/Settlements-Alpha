@@ -17,6 +17,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
@@ -606,6 +608,32 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("water_bucket"))
                         .build())
                 .factory(() -> new WashWolfBehavior(config, hungerConfig))
+                .build();
+    }
+
+    // =========================================================================
+    // Cartographer
+    // =========================================================================
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry surveyLandscape(SurveyLandscapeConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.SURVEY_LANDSCAPE)
+                        .displayName("Survey Landscape")
+                        .description("Travel to distant points and survey the landscape")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey("ui.settlements.behavior.behavior.survey_landscape")
+                        .iconItemId(ResourceLocation.withDefaultNamespace("map"))
+                        .build())
+                .factory(() -> new SurveyLandscapeBehavior(config, hungerConfig))
                 .build();
     }
 

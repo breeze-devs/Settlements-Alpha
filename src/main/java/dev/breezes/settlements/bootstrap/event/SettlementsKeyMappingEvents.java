@@ -17,6 +17,7 @@ public final class SettlementsKeyMappingEvents {
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(SettlementsKeyMappings.OPEN_VILLAGER_STATS);
         event.register(SettlementsKeyMappings.OPEN_DAY_PLAN);
+        event.register(SettlementsKeyMappings.OPEN_DEBUG_POSE_OVERLAY);
     }
 
 }

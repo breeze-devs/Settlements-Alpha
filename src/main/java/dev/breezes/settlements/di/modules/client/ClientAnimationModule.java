@@ -9,6 +9,7 @@ import dev.breezes.settlements.domain.animation.AnimationKey;
 import dev.breezes.settlements.domain.animation.AnimationLibrary;
 import dev.breezes.settlements.domain.animation.AnimationResolver;
 import dev.breezes.settlements.domain.animation.ButcheringAnimations;
+import dev.breezes.settlements.domain.animation.CartographerAnimations;
 import dev.breezes.settlements.domain.animation.DefaultAnimationResolver;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
 import dev.breezes.settlements.domain.animation.InMemoryAnimationLibrary;
@@ -37,7 +38,11 @@ public abstract class ClientAnimationModule {
                         Map.entry(AnimationKey.of(AnimationArchetype.REEL_IN, ItemCategory.FISHING_ROD),
                                 FishingAnimations.reelYank()),
                         Map.entry(AnimationKey.of(AnimationArchetype.INTERACT, ItemCategory.GENERIC),
-                                InteractAnimations.interact())))
+                                InteractAnimations.interact()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.SURVEY_WITH_SPYGLASS, ItemCategory.SPYGLASS),
+                                CartographerAnimations.surveyWithSpyglass()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.WRITE_TO_MAP, ItemCategory.MAP),
+                                CartographerAnimations.markMap())))
                 .build();
     }
 

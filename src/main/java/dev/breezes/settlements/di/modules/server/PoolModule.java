@@ -50,9 +50,9 @@ public final class PoolModule {
     @Provides
     @IntoSet
     static ProfessionBehaviorPool cartographerPool() {
-        // Cartographers have no profession-specific behaviors yet — they rely on universals only.
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.CARTOGRAPHER)
+                .entry(PoolEntry.of(BehaviorKey.SURVEY_LANDSCAPE))
                 .build();
     }
 

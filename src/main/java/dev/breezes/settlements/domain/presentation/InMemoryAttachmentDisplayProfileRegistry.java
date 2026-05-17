@@ -53,6 +53,13 @@ public final class InMemoryAttachmentDisplayProfileRegistry implements Attachmen
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
                 .build());
 
+        profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.SPYGLASS), AttachmentDisplayProfile.builder()
+                .translation(new Vec3(0.1, -0.15, -0.1))
+                .rotation(new Vector3f(new Vector3f((float) Math.toRadians(30), 0.0F, 0.0F)))
+                .scale(1.2F)
+                .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                .build());
+
         return InMemoryAttachmentDisplayProfileRegistry.builder()
                 .profilesByKey(profiles)
                 .build();

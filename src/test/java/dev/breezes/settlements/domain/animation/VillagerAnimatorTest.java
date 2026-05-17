@@ -32,10 +32,10 @@ class VillagerAnimatorTest {
         // Arrange
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
-                AnimationArchetype.HOLD_TOOL_VERTICAL, constantAnimation("hold", 10.0F, 0),
+                AnimationArchetype.INTERACT, constantAnimation("interact", 10.0F, 0),
                 AnimationArchetype.SWING_HEAVY, constantAnimation("swing", 20.0F, 4)));
         VillagerAnimator animator = new VillagerAnimator(resolver);
-        animator.onMotionChanged(AnimationArchetype.HOLD_TOOL_VERTICAL, (byte) 1, AnimationSelectionContext.generic(), 0L);
+        animator.onMotionChanged(AnimationArchetype.INTERACT, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Act
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 2, AnimationSelectionContext.generic(), 10L);
@@ -50,10 +50,10 @@ class VillagerAnimatorTest {
         // Arrange
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
-                AnimationArchetype.HOLD_TOOL_VERTICAL, constantAnimation("hold", 10.0F, 0),
+                AnimationArchetype.INTERACT, constantAnimation("hold", 10.0F, 0),
                 AnimationArchetype.SWING_HEAVY, animation("swing", 4, List.of())));
         VillagerAnimator animator = new VillagerAnimator(resolver);
-        animator.onMotionChanged(AnimationArchetype.HOLD_TOOL_VERTICAL, (byte) 1, AnimationSelectionContext.generic(), 0L);
+        animator.onMotionChanged(AnimationArchetype.INTERACT, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Act
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 2, AnimationSelectionContext.generic(), 10L);

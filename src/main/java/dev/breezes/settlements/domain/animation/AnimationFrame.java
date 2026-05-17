@@ -37,6 +37,20 @@ public final class AnimationFrame {
         return this.values.containsKey(target);
     }
 
+    /**
+     * Splice {@code overrides} on top of this frame. Untouched targets keep their existing values;
+     * targets present in {@code overrides} replace whatever this frame had. Unlike {@link #blendTo},
+     * targets absent from {@code overrides} are not blended toward neutral.
+     */
+    public AnimationFrame overlay(@Nonnull Map<AnimationTarget<?>, Object> overrides) {
+        if (overrides.isEmpty()) {
+            return this;
+        }
+        Map<AnimationTarget<?>, Object> merged = new HashMap<>(this.values);
+        merged.putAll(overrides);
+        return AnimationFrame.of(merged);
+    }
+
     public AnimationFrame blendTo(@Nonnull AnimationFrame other, float t) {
         Map<AnimationTarget<?>, Object> blended = new HashMap<>();
         this.values.keySet().forEach(target -> blendTargetInto(blended, target, this, other, t));

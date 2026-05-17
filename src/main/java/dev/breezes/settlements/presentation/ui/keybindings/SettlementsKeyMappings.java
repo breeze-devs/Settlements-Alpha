@@ -30,4 +30,11 @@ public final class SettlementsKeyMappings {
             KEY_CATEGORY
     );
 
+    public static final KeyMapping OPEN_DEBUG_POSE_OVERLAY = new KeyMapping(
+            "key.settlements.open_debug_pose_overlay",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_J,
+            KEY_CATEGORY
+    );
+
 }

@@ -12,6 +12,7 @@ import dev.breezes.settlements.domain.presentation.ItemCategory;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.EquipmentLookup;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.VanillaVillagerModel;
+import dev.breezes.settlements.infrastructure.rendering.animation.debug.DebugPoseOverride;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import lombok.CustomLog;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -30,6 +31,7 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
     private static final float BABY_SCALE = 0.5F;
 
     private final AttachmentRenderLayer attachmentRenderLayer;
+    private final DebugPoseOverride debugPoseOverride;
     private AnimationFrame currentFrame = AnimationFrame.EMPTY;
 
     public SettlementsVillagerRenderer(@Nonnull EntityRendererProvider.Context context) {
@@ -44,6 +46,7 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
                 clientComponent.slotAnchorRegistry(),
                 clientComponent.socketRegistry(),
                 clientComponent.attachmentDisplayProfileRegistry());
+        this.debugPoseOverride = clientComponent.debugPoseOverride();
         this.addLayer(this.attachmentRenderLayer);
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
         this.addLayer(new VillagerProfessionLayer<>(this, context.getResourceManager(), "villager"));
@@ -98,7 +101,7 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
             animator.tickContext(selectionContext(villager), gameTime);
         }
 
-        return animator.sample(gameTime, partialTicks);
+        return this.debugPoseOverride.applyTo(animator.sample(gameTime, partialTicks));
     }
 
     private static AnimationSelectionContext selectionContext(@Nonnull BaseVillager villager) {

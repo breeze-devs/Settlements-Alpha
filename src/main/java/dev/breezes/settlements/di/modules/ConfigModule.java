@@ -9,6 +9,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
@@ -38,6 +39,12 @@ import javax.inject.Singleton;
  */
 @Module
 public final class ConfigModule {
+
+    @Provides
+    @Singleton
+    static SurveyLandscapeConfig cartographerSurveyConfig() {
+        return ConfigFactory.create(SurveyLandscapeConfig.class);
+    }
 
     @Provides
     @Singleton

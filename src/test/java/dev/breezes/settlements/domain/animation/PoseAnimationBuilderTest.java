@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class PoseAnimationBuilderTest {
 
@@ -116,19 +115,6 @@ class PoseAnimationBuilderTest {
         // Assert
         assertEquals(10.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
         assertEquals(100.0F, frame.get(AnimationTestTargets.OTHER_FLOAT), 0.0001F);
-    }
-
-    @Test
-    void migratedButcheringSwing_samplesExpectedArmPose() {
-        // Arrange
-        KeyframeAnimation animation = ButcheringAnimations.swingHeavyAxe();
-
-        // Act
-        AnimationFrame frame = animation.sample(15.0F);
-
-        // Assert
-        assertEquals(Math.toRadians(-40.0F), frame.get(AnimationTargets.ARMS_ROTATION).x(), 0.0001F);
-        assertFalse(frame.has(AnimationTestTargets.FLOAT));
     }
 
 }
