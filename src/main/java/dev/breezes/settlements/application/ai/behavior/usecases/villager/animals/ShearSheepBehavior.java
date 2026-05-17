@@ -21,6 +21,7 @@ import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
@@ -108,7 +109,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                 .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbyShearableSheepExistsCondition);
-        this.preconditions.add(villager -> villager != null && ensureShearsAvailable(villager));
+        this.preconditions.add(ICondition.named("HasShears", villager -> villager != null && ensureShearsAvailable(villager)));
 
         this.initializeStateMachine(this.createControlStep(), ShearStage.END);
     }

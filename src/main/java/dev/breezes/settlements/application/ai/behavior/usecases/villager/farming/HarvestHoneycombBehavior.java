@@ -14,6 +14,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFullHiveExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
@@ -69,8 +70,10 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
                 .build();
 
         this.preconditions.add(this.nearbyFullHiveExistsCondition);
-        this.preconditions.add(entity -> entity.getSettlementsInventory().containsItem(Items.SHEARS));
-        this.preconditions.add(entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.HONEYCOMB)));
+        this.preconditions.add(ICondition.named("HasShears",
+                entity -> entity.getSettlementsInventory().containsItem(Items.SHEARS)));
+        this.preconditions.add(ICondition.named("CanFitHoneycomb",
+                entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.HONEYCOMB))));
 
         this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
     }

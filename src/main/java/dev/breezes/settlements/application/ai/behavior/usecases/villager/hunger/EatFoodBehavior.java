@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
@@ -48,9 +49,11 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
     public EatFoodBehavior(@Nonnull HungerConfig hungerConfig) {
         super(log, ClockTicks.seconds(10).asTickable(), ClockTicks.seconds(20).asTickable(), hungerConfig);
 
-        this.preconditions.add(villager -> villager.getHunger() < hungerConfig.eatPriorityThreshold());
-        this.preconditions.add(villager -> this.findFirstFoodSlot(villager.getSettlementsInventory()) >= 0);
-        this.preconditions.add(villager -> !villager.isSleeping());
+        this.preconditions.add(ICondition.named("HungerBelowEatThreshold",
+                villager -> villager.getHunger() < hungerConfig.eatPriorityThreshold()));
+        this.preconditions.add(ICondition.named("HasFood",
+                villager -> this.findFirstFoodSlot(villager.getSettlementsInventory()) >= 0));
+        this.preconditions.add(ICondition.named("NotSleeping", villager -> !villager.isSleeping()));
 
         this.selectedFoodSlot = -1;
         this.selectedFood = null;

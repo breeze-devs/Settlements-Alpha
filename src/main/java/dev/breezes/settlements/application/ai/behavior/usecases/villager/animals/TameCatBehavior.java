@@ -75,7 +75,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                 1);
         this.preconditions.add(this.nearbyUntamedCatExistsCondition);
 
-        ICondition<BaseVillager> ownershipBelowLimitCondition = villager -> {
+        this.preconditions.add(ICondition.named("OwnershipBelowLimit", villager -> {
             Expertise expertise = villager.getExpertise();
             int limit = this.config.expertiseCatLimit().getOrDefault(expertise.getConfigName(), 1);
 
@@ -89,8 +89,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                 return false;
             }
             return true;
-        };
-        this.preconditions.add(ownershipBelowLimitCondition);
+        }));
 
         this.initializeStateMachine(this.createControlStep(), TameStage.END);
     }

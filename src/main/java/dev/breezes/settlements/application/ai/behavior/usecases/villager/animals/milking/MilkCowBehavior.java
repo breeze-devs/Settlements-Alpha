@@ -14,6 +14,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyMilkableCowExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -61,8 +62,10 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
                 .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbyMilkableCowExistsCondition);
-        this.preconditions.add(entity -> entity.getSettlementsInventory().containsItem(Items.BUCKET));
-        this.preconditions.add(entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.MILK_BUCKET)));
+        this.preconditions.add(ICondition.named("HasBucket",
+                entity -> entity.getSettlementsInventory().containsItem(Items.BUCKET)));
+        this.preconditions.add(ICondition.named("CanFitMilkBucket",
+                entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.MILK_BUCKET))));
 
         this.target = null;
         this.milkCountRemaining = 0;

@@ -96,8 +96,8 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
     }
 
     private ICondition<BaseVillager> hasTradeToMirror() {
-        return villager -> this.sessionRegistry.hasInviteFor(villager.getUUID())
-                || this.sessionRegistry.getActiveSession(villager.getUUID()).isPresent();
+        return ICondition.named("HasTradeToMirror", villager -> this.sessionRegistry.hasInviteFor(villager.getUUID())
+                || this.sessionRegistry.getActiveSession(villager.getUUID()).isPresent());
     }
 
     private StepResult mirror(@Nonnull BehaviorContext<BaseVillager> context) {

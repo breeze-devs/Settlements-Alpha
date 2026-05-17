@@ -80,7 +80,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
         // Precondition: ownership below per-expertise limit
         // TODO: we should move this somewhere else
-        ICondition<BaseVillager> ownershipBelowLimitCondition = villager -> {
+        this.preconditions.add(ICondition.named("OwnershipBelowLimit", villager -> {
             Expertise expertise = villager.getExpertise();
             int limit = this.config.expertiseWolfLimit().getOrDefault(expertise.getConfigName(), 1);
 
@@ -95,8 +95,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                 return false;
             }
             return true;
-        };
-        this.preconditions.add(ownershipBelowLimitCondition);
+        }));
 
         this.initializeStateMachine(this.createControlStep(), TameStage.END);
 

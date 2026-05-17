@@ -14,6 +14,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -55,12 +56,12 @@ public class WalkDogBehavior extends VillagerStateMachineBehavior {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
         this.config = config;
 
-        this.preconditions.add(this::hasValidWolfToWalk);
-        this.continueConditions.add(villager -> this.cachedWolf != null && this.cachedWolf.isAlive()
+        this.preconditions.add(ICondition.named("HasValidWolfToWalk", this::hasValidWolfToWalk));
+        this.continueConditions.add(ICondition.named("CachedWolfStillWalkable", villager -> this.cachedWolf != null && this.cachedWolf.isAlive()
                 && !this.cachedWolf.isRemoved()
                 && villager.equals(this.cachedWolf.getOwner())
                 && (!this.wolfFollowLockAcquired || this.cachedWolf.isFollowOwnerLockedBy(WalkDogBehavior.class))
-        );
+        ));
 
         this.initializeStateMachine(this.createControlStep(), WalkDogStage.END);
     }

@@ -16,6 +16,7 @@ import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBlockExistsCondition;
 import dev.breezes.settlements.domain.enchanting.SpecializationProfile;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -74,7 +75,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
                 Blocks.ENCHANTING_TABLE,
                 null,
                 1);
-        this.preconditions.add(this::hasEnchantableNonEnchantedItem);
+        this.preconditions.add(ICondition.named("HasEnchantableNonEnchantedItem", this::hasEnchantableNonEnchantedItem));
         this.preconditions.add(this.nearbyEnchantingTableCondition);
         this.enchantmentEngine = enchantmentEngine;
 
