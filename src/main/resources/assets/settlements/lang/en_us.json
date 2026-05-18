@@ -55,6 +55,7 @@
   "ui.settlements.behavior.behavior.harvest_honeycomb": "Harvest Honeycomb",
   "ui.settlements.behavior.behavior.collect_honey": "Collect Honey",
   "ui.settlements.behavior.behavior.eat_food": "Eat Meal",
+  "ui.settlements.behavior.behavior.take_from_chest": "Fetch from Chest",
   "ui.settlements.behavior.behavior.trade_accept": "Accept Trade",
   "ui.settlements.behavior.behavior.trade_initiate": "Initiate Trade",
   "ui.settlements.behavior.behavior.walk_dog": "Walk Dog",

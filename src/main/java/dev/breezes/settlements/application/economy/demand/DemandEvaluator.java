@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.economy.demand;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.economy.catalog.DemandEntry;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -27,7 +28,7 @@ public final class DemandEvaluator {
     private final TradeCatalogRegistry tradeCatalogRegistry;
     private final DemandSignalService demandSignalService;
 
-    // TODO: efficiency optimization. This can likely be optimzied
+    // TODO: efficiency optimization. This can likely be optimized
     public List<ActiveDemand> resolve(@Nonnull BaseVillager villager) {
         long currentGameTime = villager.level().getGameTime();
         VillagerProfessionKey profession = VillagerProfessionKey.fromResourceLocation(
@@ -88,21 +89,11 @@ public final class DemandEvaluator {
     private static int countMatchingInventory(@Nonnull BaseVillager villager, @Nonnull ItemMatch match) {
         int count = 0;
         for (ItemStack stack : villager.getSettlementsInventory().getBackpack().getItems()) {
-            if (stack.isEmpty()) {
-                continue;
-            }
-            if (matches(stack, match)) {
+            if (ItemMatches.test(match, stack)) {
                 count += stack.getCount();
             }
         }
         return count;
-    }
-
-    private static boolean matches(@Nonnull ItemStack stack, @Nonnull ItemMatch match) {
-        return switch (match) {
-            case ItemMatch.ItemRef itemRef -> stack.is(BuiltInRegistries.ITEM.get(itemRef.id()));
-            case ItemMatch.TagRef tagRef -> stack.is(tagRef.tag());
-        };
     }
 
 }

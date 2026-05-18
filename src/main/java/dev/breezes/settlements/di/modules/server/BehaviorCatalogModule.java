@@ -44,6 +44,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.Ri
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
@@ -98,6 +100,32 @@ public final class BehaviorCatalogModule {
     // =========================================================================
     // Universal
     // =========================================================================
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry takeFromChest(TakeFromChestConfig config,
+                                              HungerConfig hungerConfig,
+                                              DemandEvaluator demandEvaluator) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.TAKE_FROM_CHEST)
+                        .displayName("Fetch from Chest")
+                        .description("Fetch a needed item from a nearby village chest")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(15).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey("ui.settlements.behavior.behavior.take_from_chest")
+                        .iconItemId(ResourceLocation.withDefaultNamespace("chest"))
+                        .build())
+                .factory(() -> new TakeFromChestBehavior(config, hungerConfig, demandEvaluator))
+                .build();
+    }
 
     @Provides
     @IntoSet

@@ -33,6 +33,7 @@ public enum SoundRegistry {
     FISHING_REEL(SoundEventPlayable.of(SoundEvents.FISHING_BOBBER_RETRIEVE, 1.0f, 1.0f)),
     MAP_FLAP(SoundEventPlayable.of(SoundEvents.BOOK_PAGE_TURN, 1.0f, 0.8f)),
     MAP_SCRIBBLE(SoundEventPlayable.of(SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 1.0f, 1.3f)),
+    TAKE_FROM_CHEST(SoundEventPlayable.of(SoundEvents.CHEST_OPEN, 0.8f, 1.0f)),
     ;
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound

@@ -35,6 +35,11 @@ public final class MemoryTypeRegistry {
             .moduleTypeSupplier(MemoryModuleTypeRegistry.OWNED_WOLVES)
             .build();
 
+    public static final MemoryType<List<GlobalPos>> VILLAGE_CHESTS = MemoryType.<List<GlobalPos>>builder()
+            .identifier("village_chests")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.VILLAGE_CHESTS)
+            .build();
+
 //     public static final MemoryType<List<TMemoryFarmland>> OWNED_FARMLAND = register(MemoryType.<List<TMemoryFarmland>>builder()
 //             .identifier("owned_farmland")
 //             .build());

@@ -101,7 +101,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             return;
         }
 
-        log.behaviorStatus("Starting behavior");
+        log.behaviorStatus("Starting behavior (entity: {})", entity.getUUID().toString());
         this.doStart(world, entity);
         this.status = BehaviorStatus.RUNNING;
     }

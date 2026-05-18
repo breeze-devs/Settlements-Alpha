@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.economy.catalog.TradePriceResolver;
 import dev.breezes.settlements.application.economy.demand.ActiveDemand;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
@@ -83,7 +84,7 @@ public final class PartnerScanner {
                 if (stack.isEmpty()) {
                     continue;
                 }
-                if (!matchesItemMatch(stack, activeDemand.match()) || !matchesItemMatch(stack, offerEntry.match())) {
+                if (!ItemMatches.test(activeDemand.match(), stack) || !ItemMatches.test(offerEntry.match(), stack)) {
                     continue;
                 }
 
@@ -133,13 +134,6 @@ public final class PartnerScanner {
                 seller.getUUID(), activeDemand.match().asDebugString());
 
         return Optional.empty();
-    }
-
-    private static boolean matchesItemMatch(@Nonnull ItemStack stack, @Nonnull ItemMatch itemMatch) {
-        return switch (itemMatch) {
-            case ItemMatch.ItemRef itemRef -> stack.is(BuiltInRegistries.ITEM.get(itemRef.id()));
-            case ItemMatch.TagRef tagRef -> stack.is(tagRef.tag());
-        };
     }
 
     @Builder

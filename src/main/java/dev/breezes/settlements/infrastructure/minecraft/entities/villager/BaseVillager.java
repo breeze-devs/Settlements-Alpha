@@ -642,7 +642,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.NEAREST_HARVESTABLE_SUGARCANE.getModuleType(),
                 MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
                 MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType(),
-                MemoryTypeRegistry.OWNED_WOLVES.getModuleType());
+                MemoryTypeRegistry.OWNED_WOLVES.getModuleType(),
+                MemoryTypeRegistry.VILLAGE_CHESTS.getModuleType());
     }
 
     private static ImmutableList<SensorType<? extends Sensor<? super Villager>>> sensorTypes() {
@@ -656,7 +657,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 SensorType.VILLAGER_BABIES,
                 SensorType.SECONDARY_POIS,
                 SensorType.GOLEM_DETECTED,
-                SensorTypeRegistry.OWNED_PETS_SENSOR.get()
+                SensorTypeRegistry.OWNED_PETS_SENSOR.get(),
+                SensorTypeRegistry.VILLAGE_CHESTS_SENSOR.get()
         );
     }
 

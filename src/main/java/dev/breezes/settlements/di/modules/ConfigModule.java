@@ -22,6 +22,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
@@ -195,6 +196,12 @@ public final class ConfigModule {
     @Singleton
     static TradingConfig tradingConfig() {
         return ConfigFactory.create(TradingConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static TakeFromChestConfig takeFromChestConfig() {
+        return ConfigFactory.create(TakeFromChestConfig.class);
     }
 
 }

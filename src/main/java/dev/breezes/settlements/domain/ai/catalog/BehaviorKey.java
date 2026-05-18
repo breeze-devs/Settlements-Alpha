@@ -13,6 +13,9 @@ public record BehaviorKey(String id) {
     // ---- Universal ----
     public static final BehaviorKey EAT_FOOD = new BehaviorKey("eat_food");
 
+    // ---- Logistics (universal) ----
+    public static final BehaviorKey TAKE_FROM_CHEST = new BehaviorKey("take_from_chest");
+
     // ---- Social (universal) ----
     public static final BehaviorKey TRADE_INITIATE = new BehaviorKey("trade_initiate");
     public static final BehaviorKey TRADE_ACCEPT = new BehaviorKey("trade_accept");

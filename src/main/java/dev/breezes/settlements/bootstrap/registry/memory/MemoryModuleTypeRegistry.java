@@ -39,6 +39,10 @@ public final class MemoryModuleTypeRegistry {
             "owned_wolves",
             () -> new MemoryModuleType<>(Optional.empty()));
 
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> VILLAGE_CHESTS = REGISTRY.register(
+            "village_chests",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
     private MemoryModuleTypeRegistry() {
     }
 
