@@ -12,22 +12,26 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFullHiveExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -42,6 +46,8 @@ import java.util.Map;
 
 @CustomLog
 public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
+
+    private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
 
     private enum HarvestStage implements StageKey {
         HARVEST_HONEYCOMB,
@@ -59,7 +65,8 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
     public HarvestHoneycombBehavior(@Nonnull HarvestHoneycombConfig config,
                                     @Nonnull HungerConfig hungerConfig,
-                                    @Nonnull HarvestHoneycombYieldDataManager yieldData) {
+                                    @Nonnull HarvestHoneycombYieldDataManager yieldData,
+                                    @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
         this.config = config;
@@ -70,8 +77,8 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
                 .build();
 
         this.preconditions.add(this.nearbyFullHiveExistsCondition);
-        this.preconditions.add(ICondition.named("HasShears",
-                entity -> entity.getSettlementsInventory().containsItem(Items.SHEARS)));
+        this.preconditions.add(demandSignalService.requireItem(
+                new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, this.getClass().getSimpleName()));
         this.preconditions.add(ICondition.named("CanFitHoneycomb",
                 entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.HONEYCOMB))));
 
@@ -124,7 +131,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
         List<BlockPos> targets = this.nearbyFullHiveExistsCondition.getTargets();
         VillagerInventory inventory = villager.getSettlementsInventory();
         if (targets.isEmpty()
-                || !inventory.containsItem(Items.SHEARS)
+                || !inventory.containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements)
                 || !inventory.canAddItem(new ItemStack(Items.HONEYCOMB))) {
             this.requestStop("Precondition check at behavior start failed");
             return;
@@ -166,7 +173,8 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
         }
 
         VillagerInventory inventory = villager.getSettlementsInventory();
-        if (!inventory.containsItem(Items.SHEARS) || !inventory.canAddItem(new ItemStack(Items.HONEYCOMB))) {
+        if (!inventory.containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements)
+                || !inventory.canAddItem(new ItemStack(Items.HONEYCOMB))) {
             return false;
         }
 

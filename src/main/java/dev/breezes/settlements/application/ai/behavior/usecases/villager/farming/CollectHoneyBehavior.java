@@ -12,22 +12,26 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFullHiveExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -42,6 +46,8 @@ import java.util.Map;
 
 @CustomLog
 public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
+
+    private static final ResourceLocation GLASS_BOTTLE_ID = ResourceLocation.withDefaultNamespace("glass_bottle");
 
     private enum CollectStage implements StageKey {
         COLLECT_HONEY,
@@ -59,7 +65,8 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
 
     public CollectHoneyBehavior(@Nonnull CollectHoneyConfig config,
                                 @Nonnull HungerConfig hungerConfig,
-                                @Nonnull CollectHoneyYieldDataManager yieldData) {
+                                @Nonnull CollectHoneyYieldDataManager yieldData,
+                                @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
         this.config = config;
@@ -70,8 +77,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
                 .build();
 
         this.preconditions.add(this.nearbyFullHiveExistsCondition);
-        this.preconditions.add(ICondition.named("HasGlassBottle",
-                entity -> entity.getSettlementsInventory().containsItem(Items.GLASS_BOTTLE)));
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(GLASS_BOTTLE_ID), 1, 50, this.getClass().getSimpleName()));
         this.preconditions.add(ICondition.named("CanFitHoneyBottle",
                 entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.HONEY_BOTTLE))));
 
@@ -124,7 +130,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         List<BlockPos> targets = this.nearbyFullHiveExistsCondition.getTargets();
         VillagerInventory inventory = entity.getSettlementsInventory();
         if (targets.isEmpty()
-                || !inventory.containsItem(Items.GLASS_BOTTLE)
+                || !inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements)
                 || !inventory.canAddItem(new ItemStack(Items.HONEY_BOTTLE))) {
             this.requestStop("Precondition check at behavior start failed");
             return;
@@ -166,7 +172,8 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         }
 
         VillagerInventory inventory = villager.getSettlementsInventory();
-        if (!inventory.containsItem(Items.GLASS_BOTTLE) || !inventory.canAddItem(new ItemStack(Items.HONEY_BOTTLE))) {
+        if (!inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements)
+                || !inventory.canAddItem(new ItemStack(Items.HONEY_BOTTLE))) {
             return false;
         }
 
@@ -199,11 +206,12 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         }
 
         VillagerInventory inventory = villager.getSettlementsInventory();
-        if (!inventory.containsItem(Items.GLASS_BOTTLE) || !inventory.canAddItem(new ItemStack(Items.HONEY_BOTTLE))) {
+        if (!inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements)
+                || !inventory.canAddItem(new ItemStack(Items.HONEY_BOTTLE))) {
             this.harvestsRemaining = 0;
             return StepResult.noOp();
         }
-        if (inventory.consume(Items.GLASS_BOTTLE, 1) != 1) {
+        if (!inventory.consumeIfRequired(Items.GLASS_BOTTLE, 1, GeneralConfig.bypassInventoryRequirements)) {
             this.harvestsRemaining = 0;
             return StepResult.noOp();
         }

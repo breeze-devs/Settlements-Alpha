@@ -12,17 +12,21 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyDamagedIronGolemExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.item.ItemStack;
@@ -37,6 +41,7 @@ import java.util.Map;
 @CustomLog
 public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
+    private static final ResourceLocation IRON_INGOT_ID = ResourceLocation.withDefaultNamespace("iron_ingot");
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
     private enum RepairStage implements StageKey {
@@ -53,7 +58,8 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public RepairIronGolemBehavior(RepairIronGolemConfig config,
-                                   HungerConfig hungerConfig) {
+                                   HungerConfig hungerConfig,
+                                   DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
@@ -62,6 +68,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         // Create behavior preconditions
         this.nearbyDamagedIronGolemExistsCondition = new NearbyDamagedIronGolemExistsCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical(), config.repairHpPercentage());
         this.preconditions.add(this.nearbyDamagedIronGolemExistsCondition);
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_INGOT_ID), 1, 50, this.getClass().getSimpleName()));
 
         // Initialize variables
         this.targetToRepair = null;
@@ -91,6 +98,12 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
                 })
                 .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), ctx -> {
                     if (this.targetToRepair == null || !this.targetToRepair.isAlive()) {
+                        return StepResult.complete();
+                    }
+
+                    if (!ctx.getInitiator().getSettlementsInventory()
+                            .consumeIfRequired(Items.IRON_INGOT, 1, GeneralConfig.bypassInventoryRequirements)) {
+                        // Ran out of ingots mid-task — stop gracefully
                         return StepResult.complete();
                     }
 
@@ -128,7 +141,15 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         }
 
         this.targetToRepair = targets.getFirst();
-        this.remainingRepairAttempts = RandomUtil.randomInt(1, 3, true); // TODO: this could be based on inventory, e.g. iron ingot count
+        int ingotsAvailable = villager.getSettlementsInventory().countItem(Items.IRON_INGOT);
+        int rolledAttempts = RandomUtil.randomInt(1, 3, true);
+        this.remainingRepairAttempts = GeneralConfig.bypassInventoryRequirements
+                ? rolledAttempts
+                : Math.min(rolledAttempts, ingotsAvailable);
+        if (this.remainingRepairAttempts <= 0) {
+            this.requestStop("No iron ingots available at behavior start");
+            return;
+        }
         this.shouldRewardExperience = false;
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToRepair))));
     }

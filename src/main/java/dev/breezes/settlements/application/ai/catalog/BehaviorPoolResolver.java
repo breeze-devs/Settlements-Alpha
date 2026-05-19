@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +44,7 @@ public class BehaviorPoolResolver {
     public BehaviorPoolResolver(IBehaviorCatalog catalog, Set<ProfessionBehaviorPool> pools) {
         this.catalog = catalog;
         this.pools = pools.stream()
-                .collect(Collectors.toUnmodifiableMap(ProfessionBehaviorPool::getProfession, p -> p));
+                .collect(Collectors.toUnmodifiableMap(ProfessionBehaviorPool::getProfession, Function.identity()));
     }
 
     /**

@@ -16,9 +16,11 @@ import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFriendlyNeedsPotionCondition;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.world.location.Vector;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,6 +35,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
@@ -50,6 +53,8 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
     private LivingEntity targetToThrow;
     @Nullable
     private ItemStack potionToThrow;
+    @Nullable
+    private Holder<Potion> potionHolder;
 
     public ThrowPotionsBehavior(ThrowPotionsConfig config,
                                 HungerConfig hungerConfig) {
@@ -63,6 +68,7 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
         // Initialize variables
         this.targetToThrow = null;
         this.potionToThrow = null;
+        this.potionHolder = null;
 
         this.initializeStateMachine(this.createControlStep(), ThrowStage.END);
     }
@@ -99,6 +105,9 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
                     potionEntity.shoot(direction.getX(), direction.getY(), direction.getZ(), 1, 4.0F);
 
                     villager.level().addFreshEntity(potionEntity);
+                    if (!GeneralConfig.bypassInventoryRequirements && this.potionHolder != null) {
+                        this.consumeMatchingSplashPotion(villager, this.potionHolder);
+                    }
                     villager.clearHeldItem();
                     this.rewardExperience(villager);
 
@@ -131,7 +140,17 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
         }
 
         Holder<Potion> potionNeeded = this.nearbyFriendlyNeedsPotionCondition.getFriendlyNeedsPotionMap().get(this.targetToThrow).getPotion();
-        this.potionToThrow = PotionContents.createItemStack(Items.SPLASH_POTION, potionNeeded);
+        Optional<ItemStack> foundPotion = findMatchingSplashPotionInInventory(villager, potionNeeded);
+        if (GeneralConfig.bypassInventoryRequirements) {
+            this.potionToThrow = foundPotion.orElseGet(() -> PotionContents.createItemStack(Items.SPLASH_POTION, potionNeeded));
+        } else {
+            if (foundPotion.isEmpty()) {
+                this.requestStop("No matching splash potion in inventory");
+                return;
+            }
+            this.potionToThrow = foundPotion.get().copyWithCount(1);
+        }
+        this.potionHolder = potionNeeded;
 
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToThrow))));
         villager.setHeldItem(this.potionToThrow);
@@ -151,6 +170,33 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
         villager.clearHeldItem();
         this.targetToThrow = null;
         this.potionToThrow = null;
+        this.potionHolder = null;
+    }
+
+    private static Optional<ItemStack> findMatchingSplashPotionInInventory(@Nonnull BaseVillager villager,
+                                                                           @Nonnull Holder<Potion> needed) {
+        for (ItemStack stack : villager.getSettlementsInventory().getBackpack().getItems()) {
+            if (stack.isEmpty() || !stack.is(Items.SPLASH_POTION)) continue;
+            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+            if (contents != null && contents.potion().filter(h -> h.value() == needed.value()).isPresent()) {
+                return Optional.of(stack);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static void consumeMatchingSplashPotion(@Nonnull BaseVillager villager,
+                                                    @Nonnull Holder<Potion> needed) {
+        var backpack = villager.getSettlementsInventory().getBackpack();
+        for (int i = 0; i < backpack.getContainerSize(); i++) {
+            ItemStack stack = backpack.getItem(i);
+            if (stack.isEmpty() || !stack.is(Items.SPLASH_POTION)) continue;
+            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+            if (contents != null && contents.potion().filter(h -> h.value() == needed.value()).isPresent()) {
+                backpack.removeItem(i, 1);
+                return;
+            }
+        }
     }
 
 }

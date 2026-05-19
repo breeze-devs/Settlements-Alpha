@@ -3,14 +3,12 @@ package dev.breezes.settlements.application.economy.demand;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.economy.catalog.DemandEntry;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
-import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -87,13 +85,7 @@ public final class DemandEvaluator {
     }
 
     private static int countMatchingInventory(@Nonnull BaseVillager villager, @Nonnull ItemMatch match) {
-        int count = 0;
-        for (ItemStack stack : villager.getSettlementsInventory().getBackpack().getItems()) {
-            if (ItemMatches.test(match, stack)) {
-                count += stack.getCount();
-            }
-        }
-        return count;
+        return villager.getSettlementsInventory().countMatching(match);
     }
 
 }

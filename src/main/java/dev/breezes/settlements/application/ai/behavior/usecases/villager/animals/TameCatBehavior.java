@@ -13,19 +13,23 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.SettlementsCat;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
@@ -41,6 +45,8 @@ import java.util.Optional;
 
 @CustomLog
 public class TameCatBehavior extends VillagerStateMachineBehavior {
+
+    private static final ResourceLocation COD_ID = ResourceLocation.withDefaultNamespace("cod");
 
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
@@ -58,7 +64,8 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public TameCatBehavior(TameCatConfig config,
-                           HungerConfig hungerConfig) {
+                           HungerConfig hungerConfig,
+                           DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
@@ -74,6 +81,9 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                 cat -> cat != null && !cat.isTame(),
                 1);
         this.preconditions.add(this.nearbyUntamedCatExistsCondition);
+
+        // Precondition: has at least one cod
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(COD_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.preconditions.add(ICondition.named("OwnershipBelowLimit", villager -> {
             Expertise expertise = villager.getExpertise();
@@ -121,6 +131,12 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                     Cat cat = catOptional.get();
 
                     if (cat.isTame()) {
+                        return StepResult.complete();
+                    }
+
+                    // Consume a cod for each attempt
+                    if (!ctx.getInitiator().getMinecraftEntity().getSettlementsInventory()
+                            .consumeIfRequired(Items.COD, 1, GeneralConfig.bypassInventoryRequirements)) {
                         return StepResult.complete();
                     }
 
@@ -196,7 +212,14 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenCat.get()))));
-        this.attemptsRemaining = MAX_TAME_ATTEMPTS;
+        int codAvailable = villager.getSettlementsInventory().countItem(Items.COD);
+        this.attemptsRemaining = GeneralConfig.bypassInventoryRequirements
+                ? MAX_TAME_ATTEMPTS
+                : Math.min(MAX_TAME_ATTEMPTS, codAvailable);
+        if (this.attemptsRemaining <= 0) {
+            this.requestStop("No cod available at behavior start");
+            return;
+        }
         this.shouldRewardExperience = false;
     }
 

@@ -5,6 +5,7 @@ import dagger.Provides;
 import dagger.multibindings.IntoSet;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedSpecies;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatBehavior;
@@ -78,9 +79,9 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.EntityType;
-
-import java.util.Set;
+import net.minecraft.world.item.Items;
 
 /**
  * Registers all behavior variants as {@link BehaviorCatalogEntry} Dagger multibindings.
@@ -120,7 +121,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.take_from_chest")
+                        .displayNameKey(BehaviorKey.TAKE_FROM_CHEST.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("chest"))
                         .build())
                 .factory(() -> new TakeFromChestBehavior(config, hungerConfig, demandEvaluator))
@@ -142,7 +143,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.eat_food")
+                        .displayNameKey(BehaviorKey.EAT_FOOD.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("bread"))
                         .build())
                 .factory(() -> new EatFoodBehavior(hungerConfig))
@@ -177,7 +178,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.trade_initiate")
+                        .displayNameKey(BehaviorKey.TRADE_INITIATE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("emerald"))
                         .build())
                 .factory(() -> new TradeInitiateBehavior(config, hungerConfig, sessionRegistry, tradeCatalogRegistry,
@@ -206,7 +207,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.trade_accept")
+                        .displayNameKey(BehaviorKey.TRADE_ACCEPT.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("emerald"))
                         .build())
                 .factory(() -> new TradeAcceptBehavior(config, hungerConfig, sessionRegistry, tradeSessionPresenter))
@@ -219,7 +220,8 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry repairIronGolem(RepairIronGolemConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry repairIronGolem(RepairIronGolemConfig config, HungerConfig hungerConfig,
+                                                DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.REPAIR_IRON_GOLEM)
@@ -234,10 +236,10 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.repair_iron_golem")
+                        .displayNameKey(BehaviorKey.REPAIR_IRON_GOLEM.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("iron_ingot"))
                         .build())
-                .factory(() -> new RepairIronGolemBehavior(config, hungerConfig))
+                .factory(() -> new RepairIronGolemBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 
@@ -261,7 +263,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.blast_ore")
+                        .displayNameKey(BehaviorKey.BLAST_ORE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("blast_furnace"))
                         .build())
                 .factory(() -> new BlastOreBehavior(config, hungerConfig))
@@ -271,29 +273,6 @@ public final class BehaviorCatalogModule {
     // =========================================================================
     // Butchering
     // =========================================================================
-
-    @Provides
-    @IntoSet
-    static BehaviorCatalogEntry breedPigs(BreedAnimalsConfig config, HungerConfig hungerConfig) {
-        return BehaviorCatalogEntry.builder()
-                .descriptor(BehaviorPlanningMetadata.builder()
-                        .key(BehaviorKey.BREED_PIGS)
-                        .displayName("Breed Pigs")
-                        .description("Feed and breed nearby pigs to grow the herd")
-                        .category(BehaviorCategory.WORK)
-                        .intensity(WorkIntensity.LIGHT)
-                        .requiredChannel(BehaviorChannel.MOVEMENT)
-                        .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
-                        .interruptible(false)
-                        .build())
-                .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.breed_pigs")
-                        .iconItemId(ResourceLocation.withDefaultNamespace("pig_spawn_egg"))
-                        .build())
-                .factory(() -> new BreedAnimalsBehavior(config, hungerConfig, Set.of(EntityType.PIG)))
-                .build();
-    }
 
     @Provides
     @IntoSet
@@ -311,7 +290,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.smoke_meat")
+                        .displayNameKey(BehaviorKey.SMOKE_MEAT.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("smoker"))
                         .build())
                 .factory(() -> new SmokeMeatBehavior(config, hungerConfig))
@@ -320,7 +299,8 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry butcherLivestock(ButcherLivestockConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry butcherLivestock(ButcherLivestockConfig config, HungerConfig hungerConfig,
+                                                 DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.BUTCHER_LIVESTOCK)
@@ -335,10 +315,10 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.butcher_livestock")
+                        .displayNameKey(BehaviorKey.BUTCHER_LIVESTOCK.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("iron_axe"))
                         .build())
-                .factory(() -> new ButcherLivestockBehavior(config, hungerConfig))
+                .factory(() -> new ButcherLivestockBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 
@@ -363,7 +343,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.throw_potions")
+                        .displayNameKey(BehaviorKey.THROW_POTIONS.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("splash_potion"))
                         .build())
                 .factory(() -> new ThrowPotionsBehavior(config, hungerConfig))
@@ -387,7 +367,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.harvest_soul_sand")
+                        .displayNameKey(BehaviorKey.HARVEST_SOUL_SAND.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("nether_wart"))
                         .build())
                 .factory(() -> new HarvestSoulSandBehavior(config, hungerConfig))
@@ -415,7 +395,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.harvest_sugarcane")
+                        .displayNameKey(BehaviorKey.HARVEST_SUGARCANE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("sugar_cane"))
                         .build())
                 .factory(() -> new HarvestSugarCaneBehavior(config, hungerConfig))
@@ -426,7 +406,8 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry collectHoney(CollectHoneyConfig config,
                                              HungerConfig hungerConfig,
-                                             CollectHoneyYieldDataManager yieldData) {
+                                             CollectHoneyYieldDataManager yieldData,
+                                             DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.COLLECT_HONEY)
@@ -440,10 +421,10 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.collect_honey")
+                        .displayNameKey(BehaviorKey.COLLECT_HONEY.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("honey_bottle"))
                         .build())
-                .factory(() -> new CollectHoneyBehavior(config, hungerConfig, yieldData))
+                .factory(() -> new CollectHoneyBehavior(config, hungerConfig, yieldData, demandSignalService))
                 .build();
     }
 
@@ -451,7 +432,8 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry harvestHoneycomb(HarvestHoneycombConfig config,
                                                  HungerConfig hungerConfig,
-                                                 HarvestHoneycombYieldDataManager yieldData) {
+                                                 HarvestHoneycombYieldDataManager yieldData,
+                                                 DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_HONEYCOMB)
@@ -465,16 +447,21 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.harvest_honeycomb")
+                        .displayNameKey(BehaviorKey.HARVEST_HONEYCOMB.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("honeycomb"))
                         .build())
-                .factory(() -> new HarvestHoneycombBehavior(config, hungerConfig, yieldData))
+                .factory(() -> new HarvestHoneycombBehavior(config, hungerConfig, yieldData, demandSignalService))
                 .build();
     }
 
+    // =========================================================================
+    // Animal handling
+    // =========================================================================
+
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry milkCow(MilkCowConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry milkCow(MilkCowConfig config, HungerConfig hungerConfig,
+                                        DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.MILK_COW)
@@ -488,16 +475,17 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.milk_cow")
+                        .displayNameKey(BehaviorKey.MILK_COW.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("milk_bucket"))
                         .build())
-                .factory(() -> new MilkCowBehavior(config, hungerConfig))
+                .factory(() -> new MilkCowBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry breedChickens(BreedAnimalsConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry breedChickens(BreedAnimalsConfig config, HungerConfig hungerConfig,
+                                              DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.BREED_CHICKENS)
@@ -511,16 +499,21 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.breed_chickens")
+                        .displayNameKey(BehaviorKey.BREED_CHICKENS.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("chicken_spawn_egg"))
                         .build())
-                .factory(() -> new BreedAnimalsBehavior(config, hungerConfig, Set.of(EntityType.CHICKEN)))
+                .factory(() -> new BreedAnimalsBehavior(config, hungerConfig, BreedSpecies.builder()
+                        .type(EntityType.CHICKEN)
+                        .foodTag(ItemTags.CHICKEN_FOOD)
+                        .canonicalFood(Items.WHEAT_SEEDS)
+                        .build(), demandSignalService))
                 .build();
     }
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry breedCows(BreedAnimalsConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry breedCows(BreedAnimalsConfig config, HungerConfig hungerConfig,
+                                          DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.BREED_COWS)
@@ -534,20 +527,77 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.breed_cows")
+                        .displayNameKey(BehaviorKey.BREED_COWS.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("cow_spawn_egg"))
                         .build())
-                .factory(() -> new BreedAnimalsBehavior(config, hungerConfig, Set.of(EntityType.COW)))
+                .factory(() -> new BreedAnimalsBehavior(config, hungerConfig, BreedSpecies.builder()
+                        .type(EntityType.COW)
+                        .foodTag(ItemTags.COW_FOOD)
+                        .canonicalFood(Items.WHEAT)
+                        .build(), demandSignalService))
                 .build();
     }
 
-    // =========================================================================
-    // Animal handling
-    // =========================================================================
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry breedPigs(BreedAnimalsConfig config, HungerConfig hungerConfig,
+                                          DemandSignalService demandSignalService) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.BREED_PIGS)
+                        .displayName("Breed Pigs")
+                        .description("Feed and breed nearby pigs to grow the herd")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.BREED_PIGS.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("pig_spawn_egg"))
+                        .build())
+                .factory(() -> new BreedAnimalsBehavior(config, hungerConfig, BreedSpecies.builder()
+                        .type(EntityType.PIG)
+                        .foodTag(ItemTags.PIG_FOOD)
+                        .canonicalFood(Items.CARROT)
+                        .build(), demandSignalService))
+                .build();
+    }
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry tameWolf(TameWolfConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry breedSheep(BreedAnimalsConfig config, HungerConfig hungerConfig,
+                                           DemandSignalService demandSignalService) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.BREED_SHEEP)
+                        .displayName("Breed Sheep")
+                        .description("Feed and breed nearby sheep to grow the herd")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.BREED_SHEEP.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("sheep_spawn_egg"))
+                        .build())
+                .factory(() -> new BreedAnimalsBehavior(config, hungerConfig, BreedSpecies.builder()
+                        .type(EntityType.SHEEP)
+                        .foodTag(ItemTags.SHEEP_FOOD)
+                        .canonicalFood(Items.WHEAT)
+                        .build(), demandSignalService))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry tameWolf(TameWolfConfig config, HungerConfig hungerConfig,
+                                         DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.TAME_WOLF)
@@ -562,16 +612,17 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.tame_wolf")
+                        .displayNameKey(BehaviorKey.TAME_WOLF.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("bone"))
                         .build())
-                .factory(() -> new TameWolfBehavior(config, hungerConfig))
+                .factory(() -> new TameWolfBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry tameCat(TameCatConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry tameCat(TameCatConfig config, HungerConfig hungerConfig,
+                                        DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.TAME_CAT)
@@ -586,10 +637,10 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.tame_cat")
+                        .displayNameKey(BehaviorKey.TAME_CAT.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("cod"))
                         .build())
-                .factory(() -> new TameCatBehavior(config, hungerConfig))
+                .factory(() -> new TameCatBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 
@@ -611,7 +662,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.shear_sheep")
+                        .displayNameKey(BehaviorKey.SHEAR_SHEEP.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
                         .build())
                 .factory(() -> new ShearSheepBehavior(config, hungerConfig, demandSignalService))
@@ -620,7 +671,8 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry feedWolf(FeedWolfConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry feedWolf(FeedWolfConfig config, HungerConfig hungerConfig,
+                                         DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.FEED_WOLF)
@@ -634,10 +686,10 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.feed_wolf")
+                        .displayNameKey(BehaviorKey.FEED_WOLF.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("cooked_beef"))
                         .build())
-                .factory(() -> new FeedWolfBehavior(config, hungerConfig))
+                .factory(() -> new FeedWolfBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 
@@ -657,7 +709,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.wash_wolf")
+                        .displayNameKey(BehaviorKey.WASH_WOLF.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("water_bucket"))
                         .build())
                 .factory(() -> new WashWolfBehavior(config, hungerConfig))
@@ -683,7 +735,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.survey_landscape")
+                        .displayNameKey(BehaviorKey.SURVEY_LANDSCAPE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("map"))
                         .build())
                 .factory(() -> new SurveyLandscapeBehavior(config, hungerConfig))
@@ -696,7 +748,8 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry fishing(FishingConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry fishing(FishingConfig config, HungerConfig hungerConfig,
+                                        DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.FISHING)
@@ -710,10 +763,10 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.fishing")
+                        .displayNameKey(BehaviorKey.FISHING.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("fishing_rod"))
                         .build())
-                .factory(() -> new FishingBehavior(config, hungerConfig))
+                .factory(() -> new FishingBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 
@@ -737,7 +790,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.cut_stone")
+                        .displayNameKey(BehaviorKey.CUT_STONE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("stonecutter"))
                         .build())
                 .factory(() -> new CutStoneBehavior(config, hungerConfig))
@@ -761,7 +814,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.harvest_ore")
+                        .displayNameKey(BehaviorKey.HARVEST_ORE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("iron_ore"))
                         .build())
                 .factory(() -> new HarvestOreBehavior(config, hungerConfig))
@@ -790,7 +843,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.enchant_item")
+                        .displayNameKey(BehaviorKey.ENCHANT_ITEM.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("enchanting_table"))
                         .build())
                 .factory(() -> new EnchantItemBehavior(config, hungerConfig, enchantmentEngine))
@@ -816,7 +869,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.walk_dog")
+                        .displayNameKey(BehaviorKey.WALK_DOG.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("lead"))
                         .build())
                 .factory(() -> new WalkDogBehavior(config, hungerConfig))
@@ -840,7 +893,7 @@ public final class BehaviorCatalogModule {
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey("ui.settlements.behavior.behavior.ring_bell")
+                        .displayNameKey(BehaviorKey.RING_BELL.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("bell"))
                         .build())
                 .factory(() -> new RingBellBehavior(config, hungerConfig))

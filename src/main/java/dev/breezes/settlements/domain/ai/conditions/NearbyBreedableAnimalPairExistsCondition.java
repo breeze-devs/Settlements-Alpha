@@ -9,65 +9,59 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 public class NearbyBreedableAnimalPairExistsCondition<T extends BaseVillager> implements IEntityCondition<T> {
 
     private final double rangeHorizontal;
     private final double rangeVertical;
-    private final Set<EntityType<? extends Animal>> breedableAnimalTypes;
+    private final EntityType<? extends Animal> breedableAnimalType;
 
     @Nullable
     private BreedablePair<?> breedablePair;
 
-    public NearbyBreedableAnimalPairExistsCondition(double rangeHorizontal, double rangeVertical, Set<EntityType<? extends Animal>> breedableAnimalTypes) {
+    public NearbyBreedableAnimalPairExistsCondition(double rangeHorizontal,
+                                                    double rangeVertical,
+                                                    EntityType<? extends Animal> breedableAnimalType) {
         this.rangeHorizontal = rangeHorizontal;
         this.rangeVertical = rangeVertical;
-        this.breedableAnimalTypes = breedableAnimalTypes;
-
+        this.breedableAnimalType = breedableAnimalType;
         this.breedablePair = null;
-
-        if (this.breedableAnimalTypes.isEmpty()) {
-            throw new IllegalArgumentException("Breedable animal types must not be empty");
-        }
     }
 
     @Override
     public boolean test(@Nullable T source) {
         if (source == null) {
             this.breedablePair = null;
-//            log.warn("Source entity is null, returning empty targets");
             return false;
         }
 
         AABB scanBoundary = source.getBoundingBox().inflate(this.rangeHorizontal, this.rangeVertical, this.rangeHorizontal);
-        Predicate<Entity> isBreedableType = (targetEntity) -> this.breedableAnimalTypes.contains(targetEntity.getType());
+        Predicate<Entity> isBreedableType = (targetEntity) -> targetEntity.getType() == this.breedableAnimalType;
         List<Entity> nearbyEntities = source.level().getEntities(source, scanBoundary, isBreedableType);
 
-        Map<EntityType<?>, Animal> singles = new HashMap<>();
+        Animal firstCandidate = null;
         for (Entity nearbyEntity : nearbyEntities) {
-            if (nearbyEntity == null || !nearbyEntity.isAlive() || !(nearbyEntity instanceof Animal animal)) {
+            if (!nearbyEntity.isAlive() || !(nearbyEntity instanceof Animal animal)) {
                 continue;
             }
 
-            // Check breeding requirements
+            // Both partners must be adults that are not already in love
             if (animal.getAge() != 0 || !animal.canFallInLove()) {
                 continue;
             }
 
-            // Check if we've seen a breedable entity of the same type before
-            if (!singles.containsKey(animal.getType())) {
-                singles.put(animal.getType(), animal);
+            if (firstCandidate == null) {
+                firstCandidate = animal;
                 continue;
             }
 
-            // Successfully found a pair
-            this.breedablePair = new BreedablePair<>(singles.get(animal.getType()), animal);
+            this.breedablePair = new BreedablePair<>(firstCandidate, animal);
             break;
         }
 
-        // TODO: log something
         return this.breedablePair != null;
     }
 

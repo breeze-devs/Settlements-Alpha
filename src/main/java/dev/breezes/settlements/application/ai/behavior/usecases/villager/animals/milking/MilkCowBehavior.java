@@ -12,17 +12,21 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyMilkableCowExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.item.ItemStack;
@@ -36,6 +40,8 @@ import java.util.Map;
 
 @CustomLog
 public class MilkCowBehavior extends VillagerStateMachineBehavior {
+
+    private static final ResourceLocation BUCKET_ID = ResourceLocation.withDefaultNamespace("bucket");
 
     private enum MilkStage implements StageKey {
         MILK_COW,
@@ -51,7 +57,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public MilkCowBehavior(@Nonnull MilkCowConfig config,
-                           @Nonnull HungerConfig hungerConfig) {
+                           @Nonnull HungerConfig hungerConfig,
+                           @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
@@ -62,8 +69,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
                 .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbyMilkableCowExistsCondition);
-        this.preconditions.add(ICondition.named("HasBucket",
-                entity -> entity.getSettlementsInventory().containsItem(Items.BUCKET)));
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BUCKET_ID), 1, 50, this.getClass().getSimpleName()));
         this.preconditions.add(ICondition.named("CanFitMilkBucket",
                 entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.MILK_BUCKET))));
 
@@ -100,7 +106,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
                     }
 
                     VillagerInventory inventory = context.getInitiator().getMinecraftEntity().getSettlementsInventory();
-                    if (!inventory.containsItem(Items.BUCKET) || !inventory.canAddItem(new ItemStack(Items.MILK_BUCKET))) {
+                    if (!inventory.containsOrBypassed(Items.BUCKET, GeneralConfig.bypassInventoryRequirements)
+                            || !inventory.canAddItem(new ItemStack(Items.MILK_BUCKET))) {
                         return StepResult.complete();
                     }
 
@@ -134,7 +141,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        if (!villager.getSettlementsInventory().containsItem(Items.BUCKET)
+        if (!villager.getSettlementsInventory().containsOrBypassed(Items.BUCKET, GeneralConfig.bypassInventoryRequirements)
                 || !villager.getSettlementsInventory().canAddItem(new ItemStack(Items.MILK_BUCKET))) {
             this.requestStop("Not enough buckets in inventory or inventory is full");
             return;
@@ -177,7 +184,11 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         VillagerInventory inventory = context.getInitiator().getMinecraftEntity().getSettlementsInventory();
         ItemStack milkBucketStack = new ItemStack(Items.MILK_BUCKET);
 
-        if (!inventory.canAddItem(milkBucketStack) || inventory.consume(Items.BUCKET, 1) != 1) {
+        if (!inventory.canAddItem(milkBucketStack)) {
+            this.milkCountRemaining = 0;
+            return StepResult.noOp();
+        }
+        if (!inventory.consumeIfRequired(Items.BUCKET, 1, GeneralConfig.bypassInventoryRequirements)) {
             this.milkCountRemaining = 0;
             return StepResult.noOp();
         }

@@ -154,6 +154,7 @@ public final class PoolModule {
     static ProfessionBehaviorPool shepherdPool() {
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.SHEPHERD)
+                .entry(PoolEntry.of(BehaviorKey.BREED_SHEEP))
                 .entry(PoolEntry.of(BehaviorKey.SHEAR_SHEEP))
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))
                 .entry(PoolEntry.of(BehaviorKey.WALK_DOG))

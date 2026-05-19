@@ -12,12 +12,14 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyWaterExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.fishing.FishCatchEntry;
@@ -49,6 +51,8 @@ import java.util.Optional;
 
 @CustomLog
 public class FishingBehavior extends VillagerStateMachineBehavior {
+
+    private static final ResourceLocation VILLAGER_FISHING_ROD_ID = ResourceLocation.fromNamespaceAndPath("settlements", "villager_fishing_rod");
 
     private static final double NAVIGATION_CLOSE_ENOUGH_DISTANCE = 5.0;
     private static final float NAVIGATION_SPEED = 0.5f;
@@ -86,7 +90,8 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
     private int castRetryCount;
 
     public FishingBehavior(@Nonnull FishingConfig config,
-                           @Nonnull HungerConfig hungerConfig) {
+                           @Nonnull HungerConfig hungerConfig,
+                           @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
@@ -97,6 +102,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbyWaterExistsCondition);
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(VILLAGER_FISHING_ROD_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), FishingStage.END);
     }

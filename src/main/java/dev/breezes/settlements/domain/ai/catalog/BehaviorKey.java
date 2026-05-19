@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringUtils;
  */
 public record BehaviorKey(String id) {
 
+    private static final String DISPLAY_NAME_KEY_PREFIX = "ui.settlements.behavior.behavior.";
+
     // ---- Universal ----
     public static final BehaviorKey EAT_FOOD = new BehaviorKey("eat_food");
 
@@ -27,7 +29,6 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey BLAST_ORE = new BehaviorKey("blast_ore");
 
     // ---- Butchering ----
-    public static final BehaviorKey BREED_PIGS = new BehaviorKey("breed_pigs");
     public static final BehaviorKey SMOKE_MEAT = new BehaviorKey("smoke_meat");
     public static final BehaviorKey BUTCHER_LIVESTOCK = new BehaviorKey("butcher_livestock");
 
@@ -39,11 +40,13 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey HARVEST_SUGARCANE = new BehaviorKey("harvest_sugarcane");
     public static final BehaviorKey COLLECT_HONEY = new BehaviorKey("collect_honey");
     public static final BehaviorKey HARVEST_HONEYCOMB = new BehaviorKey("harvest_honeycomb");
+
+    // ---- Animal handling ----
     public static final BehaviorKey MILK_COW = new BehaviorKey("milk_cow");
     public static final BehaviorKey BREED_CHICKENS = new BehaviorKey("breed_chickens");
     public static final BehaviorKey BREED_COWS = new BehaviorKey("breed_cows");
-
-    // ---- Animal handling ----
+    public static final BehaviorKey BREED_PIGS = new BehaviorKey("breed_pigs");
+    public static final BehaviorKey BREED_SHEEP = new BehaviorKey("breed_sheep");
     public static final BehaviorKey SHEAR_SHEEP = new BehaviorKey("shear_sheep");
     public static final BehaviorKey TAME_CAT = new BehaviorKey("tame_cat");
     public static final BehaviorKey TAME_WOLF = new BehaviorKey("tame_wolf");
@@ -75,6 +78,10 @@ public record BehaviorKey(String id) {
 
     public static BehaviorKey of(String id) {
         return new BehaviorKey(id);
+    }
+
+    public String displayNameKey() {
+        return DISPLAY_NAME_KEY_PREFIX + id;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package dev.breezes.settlements.domain.inventory;
 
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import lombok.Builder;
 import lombok.Getter;
 import net.minecraft.world.SimpleContainer;
@@ -122,6 +124,38 @@ public class VillagerInventory implements IVillagerEquipment {
      */
     public boolean containsItem(Item item) {
         return this.countItem(item) > 0;
+    }
+
+    /**
+     * Count items in backpack matching an {@link ItemMatch} (item ref or tag).
+     */
+    public int countMatching(@Nonnull ItemMatch match) {
+        int total = 0;
+        for (ItemStack stack : this.backpack.getItems()) {
+            if (ItemMatches.test(match, stack)) {
+                total += stack.getCount();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Returns true if {@code bypass} is on, or if the item is present. Use to guard containsItem
+     * checks in behaviors that respect {@code GeneralConfig.bypassInventoryRequirements}.
+     */
+    public boolean containsOrBypassed(@Nonnull Item item, boolean bypass) {
+        return bypass || this.containsItem(item);
+    }
+
+    /**
+     * If {@code bypass} is off, consumes {@code amount} of {@code item} and returns true only when
+     * exactly that amount was consumed. If {@code bypass} is on, skips the consume and returns true.
+     */
+    public boolean consumeIfRequired(@Nonnull Item item, int amount, boolean bypass) {
+        if (bypass) {
+            return true;
+        }
+        return this.consume(item, amount) == amount;
     }
 
     /**

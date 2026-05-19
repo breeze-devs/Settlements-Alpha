@@ -2,8 +2,10 @@ package dev.breezes.settlements.application.economy.demand;
 
 import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry;
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -11,6 +13,8 @@ import lombok.NoArgsConstructor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ServerScope
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
@@ -55,6 +59,72 @@ public final class DemandSignalService {
         if (!updated.equals(current)) {
             villager.setData(AttachmentRegistry.VILLAGER_DEMAND_SIGNALS, currentState.withDemandSignalSet(updated));
         }
+    }
+
+    /**
+     * Returns a precondition that passes when the villager holds enough of the matched item.
+     * Emits a demand signal when the villager is short so TakeFromChest/Trade can procure it.
+     * The gate and signal are suppressed entirely when bypassInventoryRequirements is on.
+     */
+    public ICondition<BaseVillager> requireItem(@Nonnull ItemMatch match,
+                                                int quantity,
+                                                int priorityBoost,
+                                                @Nonnull String source) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("requireItem quantity must be positive");
+        }
+        String name = "RequireItem:" + match.asDebugString();
+        return ICondition.named(name, villager -> {
+            if (villager == null) {
+                return false;
+            }
+            if (GeneralConfig.bypassInventoryRequirements) {
+                return true;
+            }
+            if (villager.getSettlementsInventory().countMatching(match) >= quantity) {
+                return true;
+            }
+            this.emit(villager, match, quantity, priorityBoost, null, source, villager.level().getGameTime());
+            return false;
+        });
+    }
+
+    /**
+     * Like requireItem, but accepts any one of the provided matches.
+     * Emits one signal per unsatisfied match so the procurement network can fulfil whichever is easiest.
+     */
+    public ICondition<BaseVillager> requireAny(@Nonnull List<ItemMatch> matches,
+                                               int quantity,
+                                               int priorityBoost,
+                                               @Nonnull String source) {
+        if (matches.isEmpty()) {
+            throw new IllegalArgumentException("requireAny matches must not be empty");
+        }
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("requireAny quantity must be positive");
+        }
+        String name = "RequireAny:" + matches.stream()
+                .map(ItemMatch::asDebugString)
+                .collect(Collectors.joining("|"));
+        return ICondition.named(name, villager -> {
+            if (villager == null) {
+                return false;
+            }
+            if (GeneralConfig.bypassInventoryRequirements) {
+                return true;
+            }
+            for (ItemMatch match : matches) {
+                if (villager.getSettlementsInventory().countMatching(match) >= quantity) {
+                    return true;
+                }
+            }
+            // Nothing satisfies — emit one signal per match so chest/trade can pick whichever the world makes easiest
+            long now = villager.level().getGameTime();
+            for (ItemMatch match : matches) {
+                this.emit(villager, match, quantity, priorityBoost, null, source, now);
+            }
+            return false;
+        });
     }
 
     public void remove(@Nonnull BaseVillager villager, @Nonnull ItemMatch key) {

@@ -21,16 +21,15 @@ import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
-import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
@@ -58,7 +57,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
     private static final String BUBBLE_OWNER_KEY = "behavior:shear_sheep";
-    private static final String DISPLAY_NAME_KEY = "ui.settlements.behavior.behavior.shear_sheep";
     private static final ClockTicks BUBBLE_TTL = ClockTicks.seconds(30);
     private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
 
@@ -86,7 +84,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private final ShearSheepConfig config;
-    private final DemandSignalService demandSignalService;
 
     private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
     private final AtomicInteger shearCount;
@@ -99,7 +96,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                 config.experienceReward());
 
         this.config = config;
-        this.demandSignalService = demandSignalService;
         this.shearCount = new AtomicInteger(0);
         this.shouldRewardExperience = false;
 
@@ -109,7 +105,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                 .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbyShearableSheepExistsCondition);
-        this.preconditions.add(ICondition.named("HasShears", villager -> villager != null && ensureShearsAvailable(villager)));
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), ShearStage.END);
     }
@@ -230,7 +226,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
         this.shouldRewardExperience = false;
         log.behaviorStatus("Villager is '{}' level, maximum shear count is {}", expertise.toString(), limit);
 
-        if (!this.ensureShearsAvailable(villager)) {
+        if (!villager.getSettlementsInventory().containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements)) {
             this.requestStop("No shears available");
             return;
         }
@@ -251,18 +247,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
         this.shouldRewardExperience = false;
-    }
-
-    private boolean ensureShearsAvailable(@Nonnull BaseVillager villager) {
-        VillagerInventory inventory = villager.getSettlementsInventory();
-        if (inventory.containsItem(Items.SHEARS)) {
-            return true;
-        }
-
-        log.behaviorStatus("Emitting demand signal for {}", SHEARS_ITEM_ID);
-        this.demandSignalService.emit(villager, new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, null,
-                DISPLAY_NAME_KEY, villager.level().getGameTime());
-        return false;
     }
 
     private Optional<Sheep> getTargetSheep(@Nonnull BehaviorContext<BaseVillager> context) {

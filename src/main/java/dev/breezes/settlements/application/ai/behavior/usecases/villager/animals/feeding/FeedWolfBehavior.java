@@ -13,14 +13,16 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
-import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import lombok.CustomLog;
@@ -36,6 +38,7 @@ import net.neoforged.neoforge.common.Tags;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 
 @CustomLog
@@ -60,7 +63,9 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
     private ItemStack selectedMeat;
     private int selectedMeatSlot;
 
-    public FeedWolfBehavior(@Nonnull FeedWolfConfig config, @Nonnull HungerConfig hungerConfig) {
+    public FeedWolfBehavior(@Nonnull FeedWolfConfig config,
+                            @Nonnull HungerConfig hungerConfig,
+                            @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
         this.config = config;
 
@@ -69,7 +74,10 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
         this.selectedMeatSlot = -1;
 
         this.ownedWolfCondition = new OwnedWolfExistsCondition(config.scanRangeHorizontal(), config.scanRangeVertical(), ignored -> true);
-        this.preconditions.add(ICondition.named("HasMeat", villager -> findFirstMeatSlot(villager.getSettlementsInventory()) >= 0));
+        this.preconditions.add(demandSignalService.requireAny(
+                List.of(new ItemMatch.TagRef(Tags.Items.FOODS_RAW_MEAT),
+                        new ItemMatch.TagRef(Tags.Items.FOODS_COOKED_MEAT)),
+                1, 50, this.getClass().getSimpleName()));
         this.preconditions.add(this.ownedWolfCondition);
 
         this.initializeStateMachine(this.createControlStep(), FeedStage.END);
@@ -123,14 +131,16 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
         }
 
         this.selectedMeatSlot = findFirstMeatSlot(villager.getSettlementsInventory());
-        if (this.selectedMeatSlot < 0) {
+        if (this.selectedMeatSlot < 0 && !GeneralConfig.bypassInventoryRequirements) {
             this.requestStop("No meat found in inventory at behavior start");
             return;
         }
 
-        this.selectedMeat = villager.getSettlementsInventory()
-                .getBackpack().getItem(this.selectedMeatSlot).copyWithCount(1);
-        villager.setHeldItem(this.selectedMeat.copy());
+        if (this.selectedMeatSlot >= 0) {
+            this.selectedMeat = villager.getSettlementsInventory()
+                    .getBackpack().getItem(this.selectedMeatSlot).copyWithCount(1);
+            villager.setHeldItem(this.selectedMeat.copy());
+        }
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.targetWolf)));
     }
 

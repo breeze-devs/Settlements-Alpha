@@ -23,5 +23,11 @@ public class GeneralConfig {
             defaultValue = false)
     public static boolean disableNaturalExperienceGain;
 
+    @BooleanConfig(type = ConfigurationType.GENERAL,
+            identifier = "bypass_inventory_requirements",
+            description = "When true, behaviors run without requiring or emitting demand signals for their input items. " +
+                    "If the villager happens to have the item, it is still consumed.",
+            defaultValue = false)
+    public static boolean bypassInventoryRequirements;
 
 }

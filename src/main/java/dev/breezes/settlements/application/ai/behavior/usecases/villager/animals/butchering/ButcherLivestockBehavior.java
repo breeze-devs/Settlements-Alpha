@@ -12,10 +12,12 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.ButcheringAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -40,6 +42,8 @@ import java.util.function.Predicate;
 @CustomLog
 public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
+    private static final ResourceLocation IRON_AXE_ID = ResourceLocation.withDefaultNamespace("iron_axe");
+
     private enum ButcherStage implements StageKey {
         BUTCHER_TARGET,
         COLLECT_DROPS,
@@ -59,7 +63,8 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public ButcherLivestockBehavior(@Nonnull ButcherLivestockConfig config,
-                                    @Nonnull HungerConfig hungerConfig) {
+                                    @Nonnull HungerConfig hungerConfig,
+                                    @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
@@ -73,6 +78,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                 .requireVillageOwnedTag(config.requireVillageOwnedTag())
                 .build();
         this.preconditions.add(this.nearbyButcherableLivestockExistsCondition);
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_AXE_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.butcherCountRemaining = 0;
         this.selectedAnimalType = null;

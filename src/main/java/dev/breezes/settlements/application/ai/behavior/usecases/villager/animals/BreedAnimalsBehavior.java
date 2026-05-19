@@ -12,23 +12,23 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
@@ -37,29 +37,11 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 @CustomLog
 public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
-
-    private static final ItemStack WHEAT = new ItemStack(Items.WHEAT);
-    private static final ItemStack CARROT = new ItemStack(Items.CARROT);
-    private static final ItemStack POTATO = new ItemStack(Items.POTATO);
-    private static final ItemStack BEETROOT = new ItemStack(Items.BEETROOT);
-    private static final ItemStack WHEAT_SEEDS = new ItemStack(Items.WHEAT_SEEDS);
-    private static final ItemStack BEETROOT_SEEDS = new ItemStack(Items.BEETROOT_SEEDS);
-    private static final ItemStack MELON_SEEDS = new ItemStack(Items.MELON_SEEDS);
-    private static final ItemStack PUMPKIN_SEEDS = new ItemStack(Items.PUMPKIN_SEEDS);
-
-    private static final Map<EntityType<? extends Animal>, ItemStack[]> BREED_ITEMS = Map.of(
-            EntityType.COW, new ItemStack[]{WHEAT},
-            EntityType.SHEEP, new ItemStack[]{WHEAT},
-            EntityType.CHICKEN, new ItemStack[]{WHEAT_SEEDS, BEETROOT_SEEDS, MELON_SEEDS, PUMPKIN_SEEDS},
-            EntityType.PIG, new ItemStack[]{CARROT, POTATO, BEETROOT},
-            EntityType.RABBIT, new ItemStack[]{CARROT}
-    );
 
     private enum BreedStage implements StageKey {
         FEED_FIRST,
@@ -70,6 +52,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
+    private final BreedSpecies species;
     private final NearbyBreedableAnimalPairExistsCondition<BaseVillager> nearbyBreedableAnimalPairExistsCondition;
 
     @Nullable
@@ -82,18 +65,21 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
     public BreedAnimalsBehavior(BreedAnimalsConfig config,
                                 HungerConfig hungerConfig,
-                                Set<EntityType<? extends Animal>> breedableAnimalTypes) {
+                                BreedSpecies species,
+                                DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
-        // Create behavior preconditions
+        this.species = species;
         this.nearbyBreedableAnimalPairExistsCondition = new NearbyBreedableAnimalPairExistsCondition<>(
                 config.scanRangeHorizontal(),
                 config.scanRangeVertical(),
-                breedableAnimalTypes);
+                species.getType());
         this.preconditions.add(this.nearbyBreedableAnimalPairExistsCondition);
+        this.preconditions.add(demandSignalService.requireAny(
+                List.of(new ItemMatch.TagRef(species.getFoodTag())),
+                1, 50, this.getClass().getSimpleName()));
 
-        // Initialize variables
         this.heldItem = null;
         this.breedTarget1 = null;
         this.breedTarget2 = null;
@@ -138,13 +124,16 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         this.breedTarget2 = breedablePair.get().getSecond();
         this.shouldRewardExperience = false;
 
-        ItemStack[] breedItems = BREED_ITEMS.get(this.breedTarget1.getType());
-        if (breedItems == null || breedItems.length == 0) {
-            this.requestStop("No configured breeding item for type %s".formatted(this.breedTarget1.getType().toString()));
+        ItemStack foundFood = findFirstMatchingFood(villager);
+        if (!foundFood.isEmpty()) {
+            this.heldItem = foundFood.copyWithCount(1);
+        } else if (GeneralConfig.bypassInventoryRequirements) {
+            this.heldItem = new ItemStack(this.species.getCanonicalFood());
+        } else {
+            this.requestStop("No food available for breeding at behavior start");
             return;
         }
 
-        this.heldItem = RandomUtil.choice(breedItems).copy();
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.breedTarget1)));
     }
 
@@ -165,11 +154,11 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
 
+        // Only claim if we actually started feeding; otherwise we'd grab unrelated nearby babies
         if (this.breedTarget1 != null) {
-            this.claimNearbyBabyAnimals(villager, this.breedTarget1.getType());
+            this.claimNearbyBabyAnimals(villager);
         }
 
-        // Stop breeding for both animals
         for (Animal target : new Animal[]{this.breedTarget1, this.breedTarget2}) {
             if (target == null) {
                 continue;
@@ -272,10 +261,12 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
         log.behaviorStatus("Feeding {} animal: '{}'", label, target);
 
-        // Feed the animal
+        if (!villager.getSettlementsInventory().consumeIfRequired(this.heldItem.getItem(), 1, GeneralConfig.bypassInventoryRequirements)) {
+            return StepResult.complete();
+        }
+
         target.setLeashedTo(villager, true);
 
-        // Display effects
         Location targetLocation = Location.fromEntity(target, false);
         ParticleRegistry.breedHearts(targetLocation);
         ParticleRegistry.breedItemConsume(targetLocation, this.heldItem);
@@ -286,13 +277,24 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         return StepResult.noOp();
     }
 
-    private void claimNearbyBabyAnimals(@Nonnull BaseVillager villager, @Nonnull EntityType<?> type) {
-        AABB scanBoundary = villager.getBoundingBox().inflate(6, 6, 6);
-        Predicate<Entity> isBabyOfRightType = targetEntity -> targetEntity.getType() == type && ((Animal) targetEntity).isBaby();
+    private ItemStack findFirstMatchingFood(@Nonnull BaseVillager villager) {
+        for (ItemStack stack : villager.getSettlementsInventory().getBackpack().getItems()) {
+            if (!stack.isEmpty() && stack.is(this.species.getFoodTag())) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private void claimNearbyBabyAnimals(@Nonnull BaseVillager villager) {
+        AABB scanBoundary = villager.getBoundingBox().inflate(6, 3, 6);
+        Predicate<Entity> isBabyOfRightType = targetEntity -> targetEntity.getType() == this.species.getType()
+                && ((Animal) targetEntity).isBaby();
         List<Entity> nearbyEntities = villager.level().getEntities(villager, scanBoundary, isBabyOfRightType);
         for (Entity nearbyEntity : nearbyEntities) {
             log.behaviorStatus("Claiming baby animal '{}' as village-owned", nearbyEntity);
             nearbyEntity.addTag(EntityTag.VILLAGE_OWNED_ANIMAL.getTag());
         }
     }
+
 }

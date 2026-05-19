@@ -13,20 +13,24 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
@@ -45,6 +49,8 @@ import java.util.UUID;
 @CustomLog
 public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
+    private static final ResourceLocation BONE_ID = ResourceLocation.withDefaultNamespace("bone");
+
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
 
@@ -60,7 +66,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
     private int attemptsRemaining;
     private boolean shouldRewardExperience;
 
-    public TameWolfBehavior(TameWolfConfig config, HungerConfig hungerConfig) {
+    public TameWolfBehavior(TameWolfConfig config, HungerConfig hungerConfig, DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
@@ -77,6 +83,9 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                 wolf -> wolf != null && !wolf.isTame(),
                 1);
         this.preconditions.add(this.nearbyUntamedWolfExistsCondition);
+
+        // Precondition: has at least one bone
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BONE_ID), 1, 50, this.getClass().getSimpleName()));
 
         // Precondition: ownership below per-expertise limit
         // TODO: we should move this somewhere else
@@ -130,6 +139,12 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
                     // If already tamed somehow, end
                     if (wolf.isTame()) {
+                        return StepResult.complete();
+                    }
+
+                    // Consume a bone for each attempt
+                    if (!ctx.getInitiator().getMinecraftEntity().getSettlementsInventory()
+                            .consumeIfRequired(Items.BONE, 1, GeneralConfig.bypassInventoryRequirements)) {
                         return StepResult.complete();
                     }
 
@@ -221,7 +236,14 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenWolf.get()))));
-        this.attemptsRemaining = MAX_TAME_ATTEMPTS;
+        int bonesAvailable = villager.getSettlementsInventory().countItem(Items.BONE);
+        this.attemptsRemaining = GeneralConfig.bypassInventoryRequirements
+                ? MAX_TAME_ATTEMPTS
+                : Math.min(MAX_TAME_ATTEMPTS, bonesAvailable);
+        if (this.attemptsRemaining <= 0) {
+            this.requestStop("No bones available at behavior start");
+            return;
+        }
         this.shouldRewardExperience = false;
     }
 
