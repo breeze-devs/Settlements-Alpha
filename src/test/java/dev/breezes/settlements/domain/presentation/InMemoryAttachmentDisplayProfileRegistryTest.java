@@ -57,7 +57,7 @@ class InMemoryAttachmentDisplayProfileRegistryTest {
         AttachmentDisplayProfile resolved = registry.get(TestSlot.TEST, ItemCategory.AXE);
 
         // Assert
-        assertEquals(Vec3.ZERO, resolved.getTranslation());
+        assertEquals(new Vec3(0, -0.1, 0), resolved.getTranslation());
         assertEquals(new Vector3f(), resolved.getRotation());
         assertEquals(1.0F, resolved.getScale(), 0.0001F);
     }

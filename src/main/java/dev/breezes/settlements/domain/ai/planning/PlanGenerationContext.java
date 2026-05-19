@@ -6,6 +6,7 @@ import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import dev.breezes.settlements.domain.world.WorldCalendar;
 import lombok.Builder;
 
 import java.util.List;
@@ -30,6 +31,13 @@ public record PlanGenerationContext(
 
     public PlanGenerationContext {
         availableBehaviors = List.copyOf(availableBehaviors);
+    }
+
+    /**
+     * Derived from {@link #wakeAtAbsoluteTick} so the two cannot drift apart.
+     */
+    public long calendarDay() {
+        return WorldCalendar.calendarDayOf(this.wakeAtAbsoluteTick);
     }
 
 }

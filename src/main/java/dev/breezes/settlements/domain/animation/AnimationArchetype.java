@@ -11,6 +11,7 @@ public enum AnimationArchetype {
     INTERACT,
     SURVEY_WITH_SPYGLASS,
     WRITE_TO_MAP,
+    EAT,
     ;
 
     private static final AnimationArchetype[] VALUES = values();

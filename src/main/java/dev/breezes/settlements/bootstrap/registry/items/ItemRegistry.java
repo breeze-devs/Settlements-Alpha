@@ -15,7 +15,7 @@ public final class ItemRegistry {
     public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(BuiltInRegistries.ITEM, SettlementsMod.MOD_ID);
 
     public static final DeferredHolder<Item, SpawnEggItem> BASE_VILLAGER_SPAWN_EGG = REGISTRY.register("base_villager_spawn_egg",
-            () -> new DeferredSpawnEggItem(EntityRegistry.BASE_VILLAGER, 0x7E3080, 0x2BD125, new Item.Properties()));
+            () -> new DeferredSpawnEggItem(EntityRegistry.BASE_VILLAGER, 0x6B4030, 0xD49575, new Item.Properties()));
 
     public static final DeferredHolder<Item, Item> VILLAGER_FISHING_ROD = REGISTRY.register("villager_fishing_rod",
             () -> new Item(new Item.Properties().stacksTo(1)));

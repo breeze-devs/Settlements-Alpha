@@ -1,6 +1,7 @@
 package dev.breezes.settlements.domain.ai.planning;
 
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
+import dev.breezes.settlements.domain.world.WorldCalendar;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
@@ -65,8 +66,12 @@ public class DayPlan {
         this.currentSlotIndex = currentSlotIndex;
     }
 
-    public long getAuthoredDayNumber() {
-        return this.wakeAtAbsoluteTick / TICKS_PER_DAY;
+    /**
+     * Midnight-aligned calendar day this plan was authored for. Derived from
+     * {@link #wakeAtAbsoluteTick} so the two cannot drift apart.
+     */
+    public long getCalendarDay() {
+        return WorldCalendar.calendarDayOf(this.wakeAtAbsoluteTick);
     }
 
     public Optional<PlanSlot> getCurrentSlot() {

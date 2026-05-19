@@ -46,6 +46,7 @@ class DayPlanAttachmentCodecTest {
         // Assert
         assertEquals(PlanDayType.WORK_DAY, decoded.getDayType());
         assertEquals(47_000L, decoded.getWakeAtAbsoluteTick());
+        assertEquals(2L, decoded.getCalendarDay());
         assertEquals(1, decoded.getCurrentSlotIndex());
         assertEquals(23_000, decoded.getDayStartTick());
         assertEquals(23_000, decoded.getSchedule().wakeTick());

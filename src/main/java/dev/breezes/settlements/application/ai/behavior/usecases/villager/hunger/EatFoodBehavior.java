@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
@@ -83,6 +84,7 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
 
                     this.selectedFood = villager.getSettlementsInventory().getBackpack().getItem(this.selectedFoodSlot).copyWithCount(1);
                     villager.setHeldItem(this.selectedFood.copy());
+                    villager.setMotion(AnimationArchetype.EAT);
                     this.particleTimer = RandomRangeTickable.of(PARTICLE_MAX_INTERVAL, PARTICLE_MIN_INTERVAL);
                     return StepResult.noOp();
                 })
@@ -108,6 +110,7 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
                 })
                 .onEnd(context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
+                    villager.setMotion(AnimationArchetype.IDLE);
                     this.finishEating(villager);
                     return StepResult.complete();
                 })
@@ -116,6 +119,7 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        villager.setMotion(AnimationArchetype.IDLE);
         villager.clearHeldItem();
         this.selectedFood = null;
         this.selectedFoodSlot = -1;

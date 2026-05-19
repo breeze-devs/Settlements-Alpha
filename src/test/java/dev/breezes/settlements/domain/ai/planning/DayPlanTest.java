@@ -27,7 +27,7 @@ class DayPlanTest {
         assertEquals(PlanStatus.PENDING, plan.getStatus());
         assertEquals(PlanDayType.WORK_DAY, plan.getDayType());
         assertEquals(49_000L, plan.getWakeAtAbsoluteTick());
-        assertEquals(2L, plan.getAuthoredDayNumber());
+        assertEquals(2L, plan.getCalendarDay());
         assertEquals(0, plan.getCurrentSlotIndex());
     }
 

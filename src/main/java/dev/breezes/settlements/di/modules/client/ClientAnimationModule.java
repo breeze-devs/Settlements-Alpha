@@ -11,6 +11,7 @@ import dev.breezes.settlements.domain.animation.AnimationResolver;
 import dev.breezes.settlements.domain.animation.ButcheringAnimations;
 import dev.breezes.settlements.domain.animation.CartographerAnimations;
 import dev.breezes.settlements.domain.animation.DefaultAnimationResolver;
+import dev.breezes.settlements.domain.animation.EatingAnimations;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
 import dev.breezes.settlements.domain.animation.InMemoryAnimationLibrary;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
@@ -42,7 +43,9 @@ public abstract class ClientAnimationModule {
                         Map.entry(AnimationKey.of(AnimationArchetype.SURVEY_WITH_SPYGLASS, ItemCategory.SPYGLASS),
                                 CartographerAnimations.surveyWithSpyglass()),
                         Map.entry(AnimationKey.of(AnimationArchetype.WRITE_TO_MAP, ItemCategory.MAP),
-                                CartographerAnimations.markMap())))
+                                CartographerAnimations.markMap()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.EAT, ItemCategory.GENERIC),
+                                EatingAnimations.eat())))
                 .build();
     }
 

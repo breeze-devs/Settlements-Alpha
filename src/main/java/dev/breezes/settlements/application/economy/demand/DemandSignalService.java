@@ -82,6 +82,8 @@ public final class DemandSignalService {
                 return true;
             }
             if (villager.getSettlementsInventory().countMatching(match) >= quantity) {
+                // Clear any signal previously emitted for this match so chest/trade stop procuring
+                this.remove(villager, match);
                 return true;
             }
             this.emit(villager, match, quantity, priorityBoost, null, source, villager.level().getGameTime());
@@ -115,6 +117,10 @@ public final class DemandSignalService {
             }
             for (ItemMatch match : matches) {
                 if (villager.getSettlementsInventory().countMatching(match) >= quantity) {
+                    // Any-of satisfied — clear signals for all alternatives, not just the satisfied one
+                    for (ItemMatch m : matches) {
+                        this.remove(villager, m);
+                    }
                     return true;
                 }
             }

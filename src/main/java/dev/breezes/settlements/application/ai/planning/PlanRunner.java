@@ -20,6 +20,7 @@ import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
 import lombok.AccessLevel;
@@ -49,6 +50,7 @@ public class PlanRunner {
     private static final String RESET_REASON_ASYNC_OVERRUN = "async plan generation overrun";
     private static final String RESET_REASON_BACKWARD_JUMP = "backward dayTime jump";
     private static final String RESET_REASON_BACKWARD_WHILE_UNLOADED = "backward dayTime jump while unloaded";
+    private static final String RESET_REASON_CALENDAR_DAY_MISMATCH = "calendar day mismatch";
 
     private final IBehaviorCatalog catalog;
     private final BehaviorPoolResolver behaviorPoolResolver;
@@ -83,6 +85,14 @@ public class PlanRunner {
                     villager.getUUID(), dayTime, plan.getWakeAtAbsoluteTick());
             this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
             return;
+        } else if (hasCalendarDayMismatch(plan, dayTime)) {
+            // Forward time jumps (e.g. /time set, bed-sleep skip) can cross the calendar boundary
+            // before the plan's authored duration elapses; without this gate the villager would
+            // execute yesterday's plan into today.
+            log.behaviorStatus("Plan calendar mismatch for villager {}: planDay={}, currentDay={}, dayTime={}",
+                    villager.getUUID(), plan.getCalendarDay(), WorldCalendar.calendarDayOf(dayTime), dayTime);
+            this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
+            return;
         } else if (delta.firstTick() && detectOnLoadBackward(plan, dayTick, plan.getDayStartTick())) {
             // Runtime clocks are transient across reloads; persisted slot order is the only reliable signal for unloaded time travel.
             plan = this.hardReset(level, villager, runtime, dayTime, RESET_REASON_BACKWARD_WHILE_UNLOADED, delta);
@@ -111,7 +121,9 @@ public class PlanRunner {
         if (plan == null) {
             plan = villager.getDayPlan();
         }
-        if (plan != null && !this.isPlanOverdue(plan, dayTime)) {
+        if (plan != null
+                && !this.isPlanOverdue(plan, dayTime)
+                && !hasCalendarDayMismatch(plan, dayTime)) {
             return;
         }
 
@@ -128,7 +140,14 @@ public class PlanRunner {
             }
         }
 
-        String resetReason = plan == null ? RESET_REASON_MISSING_PLAN : RESET_REASON_MISSING_SUCCESSOR;
+        String resetReason;
+        if (plan == null) {
+            resetReason = RESET_REASON_MISSING_PLAN;
+        } else if (hasCalendarDayMismatch(plan, dayTime)) {
+            resetReason = RESET_REASON_CALENDAR_DAY_MISMATCH;
+        } else {
+            resetReason = RESET_REASON_MISSING_SUCCESSOR;
+        }
         this.hardReset(level, villager, runtime, dayTime, resetReason,
                 DeltaResult.builder()
                         .deltaTicks(1)
@@ -262,8 +281,7 @@ public class PlanRunner {
     private PlanGenerationContext createGenerationContext(@Nonnull BaseVillager villager, long wakeAtAbsoluteTick) {
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerProfessionKey professionKey = new VillagerProfessionKey(profession.name());
-        long authoredDayNumber = wakeAtAbsoluteTick / TICKS_PER_DAY;
-        PlanDayType dayType = this.weekCycleProvider.getDayType(authoredDayNumber);
+        PlanDayType dayType = this.weekCycleProvider.getDayType(WorldCalendar.calendarDayOf(wakeAtAbsoluteTick));
         return PlanGenerationContext.builder()
                 .profession(professionKey)
                 .genetics(villager.getGenetics().copy())
@@ -405,37 +423,47 @@ public class PlanRunner {
         return pendingNextPlan != null && dayTime < pendingNextPlan.getWakeAtAbsoluteTick();
     }
 
+    @VisibleForTesting
+    static boolean hasCalendarDayMismatch(@Nonnull DayPlan plan, long dayTime) {
+        return plan.getCalendarDay() != WorldCalendar.calendarDayOf(dayTime);
+    }
+
     private boolean isPlanOverdue(@Nonnull DayPlan plan, long dayTime) {
         // Backstop for stuck slots or interrupt overflow where natural cursor exhaustion never fires.
         return dayTime >= plan.getWakeAtAbsoluteTick() + plan.getSchedule().authoredDayDurationTicks();
     }
 
     private long currentWakeAtOrBefore(@Nonnull BaseVillager villager, long dayTime) {
-        long dayStart = floorToDay(dayTime);
-        long candidate = dayStart + this.wakeTickForDay(villager, dayStart / TICKS_PER_DAY);
-        if (candidate > dayTime) {
-            long previousDayStart = dayStart - TICKS_PER_DAY;
-            return Math.max(0L,
-                    previousDayStart + this.wakeTickForDay(villager, previousDayStart / TICKS_PER_DAY));
+        long currentCalendarDay = WorldCalendar.calendarDayOf(dayTime);
+        long todayWake = this.wakeAbsoluteTickFor(villager, currentCalendarDay);
+        if (todayWake > dayTime) {
+            // Today's wake event hasn't happened yet (e.g. world-start before a librarian's 8am, or
+            // mid-pre-dawn of a farmer whose 4:30am wake is still upcoming).
+            long yesterdayWake = this.wakeAbsoluteTickFor(villager, currentCalendarDay - 1);
+            return Math.max(0L, yesterdayWake);
         }
-        return candidate;
+        return Math.max(0L, todayWake);
     }
 
     private long nextWakeAtAbsoluteTick(@Nonnull BaseVillager villager, long dayTime, long currentWakeAtAbsoluteTick) {
-        long dayStart = floorToDay(dayTime);
-        long candidate = dayStart + this.wakeTickForDay(villager, dayStart / TICKS_PER_DAY);
-        if (candidate <= currentWakeAtAbsoluteTick) {
-            long nextDayStart = dayStart + TICKS_PER_DAY;
-            return nextDayStart + this.wakeTickForDay(villager, nextDayStart / TICKS_PER_DAY);
+        long currentCalendarDay = WorldCalendar.calendarDayOf(dayTime);
+        long todayWake = this.wakeAbsoluteTickFor(villager, currentCalendarDay);
+        if (todayWake > currentWakeAtAbsoluteTick) {
+            return todayWake;
         }
-        return candidate;
+        return this.wakeAbsoluteTickFor(villager, currentCalendarDay + 1);
     }
 
-    private int wakeTickForDay(@Nonnull BaseVillager villager, long authoredDayNumber) {
+    private long wakeAbsoluteTickFor(@Nonnull BaseVillager villager, long calendarDay) {
+        int wakeTickInMcDay = this.wakeTickFor(villager, calendarDay);
+        return WorldCalendar.absoluteTickFor(calendarDay, wakeTickInMcDay);
+    }
+
+    private int wakeTickFor(@Nonnull BaseVillager villager, long calendarDay) {
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerProfessionKey professionKey = new VillagerProfessionKey(profession.name());
         ScheduleProfile scheduleProfile = ScheduleProfile.defaultFor(professionKey);
-        PlanDayType dayType = this.weekCycleProvider.getDayType(authoredDayNumber);
+        PlanDayType dayType = this.weekCycleProvider.getDayType(calendarDay);
         GeneticsProfile genetics = villager.getGenetics();
         return this.wakeTickResolver.resolveWakeTick(scheduleProfile, genetics, dayType);
     }
@@ -503,10 +531,6 @@ public class PlanRunner {
     @VisibleForTesting
     static int currentDayTick(long dayTime) {
         return Math.floorMod(dayTime, TICKS_PER_DAY);
-    }
-
-    private static long floorToDay(long dayTime) {
-        return Math.floorDiv(dayTime, TICKS_PER_DAY) * TICKS_PER_DAY;
     }
 
 }

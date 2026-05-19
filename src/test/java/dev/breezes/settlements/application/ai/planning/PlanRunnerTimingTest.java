@@ -8,6 +8,7 @@ import dev.breezes.settlements.domain.ai.planning.DayPlanSchedule;
 import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.planning.PlanSlotStatus;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
+import dev.breezes.settlements.domain.time.TimeOfDay;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -208,6 +209,65 @@ class PlanRunnerTimingTest {
 
         // Assert
         assertFalse(shouldWait);
+    }
+
+    @Test
+    void hasCalendarDayMismatch_returnsFalseWhenPlanAndCurrentDayTimeShareCalendarDay() {
+        // Plan generated for a farmer's 04:30 wake on calendar day 1; current dayTime is 06:30
+        // the same morning. Calendar day matches.
+        // Arrange
+        DayPlan plan = DayPlan.builder()
+                .dayType(PlanDayType.WORK_DAY)
+                .wakeAtAbsoluteTick(TimeOfDay.AT_04_30.getTick())
+                .schedule(schedule())
+                .build();
+        long currentDayTime = TimeOfDay.TICKS_PER_DAY + TimeOfDay.AT_06_30.getTick();
+
+        // Act
+        boolean mismatch = PlanRunner.hasCalendarDayMismatch(plan, currentDayTime);
+
+        // Assert
+        assertFalse(mismatch);
+    }
+
+    @Test
+    void hasCalendarDayMismatch_returnsTrueWhenPlayerTimeSetCrossesMidnight() {
+        // Reproduces the original bug: plan generated for calendar day 0 (e.g. a farmer woke at
+        // 04:30 the very first morning), then /time set jumps the world to 06:30 of calendar day 1.
+        // The stored plan no longer matches the active calendar day.
+        // Arrange
+        DayPlan plan = DayPlan.builder()
+                .dayType(PlanDayType.WORK_DAY)
+                .wakeAtAbsoluteTick(0L)
+                .schedule(schedule())
+                .build();
+        long dayTimeOnNextCalendarDay = TimeOfDay.TICKS_PER_DAY + TimeOfDay.AT_06_30.getTick();
+
+        // Act
+        boolean mismatch = PlanRunner.hasCalendarDayMismatch(plan, dayTimeOnNextCalendarDay);
+
+        // Assert
+        assertTrue(mismatch);
+    }
+
+    @Test
+    void hasCalendarDayMismatch_returnsTrueForBedSleepSkipFromYesterdayDuskToTodayDawn() {
+        // Bed-sleep skip: plan was generated yesterday morning (wake at 07:00 calendar day 0),
+        // player slept through the night, dayTime jumps to dawn of calendar day 1. Calendar flipped
+        // even though the plan's authored duration may not yet be exhausted.
+        // Arrange
+        DayPlan plan = DayPlan.builder()
+                .dayType(PlanDayType.WORK_DAY)
+                .wakeAtAbsoluteTick(TimeOfDay.AT_07_00.getTick())
+                .schedule(schedule())
+                .build();
+        long dawnOfNextCalendarDay = TimeOfDay.TICKS_PER_DAY;
+
+        // Act
+        boolean mismatch = PlanRunner.hasCalendarDayMismatch(plan, dawnOfNextCalendarDay);
+
+        // Assert
+        assertTrue(mismatch);
     }
 
     private static DayPlan plan(PlanSlot... slots) {

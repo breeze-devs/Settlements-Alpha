@@ -39,7 +39,7 @@ public final class DayPlanSnapshotAssembler {
                 .toList();
 
         return DayPlanSnapshot.builder()
-                .dayNumber(dayPlan.getAuthoredDayNumber())
+                .dayNumber(dayPlan.getCalendarDay())
                 .dayType(dayPlan.getDayType())
                 .currentTime(formatTime(currentDayTick))
                 .planStatus(dayPlan.getStatus())
