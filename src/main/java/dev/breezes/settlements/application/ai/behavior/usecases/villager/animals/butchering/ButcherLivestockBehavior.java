@@ -16,7 +16,7 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.ButcheringAnimations;
+import dev.breezes.settlements.domain.animation.SwingAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -101,7 +101,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createButcherStep() {
         TimeBasedStep<BaseVillager> butcherStep = TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.of(ButcheringAnimations.SWING_DURATION_TICKS).asTickable())
+                .withTickable(ClockTicks.of(SwingAnimations.SWING_DURATION_TICKS).asTickable())
                 .onStart(context -> {
                     BaseVillager villager = context.getInitiator();
                     villager.setHeldItem(Items.IRON_AXE.getDefaultInstance());
@@ -110,7 +110,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                     context.getInitiator().triggerMotion(AnimationArchetype.SWING_HEAVY);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(ButcheringAnimations.SWING_IMPACT_TICKS), context -> {
+                .addKeyFrame(ClockTicks.of(SwingAnimations.SWING_IMPACT_TICKS), context -> {
                     if (this.target == null || !this.target.isAlive()) {
                         context.getInitiator().setMotion(AnimationArchetype.IDLE);
                         return StepResult.complete();

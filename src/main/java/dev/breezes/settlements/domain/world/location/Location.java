@@ -1,8 +1,9 @@
 package dev.breezes.settlements.domain.world.location;
 
-import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.shared.util.MathUtil;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -19,6 +20,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -26,6 +29,8 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -358,6 +363,34 @@ public class Location implements Cloneable {
         this.level.addFreshEntity(entity);
     }
 
+    /**
+     * Spawns an item entity at this location and adds it to the world.
+     * <p>
+     * When {@code randomMotion} is true, applies a small upward random delta-movement so the drop visibly
+     * scatters — matches the feel of vanilla block-break drops.
+     */
+    public ItemEntity dropItem(@Nonnull ItemStack stack, boolean randomMotion) {
+        Level world = Objects.requireNonNull(this.level, "Cannot drop an item from a location with no level");
+
+        ItemEntity entity = new ItemEntity(world, this.x, this.y, this.z, stack);
+        if (randomMotion) {
+            entity.setDeltaMovement(RandomUtil.randomDouble(-0.05D, 0.05D), RandomUtil.randomDouble(0D, 0.05D),
+                    RandomUtil.randomDouble(-0.05D, 0.05D));
+        }
+        world.addFreshEntity(entity);
+        return entity;
+    }
+
+    /**
+     * Spawns one item entity per stack at this location. See {@link #dropItem(ItemStack, boolean)}.
+     */
+    public List<ItemEntity> dropItems(@Nonnull List<ItemStack> stacks, boolean randomMotion) {
+        List<ItemEntity> entities = new ArrayList<>(stacks.size());
+        for (ItemStack stack : stacks) {
+            entities.add(this.dropItem(stack, randomMotion));
+        }
+        return entities;
+    }
 
 }
 

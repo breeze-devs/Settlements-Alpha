@@ -26,15 +26,15 @@ public class WaitStep<T extends ISettlementsBrainEntity> extends AbstractStep<T>
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext<T> context) {
-        if (waitTime.tickCheckAndReset(1)) {
-            return StepResult.transition(nextStage);
+    protected StepResult doTick(@Nonnull BehaviorContext<T> context) {
+        if (this.waitTime.tickCheckAndReset(1)) {
+            return StepResult.transition(this.nextStage);
         }
         return StepResult.noOp();
     }
 
     @Override
-    public void reset() {
+    protected void doOnEnter() {
         this.waitTime.reset();
     }
 

@@ -60,7 +60,7 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext<T> context) {
+    protected StepResult doTick(@Nonnull BehaviorContext<T> context) {
         if (this.onStart != null && this.tickable.getTicksElapsed() == 0) {
             StepResult result = this.onStart.tick(context);
             if (!(result instanceof StepResult.NoOp)) {
@@ -112,9 +112,26 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
     }
 
     @Override
-    public void reset() {
+    protected void doOnEnter() {
+        // Per-entry: rewind the tickable so the keyframes / onStart / onEnd fire correctly on
+        // re-entry within a run, and propagate the per-entry reset to substeps.
         this.tickable.reset();
 
+        if (this.onStart != null) {
+            this.onStart.onEnter();
+        }
+        if (this.onEnd != null) {
+            this.onEnd.onEnter();
+        }
+
+        this.periodicSteps.values().forEach(steps -> steps.forEach(BehaviorStep::onEnter));
+        this.keyFrames.values().forEach(BehaviorStep::onEnter);
+    }
+
+    @Override
+    protected void doReset() {
+        // Per-run: full reset cascade so any nested cross-entry state (e.g. a LoopBackStep counter
+        // used inside a keyframe — unusual but legal) clears between behavior runs.
         if (this.onStart != null) {
             this.onStart.reset();
         }

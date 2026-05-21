@@ -93,4 +93,18 @@ public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<
         return Collections.unmodifiableList(this.targets);
     }
 
+    /**
+     * Re-runs the block predicate against a single position against the current world state.
+     * <p>
+     * Use this from per-behavior pick-target steps to re-validate cached candidates between loop iterations,
+     * since {@link #getTargets()} returns a snapshot captured during the last {@link #test(Entity)} call
+     * and can include positions whose block has since been mutated (harvested, replaced, etc.).
+     */
+    public boolean stillMatches(@Nonnull BlockPos pos, @Nonnull Level level) {
+        BlockState blockState = level.getBlockState(pos);
+        boolean blockMatches = (this.targetBlock != null && blockState.is(this.targetBlock))
+                || (this.targetTag != null && blockState.is(this.targetTag));
+        return blockMatches && this.extraBlockCondition.test(pos, level);
+    }
+
 }

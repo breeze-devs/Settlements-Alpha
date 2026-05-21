@@ -26,7 +26,7 @@ public class NavigateToTargetStep<T extends ISettlementsBrainEntity> extends Abs
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext<T> context) {
+    protected StepResult doTick(@Nonnull BehaviorContext<T> context) {
         T initiator = context.getInitiator();
 
         if (initiator.getNavigationManager().isNavigating()) {

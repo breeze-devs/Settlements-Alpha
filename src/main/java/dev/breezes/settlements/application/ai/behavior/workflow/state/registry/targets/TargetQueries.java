@@ -4,6 +4,8 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorCo
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 
@@ -31,6 +33,28 @@ public final class TargetQueries {
                 .map(Targetable::getAsEntity)
                 .filter(castTo::isInstance)
                 .map(castTo::cast);
+    }
+
+    /**
+     * Returns the first {@link TargetableType#BLOCK} target as a {@link PhysicalBlock}, or empty if
+     * the target state is missing or the first target is not a block.
+     * <p>
+     * Used by bespoke impact-keyframe steps that need the captured block snapshot (state + location).
+     */
+    public static <T extends ISettlementsBrainEntity> Optional<PhysicalBlock> firstBlock(@Nonnull BehaviorContext<T> context) {
+        return context.getState(BehaviorStateType.TARGET, TargetState.class)
+                .flatMap(TargetState::getFirst)
+                .filter(target -> target.getType() == TargetableType.BLOCK)
+                .map(Targetable::getAsBlock);
+    }
+
+    /**
+     * Convenience over {@link #firstBlock(BehaviorContext)} returning just the {@link BlockPos} —
+     * matches the most common call-site shape inside harvest impact keyframes.
+     */
+    public static <T extends ISettlementsBrainEntity> Optional<BlockPos> firstBlockPos(@Nonnull BehaviorContext<T> context) {
+        return firstBlock(context)
+                .map(block -> block.getLocation(false).toBlockPos());
     }
 
 }

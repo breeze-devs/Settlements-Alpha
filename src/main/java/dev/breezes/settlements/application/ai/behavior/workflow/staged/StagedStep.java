@@ -75,7 +75,7 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext<T> context) {
+    protected StepResult doTick(@Nonnull BehaviorContext<T> context) {
         BehaviorStep<T> step = this.stageStepMap.get(this.currentStage);
         if (step == null) {
             log.error("Missing step for stage: {} in {} ({})", this.currentStage.name(), this.getName(), this.getUuid());
@@ -112,9 +112,19 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
         }
     }
 
-    public void reset() {
+    @Override
+    protected void doOnEnter() {
+        // Per-entry reset: restart the state machine at the START stage. Stages themselves
+        // get per-entry reset via transitionStage() as the machine advances — no eager cascade
+        // here, because eager cascade would clear cross-entry state (loop counters) inside
+        // stages we haven't entered yet on this re-entry.
         this.currentStage = this.startingStage;
+    }
 
+    @Override
+    protected void doReset() {
+        // Per-run reset: full cascade. Each stage step gets its full reset() so nested
+        // cross-entry state (LoopBackStep.remaining etc.) clears between behavior runs.
         if (this.onStart != null) {
             this.onStart.reset();
         }
@@ -169,13 +179,17 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
             return;
         }
 
-        if (!this.stageStepMap.containsKey(stage)) {
+        BehaviorStep<T> nextStep = this.stageStepMap.get(stage);
+        if (nextStep == null) {
             log.warn("Attempted to transition to an unknown stage: {} for {} ({})", stage.name(), this.getName(), this.getUuid());
             throw new StopBehaviorException("Attempted to transition to an unknown stage: %s".formatted(stage.name()));
         }
 
         log.behaviorStatus("Transitioning from {} to {} stage for {} ({})", this.currentStage.name(), stage.name(), this.getName(), this.getUuid());
         this.currentStage = stage;
+        // Per-entry lifecycle: give the destination step a fresh start so timeouts, tickables, and
+        // nested sequence/state indices don't carry over from a previous entry on this same run.
+        nextStep.onEnter();
     }
 
     private enum InternalStage implements StageKey {

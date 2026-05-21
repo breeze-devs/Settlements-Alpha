@@ -44,7 +44,7 @@ public class SequencedStep<T extends ISettlementsBrainEntity> extends AbstractSt
     }
 
     @Override
-    public StepResult tick(@Nonnull BehaviorContext<T> context) {
+    protected StepResult doTick(@Nonnull BehaviorContext<T> context) {
         if (this.currentStepIndex >= this.steps.size()) {
             return StepResult.complete();
         }
@@ -69,15 +69,23 @@ public class SequencedStep<T extends ISettlementsBrainEntity> extends AbstractSt
     }
 
     @Override
-    public void reset() {
+    protected void doOnEnter() {
         this.currentStepIndex = 0;
+        this.cascade(BehaviorStep::onEnter);
+    }
 
+    @Override
+    protected void doReset() {
+        this.cascade(BehaviorStep::reset);
+    }
+
+    private void cascade(@Nonnull java.util.function.Consumer<BehaviorStep<T>> hook) {
         Set<BehaviorStep<T>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         for (BehaviorStep<T> step : this.steps) {
             if (!visited.add(step)) {
                 continue;
             }
-            step.reset();
+            hook.accept(step);
         }
     }
 

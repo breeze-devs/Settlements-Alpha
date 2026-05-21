@@ -134,7 +134,12 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                             .orElse(false);
                 });
 
-        return new ConditionalStep<>(closeEnoughHorizontally, arrivedStep, navigateStep);
+        return ConditionalStep.<BaseVillager>builder()
+                .name("SurveyArrivedOrNavigate")
+                .condition(closeEnoughHorizontally)
+                .trueStep(arrivedStep)
+                .falseStep(navigateStep)
+                .build();
     }
 
     private BehaviorStep<BaseVillager> createSurveyStep() {
