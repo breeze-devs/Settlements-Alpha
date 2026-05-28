@@ -39,10 +39,11 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
     @Nullable
     private final BehaviorStep<T> onEnd;
 
-    public TimeBasedStep(@Nonnull ITickable tickable,
+    public TimeBasedStep(@Nonnull String name,
+                         @Nonnull ITickable tickable,
                          @Nullable BehaviorStep<T> onStart,
                          @Nullable BehaviorStep<T> onEnd) {
-        super("TimeBasedStep[%s]".formatted(tickable.getRemainingCooldownsAsPrettyString()));
+        super(name);
         this.tickable = tickable;
         this.keyFrames = new HashMap<>();
         this.periodicSteps = new HashMap<>();
@@ -150,6 +151,8 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
     public static class Builder<T extends ISettlementsBrainEntity> {
 
         @Nullable
+        private String name;
+        @Nullable
         private ITickable tickable;
         @Nonnull
         private final Map<Long, BehaviorStep<T>> keyFrames;
@@ -163,6 +166,11 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
         public Builder() {
             this.keyFrames = new HashMap<>();
             this.periodicSteps = new HashMap<>();
+        }
+
+        public Builder<T> name(@Nonnull String name) {
+            this.name = name;
+            return this;
         }
 
         public Builder<T> withTickable(@Nonnull ITickable tickable) {
@@ -203,7 +211,9 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
             if (this.tickable == null) {
                 throw new IllegalStateException("Tickable must be set");
             }
-            TimeBasedStep<T> step = new TimeBasedStep<>(this.tickable, this.onStart, this.onEnd);
+            String resolvedName = this.name != null ? this.name
+                    : "TimeBasedStep[%s]".formatted(this.tickable.getRemainingCooldownsAsPrettyString());
+            TimeBasedStep<T> step = new TimeBasedStep<>(resolvedName, this.tickable, this.onStart, this.onEnd);
             step.addKeyFrames(this.keyFrames);
             step.addPeriodicSteps(this.periodicSteps);
             return step;

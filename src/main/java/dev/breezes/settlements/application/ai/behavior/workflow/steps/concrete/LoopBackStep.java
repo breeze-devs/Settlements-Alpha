@@ -26,6 +26,7 @@ import java.util.function.ToIntFunction;
 public class LoopBackStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
     private static final int UNINITIALIZED = -1;
+    private static final int MINIMUM_ITERATIONS = 1;
 
     private final StageKey loopBackTo;
     private final StageKey completionTransition;
@@ -49,7 +50,7 @@ public class LoopBackStep<T extends ISettlementsBrainEntity> extends AbstractSte
     @Override
     protected StepResult doTick(@Nonnull BehaviorContext<T> context) {
         if (this.remaining == UNINITIALIZED) {
-            this.remaining = this.maxIterationsResolver.applyAsInt(context);
+            this.remaining = Math.max(MINIMUM_ITERATIONS, this.maxIterationsResolver.applyAsInt(context));
         }
         this.remaining--;
         return this.remaining > 0

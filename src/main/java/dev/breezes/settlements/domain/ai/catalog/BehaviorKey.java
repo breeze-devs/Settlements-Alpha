@@ -40,6 +40,10 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey HARVEST_SUGARCANE = new BehaviorKey("harvest_sugarcane");
     public static final BehaviorKey COLLECT_HONEY = new BehaviorKey("collect_honey");
     public static final BehaviorKey HARVEST_HONEYCOMB = new BehaviorKey("harvest_honeycomb");
+    public static final BehaviorKey HARVEST_PUMPKIN = new BehaviorKey("harvest_pumpkin");
+    public static final BehaviorKey HARVEST_MELON = new BehaviorKey("harvest_melon");
+    public static final BehaviorKey HARVEST_SWEET_BERRIES = new BehaviorKey("harvest_sweet_berries");
+    public static final BehaviorKey HARVEST_RIPE_CROPS = new BehaviorKey("harvest_ripe_crops");
 
     // ---- Animal handling ----
     public static final BehaviorKey MILK_COW = new BehaviorKey("milk_cow");

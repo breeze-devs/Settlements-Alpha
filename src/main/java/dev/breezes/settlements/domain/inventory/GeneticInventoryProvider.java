@@ -11,11 +11,11 @@ import net.minecraft.util.Mth;
 @CustomLog
 public class GeneticInventoryProvider {
 
-    public static final int MINIMUM_INVENTORY_SIZE = 6;
+    public static final int MINIMUM_INVENTORY_SIZE = 18;
     public static final int MAXIMUM_INVENTORY_SIZE = 54;
 
     // Curve tuning
-    public static final double GROWTH_EXPONENT = 1.5;
+    public static final double GROWTH_EXPONENT = 2;
     public static final double CONSTITUTION_BONUS = 0.24;
 
     public VillagerInventory provideDefault() {

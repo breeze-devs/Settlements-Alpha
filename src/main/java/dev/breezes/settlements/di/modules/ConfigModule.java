@@ -16,9 +16,13 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.craftin
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestMelonConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestPumpkinConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestRipeCropsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
@@ -160,6 +164,30 @@ public final class ConfigModule {
     @Singleton
     static HarvestHoneycombConfig harvestHoneycombConfig() {
         return ConfigFactory.create(HarvestHoneycombConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static HarvestPumpkinConfig harvestPumpkinConfig() {
+        return ConfigFactory.create(HarvestPumpkinConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static HarvestMelonConfig harvestMelonConfig() {
+        return ConfigFactory.create(HarvestMelonConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static HarvestSweetBerriesConfig harvestSweetBerriesConfig() {
+        return ConfigFactory.create(HarvestSweetBerriesConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static HarvestRipeCropsConfig harvestRipeCropsConfig() {
+        return ConfigFactory.create(HarvestRipeCropsConfig.class);
     }
 
     @Provides

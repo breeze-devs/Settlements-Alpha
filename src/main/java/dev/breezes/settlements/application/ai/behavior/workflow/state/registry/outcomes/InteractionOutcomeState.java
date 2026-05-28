@@ -15,12 +15,16 @@ public class InteractionOutcomeState implements BehaviorState {
     @Getter
     private boolean success;
 
-    private InteractionOutcomeState() {
-        this.success = false;
+    private InteractionOutcomeState(boolean success) {
+        this.success = success;
     }
 
     public static InteractionOutcomeState empty() {
-        return new InteractionOutcomeState();
+        return new InteractionOutcomeState(false);
+    }
+
+    public static InteractionOutcomeState success() {
+        return new InteractionOutcomeState(true);
     }
 
     public void markSuccess() {

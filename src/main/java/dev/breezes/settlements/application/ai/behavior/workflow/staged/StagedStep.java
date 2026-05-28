@@ -87,6 +87,15 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
         if (result instanceof StepResult.NoOp) {
             return StepResult.noOp();
         } else if (result instanceof StepResult.Transition(StageKey key)) {
+            // When an inner step explicitly transitions to the outer StagedStep's own exit stage
+            // (e.g. AWARD → Stage.END), treat it as clean completion rather than calling
+            // transitionStage(key), which would fail with "unknown stage" because the
+            // behavior-level terminal stage is intentionally absent from the stageStepMap.
+            if (key.equals(this.nextStage)) {
+                this.transitionStage(InternalStage.END);
+                this.onEnd(context);
+                return StepResult.transition(this.nextStage);
+            }
             this.transitionStage(key);
             return StepResult.noOp();
         } else if (result instanceof StepResult.Complete) {

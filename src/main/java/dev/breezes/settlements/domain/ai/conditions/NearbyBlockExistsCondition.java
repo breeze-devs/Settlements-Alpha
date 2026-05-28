@@ -13,48 +13,82 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 @CustomLog
 public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<E> {
 
     private final double rangeHorizontal;
     private final double rangeVertical;
-    @Nullable
-    private Block targetBlock;
-    @Nullable
-    private TagKey<Block> targetTag;
     private final int minimumTargetCount;
 
-    // IBlockCondition allows testing both itself and neighbors
+    /**
+     * Unified block-match predicate. All constructors converge here so the scan loop and
+     * stillMatches re-validation share one code path instead of branching on nullable fields.
+     */
+    private final Predicate<BlockState> blockMatcher;
+
+    /**
+     * Optional secondary world-dependent predicate (e.g. neighbor checks). Applied only when
+     * blockMatcher passes. Defaults to always-true when the caller does not need neighbor access.
+     */
     private final IBlockCondition extraBlockCondition;
 
     @Nonnull
     private List<BlockPos> targets;
 
-    public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical, @Nonnull Block targetBlock, @Nullable IBlockCondition extraBlockCondition, int minimumTargetCount) {
-        this.rangeHorizontal = rangeHorizontal;
-        this.rangeVertical = rangeVertical;
-        this.targetBlock = targetBlock;
-        this.extraBlockCondition = extraBlockCondition == null ? (blockPos, level) -> true : extraBlockCondition;
-        this.minimumTargetCount = minimumTargetCount;
-        this.targets = new ArrayList<>();
-
-        if (minimumTargetCount < 1) {
-            throw new IllegalArgumentException("Minimum target count must be at least 1");
-        }
+    /**
+     * Convenience constructor for a single block type with an optional additional world-dependent
+     * predicate (e.g. checking neighboring blocks).
+     */
+    public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical,
+                                      @Nonnull Block targetBlock,
+                                      @Nullable IBlockCondition extraBlockCondition,
+                                      int minimumTargetCount) {
+        this(rangeHorizontal, rangeVertical,
+                state -> state.is(targetBlock),
+                extraBlockCondition,
+                minimumTargetCount);
     }
 
-    public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical, @Nonnull TagKey<Block> targetBlocks, @Nullable IBlockCondition extraBlockCondition, int minimumTargetCount) {
-        this.rangeHorizontal = rangeHorizontal;
-        this.rangeVertical = rangeVertical;
-        this.targetTag = targetBlocks;
-        this.extraBlockCondition = extraBlockCondition == null ? (blockPos, level) -> true : extraBlockCondition;
-        this.minimumTargetCount = minimumTargetCount;
-        this.targets = new ArrayList<>();
+    /**
+     * Convenience constructor for a block tag with an optional additional world-dependent predicate.
+     */
+    public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical,
+                                      @Nonnull TagKey<Block> targetTag,
+                                      @Nullable IBlockCondition extraBlockCondition,
+                                      int minimumTargetCount) {
+        this(rangeHorizontal, rangeVertical,
+                state -> state.is(targetTag),
+                extraBlockCondition,
+                minimumTargetCount);
+    }
 
+    /**
+     * Predicate-based constructor for cases where the matching logic does not map to a single
+     * block or tag — e.g. polymorphic subclass checks like {@code state.getBlock() instanceof CropBlock}.
+     * No additional world-dependent condition is supported here; encode all matching logic in the
+     * predicate itself.
+     */
+    public NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical,
+                                      @Nonnull Predicate<BlockState> blockStatePredicate,
+                                      int minimumTargetCount) {
+        this(rangeHorizontal, rangeVertical, blockStatePredicate, null, minimumTargetCount);
+    }
+
+    private NearbyBlockExistsCondition(double rangeHorizontal, double rangeVertical,
+                                       @Nonnull Predicate<BlockState> blockMatcher,
+                                       @Nullable IBlockCondition extraBlockCondition,
+                                       int minimumTargetCount) {
         if (minimumTargetCount < 1) {
             throw new IllegalArgumentException("Minimum target count must be at least 1");
         }
+        this.rangeHorizontal = rangeHorizontal;
+        this.rangeVertical = rangeVertical;
+        this.blockMatcher = blockMatcher;
+        this.extraBlockCondition = extraBlockCondition != null ? extraBlockCondition : (pos, level) -> true;
+        this.minimumTargetCount = minimumTargetCount;
+        this.targets = new ArrayList<>();
     }
 
     @Override
@@ -71,10 +105,8 @@ public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<
                     mutableBlockPos.set(entity.getX() + x, entity.getY() + y, entity.getZ() + z);
                     BlockState blockState = level.getBlockState(mutableBlockPos);
 
-                    // Only one of targetBlock/targetTag is set depending on which constructor was used
-                    boolean blockMatches = (this.targetBlock != null && blockState.is(this.targetBlock))
-                            || (this.targetTag != null && blockState.is(this.targetTag));
-                    if (blockMatches && this.extraBlockCondition.test(mutableBlockPos, entity.level())) {
+                    if (this.blockMatcher.test(blockState)
+                            && this.extraBlockCondition.test(mutableBlockPos, level)) {
                         targets.add(mutableBlockPos.immutable());
                         if (this.targets.size() >= this.minimumTargetCount) {
                             log.sensorStatus("Found at least {} blocks nearby", this.minimumTargetCount);
@@ -88,7 +120,6 @@ public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<
         return this.targets.size() >= this.minimumTargetCount;
     }
 
-    @Nonnull
     public List<BlockPos> getTargets() {
         return Collections.unmodifiableList(this.targets);
     }
@@ -96,15 +127,14 @@ public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<
     /**
      * Re-runs the block predicate against a single position against the current world state.
      * <p>
-     * Use this from per-behavior pick-target steps to re-validate cached candidates between loop iterations,
-     * since {@link #getTargets()} returns a snapshot captured during the last {@link #test(Entity)} call
-     * and can include positions whose block has since been mutated (harvested, replaced, etc.).
+     * Use this from per-behavior pick-target steps to re-validate cached candidates between loop
+     * iterations, since {@link #getTargets()} returns a snapshot captured during the last
+     * {@link #test(Entity)} call and can include positions whose block has since been mutated
+     * (harvested, replaced, etc.).
      */
     public boolean stillMatches(@Nonnull BlockPos pos, @Nonnull Level level) {
         BlockState blockState = level.getBlockState(pos);
-        boolean blockMatches = (this.targetBlock != null && blockState.is(this.targetBlock))
-                || (this.targetTag != null && blockState.is(this.targetTag));
-        return blockMatches && this.extraBlockCondition.test(pos, level);
+        return this.blockMatcher.test(blockState) && this.extraBlockCondition.test(pos, level);
     }
 
 }

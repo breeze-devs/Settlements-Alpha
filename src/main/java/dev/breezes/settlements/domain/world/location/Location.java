@@ -373,16 +373,17 @@ public class Location implements Cloneable {
         Level world = Objects.requireNonNull(this.level, "Cannot drop an item from a location with no level");
 
         ItemEntity entity = new ItemEntity(world, this.x, this.y, this.z, stack);
-        if (randomMotion) {
-            entity.setDeltaMovement(RandomUtil.randomDouble(-0.05D, 0.05D), RandomUtil.randomDouble(0D, 0.05D),
-                    RandomUtil.randomDouble(-0.05D, 0.05D));
-        }
         world.addFreshEntity(entity);
+
+        if (randomMotion) {
+            entity.setDeltaMovement(RandomUtil.randomDouble(-0.1D, 0.1D), 0.1D, RandomUtil.randomDouble(-0.1D, 0.1D));
+        }
+
         return entity;
     }
 
     /**
-     * Spawns one item entity per stack at this location. See {@link #dropItem(ItemStack, boolean)}.
+     * Spawns one item entity per stack at this location. See {@link #dropItem}.
      */
     public List<ItemEntity> dropItems(@Nonnull List<ItemStack> stacks, boolean randomMotion) {
         List<ItemEntity> entities = new ArrayList<>(stacks.size());

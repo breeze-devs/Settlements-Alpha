@@ -32,12 +32,20 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestMelonBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestMelonConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestPumpkinBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestPumpkinConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestRipeCropsBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestRipeCropsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
@@ -451,6 +459,100 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("honeycomb"))
                         .build())
                 .factory(() -> new HarvestHoneycombBehavior(config, hungerConfig, yieldData, demandSignalService))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry harvestPumpkin(HarvestPumpkinConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.HARVEST_PUMPKIN)
+                        .displayName("Harvest Pumpkin")
+                        .description("Harvest ripe pumpkins from nearby stems")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.HEAVY)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.HARVEST_PUMPKIN.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("pumpkin"))
+                        .build())
+                .factory(() -> new HarvestPumpkinBehavior(config, hungerConfig))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry harvestMelon(HarvestMelonConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.HARVEST_MELON)
+                        .displayName("Harvest Melon")
+                        .description("Harvest ripe melons from nearby stems")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.HEAVY)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.HARVEST_MELON.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("melon"))
+                        .build())
+                .factory(() -> new HarvestMelonBehavior(config, hungerConfig))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry harvestSweetBerries(HarvestSweetBerriesConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.HARVEST_SWEET_BERRIES)
+                        .displayName("Harvest Sweet Berries")
+                        .description("Pick ripe sweet berries from nearby bushes")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.HARVEST_SWEET_BERRIES.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("sweet_berries"))
+                        .build())
+                .factory(() -> new HarvestSweetBerriesBehavior(config, hungerConfig))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry harvestRipeCrops(HarvestRipeCropsConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.HARVEST_RIPE_CROPS)
+                        .displayName("Harvest Ripe Crops")
+                        .description("Harvest ripe crops from nearby farmland")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.HARVEST_RIPE_CROPS.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("wheat"))
+                        .build())
+                .factory(() -> new HarvestRipeCropsBehavior(config, hungerConfig))
                 .build();
     }
 
