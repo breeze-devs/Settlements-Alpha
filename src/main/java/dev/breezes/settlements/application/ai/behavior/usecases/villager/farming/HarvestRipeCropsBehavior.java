@@ -4,11 +4,10 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.blocks.VisitedBlockSitesState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.items.ItemState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.InteractionOutcomeState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
@@ -20,19 +19,26 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.O
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.PickupItemsStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.WaitStep;
+import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
-import dev.breezes.settlements.domain.ai.conditions.NearbyRipeCropCondition;
+import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
-import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import dev.breezes.settlements.domain.world.blocks.AabbBlockScan;
+import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
+import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
+import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
+import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -56,22 +62,32 @@ public class HarvestRipeCropsBehavior extends VillagerStateMachineBehavior {
         PICK_TARGET, APPROACH, HARVEST, SETTLE, PICKUP, LOOP, AWARD, END
     }
 
+    private final BlockMatcher ripeCropMatcher;
+    private final BlockScanBox confirmBox;
+    private final int maxConfirms;
     private final HarvestRipeCropsConfig config;
-    private final NearbyRipeCropCondition<BaseVillager> nearbyCropCondition;
+    private final BlockMemoryTargetResolver targetResolver;
 
     public HarvestRipeCropsBehavior(@Nonnull HarvestRipeCropsConfig config,
-                                    @Nonnull HungerConfig hungerConfig) {
+                                    @Nonnull HungerConfig hungerConfig,
+                                    @Nonnull BlockMemoryTargetResolver targetResolver) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
                 hungerConfig,
                 config.experienceReward());
         this.config = config;
-        this.nearbyCropCondition = NearbyRipeCropCondition.<BaseVillager>builder()
-                .rangeHorizontal(config.scanRangeHorizontal())
-                .rangeVertical(config.scanRangeVertical())
-                .build();
-        this.preconditions.add(this.nearbyCropCondition);
+        this.targetResolver = targetResolver;
+        this.ripeCropMatcher = BlockMatchers.RIPE_CROP;
+        this.confirmBox = BlockScanBox.confirm();
+        this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
+        this.preconditions.add(KnownBlockSitesPrecondition.builder()
+                .memoryType(MemoryTypeRegistry.RIPE_CROP_SITES)
+                .matcher(this.ripeCropMatcher)
+                .confirmBox(this.confirmBox)
+                .maxSitesToConfirm(this.maxConfirms)
+                .description("Known ripe crop sites")
+                .build());
 
         this.initializeStateMachine(this.createControlStep(), Stage.END);
     }
@@ -122,21 +138,13 @@ public class HarvestRipeCropsBehavior extends VillagerStateMachineBehavior {
         return OneShotStep.<BaseVillager>builder()
                 .name("PickRipeCropTarget")
                 .action(ctx -> {
-                    Level world = ctx.getInitiator().level();
-                    List<BlockPos> candidates = this.nearbyCropCondition.getTargets().stream()
-                            .filter(pos -> this.nearbyCropCondition.stillMatches(pos, world))
-                            .toList();
-                    if (candidates.isEmpty()) {
+                    boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.RIPE_CROP_SITES,
+                            this.ripeCropMatcher, this.confirmBox, this.maxConfirms);
+                    if (!resolved) {
                         log.behaviorStatus("No additional ripe crop targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
-                    BlockPos picked = RandomUtil.choice(candidates);
-                    log.behaviorStatus("New ripe crop target found at {}, continuing behavior", picked.toShortString());
 
-                    BlockState state = world.getBlockState(picked);
-                    ctx.setState(BehaviorStateType.TARGET,
-                            TargetState.of(Targetable.fromBlock(
-                                    PhysicalBlock.of(Location.of(picked, world), state))));
                     return StepResult.transition(Stage.APPROACH);
                 })
                 .build();
@@ -164,20 +172,24 @@ public class HarvestRipeCropsBehavior extends VillagerStateMachineBehavior {
                     if (!(world instanceof ServerLevel server)) {
                         return StepResult.noOp();
                     }
-                    // Guard against the crop being harvested by another agent between targeting and arrival.
-                    if (!(state.getBlock() instanceof CropBlock crop) || !crop.isMaxAge(state)) {
+                    // Guard against the crop being harvested or replaced while the villager was approaching it.
+                    if (AabbBlockScan.findFirst(pos, BlockScanBox.self(), this.ripeCropMatcher, world).isEmpty()) {
                         return StepResult.noOp();
                     }
+
+                    CropBlock crop = (CropBlock) state.getBlock();
                     Location effectLocation = Location.of(pos, world).center(true).add(0, 0.5, 0, true);
                     ParticleRegistry.harvestBlock(effectLocation, state);
-                    effectLocation.playSound(state.getSoundType(world, pos, villager).getBreakSound(), 0.8f, 1.0f, SoundSource.BLOCKS);
+                    effectLocation.playSound(SoundEvents.VILLAGER_WORK_FARMER, 0.8f, 1.0f, SoundSource.BLOCKS);
 
                     List<ItemStack> drops = Block.getDrops(state, server, pos, null, villager, ItemStack.EMPTY);
                     List<ItemEntity> spawned = Location.of(pos, world).center(true).dropItems(drops, true);
                     spawned.forEach(itemEntity -> itemEntity.setPickUpDelay(ClockTicks.seconds(5).getTicksAsInt()));
 
-                    // Reset to age 0 so the crop regrows from seed rather than being destroyed outright
+                    // Reset to age 0 so the crop regrows from seed rather than being destroyed outright.
                     world.setBlockAndUpdate(pos, crop.getStateForAge(0));
+                    ctx.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
+                            .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(world.dimension(), pos)));
                     ctx.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
                     ctx.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.success());
                     return StepResult.noOp();
@@ -191,6 +203,7 @@ public class HarvestRipeCropsBehavior extends VillagerStateMachineBehavior {
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         context.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.empty());
+        context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
     }
 
     @Override

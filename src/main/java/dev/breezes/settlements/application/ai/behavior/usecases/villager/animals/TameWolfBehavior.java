@@ -51,6 +51,8 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation BONE_ID = ResourceLocation.withDefaultNamespace("bone");
 
+    // TODO: change to always succeed once we onboard to LOOP.
+    //  i.e. after N loops the final attempt is a guaranteed tame
     private static final double TAME_SUCCESS_CHANCE = 0.33;
     private static final int MAX_TAME_ATTEMPTS = 5;
 

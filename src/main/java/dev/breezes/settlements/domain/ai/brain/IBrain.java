@@ -1,13 +1,20 @@
 package dev.breezes.settlements.domain.ai.brain;
 
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
-import dev.breezes.settlements.domain.ai.memory.entry.IMemoryEntry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
 public interface IBrain {
+
+    /**
+     * Wires up server-scoped state (e.g. sensors) for the brain's owner.
+     * <p>
+     * Called once on the server when the entity spawns or loads, before the first {@link #tick(int)}.
+     * The constructor cannot do this: the server graph is unavailable during entity construction and on the client.
+     */
+    void initialize();
 
     /**
      * Called every delta ticks to update the brain, this should be called frequently
@@ -17,18 +24,12 @@ public interface IBrain {
     /*
      * Memory management methods
      */
-    <T> Optional<IMemoryEntry<T>> getMemory(@Nonnull MemoryType<T> type);
+    <T> Optional<T> getMemory(@Nonnull MemoryType<T> type);
 
-    <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull IMemoryEntry<T> memory);
+    <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull T value);
 
-    // TODO: evaluate how we should set expiration
-    <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull IMemoryEntry<T> memory, @Nonnull ClockTicks expiration);
+    <T> void setMemory(@Nonnull MemoryType<T> type, @Nonnull T value, @Nonnull ClockTicks expiration);
 
     void clearMemory(@Nonnull MemoryType<?> type);
-
-    /**
-     * Loops through all memories and removes any expired ones
-     */
-    void checkAndExpireMemories();
 
 }

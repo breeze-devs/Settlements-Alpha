@@ -43,6 +43,22 @@ public final class MemoryModuleTypeRegistry {
             "village_chests",
             () -> new MemoryModuleType<>(Optional.empty()));
 
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_PUMPKIN_SITES = REGISTRY.register(
+            "ripe_pumpkin_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_MELON_SITES = REGISTRY.register(
+            "ripe_melon_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_SWEET_BERRY_BUSH_SITES = REGISTRY.register(
+            "ripe_sweet_berry_bush_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_CROP_SITES = REGISTRY.register(
+            "ripe_crop_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
     private MemoryModuleTypeRegistry() {
     }
 

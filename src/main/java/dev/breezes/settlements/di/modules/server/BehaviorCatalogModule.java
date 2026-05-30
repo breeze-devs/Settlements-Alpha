@@ -65,6 +65,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeAcceptBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeInitiateBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeSessionPresenter;
+import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
 import dev.breezes.settlements.application.ai.trading.NegotiationEngine;
 import dev.breezes.settlements.application.ai.trading.TradeExecutor;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
@@ -464,7 +465,9 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry harvestPumpkin(HarvestPumpkinConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry harvestPumpkin(HarvestPumpkinConfig config,
+                                               HungerConfig hungerConfig,
+                                               BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_PUMPKIN)
@@ -475,20 +478,22 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_PUMPKIN.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("pumpkin"))
                         .build())
-                .factory(() -> new HarvestPumpkinBehavior(config, hungerConfig))
+                .factory(() -> new HarvestPumpkinBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry harvestMelon(HarvestMelonConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry harvestMelon(HarvestMelonConfig config,
+                                             HungerConfig hungerConfig,
+                                             BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_MELON)
@@ -499,20 +504,22 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_MELON.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("melon"))
                         .build())
-                .factory(() -> new HarvestMelonBehavior(config, hungerConfig))
+                .factory(() -> new HarvestMelonBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry harvestSweetBerries(HarvestSweetBerriesConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry harvestSweetBerries(HarvestSweetBerriesConfig config,
+                                                    HungerConfig hungerConfig,
+                                                    BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_SWEET_BERRIES)
@@ -522,20 +529,22 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_SWEET_BERRIES.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("sweet_berries"))
                         .build())
-                .factory(() -> new HarvestSweetBerriesBehavior(config, hungerConfig))
+                .factory(() -> new HarvestSweetBerriesBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry harvestRipeCrops(HarvestRipeCropsConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry harvestRipeCrops(HarvestRipeCropsConfig config,
+                                                 HungerConfig hungerConfig,
+                                                 BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_RIPE_CROPS)
@@ -552,7 +561,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_RIPE_CROPS.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("wheat"))
                         .build())
-                .factory(() -> new HarvestRipeCropsBehavior(config, hungerConfig))
+                .factory(() -> new HarvestRipeCropsBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 

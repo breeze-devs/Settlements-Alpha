@@ -4,9 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
-import dev.breezes.settlements.application.ai.brain.DefaultBrain;
 import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
+import dev.breezes.settlements.application.ai.brain.VillagerBrain;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
@@ -131,9 +131,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         this.genetics = new GeneticsProfile();
 
-        // TODO: implement brain
-        this.settlementsBrain = DefaultBrain.builder()
-                .build();
+        this.settlementsBrain = new VillagerBrain(this);
 
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
         this.planRuntimeState = new PlanRuntimeState();
@@ -241,6 +239,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             this.settlementsInventory = this.geneticInventoryProvider().provide(this.genetics);
             this.addStartingFood(this.settlementsInventory);
         }
+        this.settlementsBrain.initialize();
         return finalizedSpawnData;
     }
 
@@ -258,6 +257,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         super.load(nbtTag);
         VillagerGeneticsAttachment.loadInto(this, this.genetics);
         VillagerBrainAttachment.loadInto(this);
+        this.settlementsBrain.initialize();
 
         // Load inventory
         this.settlementsInventory = this.geneticInventoryProvider().provide(this.genetics);
@@ -281,10 +281,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             this.tickHunger();
             this.bubbleService().tick(this, this.level().getGameTime());
         }
+    }
 
-        // if (this.level().isClientSide()) {
-        //     this.spinAnimator.tickAnimations(this.tickCount);
-        // }
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+
+        this.settlementsBrain.tick(1);
     }
 
     @Override
@@ -643,7 +646,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
                 MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType(),
                 MemoryTypeRegistry.OWNED_WOLVES.getModuleType(),
-                MemoryTypeRegistry.VILLAGE_CHESTS.getModuleType());
+                MemoryTypeRegistry.VILLAGE_CHESTS.getModuleType(),
+                MemoryTypeRegistry.RIPE_PUMPKIN_SITES.getModuleType(),
+                MemoryTypeRegistry.RIPE_MELON_SITES.getModuleType(),
+                MemoryTypeRegistry.RIPE_SWEET_BERRY_BUSH_SITES.getModuleType(),
+                MemoryTypeRegistry.RIPE_CROP_SITES.getModuleType()
+        );
     }
 
     private static ImmutableList<SensorType<? extends Sensor<? super Villager>>> sensorTypes() {

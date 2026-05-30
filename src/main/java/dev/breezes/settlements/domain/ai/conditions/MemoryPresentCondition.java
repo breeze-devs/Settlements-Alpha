@@ -27,7 +27,7 @@ public class MemoryPresentCondition<T extends Entity & ISettlementsBrainEntity, 
         return Optional.ofNullable(brainEntity)
                 .map(ISettlementsBrainEntity::getSettlementsBrain)
                 .flatMap(brain -> brain.getMemory(this.memoryType))
-                .map(memoryEntry -> this.memoryValuePredicate.test(memoryEntry.getMemoryValue()))
+                .map(this.memoryValuePredicate::test)
                 .orElse(false);
     }
 

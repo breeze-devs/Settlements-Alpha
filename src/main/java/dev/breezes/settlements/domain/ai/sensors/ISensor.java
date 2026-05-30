@@ -1,15 +1,16 @@
 package dev.breezes.settlements.domain.ai.sensors;
 
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryWrite;
 import dev.breezes.settlements.domain.time.ITickable;
-import dev.breezes.settlements.domain.ai.sensors.result.ISenseResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-public interface ISensor<T extends Entity> {
+public interface ISensor<T extends Entity & ISettlementsBrainEntity> {
 
     /**
      * List of preconditions that must be met before the sensor can be executed
@@ -26,7 +27,7 @@ public interface ISensor<T extends Entity> {
     /**
      * Perform the sensing action and return the result
      */
-    ISenseResult doSense(@Nonnull Level world, @Nonnull T entity);
+    List<MemoryWrite<?>> doSense(@Nonnull Level world, @Nonnull T entity);
 
     /**
      * Cooldown between each sense, can be set initially to delay the first sense

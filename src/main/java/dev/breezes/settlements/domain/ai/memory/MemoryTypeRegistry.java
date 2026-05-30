@@ -40,9 +40,25 @@ public final class MemoryTypeRegistry {
             .moduleTypeSupplier(MemoryModuleTypeRegistry.VILLAGE_CHESTS)
             .build();
 
-//     public static final MemoryType<List<TMemoryFarmland>> OWNED_FARMLAND = register(MemoryType.<List<TMemoryFarmland>>builder()
-//             .identifier("owned_farmland")
-//             .build());
+    public static final MemoryType<List<GlobalPos>> RIPE_PUMPKIN_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("ripe_pumpkin_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.RIPE_PUMPKIN_SITES)
+            .build();
+
+    public static final MemoryType<List<GlobalPos>> RIPE_MELON_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("ripe_melon_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.RIPE_MELON_SITES)
+            .build();
+
+    public static final MemoryType<List<GlobalPos>> RIPE_SWEET_BERRY_BUSH_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("ripe_sweet_berry_bush_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.RIPE_SWEET_BERRY_BUSH_SITES)
+            .build();
+
+    public static final MemoryType<List<GlobalPos>> RIPE_CROP_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("ripe_crop_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.RIPE_CROP_SITES)
+            .build();
 
     private MemoryTypeRegistry() {
     }

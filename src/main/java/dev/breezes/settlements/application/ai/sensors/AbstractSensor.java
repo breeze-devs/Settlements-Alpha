@@ -1,10 +1,10 @@
 package dev.breezes.settlements.application.ai.sensors;
 
-import dev.breezes.settlements.domain.ai.sensors.ISensor;
+import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
+import dev.breezes.settlements.domain.ai.sensors.ISensor;
 import dev.breezes.settlements.domain.time.ITickable;
-import dev.breezes.settlements.domain.ai.sensors.result.ISenseResult;
 import lombok.Getter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
@@ -17,12 +17,10 @@ public abstract class AbstractSensor<T extends Entity & ISettlementsBrainEntity>
 
     protected final List<IEntityCondition<T>> preconditions;
     protected final ITickable senseCooldown;
-    protected final T entity;
 
-    protected AbstractSensor(List<IEntityCondition<T>> preconditions, ITickable senseCooldown, T entity) {
+    protected AbstractSensor(List<IEntityCondition<T>> preconditions, ITickable senseCooldown) {
         this.preconditions = preconditions;
         this.senseCooldown = senseCooldown;
-        this.entity = entity;
     }
 
     @Override
@@ -32,27 +30,14 @@ public abstract class AbstractSensor<T extends Entity & ISettlementsBrainEntity>
             return;
         }
 
-        // Check preconditions
         for (IEntityCondition<T> precondition : this.preconditions) {
-            if (!precondition.test(this.entity)) {
+            if (!precondition.test(entity)) {
                 return;
             }
         }
 
-        // Perform sensing action
-        ISenseResult senseResult = this.doSense(world, entity);
-
-        // Handle the result
-        this.handleSenseResult(senseResult);
-    }
-
-    /**
-     * Default behavior is to overwrite the memory with the new memories or wipe the memory if no sense result of that type is present
-     * <p>
-     * This can be overridden to implement custom behavior
-     */
-    protected void handleSenseResult(ISenseResult senseResult) {
-        senseResult.saveToMemory(this.entity.getSettlementsBrain());
+        IBrain brain = entity.getSettlementsBrain();
+        this.doSense(world, entity).forEach(write -> write.applyTo(brain));
     }
 
 }

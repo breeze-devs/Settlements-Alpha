@@ -31,6 +31,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.smeltin
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
+import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
@@ -170,6 +171,12 @@ public final class ConfigModule {
     @Singleton
     static HarvestPumpkinConfig harvestPumpkinConfig() {
         return ConfigFactory.create(HarvestPumpkinConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static BlockResourceSensorConfig blockResourceSensorConfig() {
+        return ConfigFactory.create(BlockResourceSensorConfig.class);
     }
 
     @Provides

@@ -12,7 +12,6 @@ public interface ICondition<T> extends Predicate<T> {
     @Override
     boolean test(@Nullable T t);
 
-    @Nonnull
     default String description() {
         return this.getClass().getSimpleName();
     }

@@ -14,10 +14,12 @@ import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
+import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
 import dev.breezes.settlements.di.modules.server.InventoryModule;
 import dev.breezes.settlements.di.modules.server.PlanningModule;
 import dev.breezes.settlements.di.modules.server.PoolModule;
+import dev.breezes.settlements.di.modules.server.SensorCatalogModule;
 import dev.breezes.settlements.di.modules.server.ServerNetworkModule;
 import dev.breezes.settlements.di.modules.server.SettlementQueryModule;
 import dev.breezes.settlements.di.modules.server.UiSyncModule;
@@ -32,6 +34,7 @@ import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructur
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketReceiver;
 
 import javax.inject.Provider;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 @ServerScope
@@ -42,6 +45,7 @@ import java.util.concurrent.ExecutorService;
         PlanningModule.class,
         InventoryModule.class,
         SettlementQueryModule.class,
+        SensorCatalogModule.class,
         UiSyncModule.class,
 })
 public interface ServerComponent {
@@ -85,6 +89,8 @@ public interface ServerComponent {
     SettlementStructureLocator settlementStructureLocator();
 
     TradeSessionRegistry tradeSessionRegistry();
+
+    Set<VillagerSensorFactory> villagerSensorFactories();
 
     ExecutorService planGenerationExecutor();
 
