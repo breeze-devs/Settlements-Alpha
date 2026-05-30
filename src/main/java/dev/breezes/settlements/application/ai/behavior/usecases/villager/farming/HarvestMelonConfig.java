@@ -5,8 +5,6 @@ import dev.breezes.settlements.application.config.constants.BehaviorConfigConsta
 import dev.breezes.settlements.application.config.validation.BehaviorCooldownValidator;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
-import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfig;
-import dev.breezes.settlements.infrastructure.config.annotations.floats.FloatConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 
 @BehaviorConfig(name = "harvest_melon", type = ConfigurationType.BEHAVIOR)
@@ -43,51 +41,6 @@ public record HarvestMelonConfig(
                 defaultValue = 240,
                 min = 1)
         int behaviorCooldownMax,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_horizontal",
-                description = "Horizontal range (in blocks) to scan for nearby ripe melons",
-                defaultValue = 16,
-                min = 1,
-                max = 32)
-        int scanRangeHorizontal,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_vertical",
-                description = "Vertical range (in blocks) to scan for nearby ripe melons",
-                defaultValue = 4,
-                min = 0,
-                max = 8)
-        int scanRangeVertical,
-
-        @DoubleConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "close_enough_distance",
-                description = "Distance (in blocks) at which the villager is considered close enough to begin chopping",
-                defaultValue = 2.0,
-                min = 0.5,
-                max = 5.0)
-        double closeEnoughDistance,
-
-        @FloatConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "movement_speed",
-                description = "Movement speed multiplier while navigating to a melon",
-                defaultValue = 0.5f,
-                min = 0.1f,
-                max = 1.5f)
-        float movementSpeed,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "approach_timeout_ticks",
-                description = "Maximum ticks allowed for the villager to reach a melon before re-targeting (20 ticks = 1 second)",
-                defaultValue = 400,
-                min = 20,
-                max = 2000)
-        int approachTimeoutTicks,
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,

@@ -34,7 +34,7 @@ public record BehaviorKey(String id) {
 
     // ---- Cleric ----
     public static final BehaviorKey THROW_POTIONS = new BehaviorKey("throw_potions");
-    public static final BehaviorKey HARVEST_SOUL_SAND = new BehaviorKey("harvest_soul_sand");
+    public static final BehaviorKey HARVEST_NETHER_WART = new BehaviorKey("harvest_nether_wart");
 
     // ---- Farming ----
     public static final BehaviorKey HARVEST_SUGARCANE = new BehaviorKey("harvest_sugarcane");

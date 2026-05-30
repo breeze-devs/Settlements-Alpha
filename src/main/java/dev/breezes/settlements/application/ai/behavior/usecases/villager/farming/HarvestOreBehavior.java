@@ -4,135 +4,229 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.blocks.VisitedBlockSitesState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.items.ItemState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.InteractionOutcomeState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.AwardExperienceStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.LoopBackStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.PickupItemsStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.WaitStep;
+import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.domain.ai.conditions.NearbyOreExistsCondition;
-import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
+import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.SwingAnimations;
+import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.world.blocks.AabbBlockScan;
+import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
+import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
+import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
+import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.Tags;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class HarvestOreBehavior extends VillagerStateMachineBehavior {
 
-    private enum HarvestStage implements StageKey {
-        HARVEST_ORE,
-        END
+    private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
+    private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
+    private static final float MOVEMENT_SPEED = 0.5F;
+
+    private enum Stage implements StageKey {
+        PICK_TARGET, APPROACH, HARVEST, SETTLE, PICKUP, LOOP, AWARD, END
     }
 
-    @Nullable
-    private BlockPos orePos;
-    private int timeWorkedSoFar;
-    private List<BlockPos> validOresAroundVillager;
-    private final NearbyOreExistsCondition<BaseVillager> nearbyOreExistsCondition;
-    private boolean shouldRewardExperience;
+    private final BlockMatcher oreMatcher;
+    private final BlockScanBox confirmBox;
+    private final int maxConfirms;
+    private final HarvestOreConfig config;
+    private final BlockMemoryTargetResolver targetResolver;
 
-    public HarvestOreBehavior(HarvestOreConfig config,
-                              HungerConfig hungerConfig) {
+    public HarvestOreBehavior(@Nonnull HarvestOreConfig config,
+                              @Nonnull HungerConfig hungerConfig,
+                              @Nonnull BlockMemoryTargetResolver targetResolver) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
+        this.config = config;
+        this.targetResolver = targetResolver;
+        this.oreMatcher = BlockMatchers.HARVESTABLE_ORE;
+        this.confirmBox = BlockScanBox.confirm();
+        this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
+        this.preconditions.add(KnownBlockSitesPrecondition.builder()
+                .memoryType(MemoryTypeRegistry.ORE_SITES)
+                .matcher(this.oreMatcher)
+                .confirmBox(this.confirmBox)
+                .maxSitesToConfirm(this.maxConfirms)
+                .description("Known ore sites")
+                .build());
 
-        this.nearbyOreExistsCondition = NearbyOreExistsCondition.builder()
-                .rangeHorizontal(config.scanRangeHorizontal())
-                .rangeVertical(config.scanRangeVertical())
-                .build();
-        this.preconditions.add(this.nearbyOreExistsCondition);
-
-        this.orePos = null;
-        this.timeWorkedSoFar = 0;
-        this.validOresAroundVillager = new ArrayList<>();
-        this.shouldRewardExperience = false;
-
-        this.initializeStateMachine(this.createControlStep(), HarvestOreBehavior.HarvestStage.END);
+        this.initializeStateMachine(this.createControlStep(), Stage.END);
     }
 
-    protected StagedStep<BaseVillager> createControlStep() {
+    private StagedStep<BaseVillager> createControlStep() {
+        Map<StageKey, BehaviorStep<BaseVillager>> stageMap = new HashMap<>();
+        stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
+        stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
+                .closeEnoughDistance(2.5)
+                .navigateStep(new NavigateToTargetStep<>(MOVEMENT_SPEED, 2))
+                .actionStep(OneShotStep.<BaseVillager>builder()
+                        .name("ArrivedAtOre")
+                        .action(ctx -> StepResult.transition(Stage.HARVEST))
+                        .build())
+                .timeoutTicks(APPROACH_TIMEOUT_TICKS)
+                .timeoutTransition(Stage.PICK_TARGET)
+                .build());
+        stageMap.put(Stage.HARVEST, this.createHarvestStep());
+        stageMap.put(Stage.SETTLE, WaitStep.<BaseVillager>builder()
+                .waitTime(SETTLE_DURATION.asTickable())
+                .nextStage(Stage.PICKUP)
+                .build());
+        stageMap.put(Stage.PICKUP, PickupItemsStep.builder()
+                .name("PickupOreDrops")
+                .nextStage(Stage.LOOP)
+                .build());
+        stageMap.put(Stage.LOOP, LoopBackStep.<BaseVillager>builder()
+                .name("OreLoopBack")
+                .loopBackTo(Stage.PICK_TARGET)
+                .completionTransition(Stage.AWARD)
+                .maxIterationsResolver(ctx -> this.config.expertiseHarvestLimit()
+                        .getOrDefault(ctx.getInitiator().getExpertise().getConfigName(), 1))
+                .build());
+        stageMap.put(Stage.AWARD, AwardExperienceStep.builder()
+                .name("AwardOreXp")
+                .experienceAmount(this.config.experienceReward())
+                .nextStage(Stage.END)
+                .build());
+
         return StagedStep.<BaseVillager>builder()
                 .name("HarvestOreBehavior")
-                .initialStage(HarvestOreBehavior.HarvestStage.HARVEST_ORE)
-                .stageStepMap(Map.of(HarvestOreBehavior.HarvestStage.HARVEST_ORE, this.createHarvestStep()))
-                .nextStage(HarvestOreBehavior.HarvestStage.END)
+                .initialStage(Stage.PICK_TARGET)
+                .stageStepMap(stageMap)
+                .nextStage(Stage.END)
+                .build();
+    }
+
+    private BehaviorStep<BaseVillager> createPickTargetStep() {
+        return OneShotStep.<BaseVillager>builder()
+                .name("PickOreTarget")
+                .action(ctx -> {
+                    boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.ORE_SITES,
+                            this.oreMatcher, this.confirmBox, this.maxConfirms);
+                    if (!resolved) {
+                        log.behaviorStatus("No additional ore targets found, ending behavior");
+                        return StepResult.transition(Stage.AWARD);
+                    }
+
+                    return StepResult.transition(Stage.APPROACH);
+                })
                 .build();
     }
 
     private BehaviorStep<BaseVillager> createHarvestStep() {
-        return StayCloseStep.<BaseVillager>builder()
-                .closeEnoughDistance(1.5)
-                .navigateStep(new NavigateToTargetStep<>(0.5f, 2))
-                .actionStep(context -> {
-                    if (this.orePos == null) {
-                        return StepResult.complete();
-                    }
-
-                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
-
-                    Level level = villager.level();
-                    BlockState replaceBlock = level.getBlockState(orePos);
-                    replaceBlock = (replaceBlock.is(Tags.Blocks.ORES_IN_GROUND_STONE)) ? Blocks.COBBLESTONE.defaultBlockState() : Blocks.COBBLED_DEEPSLATE.defaultBlockState();
-                    level.destroyBlock(this.orePos, true, villager);
-                    level.setBlockAndUpdate(orePos, replaceBlock);
-                    this.shouldRewardExperience = true;
-                    return StepResult.complete();
+        return TimeBasedStep.<BaseVillager>builder()
+                .name("HarvestOre")
+                .withTickable(ClockTicks.of(SwingAnimations.SWING_DURATION_TICKS).asTickable())
+                .onStart(ctx -> {
+                    ctx.getInitiator().setHeldItem(Items.IRON_PICKAXE.getDefaultInstance());
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.SWING_HEAVY);
+                    return StepResult.noOp();
+                })
+                .addKeyFrame(ClockTicks.of(SwingAnimations.SWING_IMPACT_TICKS), this::replaceOre)
+                .onEnd(ctx -> {
+                    ctx.getInitiator().clearHeldItem();
+                    return StepResult.transition(Stage.SETTLE);
                 })
                 .build();
+    }
+
+    private StepResult replaceOre(@Nonnull BehaviorContext<BaseVillager> context) {
+        Optional<BlockPos> target = TargetQueries.firstBlockPos(context);
+        if (target.isEmpty()) {
+            return StepResult.noOp();
+        }
+
+        BaseVillager villager = context.getInitiator();
+        Level world = villager.level();
+        BlockPos pos = target.get();
+        BlockState oreState = world.getBlockState(pos);
+
+        if (!(world instanceof ServerLevel server)) {
+            return StepResult.noOp();
+        }
+
+        // Ore can be mined by another actor while this villager is approaching the remembered site.
+        if (AabbBlockScan.findFirst(pos, BlockScanBox.self(), this.oreMatcher, world).isEmpty()) {
+            return StepResult.noOp();
+        }
+
+        Location effectLocation = Location.of(pos, world).center(true).add(0, 0.5, 0, true);
+        ParticleRegistry.harvestBlock(effectLocation, oreState);
+        effectLocation.playSound(oreState.getSoundType(world, pos, villager).getBreakSound(), 0.8F, 1.0F, SoundSource.BLOCKS);
+
+        // Reserve item drops
+        List<ItemStack> drops = Block.getDrops(oreState, server, pos, null, villager, ItemStack.EMPTY);
+        List<ItemEntity> spawned = Location.of(pos, world).center(true).dropItems(drops, true);
+        spawned.forEach(itemEntity -> itemEntity.setPickUpDelay(ClockTicks.seconds(5).getTicksAsInt()));
+
+        // Replace block
+        BlockState replacement = this.createReplacementState(oreState);
+        world.setBlockAndUpdate(pos, replacement);
+
+        context.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
+                .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(world.dimension(), pos)));
+        context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
+        context.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.success());
+        return StepResult.noOp();
+    }
+
+    private BlockState createReplacementState(@Nonnull BlockState oreState) {
+        return oreState.is(Tags.Blocks.ORES_IN_GROUND_STONE)
+                ? Blocks.COBBLESTONE.defaultBlockState()
+                : Blocks.COBBLED_DEEPSLATE.defaultBlockState();
     }
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        this.timeWorkedSoFar = 0;
-        this.shouldRewardExperience = false;
-
-        this.validOresAroundVillager = new ArrayList<>(this.nearbyOreExistsCondition.getTargets());
-        if (this.validOresAroundVillager.isEmpty()) {
-            this.requestStop("No ores found within range");
-            return;
-        }
-
-        this.orePos = getRandomPosition(world);
-        context.setState(BehaviorStateType.TARGET,
-                TargetState.of(Targetable.fromBlock(PhysicalBlock.of(Location.of(this.orePos, world), world.getBlockState(this.orePos)))));
-    }
-
-    private BlockPos getRandomPosition(Level world) {
-        return this.validOresAroundVillager
-                .get(world.getRandom().nextInt(this.validOresAroundVillager.size()));
+        context.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.empty());
+        context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
     }
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.shouldRewardExperience) {
-            this.rewardExperience(villager);
-        }
-
         villager.getNavigationManager().stop();
-        this.timeWorkedSoFar = 0;
-        this.orePos = null;
-        this.validOresAroundVillager = new ArrayList<>();
-        this.shouldRewardExperience = false;
+        villager.clearHeldItem();
+        villager.setMotion(AnimationArchetype.IDLE);
     }
 
-    @Override
-    public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager villager) {
-        this.timeWorkedSoFar += delta;
-        return super.tickContinueConditions(delta, world, villager) && this.timeWorkedSoFar < 400;
-    }
 }

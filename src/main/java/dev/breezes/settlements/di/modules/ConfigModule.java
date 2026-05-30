@@ -20,7 +20,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestPumpkinConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestRipeCropsConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestNetherWartConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
@@ -199,8 +199,8 @@ public final class ConfigModule {
 
     @Provides
     @Singleton
-    static HarvestSoulSandConfig harvestSoulSandConfig() {
-        return ConfigFactory.create(HarvestSoulSandConfig.class);
+    static HarvestNetherWartConfig harvestNetherWartConfig() {
+        return ConfigFactory.create(HarvestNetherWartConfig.class);
     }
 
     @Provides

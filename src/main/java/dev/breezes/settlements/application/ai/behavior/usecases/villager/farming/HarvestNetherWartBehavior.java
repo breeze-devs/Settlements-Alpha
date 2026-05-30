@@ -25,7 +25,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.SwingAnimations;
+import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.AabbBlockScan;
 import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
@@ -38,12 +38,13 @@ import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nonnull;
@@ -53,26 +54,24 @@ import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
+public class HarvestNetherWartBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
     private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
-    private static final float MOVEMENT_SPEED = 0.5f;
 
     private enum Stage implements StageKey {
-        PICK_TARGET, APPROACH, CHOP, SETTLE, PICKUP, LOOP, AWARD, END
+        PICK_TARGET, APPROACH, HARVEST, SETTLE, PICKUP, LOOP, AWARD, END
     }
 
-    private final BlockMatcher ripePumpkinMatcher;
+    private final BlockMatcher netherWartMatcher;
     private final BlockScanBox confirmBox;
     private final int maxConfirms;
-
-    private final HarvestPumpkinConfig config;
+    private final HarvestNetherWartConfig config;
     private final BlockMemoryTargetResolver targetResolver;
 
-    public HarvestPumpkinBehavior(@Nonnull HarvestPumpkinConfig config,
-                                  @Nonnull HungerConfig hungerConfig,
-                                  @Nonnull BlockMemoryTargetResolver targetResolver) {
+    public HarvestNetherWartBehavior(@Nonnull HarvestNetherWartConfig config,
+                                     @Nonnull HungerConfig hungerConfig,
+                                     @Nonnull BlockMemoryTargetResolver targetResolver) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
@@ -80,15 +79,15 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
                 config.experienceReward());
         this.config = config;
         this.targetResolver = targetResolver;
-        this.ripePumpkinMatcher = BlockMatchers.HARVESTABLE_PUMPKIN;
+        this.netherWartMatcher = BlockMatchers.HARVESTABLE_NETHER_WART;
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
         this.preconditions.add(KnownBlockSitesPrecondition.builder()
-                .memoryType(MemoryTypeRegistry.RIPE_PUMPKIN_SITES)
-                .matcher(this.ripePumpkinMatcher)
+                .memoryType(MemoryTypeRegistry.NETHER_WART_FARM_SITES)
+                .matcher(this.netherWartMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
-                .description("Known ripe pumpkin sites")
+                .description("Known nether wart farm sites")
                 .build());
 
         this.initializeStateMachine(this.createControlStep(), Stage.END);
@@ -99,37 +98,37 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.5)
-                .navigateStep(new NavigateToTargetStep<>(MOVEMENT_SPEED, 1))
+                .navigateStep(new NavigateToTargetStep<>(0.5F, 1))
                 .actionStep(OneShotStep.<BaseVillager>builder()
-                        .name("ArrivedAtPumpkin")
-                        .action(ctx -> StepResult.transition(Stage.CHOP))
+                        .name("ArrivedAtNetherWart")
+                        .action(ctx -> StepResult.transition(Stage.HARVEST))
                         .build())
                 .timeoutTicks(APPROACH_TIMEOUT_TICKS)
                 .timeoutTransition(Stage.PICK_TARGET)
                 .build());
-        stageMap.put(Stage.CHOP, this.createChopStep());
+        stageMap.put(Stage.HARVEST, this.createHarvestStep());
         stageMap.put(Stage.SETTLE, WaitStep.<BaseVillager>builder()
                 .waitTime(SETTLE_DURATION.asTickable())
                 .nextStage(Stage.PICKUP)
                 .build());
         stageMap.put(Stage.PICKUP, PickupItemsStep.builder()
-                .name("PickupPumpkinDrops")
+                .name("PickupNetherWartDrops")
                 .nextStage(Stage.LOOP)
                 .build());
         stageMap.put(Stage.LOOP, LoopBackStep.<BaseVillager>builder()
-                .name("PumpkinLoopBack")
+                .name("NetherWartLoopBack")
                 .loopBackTo(Stage.PICK_TARGET)
                 .completionTransition(Stage.AWARD)
                 .maxIterationsResolver(ctx -> 4 * ctx.getInitiator().getExpertise().getLevel())
                 .build());
         stageMap.put(Stage.AWARD, AwardExperienceStep.builder()
-                .name("AwardPumpkinXp")
+                .name("AwardNetherWartXp")
                 .experienceAmount(this.config.experienceReward())
                 .nextStage(Stage.END)
                 .build());
 
         return StagedStep.<BaseVillager>builder()
-                .name("HarvestPumpkinBehavior")
+                .name("HarvestNetherWartBehavior")
                 .initialStage(Stage.PICK_TARGET)
                 .stageStepMap(stageMap)
                 .nextStage(Stage.END)
@@ -138,12 +137,12 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createPickTargetStep() {
         return OneShotStep.<BaseVillager>builder()
-                .name("PickPumpkinTarget")
+                .name("PickNetherWartTarget")
                 .action(ctx -> {
-                    boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.RIPE_PUMPKIN_SITES,
-                            this.ripePumpkinMatcher, this.confirmBox, this.maxConfirms);
+                    boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.NETHER_WART_FARM_SITES,
+                            this.netherWartMatcher, this.confirmBox, this.maxConfirms);
                     if (!resolved) {
-                        log.behaviorStatus("No additional pumpkin targets found, ending behavior");
+                        log.behaviorStatus("No additional nether wart targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 
@@ -152,16 +151,15 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep<BaseVillager> createChopStep() {
+    private BehaviorStep<BaseVillager> createHarvestStep() {
         return TimeBasedStep.<BaseVillager>builder()
-                .name("ChopPumpkin")
-                .withTickable(ClockTicks.of(SwingAnimations.SWING_DURATION_TICKS).asTickable())
+                .name("HarvestNetherWart")
+                .withTickable(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
-                    ctx.getInitiator().setHeldItem(Items.IRON_AXE.getDefaultInstance());
-                    ctx.getInitiator().triggerMotion(AnimationArchetype.SWING_HEAVY);
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(SwingAnimations.SWING_IMPACT_TICKS), ctx -> {
+                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_PEAK_TICK), ctx -> {
                     Optional<BlockPos> target = TargetQueries.firstBlockPos(ctx);
                     if (target.isEmpty()) {
                         return StepResult.noOp();
@@ -174,31 +172,28 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
                     if (!(world instanceof ServerLevel server)) {
                         return StepResult.noOp();
                     }
-
-                    // Guard against the target being replaced while the villager was approaching it
-                    if (AabbBlockScan.findFirst(pos, BlockScanBox.self(), this.ripePumpkinMatcher, world).isEmpty()) {
+                    // Guard against the wart being harvested or replaced while the villager was approaching.
+                    if (AabbBlockScan.findFirst(pos, BlockScanBox.self(), this.netherWartMatcher, world).isEmpty()) {
                         return StepResult.noOp();
                     }
 
                     Location effectLocation = Location.of(pos, world).center(true).add(0, 0.5, 0, true);
                     ParticleRegistry.harvestBlock(effectLocation, state);
-                    effectLocation.playSound(state.getSoundType(world, pos, villager).getBreakSound(), 0.8f, 1.0f, SoundSource.BLOCKS);
+                    effectLocation.playSound(SoundEvents.SOUL_SAND_BREAK, 0.8f, 1.0f, SoundSource.BLOCKS);
 
                     List<ItemStack> drops = Block.getDrops(state, server, pos, null, villager, ItemStack.EMPTY);
                     List<ItemEntity> spawned = Location.of(pos, world).center(true).dropItems(drops, true);
                     spawned.forEach(itemEntity -> itemEntity.setPickUpDelay(ClockTicks.seconds(5).getTicksAsInt()));
 
-                    world.removeBlock(pos, false);
+                    // Reset to age 0 so the wart regrows from seed rather than being destroyed.
+                    world.setBlockAndUpdate(pos, state.setValue(NetherWartBlock.AGE, 0));
                     ctx.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
                             .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(world.dimension(), pos)));
                     ctx.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
                     ctx.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.success());
                     return StepResult.noOp();
                 })
-                .onEnd(ctx -> {
-                    ctx.getInitiator().clearHeldItem();
-                    return StepResult.transition(Stage.SETTLE);
-                })
+                .onEnd(ctx -> StepResult.transition(Stage.SETTLE))
                 .build();
     }
 
@@ -213,7 +208,6 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
-        villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
     }
 

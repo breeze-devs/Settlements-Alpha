@@ -35,23 +35,27 @@ public enum ItemCategory {
         }
 
         Item item = stack.getItem();
-        if (item instanceof AxeItem) {
-            return AXE;
-        }
-        if (item instanceof SwordItem) {
-            return SWORD;
-        }
-        if (item instanceof PickaxeItem) {
-            return PICKAXE;
-        }
-        if (item instanceof ShovelItem) {
-            return SHOVEL;
-        }
-        if (item instanceof HoeItem) {
-            return HOE;
-        }
-        if (item instanceof FishingRodItem) {
-            return FISHING_ROD;
+        switch (item) {
+            case AxeItem axeItem -> {
+                return AXE;
+            }
+            case SwordItem swordItem -> {
+                return SWORD;
+            }
+            case PickaxeItem pickaxeItem -> {
+                return PICKAXE;
+            }
+            case ShovelItem shovelItem -> {
+                return SHOVEL;
+            }
+            case HoeItem hoeItem -> {
+                return HOE;
+            }
+            case FishingRodItem fishingRodItem -> {
+                return FISHING_ROD;
+            }
+            default -> {
+            }
         }
 
         // Keep item-specific taxonomy centralized so render and animation code never branch on concrete items.

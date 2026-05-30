@@ -6,6 +6,10 @@ import dev.breezes.settlements.application.config.validation.BehaviorCooldownVal
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
+import dev.breezes.settlements.infrastructure.config.annotations.maps.MapConfig;
+import dev.breezes.settlements.infrastructure.config.annotations.maps.MapEntry;
+
+import java.util.Map;
 
 @BehaviorConfig(name = "harvest_ore", type = ConfigurationType.BEHAVIOR)
 public record HarvestOreConfig(
@@ -41,23 +45,19 @@ public record HarvestOreConfig(
                 min = 1)
         int behaviorCooldownMax,
 
-        @IntegerConfig(
+        @MapConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_horizontal",
-                description = "Horizontal range (in blocks) to scan for nearby ores",
-                defaultValue = 10,
-                min = 1,
-                max = 16)
-        int scanRangeHorizontal,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_vertical",
-                description = "Vertical range (in blocks) to scan for nearby ores",
-                defaultValue = 2,
-                min = 0,
-                max = 3)
-        int scanRangeVertical,
+                identifier = "expertise_harvest_limit",
+                description = "Map of villager expertise level to the maximum number of ore harvests in one session.",
+                deserializer = "StringToInteger",
+                defaultValue = {
+                        @MapEntry(key = "novice", value = "4"),
+                        @MapEntry(key = "apprentice", value = "5"),
+                        @MapEntry(key = "journeyman", value = "7"),
+                        @MapEntry(key = "expert", value = "10"),
+                        @MapEntry(key = "master", value = "15")
+                })
+        Map<String, Integer> expertiseHarvestLimit,
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,

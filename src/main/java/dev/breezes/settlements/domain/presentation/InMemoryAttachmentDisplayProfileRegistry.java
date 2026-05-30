@@ -34,14 +34,17 @@ public final class InMemoryAttachmentDisplayProfileRegistry implements Attachmen
                 .rotation(new Vector3f())
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
                 .build();
-        for (ItemCategory category : new ItemCategory[]{
-                ItemCategory.SWORD, ItemCategory.MACE,
-                ItemCategory.PICKAXE, ItemCategory.SHOVEL, ItemCategory.HOE}) {
+        for (ItemCategory category : new ItemCategory[]{ItemCategory.SWORD, ItemCategory.MACE, ItemCategory.SHOVEL, ItemCategory.HOE}) {
             profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, category), handTool);
         }
 
         // Declare custom model display profile overrides
         profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.AXE), AttachmentDisplayProfile.builder()
+                .translation(new Vec3(0.0, -0.15, -0.1))
+                .rotation(new Vector3f(new Vector3f((float) Math.toRadians(-15), 0.0F, 0.0F)))
+                .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                .build());
+        profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.PICKAXE), AttachmentDisplayProfile.builder()
                 .translation(new Vec3(0.0, -0.15, -0.1))
                 .rotation(new Vector3f(new Vector3f((float) Math.toRadians(-15), 0.0F, 0.0F)))
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)

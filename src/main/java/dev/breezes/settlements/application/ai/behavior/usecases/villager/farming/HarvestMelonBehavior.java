@@ -59,6 +59,8 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
      * Settle delay between impact and pickup
      */
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
+    private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
+    private static final float MOVEMENT_SPEED = 0.5f;
 
     private enum Stage implements StageKey {
         PICK_TARGET, APPROACH, CHOP, SETTLE, PICKUP, LOOP, AWARD, END
@@ -99,13 +101,13 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
         Map<StageKey, BehaviorStep<BaseVillager>> stageMap = new HashMap<>();
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
-                .closeEnoughDistance(this.config.closeEnoughDistance())
-                .navigateStep(new NavigateToTargetStep<>(this.config.movementSpeed(), 1))
+                .closeEnoughDistance(1.5)
+                .navigateStep(new NavigateToTargetStep<>(MOVEMENT_SPEED, 1))
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtMelon")
                         .action(ctx -> StepResult.transition(Stage.CHOP))
                         .build())
-                .timeoutTicks(this.config.approachTimeoutTicks())
+                .timeoutTicks(APPROACH_TIMEOUT_TICKS)
                 .timeoutTransition(Stage.PICK_TARGET)
                 .build());
         stageMap.put(Stage.CHOP, this.createChopStep());

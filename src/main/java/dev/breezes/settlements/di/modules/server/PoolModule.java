@@ -62,7 +62,7 @@ public final class PoolModule {
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.CLERIC)
                 .entry(PoolEntry.of(BehaviorKey.THROW_POTIONS))
-                .entry(PoolEntry.of(BehaviorKey.HARVEST_SOUL_SAND))
+                .entry(PoolEntry.of(BehaviorKey.HARVEST_NETHER_WART))
                 .build();
     }
 

@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ButcheringPoses {
+public final class SwingPoses {
 
     public static final Pose ARMS_REST = arms(0.0F);
     public static final Pose ARMS_RAISED = arms(-40.0F);

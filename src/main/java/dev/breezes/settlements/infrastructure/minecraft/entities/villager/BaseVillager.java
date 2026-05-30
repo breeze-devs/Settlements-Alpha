@@ -642,7 +642,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
                 // Custom memory module types starts here
                 MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType(),
-                MemoryTypeRegistry.NEAREST_HARVESTABLE_SUGARCANE.getModuleType(),
                 MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
                 MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType(),
                 MemoryTypeRegistry.OWNED_WOLVES.getModuleType(),
@@ -650,7 +649,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.RIPE_PUMPKIN_SITES.getModuleType(),
                 MemoryTypeRegistry.RIPE_MELON_SITES.getModuleType(),
                 MemoryTypeRegistry.RIPE_SWEET_BERRY_BUSH_SITES.getModuleType(),
-                MemoryTypeRegistry.RIPE_CROP_SITES.getModuleType()
+                MemoryTypeRegistry.RIPE_CROP_SITES.getModuleType(),
+                MemoryTypeRegistry.NETHER_WART_FARM_SITES.getModuleType(),
+                MemoryTypeRegistry.HARVESTABLE_SUGARCANE_SITES.getModuleType(),
+                MemoryTypeRegistry.FULL_HIVE_SITES.getModuleType(),
+                MemoryTypeRegistry.ORE_SITES.getModuleType()
         );
     }
 

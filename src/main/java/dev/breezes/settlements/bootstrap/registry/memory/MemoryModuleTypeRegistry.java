@@ -19,10 +19,6 @@ public final class MemoryModuleTypeRegistry {
     public static final DeferredRegister<MemoryModuleType<?>> REGISTRY =
             DeferredRegister.create(BuiltInRegistries.MEMORY_MODULE_TYPE, SettlementsMod.MOD_ID);
 
-    public static final Supplier<MemoryModuleType<GlobalPos>> NEAREST_HARVESTABLE_SUGARCANE = REGISTRY.register(
-            "nearest_harvestable_sugarcane",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
     public static final Supplier<MemoryModuleType<ISettlementsVillager>> INTERACT_TARGET = REGISTRY.register(
             "interact_target",
             () -> new MemoryModuleType<>(Optional.empty()));
@@ -57,6 +53,22 @@ public final class MemoryModuleTypeRegistry {
 
     public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_CROP_SITES = REGISTRY.register(
             "ripe_crop_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> NETHER_WART_FARM_SITES = REGISTRY.register(
+            "nether_wart_farm_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> HARVESTABLE_SUGARCANE_SITES = REGISTRY.register(
+            "harvestable_sugarcane_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> FULL_HIVE_SITES = REGISTRY.register(
+            "full_hive_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> ORE_SITES = REGISTRY.register(
+            "ore_sites",
             () -> new MemoryModuleType<>(Optional.empty()));
 
     private MemoryModuleTypeRegistry() {

@@ -43,21 +43,12 @@ public record HarvestSugarCaneConfig(
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_horizontal",
-                description = "Horizontal range (in blocks) to scan for nearby sugar cane",
-                defaultValue = 4,
+                identifier = "max_harvest_blocks",
+                description = "Maximum sugar cane blocks to directly harvest from a single column",
+                defaultValue = 10,
                 min = 1,
-                max = 16)
-        int scanRangeHorizontal,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_vertical",
-                description = "Vertical range (in blocks) to scan for nearby sugar cane",
-                defaultValue = 2,
-                min = 0,
-                max = 3)
-        int scanRangeVertical,
+                max = 64)
+        int maxHarvestBlocks,
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,

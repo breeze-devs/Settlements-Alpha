@@ -19,9 +19,9 @@ public record BlockResourceSensorConfig(
                 type = ConfigurationType.SENSOR,
                 identifier = "scan_range_vertical",
                 description = "Vertical radius in blocks for shared block resource scans",
-                defaultValue = 4,
+                defaultValue = 8,
                 min = 0,
-                max = 24)
+                max = 48)
         int scanRangeVertical,
 
         @IntegerConfig(

@@ -4,32 +4,42 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.blocks.VisitedBlockSitesState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.InteractionOutcomeState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.AwardExperienceStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.LoopBackStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
-import dev.breezes.settlements.domain.ai.conditions.NearbyFullHiveExistsCondition;
+import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
-import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
-import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import dev.breezes.settlements.domain.world.blocks.AabbBlockScan;
+import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
+import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
+import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
+import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
@@ -40,43 +50,54 @@ import net.minecraft.world.level.block.BeehiveBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
+    private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
+    private static final float MOVEMENT_SPEED = 0.55F;
 
     private enum HarvestStage implements StageKey {
+        PICK_TARGET,
+        APPROACH,
         HARVEST_HONEYCOMB,
+        LOOP,
+        AWARD,
         END;
     }
 
+    private final BlockMatcher fullHiveMatcher;
+    private final BlockScanBox confirmBox;
+    private final int maxConfirms;
     private final HarvestHoneycombConfig config;
     private final HarvestHoneycombYieldDataManager yieldData;
-    private final NearbyFullHiveExistsCondition<BaseVillager> nearbyFullHiveExistsCondition;
-
-    @Nullable
-    private BlockPos targetHivePos;
-    private int harvestsRemaining;
-    private boolean shouldRewardExperience;
+    private final BlockMemoryTargetResolver targetResolver;
 
     public HarvestHoneycombBehavior(@Nonnull HarvestHoneycombConfig config,
                                     @Nonnull HungerConfig hungerConfig,
                                     @Nonnull HarvestHoneycombYieldDataManager yieldData,
-                                    @Nonnull DemandSignalService demandSignalService) {
+                                    @Nonnull DemandSignalService demandSignalService,
+                                    @Nonnull BlockMemoryTargetResolver targetResolver) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
         this.config = config;
         this.yieldData = yieldData;
-        this.nearbyFullHiveExistsCondition = NearbyFullHiveExistsCondition.<BaseVillager>builder()
-                .rangeHorizontal(config.scanRangeHorizontal())
-                .rangeVertical(config.scanRangeVertical())
-                .build();
+        this.targetResolver = targetResolver;
+        this.fullHiveMatcher = BlockMatchers.FULL_HIVE;
+        this.confirmBox = BlockScanBox.confirm();
+        this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
 
-        this.preconditions.add(this.nearbyFullHiveExistsCondition);
+        this.preconditions.add(KnownBlockSitesPrecondition.builder()
+                .memoryType(MemoryTypeRegistry.FULL_HIVE_SITES)
+                .matcher(this.fullHiveMatcher)
+                .confirmBox(this.confirmBox)
+                .maxSitesToConfirm(this.maxConfirms)
+                .description("Known full hive sites")
+                .build());
         this.preconditions.add(demandSignalService.requireItem(
                 new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, this.getClass().getSimpleName()));
         this.preconditions.add(ICondition.named("CanFitHoneycomb",
@@ -86,11 +107,58 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
     }
 
     protected StagedStep<BaseVillager> createControlStep() {
+        Map<StageKey, BehaviorStep<BaseVillager>> stageMap = new HashMap<>();
+        stageMap.put(HarvestStage.PICK_TARGET, this.createPickTargetStep());
+        stageMap.put(HarvestStage.APPROACH, StayCloseStep.<BaseVillager>builder()
+                .closeEnoughDistance(2.0)
+                .navigateStep(new NavigateToTargetStep<>(MOVEMENT_SPEED, 1))
+                .actionStep(OneShotStep.<BaseVillager>builder()
+                        .name("ArrivedAtHoneycombHive")
+                        .action(context -> StepResult.transition(HarvestStage.HARVEST_HONEYCOMB))
+                        .build())
+                .timeoutTicks(APPROACH_TIMEOUT_TICKS)
+                .timeoutTransition(HarvestStage.PICK_TARGET)
+                .build());
+        stageMap.put(HarvestStage.HARVEST_HONEYCOMB, this.createHarvestStep());
+        stageMap.put(HarvestStage.LOOP, LoopBackStep.<BaseVillager>builder()
+                .name("HarvestHoneycombLoopBack")
+                .loopBackTo(HarvestStage.PICK_TARGET)
+                .completionTransition(HarvestStage.AWARD)
+                .maxIterationsResolver(context -> this.config.expertiseHarvestLimit()
+                        .getOrDefault(context.getInitiator().getExpertise().getConfigName(), 1))
+                .build());
+        stageMap.put(HarvestStage.AWARD, AwardExperienceStep.builder()
+                .name("AwardHarvestHoneycombXp")
+                .experienceAmount(this.config.experienceReward())
+                .nextStage(HarvestStage.END)
+                .build());
+
         return StagedStep.<BaseVillager>builder()
                 .name("HarvestHoneycombBehavior")
-                .initialStage(HarvestStage.HARVEST_HONEYCOMB)
-                .stageStepMap(Map.of(HarvestStage.HARVEST_HONEYCOMB, this.createHarvestStep()))
+                .initialStage(HarvestStage.PICK_TARGET)
+                .stageStepMap(stageMap)
                 .nextStage(HarvestStage.END)
+                .build();
+    }
+
+    private BehaviorStep<BaseVillager> createPickTargetStep() {
+        return OneShotStep.<BaseVillager>builder()
+                .name("PickHoneycombHiveTarget")
+                .action(context -> {
+                    BaseVillager villager = context.getInitiator();
+                    if (!this.canHarvest(villager)) {
+                        return StepResult.transition(HarvestStage.AWARD);
+                    }
+
+                    boolean resolved = this.targetResolver.resolveBlockTarget(context, MemoryTypeRegistry.FULL_HIVE_SITES,
+                            this.fullHiveMatcher, this.confirmBox, this.maxConfirms);
+                    if (!resolved) {
+                        log.behaviorStatus("No additional full hive targets found, ending honeycomb harvest");
+                        return StepResult.transition(HarvestStage.AWARD);
+                    }
+
+                    return StepResult.transition(HarvestStage.APPROACH);
+                })
                 .build();
     }
 
@@ -105,104 +173,51 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
                 .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), this::performHarvest)
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
-                    if (this.harvestsRemaining > 0 && this.selectFreshTarget(context.getInitiator().getMinecraftEntity(), context.getInitiator().getMinecraftEntity().level(), context)) {
-                        return StepResult.transition(HarvestStage.HARVEST_HONEYCOMB);
-                    }
-                    return StepResult.complete();
+                    return StepResult.transition(HarvestStage.LOOP);
                 })
                 .build();
-
-        return StayCloseStep.<BaseVillager>builder()
-                .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep<>(0.55f, 1))
-                .actionStep(harvestStep)
-                .build();
+        return harvestStep;
     }
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        Expertise expertise = villager.getExpertise();
-        this.harvestsRemaining = this.config.expertiseHarvestLimit().getOrDefault(expertise.getConfigName(), 1);
-        this.shouldRewardExperience = false;
+        context.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.empty());
+        context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
 
-        // Precondition scan already ran, pull from its cached results
-        List<BlockPos> targets = this.nearbyFullHiveExistsCondition.getTargets();
-        VillagerInventory inventory = villager.getSettlementsInventory();
-        if (targets.isEmpty()
-                || !inventory.containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements)
-                || !inventory.canAddItem(new ItemStack(Items.HONEYCOMB))) {
+        if (!this.canHarvest(villager)) {
             this.requestStop("Precondition check at behavior start failed");
-            return;
         }
-
-        this.targetHivePos = targets.getFirst();
-        context.setState(BehaviorStateType.TARGET,
-                TargetState.of(Targetable.fromBlock(PhysicalBlock.of(Location.of(this.targetHivePos, world), world.getBlockState(this.targetHivePos)))));
-    }
-
-    @Override
-    protected boolean preTickGuard(int delta,
-                                   @Nonnull Level world,
-                                   @Nonnull BaseVillager villager,
-                                   @Nonnull BehaviorContext<BaseVillager> context) {
-        return this.targetHivePos != null;
     }
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world,
                                   @Nonnull BaseVillager villager) {
-        if (this.shouldRewardExperience) {
-            this.rewardExperience(villager);
-        }
-
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
         villager.getNavigationManager().stop();
-        this.targetHivePos = null;
-        this.harvestsRemaining = 0;
-        this.shouldRewardExperience = false;
     }
 
-    private boolean selectFreshTarget(@Nonnull BaseVillager villager,
-                                      @Nonnull Level world,
-                                      @Nonnull BehaviorContext<BaseVillager> context) {
-        if (!this.nearbyFullHiveExistsCondition.test(villager)) {
-            return false;
-        }
-
+    private boolean canHarvest(@Nonnull BaseVillager villager) {
         VillagerInventory inventory = villager.getSettlementsInventory();
-        if (!inventory.containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements)
-                || !inventory.canAddItem(new ItemStack(Items.HONEYCOMB))) {
-            return false;
-        }
-
-        List<BlockPos> targets = this.nearbyFullHiveExistsCondition.getTargets();
-        if (targets.isEmpty()) {
-            return false;
-        }
-
-        this.targetHivePos = targets.getFirst();
-        context.setState(BehaviorStateType.TARGET,
-                TargetState.of(Targetable.fromBlock(PhysicalBlock.of(Location.of(this.targetHivePos, world), world.getBlockState(this.targetHivePos)))));
-        return true;
+        return inventory.containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements)
+                && inventory.canAddItem(new ItemStack(Items.HONEYCOMB));
     }
 
     private StepResult performHarvest(@Nonnull BehaviorContext<BaseVillager> context) {
-        if (this.targetHivePos == null) {
-            this.harvestsRemaining = 0;
+        Optional<BlockPos> target = TargetQueries.firstBlockPos(context);
+        if (target.isEmpty()) {
             return StepResult.noOp();
         }
 
         BaseVillager villager = context.getInitiator().getMinecraftEntity();
         Level level = villager.level();
-        BlockState state = level.getBlockState(this.targetHivePos);
-        boolean isReady = state.getOptionalValue(BeehiveBlock.HONEY_LEVEL)
-                .map(levelValue -> levelValue == BeehiveBlock.MAX_HONEY_LEVELS)
-                .orElse(false);
-        if (!isReady) {
-            this.harvestsRemaining = 0;
+        BlockPos pos = target.get();
+        BlockState state = level.getBlockState(pos);
+
+        // The hive can be emptied by another actor while the villager is walking to it.
+        if (AabbBlockScan.findFirst(pos, BlockScanBox.self(), this.fullHiveMatcher, level).isEmpty()) {
             return StepResult.noOp();
         }
 
@@ -214,10 +229,12 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
             }
         }
 
-        level.setBlockAndUpdate(this.targetHivePos, state.setValue(BeehiveBlock.HONEY_LEVEL, 0));
-        SoundRegistry.HARVEST_HONEYCOMB.playGlobally(Location.of(this.targetHivePos, level), SoundSource.BLOCKS);
-        this.harvestsRemaining--;
-        this.shouldRewardExperience = true;
+        level.setBlockAndUpdate(pos, state.setValue(BeehiveBlock.HONEY_LEVEL, 0));
+        SoundRegistry.HARVEST_HONEYCOMB.playGlobally(Location.of(pos, level), SoundSource.BLOCKS);
+        context.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
+                .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(level.dimension(), pos)));
+        context.getState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.class)
+                .ifPresent(InteractionOutcomeState::markSuccess);
         return StepResult.noOp();
     }
 

@@ -34,14 +34,14 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestMelonBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestMelonConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestNetherWartBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestNetherWartConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestPumpkinBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestPumpkinConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestRipeCropsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestRipeCropsConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesBehavior;
@@ -361,25 +361,26 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry harvestSoulSand(HarvestSoulSandConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry harvestNetherWart(HarvestNetherWartConfig config,
+                                                  HungerConfig hungerConfig,
+                                                  BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
-                        .key(BehaviorKey.HARVEST_SOUL_SAND)
-                        .displayName("Harvest Soul Sand")
-                        .description("Gather soul sand from the Nether for potion ingredients")
+                        .key(BehaviorKey.HARVEST_NETHER_WART)
+                        .displayName("Harvest Nether Wart")
+                        .description("Harvest mature nether wart from soul sand")
                         .category(BehaviorCategory.WORK)
-                        .intensity(WorkIntensity.HEAVY)
+                        .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
-                        .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
-                        .interruptible(false)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey(BehaviorKey.HARVEST_SOUL_SAND.displayNameKey())
+                        .displayNameKey(BehaviorKey.HARVEST_NETHER_WART.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("nether_wart"))
                         .build())
-                .factory(() -> new HarvestSoulSandBehavior(config, hungerConfig))
+                .factory(() -> new HarvestNetherWartBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
@@ -389,7 +390,9 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry harvestSugarCane(HarvestSugarCaneConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry harvestSugarCane(HarvestSugarCaneConfig config,
+                                                 HungerConfig hungerConfig,
+                                                 BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_SUGARCANE)
@@ -400,14 +403,14 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .interruptible(false)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_SUGARCANE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("sugar_cane"))
                         .build())
-                .factory(() -> new HarvestSugarCaneBehavior(config, hungerConfig))
+                .factory(() -> new HarvestSugarCaneBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
@@ -416,7 +419,8 @@ public final class BehaviorCatalogModule {
     static BehaviorCatalogEntry collectHoney(CollectHoneyConfig config,
                                              HungerConfig hungerConfig,
                                              CollectHoneyYieldDataManager yieldData,
-                                             DemandSignalService demandSignalService) {
+                                             DemandSignalService demandSignalService,
+                                             BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.COLLECT_HONEY)
@@ -433,7 +437,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.COLLECT_HONEY.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("honey_bottle"))
                         .build())
-                .factory(() -> new CollectHoneyBehavior(config, hungerConfig, yieldData, demandSignalService))
+                .factory(() -> new CollectHoneyBehavior(config, hungerConfig, yieldData, demandSignalService, targetResolver))
                 .build();
     }
 
@@ -442,7 +446,8 @@ public final class BehaviorCatalogModule {
     static BehaviorCatalogEntry harvestHoneycomb(HarvestHoneycombConfig config,
                                                  HungerConfig hungerConfig,
                                                  HarvestHoneycombYieldDataManager yieldData,
-                                                 DemandSignalService demandSignalService) {
+                                                 DemandSignalService demandSignalService,
+                                                 BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_HONEYCOMB)
@@ -459,7 +464,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_HONEYCOMB.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("honeycomb"))
                         .build())
-                .factory(() -> new HarvestHoneycombBehavior(config, hungerConfig, yieldData, demandSignalService))
+                .factory(() -> new HarvestHoneycombBehavior(config, hungerConfig, yieldData, demandSignalService, targetResolver))
                 .build();
     }
 
@@ -910,7 +915,9 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry harvestOre(HarvestOreConfig config, HungerConfig hungerConfig) {
+    static BehaviorCatalogEntry harvestOre(HarvestOreConfig config,
+                                           HungerConfig hungerConfig,
+                                           BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_ORE)
@@ -928,7 +935,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_ORE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("iron_ore"))
                         .build())
-                .factory(() -> new HarvestOreBehavior(config, hungerConfig))
+                .factory(() -> new HarvestOreBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 

@@ -57,4 +57,28 @@ public abstract class SensorCatalogModule {
         return new BlockResource(BlockMatchers.RIPE_CROP, MemoryTypeRegistry.RIPE_CROP_SITES);
     }
 
+    @Provides
+    @IntoSet
+    static BlockResource netherWartFarm() {
+        return new BlockResource(BlockMatchers.HARVESTABLE_NETHER_WART, MemoryTypeRegistry.NETHER_WART_FARM_SITES);
+    }
+
+    @Provides
+    @IntoSet
+    static BlockResource harvestableSugarcane() {
+        return new BlockResource(BlockMatchers.HARVESTABLE_SUGARCANE, MemoryTypeRegistry.HARVESTABLE_SUGARCANE_SITES);
+    }
+
+    @Provides
+    @IntoSet
+    static BlockResource fullHive() {
+        return new BlockResource(BlockMatchers.FULL_HIVE, MemoryTypeRegistry.FULL_HIVE_SITES);
+    }
+
+    @Provides
+    @IntoSet
+    static BlockResource ore() {
+        return new BlockResource(BlockMatchers.HARVESTABLE_ORE, MemoryTypeRegistry.ORE_SITES);
+    }
+
 }

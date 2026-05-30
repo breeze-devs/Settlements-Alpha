@@ -7,8 +7,9 @@ import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 
-@BehaviorConfig(name = "harvest_soul_sand", type = ConfigurationType.BEHAVIOR)
-public record HarvestSoulSandConfig(
+@BehaviorConfig(name = "harvest_nether_wart", type = ConfigurationType.BEHAVIOR)
+public record HarvestNetherWartConfig(
+
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
@@ -29,7 +30,7 @@ public record HarvestSoulSandConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-                defaultValue = 60,
+                defaultValue = 80,
                 min = 1)
         int behaviorCooldownMin,
 
@@ -37,38 +38,21 @@ public record HarvestSoulSandConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-                defaultValue = 240,
+                defaultValue = 300,
                 min = 1)
         int behaviorCooldownMax,
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_horizontal",
-                description = "Horizontal range (in blocks) to scan for nearby soul sand",
-                defaultValue = 4,
-                min = 1,
-                max = 16)
-        int scanRangeHorizontal,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_vertical",
-                description = "Vertical range (in blocks) to scan for nearby soul sand",
-                defaultValue = 1,
-                min = 0,
-                max = 3)
-        int scanRangeVertical,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
                 description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
-                defaultValue = 2,
+                defaultValue = 3,
                 min = 0)
         int experienceReward
+
 ) implements BehaviorTimingConfig {
 
-    public HarvestSoulSandConfig {
+    public HarvestNetherWartConfig {
         BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
                 behaviorCooldownMin, behaviorCooldownMax);
     }

@@ -52,7 +52,7 @@ import java.util.Optional;
 @CustomLog
 public class FishingBehavior extends VillagerStateMachineBehavior {
 
-    private static final ResourceLocation VILLAGER_FISHING_ROD_ID = ResourceLocation.fromNamespaceAndPath("settlements", "villager_fishing_rod");
+    private static final ResourceLocation FISHING_ROD_ID = ResourceLocation.withDefaultNamespace("fishing_rod");
 
     private static final double NAVIGATION_CLOSE_ENOUGH_DISTANCE = 5.0;
     private static final float NAVIGATION_SPEED = 0.5f;
@@ -102,7 +102,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .rangeVertical(config.scanRangeVertical())
                 .build();
         this.preconditions.add(this.nearbyWaterExistsCondition);
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(VILLAGER_FISHING_ROD_ID), 1, 50, this.getClass().getSimpleName()));
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(FISHING_ROD_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), FishingStage.END);
     }

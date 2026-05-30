@@ -10,11 +10,6 @@ import java.util.UUID;
 
 public final class MemoryTypeRegistry {
 
-    public static final MemoryType<GlobalPos> NEAREST_HARVESTABLE_SUGARCANE = MemoryType.<GlobalPos>builder()
-            .identifier("nearest_harvestable_sugarcane")
-            .moduleTypeSupplier(MemoryModuleTypeRegistry.NEAREST_HARVESTABLE_SUGARCANE)
-            .build();
-
     public static final MemoryType<ISettlementsVillager> INTERACT_TARGET = MemoryType.<ISettlementsVillager>builder()
             .identifier("interact_target")
             .moduleTypeSupplier(MemoryModuleTypeRegistry.INTERACT_TARGET)
@@ -58,6 +53,26 @@ public final class MemoryTypeRegistry {
     public static final MemoryType<List<GlobalPos>> RIPE_CROP_SITES = MemoryType.<List<GlobalPos>>builder()
             .identifier("ripe_crop_sites")
             .moduleTypeSupplier(MemoryModuleTypeRegistry.RIPE_CROP_SITES)
+            .build();
+
+    public static final MemoryType<List<GlobalPos>> NETHER_WART_FARM_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("nether_wart_farm_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.NETHER_WART_FARM_SITES)
+            .build();
+
+    public static final MemoryType<List<GlobalPos>> HARVESTABLE_SUGARCANE_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("harvestable_sugarcane_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.HARVESTABLE_SUGARCANE_SITES)
+            .build();
+
+    public static final MemoryType<List<GlobalPos>> FULL_HIVE_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("full_hive_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.FULL_HIVE_SITES)
+            .build();
+
+    public static final MemoryType<List<GlobalPos>> ORE_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("ore_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.ORE_SITES)
             .build();
 
     private MemoryTypeRegistry() {
