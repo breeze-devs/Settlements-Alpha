@@ -17,6 +17,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyDamagedIronGolemExistsCondition;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -125,7 +126,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
                 .actionStep(repairTick)
                 .build();
     }

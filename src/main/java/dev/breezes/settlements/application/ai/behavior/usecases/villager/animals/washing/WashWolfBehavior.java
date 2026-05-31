@@ -13,6 +13,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -33,7 +34,6 @@ import java.util.Map;
 public class WashWolfBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.5D;
-    private static final float NAVIGATION_SPEED = 0.55F;
     private static final int NAVIGATION_COMPLETION_DISTANCE = 2;
     private static final ClockTicks WASH_DURATION = ClockTicks.seconds(5);
     private static final ClockTicks DRY_DURATION = ClockTicks.seconds(1);
@@ -91,7 +91,7 @@ public class WashWolfBehavior extends VillagerStateMachineBehavior {
 
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(NAVIGATION_SPEED, NAVIGATION_COMPLETION_DISTANCE))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, NAVIGATION_COMPLETION_DISTANCE))
                 .actionStep(washStep)
                 .build();
     }
@@ -109,7 +109,7 @@ public class WashWolfBehavior extends VillagerStateMachineBehavior {
 
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(NAVIGATION_SPEED, NAVIGATION_COMPLETION_DISTANCE))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, NAVIGATION_COMPLETION_DISTANCE))
                 .actionStep(dryStep)
                 .build();
     }

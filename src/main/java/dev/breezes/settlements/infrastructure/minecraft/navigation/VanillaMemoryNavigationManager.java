@@ -1,8 +1,11 @@
 package dev.breezes.settlements.infrastructure.minecraft.navigation;
 
+import dev.breezes.settlements.domain.ai.navigation.AgilitySpeedResolver;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AllArgsConstructor;
 import net.minecraft.world.entity.ai.behavior.PositionTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -36,32 +39,29 @@ public class VanillaMemoryNavigationManager<T extends BaseVillager> implements I
     }
 
     @Override
-    public void navigateTo(@Nonnull Location target, float speed, int completionRange) {
+    public void navigateTo(@Nonnull Location target, @Nonnull NavigationType type, int completionRange) {
         if (!this.canReach(target, completionRange)) {
             return;
         }
-        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(target.toBlockPos(), speed, completionRange));
+        villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                new WalkTarget(target.toBlockPos(), this.speedFor(type), completionRange));
     }
 
     @Override
     public void walkTo(@Nonnull Location target, int completionRange) {
-        this.navigateTo(target, 0.5F, completionRange);
+        this.navigateTo(target, NavigationType.WALK, completionRange);
+    }
+
+    @Override
+    public float speedFor(@Nonnull NavigationType type) {
+        double agility = this.villager.getGenetics().getGeneValue(GeneType.AGILITY);
+        return AgilitySpeedResolver.resolve(type, agility);
     }
 
     @Override
     public boolean canReach(@Nonnull Location target, double distance) {
         // TODO: implement this
         return true;
-    }
-
-    @Override
-    public float getWalkSpeed() {
-        return 0.4f;
-    }
-
-    @Override
-    public float getRunSpeed() {
-        return 0.7f;
     }
 
 }

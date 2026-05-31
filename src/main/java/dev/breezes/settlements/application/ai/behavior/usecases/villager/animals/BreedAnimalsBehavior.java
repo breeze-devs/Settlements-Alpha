@@ -17,6 +17,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.tags.EntityTag;
@@ -213,7 +214,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
                 .actionStep(feedStep)
                 .build();
     }

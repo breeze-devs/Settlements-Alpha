@@ -22,6 +22,7 @@ import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -316,12 +317,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
      * Core components copied from parent class
      */
     private void registerBrainGoals(Brain<Villager> brain) {
-        // TODO: refactor speed, instead of hard coding 0.5F make it an attribute powered by genetics
         VillagerProfession profession = this.getVillagerData().getProfession();
 
         // Register core activity
         List<Pair<Integer, ? extends BehaviorControl<? super Villager>>> corePackage = new ArrayList<>(
-                VanillaBehaviorPackages.getCorePackage(profession, 0.5F));
+                VanillaBehaviorPackages.getCorePackage(profession, this.navigationManager.speedFor(NavigationType.STROLL)));
         if (!this.isBaby()) {
             PlanRunnerBehavior planRunnerBehavior = SettlementsDagger.serverOrThrow()
                     .planRunnerBehaviorProvider()
@@ -340,10 +340,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         // Register other activities
-        brain.addActivity(Activity.PANIC, VanillaBehaviorPackages.getPanicPackage(profession, 0.5F));
-        brain.addActivity(Activity.PRE_RAID, VanillaBehaviorPackages.getPreRaidPackage(profession, 0.5F));
-        brain.addActivity(Activity.RAID, VanillaBehaviorPackages.getRaidPackage(profession, 0.5F));
-        brain.addActivity(Activity.HIDE, VanillaBehaviorPackages.getHidePackage(profession, 0.5F));
+        brain.addActivity(Activity.PANIC, VanillaBehaviorPackages.getPanicPackage(profession, this.navigationManager.speedFor(NavigationType.SPRINT)));
+        brain.addActivity(Activity.PRE_RAID, VanillaBehaviorPackages.getPreRaidPackage(profession, this.navigationManager.speedFor(NavigationType.RUN)));
+        brain.addActivity(Activity.RAID, VanillaBehaviorPackages.getRaidPackage(profession, this.navigationManager.speedFor(NavigationType.RUN)));
+        brain.addActivity(Activity.HIDE, VanillaBehaviorPackages.getHidePackage(profession, this.navigationManager.speedFor(NavigationType.RUN)));
 
         // Core activities must be configured before the first setActiveActivityIfPossible call
         brain.setCoreActivities(ImmutableSet.of(Activity.CORE));
@@ -366,22 +366,23 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private void registerBabyBrainGoals(Brain<Villager> brain,
                                         VillagerProfession profession) {
         // Babies stay on the vanilla schedule
-        brain.addActivity(Activity.IDLE, VanillaBehaviorPackages.getIdlePackage(0.5F));
-        brain.addActivity(Activity.PLAY, VanillaBehaviorPackages.getPlayPackage(0.5F));
-        brain.addActivityWithConditions(Activity.MEET, VanillaBehaviorPackages.getMeetPackage(profession, 0.5F),
+        brain.addActivity(Activity.IDLE, VanillaBehaviorPackages.getIdlePackage(this.navigationManager.speedFor(NavigationType.STROLL)));
+        brain.addActivity(Activity.PLAY, VanillaBehaviorPackages.getPlayPackage(this.navigationManager.speedFor(NavigationType.RUN)));
+        brain.addActivityWithConditions(Activity.MEET, VanillaBehaviorPackages.getMeetPackage(profession, this.navigationManager.speedFor(NavigationType.WALK)),
                 Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
-        brain.addActivity(Activity.REST, VanillaBehaviorPackages.getRestPackage(profession, 0.5F));
+        brain.addActivity(Activity.REST, VanillaBehaviorPackages.getRestPackage(profession, this.navigationManager.speedFor(NavigationType.STROLL)));
     }
 
     private void registerAdultAmbientBrainGoals(Brain<Villager> brain,
                                                 VillagerProfession profession) {
-        float speed = 0.5F;
-        brain.addActivityWithConditions(Activity.WORK, VanillaAmbientBehaviorPackages.getAmbientWorkPackage(profession, speed),
+        brain.addActivityWithConditions(Activity.WORK,
+                VanillaAmbientBehaviorPackages.getAmbientWorkPackage(profession, this.navigationManager.speedFor(NavigationType.WALK)),
                 Set.of(Pair.of(MemoryModuleType.JOB_SITE, MemoryStatus.VALUE_PRESENT)));
-        brain.addActivityWithConditions(Activity.MEET, VanillaAmbientBehaviorPackages.getAmbientMeetPackage(speed),
+        brain.addActivityWithConditions(Activity.MEET,
+                VanillaAmbientBehaviorPackages.getAmbientMeetPackage(this.navigationManager.speedFor(NavigationType.WALK)),
                 Set.of(Pair.of(MemoryModuleType.MEETING_POINT, MemoryStatus.VALUE_PRESENT)));
-        brain.addActivity(Activity.IDLE, VanillaAmbientBehaviorPackages.getAmbientIdlePackage(speed));
-        brain.addActivity(Activity.REST, VanillaAmbientBehaviorPackages.getAmbientRestPackage(speed));
+        brain.addActivity(Activity.IDLE, VanillaAmbientBehaviorPackages.getAmbientIdlePackage(this.navigationManager.speedFor(NavigationType.STROLL)));
+        brain.addActivity(Activity.REST, VanillaAmbientBehaviorPackages.getAmbientRestPackage(this.navigationManager.speedFor(NavigationType.WALK)));
     }
 
     @Override

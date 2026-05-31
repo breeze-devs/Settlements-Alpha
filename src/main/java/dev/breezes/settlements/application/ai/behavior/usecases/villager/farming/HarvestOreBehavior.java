@@ -24,6 +24,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.SwingAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -59,7 +60,6 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
     private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
-    private static final float MOVEMENT_SPEED = 0.5F;
 
     private enum Stage implements StageKey {
         PICK_TARGET, APPROACH, HARVEST, SETTLE, PICKUP, LOOP, AWARD, END
@@ -97,7 +97,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.5)
-                .navigateStep(new NavigateToTargetStep<>(MOVEMENT_SPEED, 2))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 2))
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtOre")
                         .action(ctx -> StepResult.transition(Stage.HARVEST))

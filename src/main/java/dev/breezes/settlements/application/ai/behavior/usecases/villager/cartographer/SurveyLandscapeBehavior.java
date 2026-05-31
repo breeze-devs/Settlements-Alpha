@@ -15,6 +15,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.CartographerAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -43,7 +44,6 @@ import java.util.Queue;
 public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
 
     private static final int SURVEY_POINT_HORIZONTAL_REACH = 5;
-    private static final float NAVIGATION_SPEED = 0.7f;
     private static final int NAVIGATION_COMPLETION_DISTANCE = 1;
     private static final int MAX_SAMPLING_RETRIES = 20;
     private static final int MAX_SURVEY_POINT_Y_DIFFERENCE = 10;
@@ -116,7 +116,7 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                 .onEnd(context -> StepResult.transition(SurveyStage.SURVEY))
                 .build();
 
-        NavigateToTargetStep<BaseVillager> navigateStep = new NavigateToTargetStep<>(NAVIGATION_SPEED, NAVIGATION_COMPLETION_DISTANCE);
+        NavigateToTargetStep<BaseVillager> navigateStep = new NavigateToTargetStep<>(NavigationType.WALK, NAVIGATION_COMPLETION_DISTANCE);
 
         ICondition<BehaviorContext<BaseVillager>> closeEnoughHorizontally = ICondition.named(
                 "closeEnoughHorizontally",

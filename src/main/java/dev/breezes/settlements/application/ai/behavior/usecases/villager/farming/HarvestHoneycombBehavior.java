@@ -22,6 +22,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -58,7 +59,6 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
     private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
-    private static final float MOVEMENT_SPEED = 0.55F;
 
     private enum HarvestStage implements StageKey {
         PICK_TARGET,
@@ -108,7 +108,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
         stageMap.put(HarvestStage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(HarvestStage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep<>(MOVEMENT_SPEED, 1))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtHoneycombHive")
                         .action(context -> StepResult.transition(HarvestStage.HARVEST_HONEYCOMB))

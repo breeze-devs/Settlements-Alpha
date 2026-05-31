@@ -16,6 +16,7 @@ import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -62,7 +63,7 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
                         .initialStage(MirrorStage.MIRROR)
                         .stageStepMap(Map.of(MirrorStage.MIRROR, StayCloseStep.<BaseVillager>builder()
                                 .closeEnoughDistance(TRADE_CLOSE_ENOUGH_DISTANCE)
-                                .navigateStep(new NavigateToTargetStep<>(0.5f, 2))
+                                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 2))
                                 .actionStep(this::mirror)
                                 .build()))
                         .nextStage(MirrorStage.CLOSED)

@@ -156,9 +156,8 @@ public final class VanillaBehaviorPackages {
         );
     }
 
-    public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getMeetPackage(
-            VillagerProfession profession,
-            float speed) {
+    public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getMeetPackage(VillagerProfession profession,
+                                                                                                           float speed) {
         // Default behaviors
         ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> behaviors = ImmutableList.of(
                 getFullLookBehavior(),
@@ -213,24 +212,22 @@ public final class VanillaBehaviorPackages {
     }
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getPanicPackage(VillagerProfession profession, float speed) {
-        float panicSpeed = speed * 1.5F;
         return ImmutableList.of(
                 getMinimalLookBehavior(),
                 Pair.of(0, VillagerCalmDown.create()),
-                Pair.of(1, SetWalkTargetAwayFrom.entity(MemoryModuleType.NEAREST_HOSTILE, panicSpeed, 6, false)),
-                Pair.of(1, SetWalkTargetAwayFrom.entity(MemoryModuleType.HURT_BY_ENTITY, panicSpeed, 6, false)),
-                Pair.of(3, VillageBoundRandomStroll.create(panicSpeed, 2, 2))
+                Pair.of(1, SetWalkTargetAwayFrom.entity(MemoryModuleType.NEAREST_HOSTILE, speed, 6, false)),
+                Pair.of(1, SetWalkTargetAwayFrom.entity(MemoryModuleType.HURT_BY_ENTITY, speed, 6, false)),
+                Pair.of(3, VillageBoundRandomStroll.create(speed, 2, 2))
         );
     }
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getPreRaidPackage(VillagerProfession profession, float speed) {
-        float panicSpeed = speed * 1.5F;
         return ImmutableList.of(
                 getMinimalLookBehavior(),
                 Pair.of(0, RingBell.create()),
                 Pair.of(0, TriggerGate.triggerOneShuffled(ImmutableList.of(
-                        Pair.of(SetWalkTargetFromBlockMemory.create(MemoryModuleType.MEETING_POINT, panicSpeed, 2, 150, 200), 6),
-                        Pair.of(VillageBoundRandomStroll.create(panicSpeed), 2)
+                        Pair.of(SetWalkTargetFromBlockMemory.create(MemoryModuleType.MEETING_POINT, speed, 2, 150, 200), 6),
+                        Pair.of(VillageBoundRandomStroll.create(speed), 2)
                 ))),
                 Pair.of(99, ResetRaidStatus.create())
         );
@@ -243,13 +240,13 @@ public final class VanillaBehaviorPackages {
                         BehaviorBuilder.triggerIf(VanillaBehaviorPackages::raidWon),
                         TriggerGate.triggerOneShuffled(ImmutableList.of(
                                 Pair.of(MoveToSkySeeingSpot.create(speed), 5),
-                                Pair.of(VillageBoundRandomStroll.create(speed * 1.1F), 2)
+                                Pair.of(VillageBoundRandomStroll.create(speed), 2)
                         ))
                 )),
                 Pair.of(0, new CelebrateVillagersSurvivedRaid(600, 600)),
                 Pair.of(2, BehaviorBuilder.sequence(
                         BehaviorBuilder.triggerIf(VanillaBehaviorPackages::hasActiveRaid),
-                        LocateHidingPlace.create(24, speed * 1.4F, 1)
+                        LocateHidingPlace.create(24, speed, 1)
                 )),
                 Pair.of(99, ResetRaidStatus.create())
         );
@@ -259,7 +256,7 @@ public final class VanillaBehaviorPackages {
         return ImmutableList.of(
                 getMinimalLookBehavior(),
                 Pair.of(0, SetHiddenState.create(15, 3)),
-                Pair.of(1, LocateHidingPlace.create(32, speed * 1.25F, 2))
+                Pair.of(1, LocateHidingPlace.create(32, speed, 2))
         );
     }
 

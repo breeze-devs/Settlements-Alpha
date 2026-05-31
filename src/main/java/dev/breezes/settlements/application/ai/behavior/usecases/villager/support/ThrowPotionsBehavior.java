@@ -14,6 +14,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFriendlyNeedsPotionCondition;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.world.location.Vector;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
@@ -86,7 +87,7 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createThrowStep() {
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(0.5f, 3))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 3))
                 .actionStep(ctx -> {
                     if (this.targetToThrow == null || this.potionToThrow == null) {
                         return StepResult.fail("Target or potion is null");

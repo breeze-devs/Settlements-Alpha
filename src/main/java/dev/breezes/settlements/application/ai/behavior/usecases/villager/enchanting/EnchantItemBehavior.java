@@ -18,6 +18,7 @@ import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegist
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBlockExistsCondition;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.enchanting.SpecializationProfile;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.genetics.GeneType;
@@ -120,7 +121,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
 
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(0.5f, 1))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
                 .actionStep(actionStep)
                 .build();
     }

@@ -16,6 +16,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -35,8 +36,6 @@ import java.util.UUID;
 @CustomLog
 public class WalkDogBehavior extends VillagerStateMachineBehavior {
 
-    private static final float APPROACH_SPEED = 0.6f;
-    private static final float FOLLOW_SPEED = 0.55f;
     private static final double LEASH_DISTANCE = 2.5;
     private static final int FOLLOW_COMPLETION_DISTANCE = 3;
 
@@ -118,7 +117,7 @@ public class WalkDogBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createApproachStep() {
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(LEASH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(APPROACH_SPEED, 1))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
                 .actionStep(ctx -> StepResult.transition(WalkDogStage.LEASH_WOLF))
                 .build();
     }
@@ -139,7 +138,7 @@ public class WalkDogBehavior extends VillagerStateMachineBehavior {
         return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(this.config.walkDurationSeconds()).asTickable())
                 .addPeriodicStep(ClockTicks.seconds(1).getTicksAsInt(), context -> {
-                    context.getInitiator().getNavigationManager().navigateTo(Location.fromEntity(this.cachedWolf, false), FOLLOW_SPEED, FOLLOW_COMPLETION_DISTANCE);
+                    context.getInitiator().getNavigationManager().navigateTo(Location.fromEntity(this.cachedWolf, false), NavigationType.WALK, FOLLOW_COMPLETION_DISTANCE);
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> StepResult.transition(WalkDogStage.UNLEASH_WOLF))

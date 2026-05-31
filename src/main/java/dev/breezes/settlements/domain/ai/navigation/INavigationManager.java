@@ -17,24 +17,22 @@ public interface INavigationManager<T> {
     void stop();
 
     /**
-     * Navigate to the target position with the given speed and completion range
+     * Navigate to the target position with the given navigation intent and completion range.
      * <p>
-     * Note that if the target is not reachable, the navigation will be cancelled
+     * Note that if the target is not reachable, the navigation will be cancelled.
      */
-    void navigateTo(@Nonnull Location target, float speed, int completionRange);
+    void navigateTo(@Nonnull Location target, @Nonnull NavigationType type, int completionRange);
 
     /**
-     * Same as {@link #navigateTo(Location, float, int)} but with the default walking speed
+     * Same as {@link #navigateTo(Location, NavigationType, int)} but with the default walking intent.
      */
     void walkTo(@Nonnull Location target, int completionRange);
+
+    float speedFor(@Nonnull NavigationType type);
 
     /**
      * Whether the position is reachable within the given maximum distance
      */
     boolean canReach(@Nonnull Location target, double distance);
-
-    float getWalkSpeed();
-
-    float getRunSpeed();
 
 }

@@ -17,6 +17,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyWaterExistsCondition;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -55,7 +56,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
     private static final ResourceLocation FISHING_ROD_ID = ResourceLocation.withDefaultNamespace("fishing_rod");
 
     private static final double NAVIGATION_CLOSE_ENOUGH_DISTANCE = 5.0;
-    private static final float NAVIGATION_SPEED = 0.5f;
     private static final int NAVIGATION_COMPLETION_DISTANCE = 3;
     private static final int HOOK_MAX_LIFETIME_BUFFER_SECONDS = 15;
     private static final double COLLECT_DISTANCE_SQUARED = 9.0;
@@ -197,7 +197,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
 
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(NAVIGATION_CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(NAVIGATION_SPEED, NAVIGATION_COMPLETION_DISTANCE))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, NAVIGATION_COMPLETION_DISTANCE))
                 .actionStep(arrivedStep)
                 .build();
     }

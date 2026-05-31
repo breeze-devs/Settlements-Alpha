@@ -15,6 +15,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
@@ -43,7 +44,6 @@ import java.util.Optional;
 @CustomLog
 public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
 
-    private static final float WALK_SPEED = 0.75f;
     private static final double TARGET_CLOSE_ENOUGH_DISTANCE = 2;
     private static final int NAVIGATION_COMPLETION_DISTANCE = 1;
     private static final double ENTITY_TARGET_CHANCE = 0.65;
@@ -117,7 +117,7 @@ public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
     private BehaviorStep<SettlementsWolf> createWalkToTargetStep() {
         return StayCloseStep.<SettlementsWolf>builder()
                 .closeEnoughDistance(TARGET_CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(WALK_SPEED, NAVIGATION_COMPLETION_DISTANCE))
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.RUN, NAVIGATION_COMPLETION_DISTANCE))
                 .actionStep(ctx -> StepResult.transition(WolfWalkStage.SNIFF))
                 .build();
     }
@@ -233,7 +233,7 @@ public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
                 .ifPresent(location -> {
                     // Moving targets drift away from the original path, so refresh during sniffing instead of waiting for navigation to finish.
                     if (location.distanceSquared(wolf) > TARGET_CLOSE_ENOUGH_DISTANCE * TARGET_CLOSE_ENOUGH_DISTANCE) {
-                        wolf.getNavigationManager().navigateTo(location, WALK_SPEED, NAVIGATION_COMPLETION_DISTANCE);
+                        wolf.getNavigationManager().navigateTo(location, NavigationType.RUN, NAVIGATION_COMPLETION_DISTANCE);
                     } else {
                         wolf.getNavigationManager().stop();
                     }

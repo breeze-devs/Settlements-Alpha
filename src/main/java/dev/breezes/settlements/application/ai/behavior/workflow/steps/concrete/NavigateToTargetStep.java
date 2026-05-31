@@ -7,6 +7,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.t
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.world.location.Location;
 import lombok.Builder;
 
@@ -15,13 +16,13 @@ import java.util.Optional;
 
 public class NavigateToTargetStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
-    private final float speed;
+    private final NavigationType navigationType;
     private final int completionDistance;
 
     @Builder
-    public NavigateToTargetStep(float speed, int completionDistance) {
+    public NavigateToTargetStep(@Nonnull NavigationType navigationType, int completionDistance) {
         super("NavigateToTargetStep");
-        this.speed = speed;
+        this.navigationType = navigationType;
         this.completionDistance = completionDistance;
     }
 
@@ -40,7 +41,7 @@ public class NavigateToTargetStep<T extends ISettlementsBrainEntity> extends Abs
             return StepResult.noOp();
         }
 
-        initiator.getNavigationManager().navigateTo(target.get(), this.speed, this.completionDistance);
+        initiator.getNavigationManager().navigateTo(target.get(), this.navigationType, this.completionDistance);
         return StepResult.noOp();
     }
 
