@@ -9,6 +9,7 @@ import dev.breezes.settlements.application.ui.stats.model.VillagerTradeCatalogSn
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
 import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.inventory.BackpackEntry;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundCloseUiPacket;
 import dev.breezes.settlements.presentation.ui.framework.Elements;
@@ -557,15 +558,15 @@ public class VillagerStatsScreen extends LayoutScreen {
     }
 
     private List<UIElement> buildInventoryRows() {
-        List<ItemStack> items = this.inventorySnapshot != null
-                ? this.inventorySnapshot.nonEmptyItems()
+        List<BackpackEntry> entries = this.inventorySnapshot != null
+                ? this.inventorySnapshot.entries()
                 : List.of();
 
-        if (items.isEmpty()) {
+        if (entries.isEmpty()) {
             return List.of();
         }
 
-        int rowCount = (items.size() + this.inventoryColumns - 1) / this.inventoryColumns;
+        int rowCount = (entries.size() + this.inventoryColumns - 1) / this.inventoryColumns;
         List<UIElement> rows = new ArrayList<>(rowCount);
 
         for (int row = 0; row < rowCount; row++) {
@@ -576,12 +577,14 @@ public class VillagerStatsScreen extends LayoutScreen {
 
             for (int col = 0; col < this.inventoryColumns; col++) {
                 int index = row * this.inventoryColumns + col;
-                if (index < items.size()) {
-                    final ItemStack stack = items.get(index);
+                if (index < entries.size()) {
+                    final BackpackEntry entry = entries.get(index);
+                    final ItemStack stack = entry.representative();
                     rowLayout.child(Elements.itemIcon(
                             () -> stack,
                             theme::borderLight,
-                            () -> stack
+                            () -> stack,
+                            entry::count
                     ));
                 }
             }
@@ -592,9 +595,9 @@ public class VillagerStatsScreen extends LayoutScreen {
     }
 
     private Component getInventoryHeaderComponent() {
-        int used = this.inventorySnapshot != null ? this.inventorySnapshot.nonEmptyItems().size() : 0;
-        int total = this.inventorySnapshot != null ? this.inventorySnapshot.backpackSize() : 0;
-        return Component.translatable(INVENTORY_KEY, used, total);
+        int distinctKinds = this.inventorySnapshot != null ? this.inventorySnapshot.distinctKinds() : 0;
+        int totalItems = this.inventorySnapshot != null ? this.inventorySnapshot.totalItemCount() : 0;
+        return Component.translatable(INVENTORY_KEY, distinctKinds, totalItems);
     }
 
     private List<UIElement> buildOfferRows() {

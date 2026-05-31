@@ -373,6 +373,12 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .build();
     }
 
+    @Override
+    protected boolean shouldLookAtActiveTarget() {
+        // Faces the water, not the shore block stored as the TargetState target.
+        return false;
+    }
+
     private void lookAtWater(@Nonnull ISettlementsVillager villager) {
         if (this.waterTarget != null) {
             villager.getMinecraftEntity().getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(this.waterTarget));
@@ -423,7 +429,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
     private StepResult collectAndComplete(@Nonnull BehaviorContext<BaseVillager> context) {
         if (this.caughtItem != null && !this.caughtItem.isEmpty()) {
             VillagerInventory inventory = context.getInitiator().getSettlementsInventory();
-            inventory.addItem(this.caughtItem);
+            inventory.add(this.caughtItem);
             this.rewardExperience(context.getInitiator().getMinecraftEntity());
             SoundRegistry.ITEM_POP_IN.playGlobally(
                     Location.fromEntity(context.getInitiator().getMinecraftEntity(), false),

@@ -132,4 +132,10 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity {
     public int getNetworkingId() {
         return this.getId();
     }
+
+    @Override
+    public void lookAt(@Nonnull Location target) {
+        // No plan orchestration on cats, so drive the look control directly to win the per-tick race.
+        this.getLookControl().setLookAt(target.toVec3());
+    }
 }

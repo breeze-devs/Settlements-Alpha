@@ -207,6 +207,12 @@ public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
                 || entity instanceof AbstractVillager;
     }
 
+    @Override
+    protected boolean shouldLookAtActiveTarget() {
+        // Look is driven explicitly by the WALK/SNIFF steps via everyTick(this::lookAtTarget).
+        return false;
+    }
+
     private StepResult lookAtTarget(@Nonnull BehaviorContext<SettlementsWolf> context) {
         SettlementsWolf wolf = context.getInitiator();
         context.getState(BehaviorStateType.TARGET, TargetState.class)

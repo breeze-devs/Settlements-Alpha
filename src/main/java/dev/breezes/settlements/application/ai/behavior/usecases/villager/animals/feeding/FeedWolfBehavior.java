@@ -40,6 +40,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class FeedWolfBehavior extends VillagerStateMachineBehavior {
@@ -61,7 +62,6 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
     private SettlementsWolf targetWolf;
     @Nullable
     private ItemStack selectedMeat;
-    private int selectedMeatSlot;
 
     public FeedWolfBehavior(@Nonnull FeedWolfConfig config,
                             @Nonnull HungerConfig hungerConfig,
@@ -71,7 +71,6 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
 
         this.targetWolf = null;
         this.selectedMeat = null;
-        this.selectedMeatSlot = -1;
 
         this.ownedWolfCondition = new OwnedWolfExistsCondition(config.scanRangeHorizontal(), config.scanRangeVertical(), ignored -> true);
         this.preconditions.add(demandSignalService.requireAny(
@@ -116,7 +115,6 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         this.targetWolf = null;
         this.selectedMeat = null;
-        this.selectedMeatSlot = -1;
 
         // Re-validate: conditions may have changed since the last precondition check
         if (!this.ownedWolfCondition.test(villager)) {
@@ -130,15 +128,13 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        this.selectedMeatSlot = findFirstMeatSlot(villager.getSettlementsInventory());
-        if (this.selectedMeatSlot < 0 && !GeneralConfig.bypassInventoryRequirements) {
+        this.selectedMeat = findFirstMeatRepresentative(villager.getSettlementsInventory()).orElse(null);
+        if (this.selectedMeat == null && !GeneralConfig.bypassInventoryRequirements) {
             this.requestStop("No meat found in inventory at behavior start");
             return;
         }
 
-        if (this.selectedMeatSlot >= 0) {
-            this.selectedMeat = villager.getSettlementsInventory()
-                    .getBackpack().getItem(this.selectedMeatSlot).copyWithCount(1);
+        if (this.selectedMeat != null) {
             villager.setHeldItem(this.selectedMeat.copy());
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.targetWolf)));
@@ -152,7 +148,6 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
 
         this.targetWolf = null;
         this.selectedMeat = null;
-        this.selectedMeatSlot = -1;
     }
 
     private StepResult performFeed(@Nonnull BehaviorContext<BaseVillager> context) {
@@ -175,37 +170,14 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
     }
 
     private void consumeMeat(@Nonnull BaseVillager villager) {
-        if (this.selectedMeat == null || this.selectedMeatSlot < 0) {
+        if (this.selectedMeat == null) {
             return;
         }
-
-        VillagerInventory inventory = villager.getSettlementsInventory();
-        ItemStack slotNow = inventory.getBackpack().getItem(this.selectedMeatSlot);
-
-        // Guard against inventory churn between onBehaviorStart and the keyframe firing
-        if (!slotNow.isEmpty() && slotNow.getItem() == this.selectedMeat.getItem()) {
-            inventory.consumeFromSlot(this.selectedMeatSlot, 1);
-        } else {
-            // Cached slot changed; fall back to any available meat once
-            int fallback = findFirstMeatSlot(inventory);
-            if (fallback >= 0) {
-                inventory.consumeFromSlot(fallback, 1);
-            }
-            // If no meat remains, the healing still applies
-        }
+        villager.getSettlementsInventory().consume(this.selectedMeat, 1);
     }
 
-    private static int findFirstMeatSlot(@Nonnull VillagerInventory inventory) {
-        for (int i = 0; i < inventory.getBackpackSize(); i++) {
-            ItemStack stack = inventory.getBackpack().getItem(i);
-            if (stack.isEmpty()) {
-                continue;
-            }
-            if (stack.is(Tags.Items.FOODS_RAW_MEAT) || stack.is(Tags.Items.FOODS_COOKED_MEAT)) {
-                return i;
-            }
-        }
-        return -1;
+    private Optional<ItemStack> findFirstMeatRepresentative(@Nonnull VillagerInventory inventory) {
+        return inventory.findFirst(stack -> stack.is(Tags.Items.FOODS_RAW_MEAT) || stack.is(Tags.Items.FOODS_COOKED_MEAT));
     }
 
 }

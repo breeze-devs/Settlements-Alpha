@@ -20,7 +20,6 @@ import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolve
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
@@ -100,8 +99,6 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
                 .build());
         this.preconditions.add(demandSignalService.requireItem(
                 new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, this.getClass().getSimpleName()));
-        this.preconditions.add(ICondition.named("CanFitHoneycomb",
-                entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.HONEYCOMB))));
 
         this.initializeStateMachine(this.createControlStep(), HarvestStage.END);
     }
@@ -201,8 +198,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
     private boolean canHarvest(@Nonnull BaseVillager villager) {
         VillagerInventory inventory = villager.getSettlementsInventory();
-        return inventory.containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements)
-                && inventory.canAddItem(new ItemStack(Items.HONEYCOMB));
+        return inventory.containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements);
     }
 
     private StepResult performHarvest(@Nonnull BehaviorContext<BaseVillager> context) {
@@ -225,7 +221,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
         String expertiseName = villager.getExpertise().getConfigName();
         for (ItemStack drop : this.yieldData.rollDrops(expertiseName, harvestedBlockId)) {
             if (!drop.isEmpty()) {
-                villager.getSettlementsInventory().addOrDropItem(drop, level, villager.getX(), villager.getY(), villager.getZ());
+                villager.getSettlementsInventory().add(drop);
             }
         }
 

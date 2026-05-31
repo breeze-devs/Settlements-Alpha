@@ -30,8 +30,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.LockCode;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
@@ -43,7 +41,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @CustomLog
 public class BlastOreBehavior extends VillagerStateMachineBehavior {
@@ -141,14 +138,6 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
     }
 
     @Override
-    public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull BaseVillager entity) {
-        if (this.blastFurnace != null) {
-            entity.getLookControl().setLookAt(this.blastFurnace.getLocation(false).toVec3());
-        }
-        return super.tickContinueConditions(delta, world, entity);
-    }
-
-    @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
         this.setFurnaceLitState(false);
@@ -201,7 +190,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
 
                     this.setFurnaceLitState(false);
                     BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
-                    this.storeOrDropOutput(villager, this.currentRecipe);
+                    villager.getSettlementsInventory().add(this.currentRecipe.createOutputStack());
 
                     ctx.getInitiator().setHeldItem(this.currentRecipe.createOutputStack());
                     villager.triggerMotion(AnimationArchetype.INTERACT);
@@ -229,31 +218,6 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
     private boolean consumeRecipeInput(@Nonnull BaseVillager villager,
                                        @Nonnull BlastOreRecipe recipe) {
         return villager.getSettlementsInventory().consume(recipe.getInput(), recipe.getInputCount()) == recipe.getInputCount();
-    }
-
-    private void storeOrDropOutput(@Nonnull BaseVillager villager,
-                                   @Nonnull BlastOreRecipe recipe) {
-        Optional<ItemStack> leftover = villager.getSettlementsInventory().addItem(recipe.createOutputStack());
-        leftover.ifPresent(stack -> this.dropItemNearBlastFurnace(villager, stack));
-    }
-
-    private void dropItemNearBlastFurnace(@Nonnull BaseVillager villager,
-                                          @Nonnull ItemStack stack) {
-        if (stack.isEmpty()) {
-            return;
-        }
-
-        Location dropLocation = this.blastFurnace != null
-                ? this.blastFurnace.getLocation(true).add(0, 0.5, 0, false)
-                : Location.fromEntity(villager, false);
-        Level level = villager.level();
-
-        ItemEntity itemEntity = new ItemEntity(level,
-                dropLocation.getX(),
-                dropLocation.getY(),
-                dropLocation.getZ(),
-                stack.copy());
-        level.addFreshEntity(itemEntity);
     }
 
     private void setFurnaceLitState(boolean lit) {

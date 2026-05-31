@@ -139,8 +139,7 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
                         return StepResult.fail("Chest extraction failed (empty result)");
                     }
 
-                    villager.getSettlementsInventory().addItem(extracted)
-                            .ifPresent(leftover -> dropItem(villager, leftover));
+                    villager.getSettlementsInventory().add(extracted);
 
                     return StepResult.noOp();
                 })

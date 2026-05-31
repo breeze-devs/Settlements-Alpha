@@ -428,6 +428,12 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         this.tradeSessionPresenter.presentWalkAway(session, seller);
     }
 
+    @Override
+    protected boolean shouldLookAtActiveTarget() {
+        // Buyer and seller track each other via EntityTracker; do not override with a static target look.
+        return false;
+    }
+
     private void lockMutualAttention(@Nonnull BaseVillager buyer, @Nonnull BaseVillager seller) {
         buyer.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(seller, true));
         seller.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new EntityTracker(buyer, true));

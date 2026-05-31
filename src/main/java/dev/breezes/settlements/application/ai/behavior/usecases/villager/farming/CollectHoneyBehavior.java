@@ -20,7 +20,6 @@ import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolve
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
@@ -99,8 +98,6 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
                 .description("Known full hive sites")
                 .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(GLASS_BOTTLE_ID), 1, 50, this.getClass().getSimpleName()));
-        this.preconditions.add(ICondition.named("CanFitHoneyBottle",
-                entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.HONEY_BOTTLE))));
 
         this.initializeStateMachine(this.createControlStep(), CollectStage.END);
     }
@@ -200,8 +197,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
 
     private boolean canHarvest(@Nonnull BaseVillager villager) {
         VillagerInventory inventory = villager.getSettlementsInventory();
-        return inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements)
-                && inventory.canAddItem(new ItemStack(Items.HONEY_BOTTLE));
+        return inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements);
     }
 
     private StepResult performHarvest(@Nonnull BehaviorContext<BaseVillager> context) {
@@ -221,8 +217,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         }
 
         VillagerInventory inventory = villager.getSettlementsInventory();
-        if (!inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements)
-                || !inventory.canAddItem(new ItemStack(Items.HONEY_BOTTLE))) {
+        if (!inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements)) {
             return StepResult.noOp();
         }
         if (!inventory.consumeIfRequired(Items.GLASS_BOTTLE, 1, GeneralConfig.bypassInventoryRequirements)) {
@@ -233,7 +228,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         String expertiseName = villager.getExpertise().getConfigName();
         for (ItemStack drop : this.yieldData.rollDrops(expertiseName, harvestedBlockId)) {
             if (!drop.isEmpty()) {
-                inventory.addOrDropItem(drop, level, villager.getX(), villager.getY(), villager.getZ());
+                inventory.add(drop);
             }
         }
 

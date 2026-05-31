@@ -59,7 +59,8 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
 
     @Nullable
     private BlockPos enchantingTablePos;
-    private int targetSlot;
+    @Nullable
+    private ItemStack targetRepresentative;
 
     public EnchantItemBehavior(@Nonnull EnchantItemConfig config,
                                @Nonnull HungerConfig hungerConfig,
@@ -80,7 +81,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         this.enchantmentEngine = enchantmentEngine;
 
         this.enchantingTablePos = null;
-        this.targetSlot = -1;
+        this.targetRepresentative = null;
 
         this.initializeStateMachine(this.createControlStep(), EnchantStage.END);
     }
@@ -135,10 +136,10 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        this.targetSlot = this.findFirstEnchantableNonEnchantedSlot(entity.getSettlementsInventory()).orElse(-1);
-        if (this.targetSlot < 0) {
-            log.behaviorError("Invalid enchanting slot: {}", this.targetSlot);
-            this.requestStop("Invalid enchanting slot");
+        this.targetRepresentative = this.findFirstEnchantableNonEnchantedRepresentative(entity.getSettlementsInventory()).orElse(null);
+        if (this.targetRepresentative == null) {
+            log.behaviorError("No enchantable non-enchanted item found");
+            this.requestStop("No enchantable non-enchanted item found");
             return;
         }
 
@@ -165,7 +166,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         entity.getNavigationManager().stop();
         entity.clearHeldItem();
         this.enchantingTablePos = null;
-        this.targetSlot = -1;
+        this.targetRepresentative = null;
     }
 
     private StepResult performEnchant(@Nonnull BehaviorContext<BaseVillager> context) {
@@ -173,15 +174,8 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         Level world = villager.level();
         VillagerInventory inventory = villager.getSettlementsInventory();
 
-        if (this.enchantingTablePos == null || !isValidEnchantTarget(inventory, this.targetSlot)) {
+        if (this.enchantingTablePos == null || this.targetRepresentative == null) {
             log.behaviorError("Failed to enchant item: enchanting setup or target is invalid");
-            return StepResult.noOp();
-        }
-
-        ItemStack originalItem = inventory.getBackpack().getItem(this.targetSlot);
-
-        if (originalItem.getOrDefault(DataComponentRegistry.VILLAGER_ENCHANT_ATTEMPTED.get(), false)) {
-            log.behaviorStatus("Will not enchant: item has already been villager-enchanted");
             return StepResult.noOp();
         }
 
@@ -190,15 +184,19 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         int bookshelfCount = this.countNearbyBookshelves(world, this.enchantingTablePos);
         SpecializationProfile specialization = null; // TODO: implement specialization
 
-        ItemStack enchantedItem = this.enchantmentEngine.enchant(originalItem, expertise, intelligence, bookshelfCount,
+        ItemStack enchantedItem = this.enchantmentEngine.enchant(this.targetRepresentative, expertise, intelligence, bookshelfCount,
                 specialization, world.registryAccess());
 
-        log.behaviorStatus("Enchanted item from {} to {}", originalItem, enchantedItem);
-        originalItem.shrink(1);
-        inventory.addItem(enchantedItem);
+        if (inventory.consume(this.targetRepresentative, 1) != 1) {
+            return StepResult.fail("Failed to enchant item because item cannot be consumed");
+        }
+
+        log.behaviorStatus("Enchanted item from {} to {}", this.targetRepresentative, enchantedItem);
+        inventory.add(enchantedItem);
 
         world.playSound(null, this.enchantingTablePos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
         this.rewardExperience(villager);
+
         return StepResult.noOp();
     }
 
@@ -206,24 +204,12 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         if (villager == null) {
             return false;
         }
-        return this.findFirstEnchantableNonEnchantedSlot(villager.getSettlementsInventory()).isPresent();
+        return this.findFirstEnchantableNonEnchantedRepresentative(villager.getSettlementsInventory()).isPresent();
     }
 
-    private Optional<Integer> findFirstEnchantableNonEnchantedSlot(@Nonnull VillagerInventory inventory) {
-        for (int i = 0; i < inventory.getBackpackSize(); i++) {
-            if (isValidEnchantTarget(inventory, i)) {
-                return Optional.of(i);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static boolean isValidEnchantTarget(@Nonnull VillagerInventory inventory, int slot) {
-        ItemStack stack = inventory.getBackpack().getItem(slot);
-        if (stack.isEmpty() || stack.getOrDefault(DataComponentRegistry.VILLAGER_ENCHANT_ATTEMPTED.get(), false)) {
-            return false;
-        }
-        return stack.isEnchantable() || stack.is(Items.BOOK);
+    private Optional<ItemStack> findFirstEnchantableNonEnchantedRepresentative(@Nonnull VillagerInventory inventory) {
+        return inventory.findFirst(stack -> !stack.getOrDefault(DataComponentRegistry.VILLAGER_ENCHANT_ATTEMPTED.get(), false)
+                && (stack.isEnchantable() || stack.is(Items.BOOK)));
     }
 
     private int countNearbyBookshelves(@Nonnull Level world,

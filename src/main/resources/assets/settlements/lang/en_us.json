@@ -55,7 +55,7 @@
   "ui.settlements.stats.health": "Health: ",
   "ui.settlements.stats.hunger": "Hunger: ",
   "ui.settlements.stats.activity": "Activity: %s",
-  "ui.settlements.stats.inventory": "Inventory (%s/%s)",
+  "ui.settlements.stats.inventory": "Inventory (%s kinds · %s items)",
   "ui.settlements.stats.activity.none": "None",
   "ui.settlements.stats.home": "Home: %s, %s, %s",
   "ui.settlements.stats.work": "Work: %s, %s, %s",

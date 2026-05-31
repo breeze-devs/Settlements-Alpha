@@ -11,7 +11,6 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import java.util.Optional;
 
 @ServerScope
 @CustomLog
@@ -25,9 +24,8 @@ public final class TradeExecutor {
                         @Nonnull BaseVillager seller) {
         VillagerInventory buyerInventory = buyer.getSettlementsInventory();
         VillagerInventory sellerInventory = seller.getSettlementsInventory();
-        ItemStack purchasedBundle = new ItemStack(session.getMatchedItem(), session.getBundleSize());
 
-        this.validateTrade(session, buyer, seller, buyerInventory, sellerInventory, purchasedBundle);
+        this.validateTrade(session, buyer, seller, sellerInventory);
 
         log.info("Executing trade session {}: buyer={}, seller={}, item={}, bundleSize={}, price={}",
                 session.getSessionId(), buyer.getUUID(), seller.getUUID(), session.getMatchedItem(),
@@ -39,18 +37,13 @@ public final class TradeExecutor {
             throw new IllegalStateException("Validated seller inventory drifted before trade commit");
         }
 
-        Optional<ItemStack> leftover = buyerInventory.addItem(purchasedBundle);
-        if (leftover.isPresent()) {
-            throw new IllegalStateException("Validated buyer inventory could not fully accept trade bundle");
-        }
+        buyerInventory.add(new ItemStack(session.getMatchedItem(), session.getBundleSize()));
     }
 
     private void validateTrade(@Nonnull TradeSession session,
                                @Nonnull BaseVillager buyer,
                                @Nonnull BaseVillager seller,
-                               @Nonnull VillagerInventory buyerInventory,
-                               @Nonnull VillagerInventory sellerInventory,
-                               @Nonnull ItemStack purchasedBundle) {
+                               @Nonnull VillagerInventory sellerInventory) {
         if (!buyer.getUUID().equals(session.getBuyerId())) {
             throw new IllegalArgumentException("Trade buyer does not match session buyerId");
         }
@@ -60,11 +53,8 @@ public final class TradeExecutor {
         if (!this.villagerWallet.canAfford(buyer, session.getBuyerOffer())) {
             throw new IllegalArgumentException("Trade buyer cannot afford the agreed price");
         }
-        if (sellerInventory.countItem(session.getMatchedItem()) < session.getBundleSize()) {
+        if (sellerInventory.count(session.getMatchedItem()) < session.getBundleSize()) {
             throw new IllegalArgumentException("Trade seller does not have enough matching items");
-        }
-        if (!buyerInventory.canAddItem(purchasedBundle)) {
-            throw new IllegalArgumentException("Trade buyer inventory cannot accept the purchased bundle");
         }
     }
 

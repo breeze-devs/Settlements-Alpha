@@ -238,7 +238,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenWolf.get()))));
-        int bonesAvailable = villager.getSettlementsInventory().countItem(Items.BONE);
+        int bonesAvailable = villager.getSettlementsInventory().count(Items.BONE);
         this.attemptsRemaining = GeneralConfig.bypassInventoryRequirements
                 ? MAX_TAME_ATTEMPTS
                 : Math.min(MAX_TAME_ATTEMPTS, bonesAvailable);

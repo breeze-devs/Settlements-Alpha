@@ -27,7 +27,6 @@ import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.survey.SurveyBounds;
 import dev.breezes.settlements.domain.generation.model.survey.TerrainGrid;
-import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.settlement.query.BuildingContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementPositionContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
@@ -45,19 +44,12 @@ import dev.breezes.settlements.shared.util.CoordinateHashUtil;
 import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
@@ -159,7 +151,6 @@ public class TestCommand {
                                                 .then(Commands.argument("seed", LongArgumentType.longArg())
                                                         .executes(TestCommand::generateSettlement))))))
                 .then(Commands.literal("info").executes(TestCommand::settlementInfo))
-                .then(Commands.literal("open_inventory").executes(TestCommand::openInventory))
                 .then(buildBubbleCommand()));
     }
 
@@ -372,44 +363,6 @@ public class TestCommand {
                 "Placed structure '" + structureName + "' at " + placementOrigin +
                         " size=" + template.getSize() +
                         " rotation=" + rotation.name().toLowerCase(Locale.ROOT)), false);
-        return Command.SINGLE_SUCCESS;
-    }
-
-    private static int openInventory(CommandContext<CommandSourceStack> command) {
-        if (!(command.getSource().getEntity() instanceof Player player)) {
-            return Command.SINGLE_SUCCESS;
-        }
-
-        Optional<EntityHitResult> hitResult = VillagerRaycastUtil.raycastVillagerTarget(player, 15.0);
-
-        if (hitResult.isEmpty() || !(hitResult.get().getEntity() instanceof ISettlementsVillager villager)) {
-            player.displayClientMessage(Component.literal("No villager found in range"), true);
-            return Command.SINGLE_SUCCESS;
-        }
-
-        player.displayClientMessage(Component.literal("Opening inventory for villager: " + villager.getUUID()),
-                true);
-
-        VillagerInventory settlementsInventory = villager.getSettlementsInventory();
-        SimpleContainer realBackpack = settlementsInventory.getBackpack();
-        int realSize = settlementsInventory.getBackpackSize();
-        SimpleContainer virtualContainer = new SimpleContainer(54);
-
-        // Initialize virtual container
-        for (int i = 0; i < 54; i++) {
-            if (i < realSize) {
-                virtualContainer.setItem(i, realBackpack.getItem(i));
-            } else {
-                ItemStack barrier = new ItemStack(Items.BARRIER);
-                barrier.set(DataComponents.CUSTOM_NAME, Component.literal("Locked Slot"));
-                virtualContainer.setItem(i, barrier);
-            }
-        }
-
-        player.openMenu(new SimpleMenuProvider((id, inv, p) ->
-                new ChestMenu(MenuType.GENERIC_9x6, id, inv, virtualContainer, 6),
-                Component.literal("Villager Inventory")));
-
         return Command.SINGLE_SUCCESS;
     }
 

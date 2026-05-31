@@ -212,7 +212,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenCat.get()))));
-        int codAvailable = villager.getSettlementsInventory().countItem(Items.COD);
+        int codAvailable = villager.getSettlementsInventory().count(Items.COD);
         this.attemptsRemaining = GeneralConfig.bypassInventoryRequirements
                 ? MAX_TAME_ATTEMPTS
                 : Math.min(MAX_TAME_ATTEMPTS, codAvailable);

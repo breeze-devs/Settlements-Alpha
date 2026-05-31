@@ -15,7 +15,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyMilkableCowExistsCondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -70,8 +69,6 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
                 .build();
         this.preconditions.add(this.nearbyMilkableCowExistsCondition);
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BUCKET_ID), 1, 50, this.getClass().getSimpleName()));
-        this.preconditions.add(ICondition.named("CanFitMilkBucket",
-                entity -> entity.getSettlementsInventory().canAddItem(new ItemStack(Items.MILK_BUCKET))));
 
         this.target = null;
         this.milkCountRemaining = 0;
@@ -106,8 +103,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
                     }
 
                     VillagerInventory inventory = context.getInitiator().getMinecraftEntity().getSettlementsInventory();
-                    if (!inventory.containsOrBypassed(Items.BUCKET, GeneralConfig.bypassInventoryRequirements)
-                            || !inventory.canAddItem(new ItemStack(Items.MILK_BUCKET))) {
+                    if (!inventory.containsOrBypassed(Items.BUCKET, GeneralConfig.bypassInventoryRequirements)) {
                         return StepResult.complete();
                     }
 
@@ -141,9 +137,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        if (!villager.getSettlementsInventory().containsOrBypassed(Items.BUCKET, GeneralConfig.bypassInventoryRequirements)
-                || !villager.getSettlementsInventory().canAddItem(new ItemStack(Items.MILK_BUCKET))) {
-            this.requestStop("Not enough buckets in inventory or inventory is full");
+        if (!villager.getSettlementsInventory().containsOrBypassed(Items.BUCKET, GeneralConfig.bypassInventoryRequirements)) {
+            this.requestStop("Not enough buckets in inventory");
             return;
         }
 
@@ -184,10 +179,6 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         VillagerInventory inventory = context.getInitiator().getMinecraftEntity().getSettlementsInventory();
         ItemStack milkBucketStack = new ItemStack(Items.MILK_BUCKET);
 
-        if (!inventory.canAddItem(milkBucketStack)) {
-            this.milkCountRemaining = 0;
-            return StepResult.noOp();
-        }
         if (!inventory.consumeIfRequired(Items.BUCKET, 1, GeneralConfig.bypassInventoryRequirements)) {
             this.milkCountRemaining = 0;
             return StepResult.noOp();
@@ -196,7 +187,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         SoundRegistry.MILK_COW.playGlobally(Location.fromEntity(this.target, false), SoundSource.NEUTRAL);
         context.getInitiator().setHeldItem(Items.MILK_BUCKET.getDefaultInstance());
 
-        inventory.addItem(milkBucketStack);
+        inventory.add(milkBucketStack);
         this.milkCountRemaining--;
         this.shouldRewardExperience = true;
 

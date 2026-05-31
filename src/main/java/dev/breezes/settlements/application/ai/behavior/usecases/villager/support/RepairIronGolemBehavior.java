@@ -141,7 +141,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         }
 
         this.targetToRepair = targets.getFirst();
-        int ingotsAvailable = villager.getSettlementsInventory().countItem(Items.IRON_INGOT);
+        int ingotsAvailable = villager.getSettlementsInventory().count(Items.IRON_INGOT);
         int rolledAttempts = RandomUtil.randomInt(1, 3, true);
         this.remainingRepairAttempts = GeneralConfig.bypassInventoryRequirements
                 ? rolledAttempts

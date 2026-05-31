@@ -29,14 +29,11 @@ import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.schedule.Activity;
-import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,19 +85,8 @@ public final class VillagerStatsSnapshotBuilder {
 
     public VillagerInventorySnapshot buildInventory(@Nonnull BaseVillager villager) {
         VillagerInventory inventory = villager.getSettlementsInventory();
-        SimpleContainer backpack = inventory.getBackpack();
-
-        List<ItemStack> nonEmptyItems = new ArrayList<>();
-        for (int i = 0; i < backpack.getContainerSize(); i++) {
-            ItemStack stack = backpack.getItem(i);
-            if (!stack.isEmpty()) {
-                nonEmptyItems.add(stack.copy());
-            }
-        }
-
         return VillagerInventorySnapshot.builder()
-                .backpackSize(inventory.getBackpackSize())
-                .nonEmptyItems(nonEmptyItems)
+                .entries(inventory.entries())
                 .build();
     }
 

@@ -199,6 +199,12 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
     }
 
     @Override
+    public void lookAt(@Nonnull Location target) {
+        // No plan orchestration on wolves, so drive the look control directly to win the per-tick race.
+        this.getLookControl().setLookAt(target.toVec3());
+    }
+
+    @Override
     public void dropLeash(boolean sendPacket, boolean dropItem) {
         // Never drop leash item to prevent giving players free leads
         super.dropLeash(sendPacket, false);

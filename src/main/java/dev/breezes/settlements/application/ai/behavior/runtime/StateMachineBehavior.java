@@ -2,9 +2,11 @@ package dev.breezes.settlements.application.ai.behavior.runtime;
 
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.shared.logging.ILogger;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
@@ -20,17 +22,18 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
 
     @Nullable
     private StagedStep<T> controlStep;
-
     @Nullable
     private StageKey expectedEndStage;
-
     @Nullable
     private BehaviorContext<T> context;
+
+    private final ITickable lookControlCooldown;
 
     protected StateMachineBehavior(@Nonnull ILogger log,
                                    @Nonnull ITickable preconditionCheckCooldown,
                                    @Nonnull ITickable behaviorCoolDown) {
         super(log, preconditionCheckCooldown, behaviorCoolDown);
+        this.lookControlCooldown = ClockTicks.of(10).asTickable();
     }
 
     protected final void initializeStateMachine(@Nonnull StagedStep<T> controlStep,
@@ -65,6 +68,9 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
         }
 
         StepResult result = this.controlStep.tick(context);
+        if (this.lookControlCooldown.tickCheckAndReset(1) && this.shouldLookAtActiveTarget()) {
+            TargetQueries.firstTargetLocation(context).ifPresent(entity::lookAt);
+        }
         this.handleStepResult(result, this.expectedEndStage, this.getClass().getSimpleName());
     }
 
@@ -100,6 +106,15 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
                                    @Nonnull Level world,
                                    @Nonnull T entity,
                                    @Nonnull BehaviorContext<T> context) {
+        return true;
+    }
+
+    /**
+     * Whether the entity should automatically face its active {@code TargetState} target each tick
+     * while this behavior runs. Defaults to {@code true}; behaviors that point the head somewhere
+     * other than their target (or manage look themselves) override this to {@code false}.
+     */
+    protected boolean shouldLookAtActiveTarget() {
         return true;
     }
 

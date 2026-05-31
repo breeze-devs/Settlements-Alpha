@@ -34,8 +34,7 @@ public class BlastRecipeAvailableCondition implements ICondition<BaseVillager> {
 
         VillagerInventory inventory = villager.getSettlementsInventory();
         this.validRecipes = this.recipes.stream()
-                .filter(recipe -> inventory.countItem(recipe.getInput()) >= recipe.getInputCount())
-                .filter(recipe -> inventory.canAddItem(recipe.createOutputStack()))
+                .filter(recipe -> inventory.count(recipe.getInput()) >= recipe.getInputCount())
                 .toList();
         return !this.validRecipes.isEmpty();
     }

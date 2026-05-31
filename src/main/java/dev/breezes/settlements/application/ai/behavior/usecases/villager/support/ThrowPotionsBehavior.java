@@ -175,28 +175,23 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
 
     private static Optional<ItemStack> findMatchingSplashPotionInInventory(@Nonnull BaseVillager villager,
                                                                            @Nonnull Holder<Potion> needed) {
-        for (ItemStack stack : villager.getSettlementsInventory().getBackpack().getItems()) {
-            if (stack.isEmpty() || !stack.is(Items.SPLASH_POTION)) continue;
-            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
-            if (contents != null && contents.potion().filter(h -> h.value() == needed.value()).isPresent()) {
-                return Optional.of(stack);
-            }
-        }
-        return Optional.empty();
+        return villager.getSettlementsInventory().findFirst(stack -> isMatchingSplashPotion(stack, needed));
     }
 
     private static void consumeMatchingSplashPotion(@Nonnull BaseVillager villager,
                                                     @Nonnull Holder<Potion> needed) {
-        var backpack = villager.getSettlementsInventory().getBackpack();
-        for (int i = 0; i < backpack.getContainerSize(); i++) {
-            ItemStack stack = backpack.getItem(i);
-            if (stack.isEmpty() || !stack.is(Items.SPLASH_POTION)) continue;
-            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
-            if (contents != null && contents.potion().filter(h -> h.value() == needed.value()).isPresent()) {
-                backpack.removeItem(i, 1);
-                return;
-            }
+        villager.getSettlementsInventory()
+                .findFirst(stack -> isMatchingSplashPotion(stack, needed))
+                .ifPresent(stack -> villager.getSettlementsInventory().consume(stack, 1));
+    }
+
+    private static boolean isMatchingSplashPotion(@Nonnull ItemStack stack,
+                                                  @Nonnull Holder<Potion> needed) {
+        if (!stack.is(Items.SPLASH_POTION)) {
+            return false;
         }
+        PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+        return contents != null && contents.potion().filter(h -> h.value() == needed.value()).isPresent();
     }
 
 }

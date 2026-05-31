@@ -124,9 +124,9 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         this.breedTarget2 = breedablePair.get().getSecond();
         this.shouldRewardExperience = false;
 
-        ItemStack foundFood = findFirstMatchingFood(villager);
-        if (!foundFood.isEmpty()) {
-            this.heldItem = foundFood.copyWithCount(1);
+        Optional<ItemStack> foundFood = findFirstMatchingFood(villager);
+        if (foundFood.isPresent()) {
+            this.heldItem = foundFood.get().copyWithCount(1);
         } else if (GeneralConfig.bypassInventoryRequirements) {
             this.heldItem = new ItemStack(this.species.getCanonicalFood());
         } else {
@@ -277,13 +277,8 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         return StepResult.noOp();
     }
 
-    private ItemStack findFirstMatchingFood(@Nonnull BaseVillager villager) {
-        for (ItemStack stack : villager.getSettlementsInventory().getBackpack().getItems()) {
-            if (!stack.isEmpty() && stack.is(this.species.getFoodTag())) {
-                return stack;
-            }
-        }
-        return ItemStack.EMPTY;
+    private Optional<ItemStack> findFirstMatchingFood(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsInventory().findFirst(stack -> stack.is(this.species.getFoodTag()));
     }
 
     private void claimNearbyBabyAnimals(@Nonnull BaseVillager villager) {

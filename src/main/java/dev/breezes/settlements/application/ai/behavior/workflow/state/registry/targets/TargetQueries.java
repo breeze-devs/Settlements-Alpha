@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.B
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import dev.breezes.settlements.domain.world.location.Location;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -55,6 +56,16 @@ public final class TargetQueries {
     public static <T extends ISettlementsBrainEntity> Optional<BlockPos> firstBlockPos(@Nonnull BehaviorContext<T> context) {
         return firstBlock(context)
                 .map(block -> block.getLocation(false).toBlockPos());
+    }
+
+    /**
+     * Returns the location of the first (active) target, whether it is a block or an entity.
+     * Used by the behavior framework to point the entity's head at whatever it is currently acting on.
+     */
+    public static <T extends ISettlementsBrainEntity> Optional<Location> firstTargetLocation(@Nonnull BehaviorContext<T> context) {
+        return context.getState(BehaviorStateType.TARGET, TargetState.class)
+                .flatMap(TargetState::getFirst)
+                .map(Targetable::getLocation);
     }
 
 }

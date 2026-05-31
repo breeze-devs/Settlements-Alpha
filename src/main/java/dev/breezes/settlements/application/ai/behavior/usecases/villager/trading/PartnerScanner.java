@@ -9,6 +9,7 @@ import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.domain.inventory.BackpackEntry;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
@@ -79,17 +80,16 @@ public final class PartnerScanner {
             return Optional.empty();
         }
 
+        List<BackpackEntry> sellerEntries = sellerInventory.entries();
         for (OfferEntry offerEntry : offers) {
-            for (ItemStack stack : sellerInventory.getBackpack().getItems()) {
-                if (stack.isEmpty()) {
-                    continue;
-                }
+            for (BackpackEntry entry : sellerEntries) {
+                ItemStack stack = entry.representative();
                 if (!ItemMatches.test(activeDemand.match(), stack) || !ItemMatches.test(offerEntry.match(), stack)) {
                     continue;
                 }
 
                 Item matchedItem = stack.getItem();
-                int sellerCount = sellerInventory.countItem(matchedItem);
+                int sellerCount = sellerInventory.count(matchedItem);
                 int minimumStock = Math.max(offerEntry.bundleSize(), offerEntry.surplusThreshold());
                 if (sellerCount < minimumStock) {
                     log.behaviorTrace("Rejecting seller {} for item {}: stock {} is below minimum {} (bundle={}, surplusThreshold={})",

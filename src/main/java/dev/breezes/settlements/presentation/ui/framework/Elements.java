@@ -39,7 +39,14 @@ public final class Elements {
     public static UIElement itemIcon(@Nonnull Supplier<ItemStack> stackSupplier,
                                      @Nonnull IntSupplier borderColorSupplier,
                                      @Nullable Supplier<ItemStack> tooltipStackSupplier) {
-        return new ItemIconElement(stackSupplier, borderColorSupplier, tooltipStackSupplier);
+        return new ItemIconElement(stackSupplier, borderColorSupplier, tooltipStackSupplier, null);
+    }
+
+    public static UIElement itemIcon(@Nonnull Supplier<ItemStack> stackSupplier,
+                                     @Nonnull IntSupplier borderColorSupplier,
+                                     @Nullable Supplier<ItemStack> tooltipStackSupplier,
+                                     @Nonnull IntSupplier countSupplier) {
+        return new ItemIconElement(stackSupplier, borderColorSupplier, tooltipStackSupplier, countSupplier);
     }
 
     // ---- Rectangle ----
@@ -193,14 +200,18 @@ public final class Elements {
         private final IntSupplier borderColorSupplier;
         @Nullable
         private final Supplier<ItemStack> tooltipStackSupplier;
+        @Nullable
+        private final IntSupplier countSupplier;
 
         ItemIconElement(@Nonnull Supplier<ItemStack> stackSupplier,
                         @Nonnull IntSupplier borderColorSupplier,
-                        @Nullable Supplier<ItemStack> tooltipStackSupplier) {
+                        @Nullable Supplier<ItemStack> tooltipStackSupplier,
+                        @Nullable IntSupplier countSupplier) {
             super(SizeConstraint.fixed(TOTAL_SIZE), SizeConstraint.fixed(TOTAL_SIZE), Insets.NONE);
             this.stackSupplier = stackSupplier;
             this.borderColorSupplier = borderColorSupplier;
             this.tooltipStackSupplier = tooltipStackSupplier;
+            this.countSupplier = countSupplier;
         }
 
         @Override
@@ -216,12 +227,34 @@ public final class Elements {
 
             // Border
             graphics.fill(x, y, x + TOTAL_SIZE, y + TOTAL_SIZE, borderColorSupplier.getAsInt());
+
             // Inner background
             graphics.fill(x + 1, y + 1, x + TOTAL_SIZE - 1, y + TOTAL_SIZE - 1, ICON_BACKGROUND_COLOR);
-            // Item icon
-            ItemStack stack = stackSupplier.get();
+
+            // Item icon (count=1 since we don't want Minecraft to render the count natively)
+            ItemStack stack = stackSupplier.get().copyWithCount(1);
+            Font font = Minecraft.getInstance().font;
             graphics.renderItem(stack, x + BORDER_SIZE, y + BORDER_SIZE);
-            graphics.renderItemDecorations(Minecraft.getInstance().font, stack, x + BORDER_SIZE, y + BORDER_SIZE);
+            graphics.renderItemDecorations(font, stack, x + BORDER_SIZE, y + BORDER_SIZE);
+
+            int count = this.countSupplier == null ? stack.getCount() : this.countSupplier.getAsInt();
+            if (count > 1) {
+                String countText = String.valueOf(count);
+
+                float countTextScale = 0.6F;
+                float scaledTextWidth = font.width(countText) * countTextScale;
+                float scaledTextHeight = 8 * countTextScale;
+                float textX = x + BORDER_SIZE + ICON_SIZE - scaledTextWidth;
+                float textY = y + BORDER_SIZE + ICON_SIZE - scaledTextHeight;
+
+                graphics.pose().pushPose();
+                graphics.pose().translate(textX, textY, 200.0F);
+                graphics.pose().scale(countTextScale, countTextScale, 1.0F);
+
+                // Draw at (0, 0) because we already translated to the correct position
+                graphics.drawString(font, countText, 0, 0, 0xFFFFFFFF, true);
+                graphics.pose().popPose();
+            }
         }
 
         @Override

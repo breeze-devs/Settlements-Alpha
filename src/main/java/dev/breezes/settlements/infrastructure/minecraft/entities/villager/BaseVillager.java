@@ -29,11 +29,11 @@ import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.entities.hunger.IVillagerHunger;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.EquipmentSlot;
-import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
+import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
@@ -51,8 +51,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -65,6 +63,7 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.sensing.Sensor;
@@ -74,12 +73,10 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.schedule.Schedule;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.neoforged.neoforge.common.Tags;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -144,6 +141,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.bubbleManager = new BubbleManager();
         this.bubbleState = new VillagerBubbleState();
         this.hungerDrainTimer = null;
+    }
+
+    @Override
+    public void lookAt(@Nonnull Location target) {
+        this.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target.toBlockPos()));
     }
 
     public static AttributeSupplier createCustomAttributes() {
@@ -213,7 +215,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     private void addStartingFood(@Nonnull VillagerInventory inventory) {
         for (int i = 0; i < STARTING_BREAD_STACKS; i++) {
-            inventory.addItem(new ItemStack(Items.BREAD, STARTING_BREAD_PER_STACK));
+            inventory.add(new ItemStack(Items.BREAD, STARTING_BREAD_PER_STACK));
         }
     }
 
@@ -236,7 +238,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                                         @Nullable SpawnGroupData spawnGroupData) {
         SpawnGroupData finalizedSpawnData = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
         if (this.settlementsInventory == null) {
-            this.settlementsInventory = this.geneticInventoryProvider().provide(this.genetics);
+            this.settlementsInventory = new VillagerInventory();
             this.addStartingFood(this.settlementsInventory);
         }
         this.settlementsBrain.initialize();
@@ -260,17 +262,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.settlementsBrain.initialize();
 
         // Load inventory
-        this.settlementsInventory = this.geneticInventoryProvider().provide(this.genetics);
+        this.settlementsInventory = new VillagerInventory();
         boolean loadedInventory = VillagerInventoryAttachment.loadInto(this, this.settlementsInventory);
         if (!loadedInventory) {
             // No persisted attachment state exists yet, so seed the default starting inventory.
             this.addStartingFood(this.settlementsInventory);
         }
-    }
-
-    private GeneticInventoryProvider geneticInventoryProvider() {
-        // Minecraft controls entity construction via EntityType, so constructor injection is not possible here.
-        return SettlementsDagger.serverOrThrow().geneticInventoryProvider();
     }
 
     @Override
@@ -482,59 +479,15 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     }
 
     @Override
-    protected void pickUpItem(ItemEntity itemEntity) {
+    protected void pickUpItem(@Nonnull ItemEntity itemEntity) {
+        // Vanilla pickup method, route it to the custom inventory
         this.pickUp(itemEntity);
     }
 
     @Override
-    public boolean wantsToPickUp(ItemStack itemStack) {
-        switch (this.getVillagerData().getProfession().name()) {
-            case ("cleric") -> {
-                if (shouldAddItem(itemStack,
-                        Items.NETHER_WART,
-                        Items.GLISTERING_MELON_SLICE,
-                        Items.PUFFERFISH,
-                        Items.MAGMA_CREAM,
-                        Items.GHAST_TEAR))
-                    return true;
-            }
-            case ("farmer") -> {
-                if (shouldAddItem(itemStack,
-                        Items.SUGAR_CANE,
-                        Items.BONE_MEAL,
-                        Items.WHEAT))
-                    return true;
-                if (shouldAddItem(itemStack, Tags.Items.SEEDS)) return true;
-            }
-            case ("shepherd") -> {
-                if (shouldAddItem(itemStack,
-                        ItemTags.WOOL))
-                    return true;
-            }
-            default -> {
-            }
-        }
-        // this definitely could be more compatible with other mods if we used mixins
-        return shouldAddItem(itemStack, Items.BREAD, Items.POTATO, Items.CARROT, Items.BEETROOT);
-    }
-
-    private boolean shouldAddItem(ItemStack stackToAdd, Item... items) {
-        VillagerInventory inventory = this.getSettlementsInventory();
-        for (Item item : items) {
-            if (stackToAdd.is(item) && inventory.countItem(stackToAdd.getItem()) < 64 && inventory.canAddItem(stackToAdd)) {
-                return true;
-            }
-        }
+    public boolean wantsToPickUp(@Nonnull ItemStack itemStack) {
+        // Do not passively pick up outside of behaviors
         return false;
-    }
-
-    private boolean shouldAddItem(ItemStack stackToAdd, TagKey<Item> tag) {
-        VillagerInventory inventory = this.getSettlementsInventory();
-        return stackToAdd.is(tag) && inventory.countItem(stackToAdd.getItem()) < 64 && inventory.canAddItem(stackToAdd);
-    }
-
-    public boolean hasItemInInventory(Item item) {
-        return this.getSettlementsInventory().containsItem(item);
     }
 
     public boolean isTradeAvailable() {
@@ -591,19 +544,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             return;
         }
 
-        VillagerInventory inventory = this.getSettlementsInventory();
-        Optional<ItemStack> leftover = inventory.addItem(itemstack);
-        int leftoverCount = leftover.map(ItemStack::getCount).orElse(0);
-        int takenCount = itemstack.getCount() - leftoverCount;
-
-        if (takenCount <= 0) {
-            return;
-        }
+        int takenCount = itemstack.getCount();
+        this.getSettlementsInventory().add(itemstack);
 
         log.info("Picking up {}", itemEntity.getItem());
         this.onItemPickup(itemEntity);
         this.take(itemEntity, takenCount);
-        itemstack.setCount(leftoverCount);
+        itemstack.setCount(0);
         itemEntity.setItem(itemstack);
     }
 

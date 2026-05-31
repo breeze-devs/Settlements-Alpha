@@ -1,13 +1,13 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
-import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
@@ -28,6 +28,7 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class EatFoodBehavior extends VillagerStateMachineBehavior {
@@ -43,7 +44,6 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
 
     @Nullable
     private ItemStack selectedFood;
-    private int selectedFoodSlot;
     @Nullable
     private RandomRangeTickable particleTimer;
 
@@ -53,10 +53,9 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
         this.preconditions.add(ICondition.named("HungerBelowEatThreshold",
                 villager -> villager.getHunger() < hungerConfig.eatPriorityThreshold()));
         this.preconditions.add(ICondition.named("HasFood",
-                villager -> this.findFirstFoodSlot(villager.getSettlementsInventory()) >= 0));
+                villager -> villager.getSettlementsInventory().anyMatch(stack -> stack.has(DataComponents.FOOD))));
         this.preconditions.add(ICondition.named("NotSleeping", villager -> !villager.isSleeping()));
 
-        this.selectedFoodSlot = -1;
         this.selectedFood = null;
         this.particleTimer = null;
 
@@ -77,12 +76,11 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
                 .withTickable(EATING_DURATION.asTickable())
                 .onStart(context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
-                    this.selectedFoodSlot = this.findFirstFoodSlot(villager.getSettlementsInventory());
-                    if (this.selectedFoodSlot < 0) {
+                    this.selectedFood = this.findFirstFoodRepresentative(villager.getSettlementsInventory()).orElse(null);
+                    if (this.selectedFood == null) {
                         return StepResult.complete();
                     }
 
-                    this.selectedFood = villager.getSettlementsInventory().getBackpack().getItem(this.selectedFoodSlot).copyWithCount(1);
                     villager.setHeldItem(this.selectedFood.copy());
                     villager.setMotion(AnimationArchetype.EAT);
                     this.particleTimer = RandomRangeTickable.of(PARTICLE_MAX_INTERVAL, PARTICLE_MIN_INTERVAL);
@@ -122,12 +120,11 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
         villager.setMotion(AnimationArchetype.IDLE);
         villager.clearHeldItem();
         this.selectedFood = null;
-        this.selectedFoodSlot = -1;
         this.particleTimer = null;
     }
 
     private void finishEating(@Nonnull BaseVillager villager) {
-        if (this.selectedFood == null || this.selectedFoodSlot < 0) {
+        if (this.selectedFood == null) {
             villager.clearHeldItem();
             return;
         }
@@ -146,20 +143,13 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
             villager.addEffect(new MobEffectInstance(MobEffects.REGENERATION, ClockTicks.seconds(nutrition * 5).getTicksAsInt(), 0, true, true));
         }
 
-        villager.getSettlementsInventory().consumeFromSlot(this.selectedFoodSlot, 1);
+        villager.getSettlementsInventory().consume(this.selectedFood, 1);
         villager.clearHeldItem();
         this.selectedFood = null;
-        this.selectedFoodSlot = -1;
     }
 
-    private int findFirstFoodSlot(@Nonnull VillagerInventory inventory) {
-        for (int i = 0; i < inventory.getBackpackSize(); i++) {
-            ItemStack stack = inventory.getBackpack().getItem(i);
-            if (!stack.isEmpty() && stack.has(DataComponents.FOOD)) {
-                return i;
-            }
-        }
-        return -1;
+    private Optional<ItemStack> findFirstFoodRepresentative(@Nonnull VillagerInventory inventory) {
+        return inventory.findFirst(stack -> stack.has(DataComponents.FOOD));
     }
 
 }
