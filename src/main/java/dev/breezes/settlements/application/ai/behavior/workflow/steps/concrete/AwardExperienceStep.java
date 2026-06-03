@@ -6,8 +6,11 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.o
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.domain.genetics.GeneType;
+import dev.breezes.settlements.domain.genetics.IntelligenceExperienceResolver;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.Builder;
 
 import javax.annotation.Nonnull;
@@ -46,7 +49,14 @@ public class AwardExperienceStep extends AbstractStep<BaseVillager> {
 
         context.getState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.class)
                 .filter(InteractionOutcomeState::isSuccess)
-                .ifPresent(state -> context.getInitiator().gainExperience(this.experienceAmount));
+                .ifPresent(state -> {
+                    double multiplier = IntelligenceExperienceResolver.resolveMultiplier(
+                            context.getInitiator().getGenetics().getGeneValue(GeneType.INTELLIGENCE));
+                    int awarded = RandomUtil.stochasticRound(this.experienceAmount * multiplier);
+                    if (awarded > 0) {
+                        context.getInitiator().gainExperience(awarded);
+                    }
+                });
         return StepResult.transition(this.nextStage);
     }
 

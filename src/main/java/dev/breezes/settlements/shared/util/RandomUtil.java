@@ -90,6 +90,15 @@ public class RandomUtil {
         return RANDOM.nextDouble() < chance;
     }
 
+    public static int stochasticRound(double value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("value must be non-negative");
+        }
+
+        int floor = (int) Math.floor(value);
+        return floor + (chance(value - floor) ? 1 : 0);
+    }
+
     public static void chance(double chance, @Nonnull Runnable runnable) {
         if (chance(chance)) {
             runnable.run();

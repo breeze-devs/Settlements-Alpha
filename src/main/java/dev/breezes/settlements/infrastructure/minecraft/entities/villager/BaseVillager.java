@@ -48,6 +48,7 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTear
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedgerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.genetics.VillagerGeneticAttributes;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.VillagerMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
@@ -253,11 +254,15 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                                         @Nonnull MobSpawnType spawnType,
                                         @Nullable SpawnGroupData spawnGroupData) {
         SpawnGroupData finalizedSpawnData = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
+        VillagerGeneticAttributes.apply(this);
+
         if (this.settlementsInventory == null) {
             this.settlementsInventory = new VillagerInventory();
             this.addStartingFood(this.settlementsInventory);
         }
+
         this.settlementsBrain.initialize();
+
         return finalizedSpawnData;
     }
 
@@ -275,6 +280,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     public void load(@Nonnull CompoundTag nbtTag) {
         super.load(nbtTag);
         VillagerGeneticsAttachment.loadInto(this, this.genetics);
+        VillagerGeneticAttributes.apply(this);
         VillagerBrainAttachment.loadInto(this);
         this.teardownLedger = VillagerTeardownLedgerAttachment.loadInto(this);
         this.settlementsBrain.initialize();
