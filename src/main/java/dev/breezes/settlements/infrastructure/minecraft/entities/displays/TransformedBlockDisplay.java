@@ -1,9 +1,9 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.displays;
 
+import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models.TransformationMatrix;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.BlockDisplayMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.DisplayEntityMixin;
-import dev.breezes.settlements.domain.world.location.Location;
 import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -23,8 +23,8 @@ public class TransformedBlockDisplay extends TransformedDisplay {
     private BlockState blockState;
 
     @Builder
-    public TransformedBlockDisplay(@Nonnull BlockState blockState, @Nonnull TransformationMatrix transform, boolean temporary) {
-        super(transform, DisplayType.BLOCK, temporary);
+    public TransformedBlockDisplay(@Nonnull BlockState blockState, @Nonnull TransformationMatrix transform) {
+        super(transform, DisplayType.BLOCK);
         this.blockState = blockState;
     }
 
@@ -47,8 +47,8 @@ public class TransformedBlockDisplay extends TransformedDisplay {
 
     @Nonnull
     @Override
-    public TransformedDisplay cloneWithoutEntity(boolean temporary) {
-        return new TransformedBlockDisplay(this.blockState, this.transformationMatrix, temporary);
+    public TransformedDisplay cloneWithoutEntity() {
+        return new TransformedBlockDisplay(this.blockState, this.transformationMatrix);
     }
 
     public void setBlockState(@Nonnull BlockState blockState) {

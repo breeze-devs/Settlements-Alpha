@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.teardown.DropLeashObligation;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -164,7 +165,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
             if (target == null) {
                 continue;
             }
-            target.dropLeash(true, false);
+            // Leash drop is handled by DropLeashObligation in TeardownScope.
             target.setAge(6000); // reset breeding cooldown
         }
 
@@ -192,7 +193,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
                 })
                 .onEnd(ctx -> {
                     Animal target = targetSupplier.get();
-                    StepResult result = this.feedAnimal(ctx.getInitiator().getMinecraftEntity(), target, label);
+                    StepResult result = this.feedAnimal(ctx.getInitiator().getMinecraftEntity(), ctx, target, label);
                     if (!(result instanceof StepResult.NoOp)) {
                         return result;
                     }
@@ -254,6 +255,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
     }
 
     private StepResult feedAnimal(@Nonnull BaseVillager villager,
+                                  @Nonnull BehaviorContext<BaseVillager> context,
                                   @Nullable Animal target,
                                   @Nonnull String label) {
         if (target == null || this.heldItem == null) {
@@ -267,6 +269,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         }
 
         target.setLeashedTo(villager, true);
+        context.getTeardownScope().track(new DropLeashObligation(target.getUUID(), villager.getUUID(), target.blockPosition()));
 
         Location targetLocation = Location.fromEntity(target, false);
         ParticleRegistry.breedHearts(targetLocation);

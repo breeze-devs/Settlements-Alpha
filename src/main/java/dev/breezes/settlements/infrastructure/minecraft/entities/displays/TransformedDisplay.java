@@ -26,14 +26,11 @@ public abstract class TransformedDisplay {
     @Nullable
     protected Display displayEntity;
 
-    protected final boolean temporary;
     private boolean spawned;
 
-    public TransformedDisplay(@Nonnull TransformationMatrix transformationMatrix, @Nonnull DisplayType displayType, boolean temporary) {
+    public TransformedDisplay(@Nonnull TransformationMatrix transformationMatrix, @Nonnull DisplayType displayType) {
         this.transformationMatrix = transformationMatrix;
         this.displayType = displayType;
-        this.temporary = temporary;
-
         this.spawned = false;
     }
 
@@ -45,12 +42,6 @@ public abstract class TransformedDisplay {
 
         this.displayEntity = this.createEntity(location);
         this.spawned = true;
-
-        // TODO: Add to removal list if temporary
-        if (this.temporary) {
-//            DisplayModuleController.TEMPORARY_DISPLAYS.add(this);
-        }
-
         return this.displayEntity;
     }
 
@@ -65,7 +56,7 @@ public abstract class TransformedDisplay {
     }
 
     @Nonnull
-    public abstract TransformedDisplay cloneWithoutEntity(boolean temporary);
+    public abstract TransformedDisplay cloneWithoutEntity();
 
     public void setTransformation(@Nonnull TransformationMatrix newTransformation) {
         this.setTransformation(newTransformation, null);

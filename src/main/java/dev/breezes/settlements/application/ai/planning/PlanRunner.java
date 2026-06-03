@@ -167,7 +167,9 @@ public class PlanRunner {
             return;
         }
 
-        behavior.requestStop("Plan interrupted");
+        // Synchronous stop so teardown obligations are discharged immediately
+        behavior.stop(level, villager);
+
         DayPlan plan = villager.getDayPlan();
         if (plan != null) {
             plan.getCurrentSlot()

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.runtime;
 
+import dev.breezes.settlements.application.ai.behavior.teardown.ProvidesTeardownLedger;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
@@ -52,6 +53,9 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
         this.requireInitialized();
 
         this.context = new BehaviorContext<>(entity);
+        if (entity instanceof ProvidesTeardownLedger p) {
+            this.context.getTeardownScope().bindLedger(p.getTeardownLedger());
+        }
         this.onBehaviorStart(world, entity, this.context);
         this.controlStep.reset();
     }
@@ -79,9 +83,15 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
                              @Nonnull T entity) {
         this.requireInitialized();
 
-        this.onBehaviorStop(world, entity);
-        this.context = null;
-        this.controlStep.reset();
+        try {
+            this.onBehaviorStop(world, entity);
+        } finally {
+            if (this.context != null) {
+                this.context.getTeardownScope().teardownAll(this.context.getLevel());
+            }
+            this.context = null;
+            this.controlStep.reset();
+        }
     }
 
     protected void onBehaviorStart(@Nonnull Level world,

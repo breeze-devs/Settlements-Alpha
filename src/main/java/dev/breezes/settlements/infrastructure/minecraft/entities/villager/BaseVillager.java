@@ -4,6 +4,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.teardown.ITeardownLedger;
+import dev.breezes.settlements.application.ai.behavior.teardown.LedgerEntry;
+import dev.breezes.settlements.application.ai.behavior.teardown.ProvidesTeardownLedger;
+import dev.breezes.settlements.application.ai.behavior.teardown.TeardownObligation;
 import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VillagerBrain;
@@ -40,6 +44,8 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayP
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedger;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedgerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.VillagerMixin;
@@ -89,12 +95,14 @@ import java.util.Set;
 // TODO: make this class abstract
 @CustomLog
 @Getter
-public class BaseVillager extends Villager implements ISettlementsVillager, IVillagerHunger {
+public class BaseVillager extends Villager implements ISettlementsVillager, IVillagerHunger, ProvidesTeardownLedger {
 
     private static final double DEFAULT_MOVEMENT_SPEED = 0.5D;
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
     private static final int STARTING_BREAD_STACKS = 2;
     private static final int STARTING_BREAD_PER_STACK = 64;
+    private static final int MAX_DISCHARGE_ATTEMPTS = 10;
+    private static final ClockTicks RECONCILER_COOLDOWN_TICKS = ClockTicks.seconds(5);
     private static final SyncedDataWrapper<Byte> DATA_MOTION_ARCHETYPE = SyncedDataWrapper.<Byte>builder()
             .entityClass(BaseVillager.class)
             .serializer(EntityDataSerializers.BYTE)
@@ -123,6 +131,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     @Nullable
     private ITickable hungerDrainTimer;
 
+    private VillagerTeardownLedger teardownLedger;
+    private final ITickable reconcilerCooldown;
+
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
@@ -142,6 +153,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.bubbleManager = new BubbleManager();
         this.bubbleState = new VillagerBubbleState();
         this.hungerDrainTimer = null;
+
+        // Start with an empty ledger; load() will replace it with the NBT-backed one.
+        this.teardownLedger = new VillagerTeardownLedger(List.of());
+        this.reconcilerCooldown = RECONCILER_COOLDOWN_TICKS.asTickable();
     }
 
     @Override
@@ -253,6 +268,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         VillagerGeneticsAttachment.saveFrom(this, this.genetics);
         VillagerInventoryAttachment.saveFrom(this, this.getSettlementsInventory());
         VillagerBrainAttachment.saveFrom(this);
+        VillagerTeardownLedgerAttachment.saveFrom(this, this.teardownLedger);
     }
 
     @Override
@@ -260,6 +276,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         super.load(nbtTag);
         VillagerGeneticsAttachment.loadInto(this, this.genetics);
         VillagerBrainAttachment.loadInto(this);
+        this.teardownLedger = VillagerTeardownLedgerAttachment.loadInto(this);
         this.settlementsBrain.initialize();
 
         // Load inventory
@@ -286,10 +303,80 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         super.customServerAiStep();
 
         this.settlementsBrain.tick(1);
+        this.tickReconciler();
+    }
+
+    /**
+     * Processes crash-orphaned teardown obligations on a throttled cadence.
+     * <p>
+     * Each pass iterates only obligations whose target chunk is currently loaded,
+     * deferring unloaded ones rather than counting them as failed attempts. This prevents
+     * the circuit breaker from triggering on obligations that are simply waiting for a distant
+     * chunk to load.
+     */
+    private void tickReconciler() {
+        if (!this.reconcilerCooldown.tickCheckAndReset(1)) {
+            return;
+        }
+
+        List<LedgerEntry> orphans = this.teardownLedger.pendingOrphans();
+        if (orphans.isEmpty()) {
+            return;
+        }
+
+        ServerLevel level = (ServerLevel) this.level();
+
+        // Snapshot to a new list: resolveOrphan() modifies the underlying collection,
+        // so we cannot iterate the live view and remove concurrently.
+        for (LedgerEntry entry : new ArrayList<>(orphans)) {
+            TeardownObligation obligation = entry.getObligation();
+
+            if (!level.isLoaded(obligation.targetPos())) {
+                // Target's chunk is not loaded — defer without counting an attempt.
+                continue;
+            }
+
+            if (this.teardownLedger.hasLiveObligationAt(obligation.targetPos())) {
+                // A live behavior run re-acquired this resource; it owns cleanup now.
+                continue;
+            }
+
+            if (!obligation.stillValid(level)) {
+                // Target gone, replaced, or no longer ours — nothing to do.
+                this.teardownLedger.resolveOrphan(obligation);
+                continue;
+            }
+
+            try {
+                obligation.discharge(level);
+            } catch (Exception e) {
+                log.error("Failed to discharge crash-orphan obligation '{}': {}", obligation.describe(), e.getMessage());
+            }
+
+            if (!obligation.stillValid(level)) {
+                // Discharge took effect.
+                this.teardownLedger.resolveOrphan(obligation);
+            } else {
+                entry.incrementFailedAttempts();
+                if (entry.getFailedAttempts() >= MAX_DISCHARGE_ATTEMPTS) {
+                    log.error("Abandoning crash-orphan obligation '{}' after {} failed attempts — manual cleanup may be required",
+                            obligation.describe(), MAX_DISCHARGE_ATTEMPTS);
+                    this.teardownLedger.resolveOrphan(obligation);
+                }
+            }
+        }
     }
 
     @Override
     public void remove(@Nonnull RemovalReason reason) {
+        // Stop the running behavior before entity removal so TeardownScope obligations are discharged on death/unload.
+        // The chain is:
+        //   brain.stopAll → PlanRunnerBehavior.stop → planRunner.forceStop → behavior.stop → teardownAll
+        // Must run before super.remove so the villager is still alive when discharge resolves entities.
+        if (this.level() instanceof ServerLevel serverLevel) {
+            this.getBrain().stopAll(serverLevel, this);
+        }
+
         this.planRuntimeState.clearPendingGeneration();
         super.remove(reason);
     }
@@ -412,6 +499,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         if (this.settlementsInventory != null) {
             this.settlementsInventory.setEquipped(EquipmentSlot.MAIN_HAND, ItemStack.EMPTY);
         }
+    }
+
+    @Override
+    @Nonnull
+    public ITeardownLedger getTeardownLedger() {
+        return this.teardownLedger;
     }
 
     @Override

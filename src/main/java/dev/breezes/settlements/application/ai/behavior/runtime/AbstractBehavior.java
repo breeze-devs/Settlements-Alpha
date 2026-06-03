@@ -172,11 +172,14 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         }
 
         log.behaviorStatus("Stopping behavior");
-        this.doStop(world, entity);
-
-        this.behaviorCoolDown.resetWithMultiplier(this.getCooldownMultiplier(entity));
-        this.status = BehaviorStatus.STOPPED;
-        this.stopRequested = false;
+        try {
+            this.doStop(world, entity);
+        } finally {
+            // Always advance to STOPPED so the behavior cannot be stuck as RUNNING
+            this.behaviorCoolDown.resetWithMultiplier(this.getCooldownMultiplier(entity));
+            this.status = BehaviorStatus.STOPPED;
+            this.stopRequested = false;
+        }
     }
 
     public abstract void doStop(@Nonnull Level world, @Nonnull T entity);

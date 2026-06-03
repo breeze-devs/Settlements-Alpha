@@ -1,6 +1,8 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.teardown.ResetBlockStateObligation;
+import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifactHandle;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -22,20 +24,18 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.LockCode;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nonnull;
@@ -77,6 +77,8 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
     private PhysicalBlock blastFurnace;
     @Nullable
     private BlastOreRecipe currentRecipe;
+    @Nullable
+    private TemporaryArtifactHandle litHandle;
 
     public BlastOreBehavior(BlastOreConfig config,
                             HungerConfig hungerConfig) {
@@ -93,6 +95,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         // Initialize variables
         this.blastFurnace = null;
         this.currentRecipe = null;
+        this.litHandle = null;
 
         this.initializeStateMachine(this.createControlStep(), BlastStage.END);
     }
@@ -126,8 +129,6 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         this.currentRecipe = RandomUtil.choice(validRecipes);
 
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.blastFurnace)));
-
-        this.setFurnaceLockState(true);
     }
 
     @Override
@@ -141,11 +142,12 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
-        this.setFurnaceLitState(false);
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
-        this.setFurnaceLockState(false);
 
+        // Lit reset is handled by teardownAll() via the tracked obligation; clear the handle
+        // for next-run reuse (this behavior instance is reused across runs).
+        this.litHandle = null;
         this.blastFurnace = null;
         this.currentRecipe = null;
     }
@@ -175,6 +177,12 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     ctx.getInitiator().clearHeldItem();
                     ctx.getInitiator().getMinecraftEntity().setMotion(AnimationArchetype.IDLE);
                     this.setFurnaceLitState(true);
+
+                    BlockPos furnacePos = this.blastFurnace.getLocation(false).toBlockPos();
+                    ResourceLocation furnaceBlockId = BuiltInRegistries.BLOCK.getKey(Blocks.BLAST_FURNACE);
+                    this.litHandle = ctx.getTeardownScope().track(
+                            new ResetBlockStateObligation(furnacePos, furnaceBlockId, "lit", "false"));
+
                     Location location = this.blastFurnace.getLocation(true).add(0, 0.5, 0, false);
                     location.displayParticles(ParticleTypes.LAVA, 5, 0.3, 0.3, 0.3, 0.1);
                     SoundRegistry.ITEM_POP_IN.playGlobally(location, SoundSource.BLOCKS);
@@ -189,7 +197,10 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    this.setFurnaceLitState(false);
+                    if (this.litHandle != null) {
+                        this.litHandle.dispose(ctx.getLevel());
+                        this.litHandle = null;
+                    }
                     BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
                     villager.getSettlementsInventory().add(this.currentRecipe.createOutputStack());
 
@@ -245,21 +256,6 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         log.behaviorTrace("Setting furnace lit state to {}", lit);
         BlockState newState = currentState.setValue(AbstractFurnaceBlock.LIT, lit);
         level.setBlock(pos, newState, BlockFlag.of(BlockFlag.SEND_BLOCK_UPDATE, BlockFlag.SEND_CLIENT_UPDATE));
-    }
-
-    private void setFurnaceLockState(boolean locked) {
-        if (this.blastFurnace == null) {
-            return;
-        }
-
-        BlockEntity blockEntity = this.blastFurnace.getLevel().getBlockEntity(this.blastFurnace.getLocation(false).toBlockPos());
-        if (!(blockEntity instanceof BaseContainerBlockEntityMixin lockableContainer)) {
-            log.behaviorTrace("Skipping furnace lock state update because block entity is not lockable");
-            return;
-        }
-
-        String lockKey = locked ? GeneralConfig.globalLockKey : "";
-        lockableContainer.setLockKey(new LockCode(lockKey));
     }
 
 }

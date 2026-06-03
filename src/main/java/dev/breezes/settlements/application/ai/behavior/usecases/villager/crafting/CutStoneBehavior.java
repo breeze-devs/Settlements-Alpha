@@ -1,6 +1,8 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.teardown.DiscardEntityObligation;
+import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifactHandle;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -72,6 +74,8 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
     private TransformedBlockDisplay initialBlockDisplay;
     @Nullable
     private TransformedBlockDisplay finalBlockDisplay;
+    @Nullable
+    private TemporaryArtifactHandle initialDisplayHandle;
 
     @Nullable
     private TransformationMatrix initialMatrix;
@@ -93,6 +97,7 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
         this.currentRecipe = null;
         this.initialBlockDisplay = null;
         this.finalBlockDisplay = null;
+        this.initialDisplayHandle = null;
         this.initialMatrix = null;
         this.intermediateMatrix = this.getMatrix(0, 0);
         this.finalMatrix = null;
@@ -139,8 +144,8 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        this.initialBlockDisplay = new TransformedBlockDisplay(this.currentRecipe.getInput(), initialMatrix, true);
-        this.finalBlockDisplay = new TransformedBlockDisplay(this.currentRecipe.getOutput(), intermediateMatrix, true);
+        this.initialBlockDisplay = new TransformedBlockDisplay(this.currentRecipe.getInput(), initialMatrix);
+        this.finalBlockDisplay = new TransformedBlockDisplay(this.currentRecipe.getOutput(), intermediateMatrix);
     }
 
     @Override
@@ -154,18 +159,13 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
-
-        if (this.initialBlockDisplay != null) {
-            this.initialBlockDisplay.remove();
-        }
-        if (this.finalBlockDisplay != null) {
-            this.finalBlockDisplay.remove();
-        }
-
+        // Display entity cleanup is handled by DiscardEntityObligation in TeardownScope.
+        // Null out fields to release stale references for the next run.
         this.stoneCutter = null;
         this.currentRecipe = null;
         this.initialBlockDisplay = null;
         this.finalBlockDisplay = null;
+        this.initialDisplayHandle = null;
         this.initialMatrix = null;
         this.finalMatrix = null;
     }
@@ -180,6 +180,8 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
 
                     Location location = this.stoneCutter.getLocation(true).add(0, 0.5, 0, false);
                     this.initialBlockDisplay.spawn(location);
+                    this.initialDisplayHandle = ctx.getTeardownScope().track(
+                            new DiscardEntityObligation(this.initialBlockDisplay.getDisplayEntity().getUUID(), location.toBlockPos()));
                     this.initialBlockDisplay.setTransformation(this.intermediateMatrix, ANIMATION_HALF_DURATION);
                     SoundRegistry.STONE_CUTTER_WORKING.playGlobally(location, SoundSource.BLOCKS);
                     return StepResult.noOp();
@@ -207,12 +209,16 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    if (this.initialBlockDisplay != null) {
-                        this.initialBlockDisplay.remove();
+                    // Dispose the initial display mid-run: discards the entity and drops its obligation
+                    // from the scope, so teardownAll is not left revisiting an already-handled artifact.
+                    if (this.initialDisplayHandle != null) {
+                        this.initialDisplayHandle.dispose(ctx.getLevel());
+                        this.initialDisplayHandle = null;
                     }
 
                     Location location = this.stoneCutter.getLocation(true).add(0, 0.5, 0, false);
                     this.finalBlockDisplay.spawn(location);
+                    ctx.getTeardownScope().track(new DiscardEntityObligation(this.finalBlockDisplay.getDisplayEntity().getUUID(), location.toBlockPos()));
                     this.finalBlockDisplay.setTransformation(this.finalMatrix, ANIMATION_HALF_DURATION);
                     SoundRegistry.STONE_CUTTER_WORKING.playGlobally(location, SoundSource.BLOCKS);
                     return StepResult.noOp();

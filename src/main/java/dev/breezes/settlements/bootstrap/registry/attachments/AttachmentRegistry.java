@@ -6,9 +6,11 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalCodec;
 import dev.breezes.settlements.application.economy.demand.DemandSignalState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentState;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentCodec;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentCodec;
@@ -65,6 +67,12 @@ public final class AttachmentRegistry {
             "villager_genetics",
             () -> AttachmentType.builder(VillagerGeneticsAttachmentState::empty)
                     .serialize(VillagerGeneticsAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    public static final Supplier<AttachmentType<TeardownLedgerAttachmentState>> VILLAGER_TEARDOWN_LEDGER = REGISTRY.register(
+            "villager_teardown_ledger",
+            () -> AttachmentType.builder(TeardownLedgerAttachmentState::empty)
+                    .serialize(TeardownLedgerAttachmentCodec.STATE_CODEC)
                     .build());
 
     public static void register(IEventBus eventBus) {

@@ -1,6 +1,8 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.teardown.ResetBlockStateObligation;
+import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifactHandle;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
@@ -22,20 +24,18 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.LockCode;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nonnull;
@@ -72,6 +72,8 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
     private PhysicalBlock smoker;
     @Nullable
     private SmokeMeatRecipe currentRecipe;
+    @Nullable
+    private TemporaryArtifactHandle litHandle;
 
     public SmokeMeatBehavior(SmokeMeatConfig config,
                              HungerConfig hungerConfig) {
@@ -87,6 +89,7 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
         // Initialize variables
         this.smoker = null;
         this.currentRecipe = null;
+        this.litHandle = null;
 
         this.initializeStateMachine(this.createControlStep(), SmokeStage.END);
     }
@@ -121,8 +124,6 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
 
         this.currentRecipe = RandomUtil.choice(validRecipes);
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.smoker)));
-
-        this.setSmokerLockState(true);
     }
 
     @Override
@@ -136,11 +137,12 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
-        this.setSmokerLitState(false);
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
-        this.setSmokerLockState(false);
 
+        // Lit reset is handled by teardownAll() via the tracked obligation; clear the handle
+        // for next-run reuse (this behavior instance is reused across runs).
+        this.litHandle = null;
         this.smoker = null;
         this.currentRecipe = null;
     }
@@ -170,6 +172,16 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
                     ctx.getInitiator().clearHeldItem();
                     ctx.getInitiator().getMinecraftEntity().setMotion(AnimationArchetype.IDLE);
                     this.setSmokerLitState(true);
+
+                    // Track a crash-recovery obligation for the lit state.  The smoking step's
+                    // onEnd will dispose this handle when it sets lit back to false.  If the
+                    // server crashes in the window between now and that disposal, the reconciler
+                    // will reset lit on the next reload.
+                    BlockPos smokerPos = this.smoker.getLocation(false).toBlockPos();
+                    ResourceLocation smokerBlockId = BuiltInRegistries.BLOCK.getKey(Blocks.SMOKER);
+                    this.litHandle = ctx.getTeardownScope().track(
+                            new ResetBlockStateObligation(smokerPos, smokerBlockId, "lit", "false"));
+
                     Location location = this.smoker.getLocation(true).add(0, 0.5, 0, false);
                     location.displayParticles(ParticleTypes.SMOKE, 6, 0.3, 0.3, 0.3, 0.02);
                     SoundRegistry.ITEM_POP_IN.playGlobally(location, SoundSource.BLOCKS);
@@ -184,7 +196,10 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    this.setSmokerLitState(false);
+                    if (this.litHandle != null) {
+                        this.litHandle.dispose(ctx.getLevel());
+                        this.litHandle = null;
+                    }
                     BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
                     villager.getSettlementsInventory().add(this.currentRecipe.createOutputStack());
 
@@ -240,21 +255,6 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
         log.behaviorTrace("Setting smoker lit state to {}", lit);
         BlockState newState = currentState.setValue(AbstractFurnaceBlock.LIT, lit);
         level.setBlock(pos, newState, BlockFlag.of(BlockFlag.SEND_BLOCK_UPDATE, BlockFlag.SEND_CLIENT_UPDATE));
-    }
-
-    private void setSmokerLockState(boolean locked) {
-        if (this.smoker == null) {
-            return;
-        }
-
-        BlockEntity blockEntity = this.smoker.getLevel().getBlockEntity(this.smoker.getLocation(false).toBlockPos());
-        if (!(blockEntity instanceof BaseContainerBlockEntityMixin lockableContainer)) {
-            log.behaviorTrace("Skipping smoker lock state update because block entity is not lockable");
-            return;
-        }
-
-        String lockKey = locked ? GeneralConfig.globalLockKey : "";
-        lockableContainer.setLockKey(new LockCode(lockKey));
     }
 
 }

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.workflow.state;
 
+import dev.breezes.settlements.application.ai.behavior.teardown.TeardownScope;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import java.util.Optional;
  * Represents the context of a behavior, including:
  * - the initiator (entity) of the behavior
  * - the states (facts) for the behavior
+ * - the teardown scope for tracking world artifacts
  */
 public class BehaviorContext<T extends ISettlementsBrainEntity> {
 
@@ -22,12 +24,16 @@ public class BehaviorContext<T extends ISettlementsBrainEntity> {
 
     private final Map<BehaviorStateType, BehaviorState> states;
 
+    @Getter
+    private final TeardownScope teardownScope;
+
     public BehaviorContext(@Nonnull T initiator) {
         this.initiator = initiator;
         this.states = new EnumMap<>(BehaviorStateType.class);
+        this.teardownScope = new TeardownScope();
     }
 
-    public <T extends BehaviorState> Optional<T> getState(@Nonnull BehaviorStateType type, @Nonnull Class<T> castTo) {
+    public <S extends BehaviorState> Optional<S> getState(@Nonnull BehaviorStateType type, @Nonnull Class<S> castTo) {
         if (type.getClazz() != castTo) {
             throw new IllegalArgumentException("The type of the state does not match the cast type");
         }

@@ -4,7 +4,6 @@
   "package": "dev.breezes.settlements.infrastructure.minecraft.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "BaseContainerBlockEntityMixin",
     "BlockDisplayMixin",
     "DisplayEntityMixin",
     "CatMixin",
