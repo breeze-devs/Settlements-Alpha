@@ -21,6 +21,8 @@ public record BehaviorKey(String id) {
     // ---- Social (universal) ----
     public static final BehaviorKey TRADE_INITIATE = new BehaviorKey("trade_initiate");
     public static final BehaviorKey TRADE_ACCEPT = new BehaviorKey("trade_accept");
+    public static final BehaviorKey COURTSHIP_INITIATE = new BehaviorKey("courtship_initiate");
+    public static final BehaviorKey COURTSHIP_ACCEPT = new BehaviorKey("courtship_accept");
 
     // ---- Support / Village ----
     public static final BehaviorKey REPAIR_IRON_GOLEM = new BehaviorKey("repair_iron_golem");

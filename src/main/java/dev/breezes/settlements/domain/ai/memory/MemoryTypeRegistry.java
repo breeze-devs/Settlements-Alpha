@@ -2,12 +2,15 @@ package dev.breezes.settlements.domain.ai.memory;
 
 import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MemoryTypeRegistry {
 
     public static final MemoryType<ISettlementsVillager> INTERACT_TARGET = MemoryType.<ISettlementsVillager>builder()
@@ -75,7 +78,9 @@ public final class MemoryTypeRegistry {
             .moduleTypeSupplier(MemoryModuleTypeRegistry.ORE_SITES)
             .build();
 
-    private MemoryTypeRegistry() {
-    }
+    public static final MemoryType<List<UUID>> WILLING_COURTSHIP_PARTNERS = MemoryType.<List<UUID>>builder()
+            .identifier("willing_courtship_partners")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.WILLING_COURTSHIP_PARTNERS)
+            .build();
 
 }

@@ -31,6 +31,19 @@ public final class TemporaryArtifactHandle {
         this.disposed = false;
     }
 
+    /**
+     * Stop tracking this obligation WITHOUT discharging it. Used when ownership of the artifact
+     * transfers elsewhere (e.g. a claimed bed handed to a newborn) so end-of-behavior teardown
+     * must not revert it. Contrast with {@link #dispose}, which discharges.
+     */
+    public void cancel() {
+        if (this.disposed) {
+            return;
+        }
+        this.disposed = true;
+        this.scope.removeObligation(this.obligation);
+    }
+
     public void dispose(@Nonnull ServerLevel level) {
         if (this.disposed) {
             return;

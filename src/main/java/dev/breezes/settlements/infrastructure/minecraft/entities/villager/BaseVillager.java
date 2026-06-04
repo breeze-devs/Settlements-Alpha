@@ -18,6 +18,7 @@ import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
 import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
+import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sensors.SensorTypeRegistry;
 import dev.breezes.settlements.di.SettlementsDagger;
@@ -29,6 +30,7 @@ import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.entities.hunger.IVillagerHunger;
@@ -63,6 +65,7 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
@@ -79,12 +82,14 @@ import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.schedule.Schedule;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.neoforged.neoforge.common.Tags;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -103,6 +108,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static final int STARTING_BREAD_STACKS = 2;
     private static final int STARTING_BREAD_PER_STACK = 64;
     private static final int MAX_DISCHARGE_ATTEMPTS = 10;
+    private static final float BREED_HUNGER_THRESHOLD = 0.7F;
+    private static final int BREED_FOOD_REQUIREMENT = 32;
+    private static final ItemMatch FOODS_MATCH = new ItemMatch.TagRef(Tags.Items.FOODS);
     private static final ClockTicks RECONCILER_COOLDOWN_TICKS = ClockTicks.seconds(5);
     private static final SyncedDataWrapper<Byte> DATA_MOTION_ARCHETYPE = SyncedDataWrapper.<Byte>builder()
             .entityClass(BaseVillager.class)
@@ -246,6 +254,47 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     public boolean hasSettlementsInventory() {
         return this.settlementsInventory != null;
+    }
+
+    @Nullable
+    @Override
+    public BaseVillager getBreedOffspring(@Nonnull ServerLevel level, @Nonnull AgeableMob otherParent) {
+        BaseVillager child = EntityRegistry.BASE_VILLAGER.get().create(level);
+        if (child == null) {
+            return null;
+        }
+
+        // Select child villager type
+        VillagerType childType;
+        double typeRoll = this.random.nextDouble();
+        if (typeRoll < 0.50D) {
+            childType = VillagerType.byBiome(level.getBiome(this.blockPosition()));
+        } else if (typeRoll < 0.75D || !(otherParent instanceof Villager otherVillager)) {
+            childType = this.getVillagerData().getType();
+        } else {
+            childType = otherVillager.getVillagerData().getType();
+        }
+        child.setVillagerData(child.getVillagerData().setType(childType));
+
+        // Inherit genetics
+        GeneticsProfile partnerGenetics = otherParent instanceof BaseVillager partner ? partner.getGenetics() : new GeneticsProfile();
+        child.getGenetics().replaceWith(this.genetics.crossover(partnerGenetics, this.random));
+
+        child.finalizeSpawn(level, level.getCurrentDifficultyAt(child.blockPosition()), MobSpawnType.BREEDING, null);
+        return child;
+    }
+
+    @Override
+    public boolean canBreed() {
+        if (this.getAge() != 0 || this.isSleeping() || !this.hasSettlementsInventory()) {
+            return false;
+        }
+
+        if (this.getHunger() <= BREED_HUNGER_THRESHOLD) {
+            return false;
+        }
+
+        return this.getSettlementsInventory().countMatching(FOODS_MATCH) >= BREED_FOOD_REQUIREMENT;
     }
 
     @Override
@@ -700,7 +749,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.NETHER_WART_FARM_SITES.getModuleType(),
                 MemoryTypeRegistry.HARVESTABLE_SUGARCANE_SITES.getModuleType(),
                 MemoryTypeRegistry.FULL_HIVE_SITES.getModuleType(),
-                MemoryTypeRegistry.ORE_SITES.getModuleType()
+                MemoryTypeRegistry.ORE_SITES.getModuleType(),
+                MemoryTypeRegistry.WILLING_COURTSHIP_PARTNERS.getModuleType()
         );
     }
 
@@ -712,11 +762,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 SensorType.NEAREST_BED,
                 SensorType.HURT_BY,
                 SensorType.VILLAGER_HOSTILES,
-                SensorType.VILLAGER_BABIES,
                 SensorType.SECONDARY_POIS,
                 SensorType.GOLEM_DETECTED,
+                SensorTypeRegistry.SETTLEMENTS_VILLAGER_BABIES_SENSOR.get(),
                 SensorTypeRegistry.OWNED_PETS_SENSOR.get(),
-                SensorTypeRegistry.VILLAGE_CHESTS_SENSOR.get()
+                SensorTypeRegistry.VILLAGE_CHESTS_SENSOR.get(),
+                SensorTypeRegistry.WILLING_COURTSHIP_PARTNERS_SENSOR.get()
         );
     }
 

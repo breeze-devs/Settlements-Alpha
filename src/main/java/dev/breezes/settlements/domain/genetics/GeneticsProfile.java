@@ -5,6 +5,7 @@ import lombok.CustomLog;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
@@ -57,6 +58,11 @@ public class GeneticsProfile {
 
     public GeneticsProfile copy() {
         return new GeneticsProfile(this.genes);
+    }
+
+    public void replaceWith(@Nonnull GeneticsProfile source) {
+        this.genes.clear();
+        this.genes.putAll(source.genes);
     }
 
     /**

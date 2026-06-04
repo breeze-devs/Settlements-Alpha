@@ -12,15 +12,16 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestMelonConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestNetherWartConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestPumpkinConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestRipeCropsConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestNetherWartConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
@@ -105,6 +106,12 @@ public final class ConfigModule {
     @Singleton
     static RingBellConfig ringBellConfig() {
         return ConfigFactory.create(RingBellConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static CourtshipInitiateConfig courtshipInitiateConfig() {
+        return ConfigFactory.create(CourtshipInitiateConfig.class);
     }
 
     @Provides

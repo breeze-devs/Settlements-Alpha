@@ -24,6 +24,10 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartogr
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipAcceptBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipPresenter;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemBehavior;
@@ -65,6 +69,9 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeAcceptBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeInitiateBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeSessionPresenter;
+import dev.breezes.settlements.application.ai.courtship.BedReservationService;
+import dev.breezes.settlements.application.ai.courtship.CourtshipChoreographyLibrary;
+import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
 import dev.breezes.settlements.application.ai.trading.NegotiationEngine;
 import dev.breezes.settlements.application.ai.trading.TradeExecutor;
@@ -220,6 +227,64 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("emerald"))
                         .build())
                 .factory(() -> new TradeAcceptBehavior(config, hungerConfig, sessionRegistry, tradeSessionPresenter))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry courtshipInitiate(CourtshipInitiateConfig config,
+                                                  HungerConfig hungerConfig,
+                                                  CourtshipSessionRegistry courtshipSessionRegistry,
+                                                  BedReservationService bedReservationService,
+                                                  CourtshipPresenter courtshipPresenter,
+                                                  CourtshipChoreographyLibrary choreographyLibrary) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.COURTSHIP_INITIATE)
+                        .displayName("Initiate Courtship")
+                        .description("Seek a nearby willing villager and initiate courtship")
+                        .category(BehaviorCategory.SOCIAL)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .requiredChannel(BehaviorChannel.SOCIAL)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.COURTSHIP_INITIATE.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("poppy"))
+                        .build())
+                .factory(() -> new CourtshipInitiateBehavior(config, hungerConfig, courtshipSessionRegistry,
+                        bedReservationService, courtshipPresenter, choreographyLibrary))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry courtshipAccept(HungerConfig hungerConfig,
+                                                CourtshipSessionRegistry courtshipSessionRegistry,
+                                                CourtshipPresenter courtshipPresenter,
+                                                CourtshipChoreographyLibrary choreographyLibrary) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.COURTSHIP_ACCEPT)
+                        .displayName("Accept Courtship")
+                        .description("Accept an incoming courtship invitation from another villager")
+                        .category(BehaviorCategory.SOCIAL)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .requiredChannel(BehaviorChannel.SOCIAL)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.COURTSHIP_ACCEPT.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("poppy"))
+                        .build())
+                .factory(() -> new CourtshipAcceptBehavior(hungerConfig, courtshipSessionRegistry,
+                        courtshipPresenter, choreographyLibrary))
                 .build();
     }
 

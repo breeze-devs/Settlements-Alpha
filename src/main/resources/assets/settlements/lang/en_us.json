@@ -51,6 +51,8 @@
   "ui.settlements.behavior.behavior.feed_wolf": "Feed Dog",
   "ui.settlements.behavior.behavior.ring_bell": "Ring Bell",
   "ui.settlements.behavior.behavior.survey_landscape": "Survey Landscape",
+  "ui.settlements.behavior.behavior.courtship_initiate": "Initiate Courtship",
+  "ui.settlements.behavior.behavior.courtship_accept": "Accept Courtship",
   "ui.settlements.stats.title": "VILLAGER STATS",
   "ui.settlements.stats.health": "Health: ",
   "ui.settlements.stats.hunger": "Hunger: ",

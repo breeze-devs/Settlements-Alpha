@@ -2,6 +2,8 @@ package dev.breezes.settlements.bootstrap.registry.memory;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -14,6 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MemoryModuleTypeRegistry {
 
     public static final DeferredRegister<MemoryModuleType<?>> REGISTRY =
@@ -71,8 +74,10 @@ public final class MemoryModuleTypeRegistry {
             "ore_sites",
             () -> new MemoryModuleType<>(Optional.empty()));
 
-    private MemoryModuleTypeRegistry() {
-    }
+    public static final Supplier<MemoryModuleType<List<UUID>>> WILLING_COURTSHIP_PARTNERS = REGISTRY.register(
+            "willing_courtship_partners",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

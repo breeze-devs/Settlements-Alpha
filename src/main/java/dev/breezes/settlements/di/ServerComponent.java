@@ -3,6 +3,7 @@ package dev.breezes.settlements.di;
 import dagger.Subcomponent;
 import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
+import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
 import dev.breezes.settlements.application.ai.genetics.PersonalityDeriver;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
@@ -10,6 +11,7 @@ import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.settlement.persistence.SettlementMetadataQueueService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
+import dev.breezes.settlements.bootstrap.event.CourtshipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
@@ -73,6 +75,8 @@ public interface ServerComponent {
 
     UiSyncServerEvents uiSyncServerEvents();
 
+    CourtshipSessionReaperServerEvents courtshipSessionReaperServerEvents();
+
     SettlementMetadataQueueService settlementMetadataQueueService();
 
     VillagerWallet villagerWallet();
@@ -84,6 +88,8 @@ public interface ServerComponent {
     SettlementStructureLocator settlementStructureLocator();
 
     TradeSessionRegistry tradeSessionRegistry();
+
+    CourtshipSessionRegistry courtshipSessionRegistry();
 
     Set<VillagerSensorFactory> villagerSensorFactories();
 
