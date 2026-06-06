@@ -61,7 +61,10 @@ public record BehaviorKey(String id) {
 
     // ---- Idle / Leisure ----
     public static final BehaviorKey WALK_DOG = new BehaviorKey("walk_dog");
+
+    // ---- Nitwit / Mischief ----
     public static final BehaviorKey RING_BELL = new BehaviorKey("ring_bell");
+    public static final BehaviorKey THROW_EGGS = new BehaviorKey("throw_eggs");
 
     // ---- Surveying ----
     public static final BehaviorKey SURVEY_LANDSCAPE = new BehaviorKey("survey_landscape");

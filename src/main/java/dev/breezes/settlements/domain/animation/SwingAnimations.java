@@ -22,7 +22,7 @@ public final class SwingAnimations {
 
     public static KeyframeAnimation swingHeavy() {
         return KeyframeAnimation.fromPoses()
-                .id(ResourceLocationUtil.mod("animation/butchering/swing_heavy"))
+                .id(ResourceLocationUtil.mod("animation/swing/swing_heavy"))
                 .durationTicks(SWING_DURATION_TICKS)
                 .loopMode(LoopMode.ONCE)
                 .blendInTicks(1)

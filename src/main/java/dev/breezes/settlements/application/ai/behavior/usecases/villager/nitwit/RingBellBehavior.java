@@ -1,4 +1,4 @@
-package dev.breezes.settlements.application.ai.behavior.usecases.villager.idle;
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
@@ -37,7 +37,7 @@ import java.util.Map;
 @CustomLog
 public class RingBellBehavior extends VillagerStateMachineBehavior {
 
-    private static final double CLOSE_ENOUGH_DISTANCE = 1.5;
+    private static final double CLOSE_ENOUGH_DISTANCE = 2;
 
     private enum RingBellStage implements StageKey {
         RING_BELL,

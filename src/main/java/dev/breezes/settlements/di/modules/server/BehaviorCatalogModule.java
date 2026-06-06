@@ -53,12 +53,14 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.RingBellBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
@@ -1059,6 +1061,10 @@ public final class BehaviorCatalogModule {
                 .build();
     }
 
+    // =========================================================================
+    // Nitwit / Mischief
+    // =========================================================================
+
     @Provides
     @IntoSet
     static BehaviorCatalogEntry ringBell(RingBellConfig config, HungerConfig hungerConfig) {
@@ -1080,6 +1086,29 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("bell"))
                         .build())
                 .factory(() -> new RingBellBehavior(config, hungerConfig))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry throwEggs(ThrowEggsConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.THROW_EGGS)
+                        .displayName("Throw Eggs")
+                        .description("Pelt nearby villagers, players, and wandering traders with eggs")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.THROW_EGGS.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("egg"))
+                        .build())
+                .factory(() -> new ThrowEggsBehavior(config, hungerConfig))
                 .build();
     }
 

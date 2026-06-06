@@ -5,6 +5,7 @@ import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
+import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry;
 import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
 import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sensors.SensorTypeRegistry;
@@ -32,6 +33,7 @@ public final class SettlementsMod {
 //        BlockRegistry.register(modEventBus);
         CreativeTabRegistry.register(modEventBus);
         EntityRegistry.register(modEventBus);
+        ParticleTypeRegistry.register(modEventBus);
         DataComponentRegistry.register(modEventBus);
         AttachmentRegistry.register(modEventBus);
         MemoryModuleTypeRegistry.register(modEventBus);

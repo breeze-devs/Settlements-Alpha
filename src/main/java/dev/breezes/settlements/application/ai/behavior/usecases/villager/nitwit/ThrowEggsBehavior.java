@@ -1,0 +1,251 @@
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit;
+
+import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.LoopBackStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.domain.ai.conditions.NearbyEggTargetCondition;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.domain.world.location.Vector;
+import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.SettlementsEgg;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.util.RandomUtil;
+import lombok.CustomLog;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@CustomLog
+public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
+
+    private static final int BURST_DURATION_TICKS = 15;
+    private static final int BURST_ROUNDS_MIN = 2;
+    private static final int BURST_ROUNDS_MAX = 4;
+
+    private static final float EGG_VELOCITY = 1.5f;
+    private static final float EGG_INACCURACY = 8.0f;
+
+    private static final int ANGRY_VILLAGER_PARTICLE_COUNT = 1;
+    private static final double ANGRY_VILLAGER_PARTICLE_OFFSET = 0.3;
+    private static final double ANGRY_VILLAGER_PARTICLE_SPEED = 0.1;
+
+    private static final double RELOCATE_RADIUS = 4.0;
+    private static final double CLOSE_ENOUGH_DISTANCE = 1.5;
+    private static final int RELOCATE_TIMEOUT_TICKS = ClockTicks.seconds(4).getTicksAsInt();
+
+    private enum Stage implements StageKey {
+        RELOCATE_PICK,
+        RELOCATE_MOVE,
+        BURST,
+        BURST_LOOP,
+        END
+    }
+
+    private final NearbyEggTargetCondition<BaseVillager> nearbyEggTargetCondition;
+
+    @Nullable
+    private LivingEntity victim;
+
+    public ThrowEggsBehavior(ThrowEggsConfig config, HungerConfig hungerConfig) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+
+        this.nearbyEggTargetCondition = new NearbyEggTargetCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical());
+        this.preconditions.add(this.nearbyEggTargetCondition);
+
+        this.victim = null;
+
+        this.initializeStateMachine(this.createControlStep(), Stage.END);
+    }
+
+    private StagedStep<BaseVillager> createControlStep() {
+        Map<StageKey, BehaviorStep<BaseVillager>> stageMap = new HashMap<>();
+        stageMap.put(Stage.RELOCATE_PICK, this.createRelocatePickStep());
+        stageMap.put(Stage.RELOCATE_MOVE, this.createRelocateMoveStep());
+        stageMap.put(Stage.BURST, this.createBurstStep());
+        stageMap.put(Stage.BURST_LOOP, LoopBackStep.<BaseVillager>builder()
+                .name("EggBurstLoop")
+                .loopBackTo(Stage.RELOCATE_PICK)
+                .completionTransition(Stage.END)
+                // Resolved lazily once per run — determines how many times the nitwit scampers and bursts
+                .maxIterationsResolver(ctx -> RandomUtil.randomInt(BURST_ROUNDS_MIN, BURST_ROUNDS_MAX, true))
+                .build());
+
+        return StagedStep.<BaseVillager>builder()
+                .name("ThrowEggsBehavior")
+                .initialStage(Stage.RELOCATE_PICK)
+                .stageStepMap(stageMap)
+                .nextStage(Stage.END)
+                .build();
+    }
+
+    /**
+     * Picks a random walkable point ~4 blocks from the current victim position and stores it
+     * as the TargetState so the navigation step can move toward it.
+     */
+    private BehaviorStep<BaseVillager> createRelocatePickStep() {
+        return OneShotStep.<BaseVillager>builder()
+                .name("EggRelocatePick")
+                .action(ctx -> {
+                    if (this.victim == null) {
+                        return StepResult.transition(Stage.END);
+                    }
+
+                    BaseVillager villager = ctx.getInitiator();
+                    Level world = villager.level();
+
+                    // Project a random angle around the victim and snap to surface height
+                    double angle = RandomUtil.randomDouble(0, 2 * Math.PI);
+                    int targetX = (int) (this.victim.getX() + Math.cos(angle) * RELOCATE_RADIUS);
+                    int targetZ = (int) (this.victim.getZ() + Math.sin(angle) * RELOCATE_RADIUS);
+                    int targetY;
+
+                    if (world instanceof ServerLevel server) {
+                        targetY = server.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, targetX, targetZ) - 1;
+                    } else {
+                        // Fallback for client side — stay at current height
+                        targetY = villager.getBlockY();
+                    }
+                    targetY += (int) villager.getEyeHeight();
+
+                    BlockPos relocatePos = new BlockPos(targetX, targetY, targetZ);
+                    Location relocateLocation = Location.of(relocatePos, world);
+                    ctx.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(
+                            PhysicalBlock.of(relocateLocation, world.getBlockState(relocatePos)))));
+
+                    return StepResult.transition(Stage.RELOCATE_MOVE);
+                })
+                .build();
+    }
+
+    /**
+     * Navigates to the chosen relocate point. Times out after ~10 s so the nitwit
+     * bursts anyway if pathfinding can't find a route.
+     */
+    private BehaviorStep<BaseVillager> createRelocateMoveStep() {
+        return StayCloseStep.<BaseVillager>builder()
+                .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.RUN, 1))
+                .actionStep(OneShotStep.<BaseVillager>builder()
+                        .name("EggRelocateArrived")
+                        .action(ctx -> StepResult.transition(Stage.BURST))
+                        .build())
+                .timeoutTicks(RELOCATE_TIMEOUT_TICKS)
+                .timeoutTransition(Stage.BURST)
+                .build();
+    }
+
+    @Override
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager villager,
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
+        List<LivingEntity> candidates = this.nearbyEggTargetCondition.getTargets();
+
+        // Re-scan if the cached result is stale (condition was tested before onBehaviorStart)
+        if (candidates.isEmpty()) {
+            this.nearbyEggTargetCondition.test(villager);
+            candidates = this.nearbyEggTargetCondition.getTargets();
+        }
+
+        if (candidates.isEmpty()) {
+            log.behaviorStatus("No egg targets found nearby; stopping");
+            this.requestStop("no_nearby_egg_targets");
+            return;
+        }
+
+        // Pick a random target rather than always the closest, for mischievous unpredictability
+        this.victim = RandomUtil.choice(candidates);
+        villager.setHeldItem(new ItemStack(Items.EGG));
+    }
+
+    @Override
+    protected boolean preTickGuard(int delta,
+                                   @Nonnull Level world,
+                                   @Nonnull BaseVillager villager,
+                                   @Nonnull BehaviorContext<BaseVillager> context) {
+        return this.victim != null && this.victim.isAlive();
+    }
+
+    @Override
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        villager.getNavigationManager().stop();
+        villager.clearHeldItem();
+        this.victim = null;
+    }
+
+    private BehaviorStep<BaseVillager> createBurstStep() {
+        return TimeBasedStep.<BaseVillager>builder()
+                .name("EggBurst")
+                .withTickable(ClockTicks.of(BURST_DURATION_TICKS).asTickable())
+                .onStart(ctx -> {
+                    if (this.victim != null) {
+                        ctx.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.victim)));
+                    }
+                    return StepResult.noOp();
+                })
+                .addPeriodicStep(ClockTicks.of(3).getTicksAsInt(), this::throwEggAtVictim)
+                .onEnd(ctx -> StepResult.transition(Stage.BURST_LOOP))
+                .build();
+    }
+
+    private StepResult throwEggAtVictim(@Nonnull BehaviorContext<BaseVillager> context) {
+        if (this.victim == null || !this.victim.isAlive()) {
+            return StepResult.transition(Stage.BURST_LOOP);
+        }
+
+        BaseVillager villager = context.getInitiator();
+        Level world = villager.level();
+
+        Location villagerLocation = Location.fromEntity(villager, true);
+        Location victimLocation = Location.fromEntity(this.victim, true);
+        Vector direction = villagerLocation.getDirectionTo(victimLocation);
+
+        SettlementsEgg egg = new SettlementsEgg(world, villager);
+        egg.shoot(direction.getX(), direction.getY(), direction.getZ(), EGG_VELOCITY, EGG_INACCURACY);
+        world.addFreshEntity(egg);
+
+        SoundRegistry.THROW_EGG.playGlobally(villagerLocation, SoundSource.NEUTRAL);
+        this.spawnAngryVillagerParticleOnVictim(world);
+        return StepResult.noOp();
+    }
+
+    private void spawnAngryVillagerParticleOnVictim(@Nonnull Level world) {
+        if (this.victim == null || this.victim instanceof Player || !(world instanceof ServerLevel server)) {
+            return;
+        }
+
+        server.sendParticles(ParticleTypes.ANGRY_VILLAGER,
+                this.victim.getX(), this.victim.getY() + this.victim.getBbHeight(), this.victim.getZ(),
+                ANGRY_VILLAGER_PARTICLE_COUNT,
+                ANGRY_VILLAGER_PARTICLE_OFFSET, ANGRY_VILLAGER_PARTICLE_OFFSET, ANGRY_VILLAGER_PARTICLE_OFFSET,
+                ANGRY_VILLAGER_PARTICLE_SPEED);
+    }
+
+}

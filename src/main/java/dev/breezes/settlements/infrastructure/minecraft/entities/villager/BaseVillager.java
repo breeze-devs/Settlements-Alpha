@@ -196,7 +196,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
      * Use this for continuous, looping states where the animation should persist
      * smoothly until a new state is applied.
      * <p>
-     * <b>Examples:</b> {@code IDLE}, {@code WALK}, {@code HOLDING}
+     * <b>Examples:</b> {@code IDLE}, {@code REEL_OUT}, {@code EAT}
      *
      * @param archetype The continuous animation state to apply.
      * @see #triggerMotion(AnimationArchetype) for one-shot actions.
@@ -212,7 +212,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
      * force the client to restart the animation from frame 0, even if the requested archetype
      * is the same as the current one.
      * <p>
-     * <b>Examples:</b> {@code SWING_HEAVY}, {@code INTERACT}, {@code CELEBRATE}
+     * <b>Examples:</b> {@code SWING_HEAVY}, {@code INTERACT}, {@code CAST}
      *
      * @param archetype The one-shot animation to trigger.
      */
