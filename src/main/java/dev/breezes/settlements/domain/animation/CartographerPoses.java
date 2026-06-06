@@ -45,7 +45,7 @@ public final class CartographerPoses {
     }
 
     private static Pose armsRotation(float pitchDegrees, float yawDegrees) {
-        return Pose.of(AnimationTargets.ARMS_ROTATION, RotationUtil.degrees(pitchDegrees, yawDegrees, 0));
+        return Pose.of(AnimationTargets.ARMS_CROSSED_ROTATION, RotationUtil.degrees(pitchDegrees, yawDegrees, 0));
     }
 
     private static Pose head(float pitch, float yaw) {
@@ -53,7 +53,7 @@ public final class CartographerPoses {
     }
 
     private static Pose reach(Vec3 translation) {
-        return Pose.of(AnimationTargets.ARMS_TRANSLATION, translation);
+        return Pose.of(AnimationTargets.ARMS_CROSSED_TRANSLATION, translation);
     }
 
     private static Pose armsTranslation(double x, double y, double z) {

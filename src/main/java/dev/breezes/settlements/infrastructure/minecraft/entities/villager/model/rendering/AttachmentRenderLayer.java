@@ -7,6 +7,9 @@ import dev.breezes.settlements.domain.animation.SlotTargets;
 import dev.breezes.settlements.domain.attachment.AttachmentContent;
 import dev.breezes.settlements.domain.attachment.AttachmentProvider;
 import dev.breezes.settlements.domain.attachment.RenderableAttachment;
+import dev.breezes.settlements.domain.inventory.EquipmentSlot;
+import dev.breezes.settlements.domain.presentation.ArmConfiguration;
+import dev.breezes.settlements.domain.presentation.ArmPose;
 import dev.breezes.settlements.domain.presentation.AttachmentDisplayProfile;
 import dev.breezes.settlements.domain.presentation.AttachmentDisplayProfileRegistry;
 import dev.breezes.settlements.domain.presentation.SlotAnchor;
@@ -14,7 +17,7 @@ import dev.breezes.settlements.domain.presentation.SlotAnchorRegistry;
 import dev.breezes.settlements.domain.presentation.Socket;
 import dev.breezes.settlements.domain.presentation.SocketRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.VanillaVillagerModel;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
@@ -27,7 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, VanillaVillagerModel<BaseVillager>> {
+public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, SettlementsVillagerModel<BaseVillager>> {
 
     private final SettlementsVillagerRenderer renderer;
     private final ItemInHandRenderer itemInHandRenderer;
@@ -84,12 +87,15 @@ public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, Vanil
         }
 
         SlotAnchor anchor = this.slotAnchorRegistry.get(attachment.slot());
-        Socket socket = this.socketRegistry.get(anchor.getSocket());
+        // Resolve the socket from the model's current arm config
+        ArmConfiguration config = this.getParentModel().getArmConfiguration();
+        ArmPose handPose = EquipmentSlot.OFF_HAND.equals(attachment.slot()) ? config.left() : config.right();
+        Socket socket = this.socketRegistry.get(anchor.socketFor(handPose));
         AttachmentDisplayProfile profile = this.displayProfileRegistry.get(attachment.slot(), attachment.category());
 
         poseStack.pushPose();
         if (socket.isInheritsBoneTransform()) {
-            this.getParentModel().getPart(socket.getBone()).translateAndRotate(poseStack);
+            this.getParentModel().applyBoneTransform(poseStack, socket.getBone());
         }
 
         applyTransform(poseStack, socket.getLocalTranslation(), socket.getLocalRotation(), socket.getLocalScale());

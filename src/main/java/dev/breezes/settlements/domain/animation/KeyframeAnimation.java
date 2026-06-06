@@ -1,10 +1,12 @@
 package dev.breezes.settlements.domain.animation;
 
+import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import lombok.Builder;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +20,7 @@ public final class KeyframeAnimation {
     private final int blendInTicks;
     private final int blendOutTicks;
     private final List<AnimationTrack<?>> tracks;
+    private final ArmConfiguration armConfiguration;
 
     public static PoseAnimationBuilder fromPoses() {
         return new PoseAnimationBuilder();
@@ -29,7 +32,8 @@ public final class KeyframeAnimation {
                               @Nonnull LoopMode loopMode,
                               int blendInTicks,
                               int blendOutTicks,
-                              @Nonnull List<AnimationTrack<?>> tracks) {
+                              @Nonnull List<AnimationTrack<?>> tracks,
+                              @Nullable ArmConfiguration armConfiguration) {
         if (durationTicks < 0) {
             throw new IllegalArgumentException("Animation duration must be non-negative");
         }
@@ -43,6 +47,7 @@ public final class KeyframeAnimation {
         this.blendInTicks = blendInTicks;
         this.blendOutTicks = blendOutTicks;
         this.tracks = List.copyOf(tracks);
+        this.armConfiguration = armConfiguration == null ? ArmConfiguration.BOTH_CROSSED : armConfiguration;
     }
 
     public AnimationFrame sample(float elapsedTicks) {

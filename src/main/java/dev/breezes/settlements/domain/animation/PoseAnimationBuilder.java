@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.animation;
 
+import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
@@ -17,6 +18,7 @@ public final class PoseAnimationBuilder {
     private LoopMode loopMode = LoopMode.ONCE;
     private int blendInTicks;
     private int blendOutTicks;
+    private ArmConfiguration armConfiguration = ArmConfiguration.BOTH_CROSSED;
     private final List<PoseKeyframe> poseKeyframes = new ArrayList<>();
     private final List<AnimationTrack<?>> manualTracks = new ArrayList<>();
 
@@ -45,6 +47,11 @@ public final class PoseAnimationBuilder {
         return this;
     }
 
+    public PoseAnimationBuilder arms(@Nonnull ArmConfiguration armConfiguration) {
+        this.armConfiguration = armConfiguration;
+        return this;
+    }
+
     /**
      * Adds a pose sample to the timeline. Each target is keyed independently: if an intermediate pose omits
      * a target, that target interpolates directly between the surrounding poses that do include it.
@@ -70,6 +77,7 @@ public final class PoseAnimationBuilder {
                 .blendInTicks(this.blendInTicks)
                 .blendOutTicks(this.blendOutTicks)
                 .tracks(tracks)
+                .armConfiguration(this.armConfiguration)
                 .build();
     }
 

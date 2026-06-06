@@ -47,8 +47,6 @@ public final class CartographerAnimations {
     }
 
     public static KeyframeAnimation markMap() {
-        // All three tracks (ARMS_ROTATION, HEAD_ROTATION_OVERRIDE, ARMS_TRANSLATION) are anchored at
-        // tick 0 and 40 so they all run cleanly to completion without holding the last value past the end.
         Pose restFull = CartographerPoses.ARMS_REST
                 .with(CartographerPoses.HEAD_NEUTRAL)
                 .with(CartographerPoses.REACH_NONE);

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.animation;
 
+import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import lombok.CustomLog;
 import lombok.Getter;
 
@@ -79,6 +80,15 @@ public final class VillagerAnimator {
         this.outgoingStartGameTime = this.currentStartGameTime;
         this.currentAnimation = reresolved;
         this.currentStartGameTime = gameTime;
+    }
+
+    /**
+     * Arm config is a discrete render state that snaps to the incoming animation at transition
+     * rather than blending — geometry visibility cannot be crossfaded, so we always read the
+     * current (not outgoing) animation's declared config.
+     */
+    public ArmConfiguration currentArmConfiguration() {
+        return this.currentAnimation.getArmConfiguration();
     }
 
     public AnimationFrame sample(long gameTime, float partialTicks) {

@@ -8,10 +8,11 @@ import dev.breezes.settlements.domain.animation.AnimationFrame;
 import dev.breezes.settlements.domain.animation.AnimationSelectionContext;
 import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.domain.inventory.EquipmentSlot;
+import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import dev.breezes.settlements.domain.presentation.ItemCategory;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.EquipmentLookup;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.VanillaVillagerModel;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
 import dev.breezes.settlements.infrastructure.rendering.animation.debug.DebugPoseOverride;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import lombok.CustomLog;
@@ -25,7 +26,7 @@ import net.minecraft.resources.ResourceLocation;
 import javax.annotation.Nonnull;
 
 @CustomLog
-public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager, VanillaVillagerModel<BaseVillager>> {
+public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager, SettlementsVillagerModel<BaseVillager>> {
 
     private static final float SHADOW_RADIUS = 0.5F;
     private static final float BABY_SCALE = 0.5F;
@@ -35,7 +36,7 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
     private AnimationFrame currentFrame = AnimationFrame.EMPTY;
 
     public SettlementsVillagerRenderer(@Nonnull EntityRendererProvider.Context context) {
-        super(context, new VanillaVillagerModel<>(context.bakeLayer(VanillaVillagerModel.LAYER)), SHADOW_RADIUS);
+        super(context, new SettlementsVillagerModel<>(context.bakeLayer(SettlementsVillagerModel.LAYER)), SHADOW_RADIUS);
 
         // Minecraft owns renderer construction, so the Dagger graph is reached through the project bootstrap bridge.
         ClientComponent clientComponent = SettlementsDagger.client();
@@ -68,13 +69,19 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
             poseStack.scale(BABY_SCALE, BABY_SCALE, BABY_SCALE);
         }
 
-        this.currentFrame = this.sampleAnimationFrame(villager, partialTicks);
+        long gameTime = villager.level().getGameTime();
+        VillagerAnimator animator = this.getOrUpdateAnimator(villager, gameTime);
+        this.currentFrame = this.debugPoseOverride.applyTo(animator.sample(gameTime, partialTicks));
         this.model.setAnimationFrame(this.currentFrame);
+        // Arm config is read from the animator after sampling so the same resolved animation
+        // drives both the frame and the per-arm geometry visibility.
+        this.model.setArmConfiguration(animator.currentArmConfiguration());
         try {
             super.render(villager, yaw, partialTicks, poseStack, buffer, packedLight);
         } finally {
             this.currentFrame = AnimationFrame.EMPTY;
             this.model.setAnimationFrame(null);
+            this.model.setArmConfiguration(ArmConfiguration.BOTH_CROSSED);
         }
     }
 
@@ -82,13 +89,16 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
         return this.currentFrame;
     }
 
-    private AnimationFrame sampleAnimationFrame(@Nonnull BaseVillager villager, float partialTicks) {
+    /**
+     * Advances the animator's motion state and returns it so the caller can sample both the
+     * animation frame and the arm configuration from a single up-to-date animator instance.
+     */
+    private VillagerAnimator getOrUpdateAnimator(@Nonnull BaseVillager villager, long gameTime) {
         VillagerAnimator animator = SettlementsDagger.clientSessionOrThrow()
                 .clientAnimatorRegistry()
                 .getOrCreate(villager);
         AnimationArchetype currentMotion = villager.getMotion();
         byte currentGeneration = villager.getMotionGeneration();
-        long gameTime = villager.level().getGameTime();
 
         if (animator.getLastSeenArchetype() != currentMotion || animator.getLastSeenGeneration() != currentGeneration) {
             AnimationSelectionContext ctx = selectionContext(villager);
@@ -101,7 +111,7 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
             animator.tickContext(selectionContext(villager), gameTime);
         }
 
-        return this.debugPoseOverride.applyTo(animator.sample(gameTime, partialTicks));
+        return animator;
     }
 
     private static AnimationSelectionContext selectionContext(@Nonnull BaseVillager villager) {

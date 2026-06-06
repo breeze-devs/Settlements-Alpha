@@ -16,7 +16,7 @@ public final class FishingPoses {
     public static final Pose YANK_PEAK = arms(-55.0F);
 
     private static Pose arms(float pitchDegrees) {
-        return Pose.of(AnimationTargets.ARMS_ROTATION, RotationUtil.degrees(pitchDegrees, 0.0F, 0.0F));
+        return Pose.of(AnimationTargets.ARMS_CROSSED_ROTATION, RotationUtil.degrees(pitchDegrees, 0.0F, 0.0F));
     }
 
 }

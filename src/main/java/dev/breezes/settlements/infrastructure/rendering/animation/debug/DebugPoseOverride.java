@@ -67,13 +67,13 @@ public final class DebugPoseOverride {
         }
 
         Map<AnimationTarget<?>, Object> overrides = new HashMap<>(4);
-        overrides.put(AnimationTargets.ARMS_ROTATION,
+        overrides.put(AnimationTargets.ARMS_CROSSED_ROTATION,
                 RotationUtil.degrees((float) this.armsPitchDegrees, (float) this.armsYawDegrees, (float) this.armsRollDegrees));
         overrides.put(AnimationTargets.HEAD_ROTATION_OVERRIDE,
                 RotationUtil.degrees((float) this.headPitchDegrees, (float) this.headYawDegrees, (float) this.headRollDegrees));
         overrides.put(AnimationTargets.BODY_ROTATION,
                 RotationUtil.degrees((float) this.bodyPitchDegrees, (float) this.bodyYawDegrees, (float) this.bodyRollDegrees));
-        overrides.put(AnimationTargets.ARMS_TRANSLATION,
+        overrides.put(AnimationTargets.ARMS_CROSSED_TRANSLATION,
                 new Vec3(this.armsTranslationX, this.armsTranslationY, this.armsTranslationZ));
         return frame.overlay(overrides);
     }

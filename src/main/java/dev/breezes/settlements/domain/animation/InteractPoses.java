@@ -11,7 +11,7 @@ public final class InteractPoses {
     public static final Pose INTERACT_PEAK = arms(-30.0F);
 
     private static Pose arms(float pitchDegrees) {
-        return Pose.of(AnimationTargets.ARMS_ROTATION, RotationUtil.degrees(pitchDegrees, 0.0F, 0.0F));
+        return Pose.of(AnimationTargets.ARMS_CROSSED_ROTATION, RotationUtil.degrees(pitchDegrees, 0.0F, 0.0F));
     }
 
 }

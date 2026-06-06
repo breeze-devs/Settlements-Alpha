@@ -4,7 +4,7 @@ import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.client.VillagerFishingHookRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.VanillaVillagerModel;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.rendering.SettlementsVillagerRenderer;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.entity.CatRenderer;
@@ -68,7 +68,7 @@ public class ClientModEvents {
 
     @SubscribeEvent
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(VanillaVillagerModel.LAYER, VanillaVillagerModel::createBodyLayer);
+        event.registerLayerDefinition(SettlementsVillagerModel.LAYER, SettlementsVillagerModel::createBodyLayer);
     }
 
 }

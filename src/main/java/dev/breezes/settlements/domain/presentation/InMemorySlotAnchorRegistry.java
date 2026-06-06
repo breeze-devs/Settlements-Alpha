@@ -23,15 +23,23 @@ public final class InMemorySlotAnchorRegistry implements SlotAnchorRegistry {
     }
 
     public static InMemorySlotAnchorRegistry defaults() {
-        SlotAnchor crossedArmsHand = SlotAnchor.builder()
+        SlotAnchor mainHand = SlotAnchor.builder()
                 .socket(SocketId.CROSSED_ARMS_CENTER)
+                .straightSocket(SocketId.HAND_RIGHT)
+                .defaultDisplayContext(ItemDisplayContext.GROUND)
+                .build();
+
+        SlotAnchor offHand = SlotAnchor.builder()
+                .socket(SocketId.CROSSED_ARMS_CENTER)
+                .straightSocket(SocketId.HAND_LEFT)
                 .defaultDisplayContext(ItemDisplayContext.GROUND)
                 .build();
 
         return InMemorySlotAnchorRegistry.builder()
                 .anchorsBySlot(Map.of(
-                        EquipmentSlot.MAIN_HAND, crossedArmsHand,
-                        EquipmentSlot.OFF_HAND, crossedArmsHand))
+                        EquipmentSlot.MAIN_HAND, mainHand,
+                        EquipmentSlot.OFF_HAND, offHand
+                ))
                 .build();
     }
 
