@@ -21,8 +21,10 @@ import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
+import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -86,7 +88,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
     private final ShearSheepConfig config;
 
-    private final NearbyShearableSheepExistsCondition<BaseVillager> nearbyShearableSheepExistsCondition;
     private final AtomicInteger shearCount;
     private boolean shouldRewardExperience;
 
@@ -101,11 +102,10 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
         this.shouldRewardExperience = false;
 
         // Create behavior preconditions
-        this.nearbyShearableSheepExistsCondition = NearbyShearableSheepExistsCondition.builder()
-                .rangeHorizontal(config.scanRangeHorizontal())
-                .rangeVertical(config.scanRangeVertical())
-                .build();
-        this.preconditions.add(this.nearbyShearableSheepExistsCondition);
+        this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, Sheep>builder()
+                .entityType(Sheep.class)
+                .filter((villager, sheep) -> isShearable(sheep))
+                .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), ShearStage.END);
@@ -194,15 +194,16 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                             .ifPresent(itemState -> itemState.getItems()
                                     .forEach(itemEntity -> context.getInitiator().pickUp(itemEntity)));
 
-                    // Determine if there are more sheep to shear
-                    if (this.shearCount.get() > 0 && this.nearbyShearableSheepExistsCondition.test(context.getInitiator().getMinecraftEntity())) {
-                        List<Targetable> nearbySheep = this.nearbyShearableSheepExistsCondition.getTargets().stream()
+                    // Determine if there are more sheep to shear; only scan when quota remains
+                    if (this.shearCount.get() > 0) {
+                        List<Targetable> nearbySheep = this.findShearableSheep(context.getInitiator().getMinecraftEntity()).stream()
                                 .map(Targetable::fromEntity)
                                 .toList();
-                        context.setState(BehaviorStateType.TARGET, TargetState.of(nearbySheep));
-
-                        log.behaviorStatus("Found {} nearby sheep to shear, remaining {}", nearbySheep.size(), this.shearCount.get());
-                        return StepResult.transition(ShearStage.SHEAR_SHEEP);
+                        if (!nearbySheep.isEmpty()) {
+                            context.setState(BehaviorStateType.TARGET, TargetState.of(nearbySheep));
+                            log.behaviorStatus("Found {} nearby sheep to shear, remaining {}", nearbySheep.size(), this.shearCount.get());
+                            return StepResult.transition(ShearStage.SHEAR_SHEEP);
+                        }
                     }
 
                     return StepResult.complete();
@@ -232,7 +233,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        List<Targetable> targets = this.nearbyShearableSheepExistsCondition.getTargets().stream()
+        List<Targetable> targets = this.findShearableSheep(villager).stream()
                 .map(Targetable::fromEntity)
                 .toList();
         context.setState(BehaviorStateType.TARGET, TargetState.of(targets));
@@ -251,7 +252,24 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private Optional<Sheep> getTargetSheep(@Nonnull BehaviorContext<BaseVillager> context) {
-        return TargetQueries.firstEntity(context, EntityType.SHEEP, Sheep.class);
+        return TargetQueries.firstEntity(context, EntityType.SHEEP, Sheep.class)
+                .filter(ShearSheepBehavior::isShearable);
+    }
+
+    private List<Sheep> findShearableSheep(@Nonnull BaseVillager villager) {
+        return this.getPerceivedEntities(villager)
+                .ofType(Sheep.class, ShearSheepBehavior::isShearable)
+                .toList();
+    }
+
+    private PerceivedEntities getPerceivedEntities(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty());
+    }
+
+    private static boolean isShearable(@Nonnull Sheep sheep) {
+        return sheep.readyForShearing();
     }
 
 }

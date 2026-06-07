@@ -46,24 +46,6 @@ public record MilkCowConfig(
                 min = 1)
         int behaviorCooldownMax,
 
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_horizontal",
-                description = "Horizontal range (in blocks) to scan for nearby cows to milk.",
-                defaultValue = 32,
-                min = 5,
-                max = 128)
-        int scanRangeHorizontal,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_vertical",
-                description = "Vertical range (in blocks) to scan for nearby cows to milk.",
-                defaultValue = 12,
-                min = 1,
-                max = 16)
-        int scanRangeVertical,
-
         @MapConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "expertise_milk_limit",

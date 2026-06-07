@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.registry.memory;
 
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -76,6 +77,10 @@ public final class MemoryModuleTypeRegistry {
 
     public static final Supplier<MemoryModuleType<List<UUID>>> WILLING_COURTSHIP_PARTNERS = REGISTRY.register(
             "willing_courtship_partners",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<PerceivedEntities>> NEARBY_SENSED_ENTITIES = REGISTRY.register(
+            "nearby_sensed_entities",
             () -> new MemoryModuleType<>(Optional.empty()));
 
 

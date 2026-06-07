@@ -9,14 +9,6 @@ import dev.breezes.settlements.infrastructure.config.annotations.integers.Intege
 public record TradingConfig(
 
         @IntegerConfig(type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_radius_blocks",
-                description = "How far initiators search for a trading partner.",
-                defaultValue = 12,
-                min = 1,
-                max = 128)
-        int scanRadiusBlocks,
-
-        @IntegerConfig(type = ConfigurationType.BEHAVIOR,
                 identifier = "initiate_precondition_cooldown_seconds",
                 description = "Seconds between expensive initiator precondition scans.",
                 defaultValue = 10,

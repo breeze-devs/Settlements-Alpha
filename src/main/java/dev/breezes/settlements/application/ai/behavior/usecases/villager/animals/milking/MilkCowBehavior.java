@@ -15,8 +15,10 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.ai.conditions.NearbyMilkableCowExistsCondition;
+import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -35,8 +37,8 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class MilkCowBehavior extends VillagerStateMachineBehavior {
@@ -49,7 +51,6 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
     }
 
     private final MilkCowConfig config;
-    private final NearbyMilkableCowExistsCondition<BaseVillager> nearbyMilkableCowExistsCondition;
 
     @Nullable
     private Cow target;
@@ -64,11 +65,10 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
         this.config = config;
 
-        this.nearbyMilkableCowExistsCondition = NearbyMilkableCowExistsCondition.builder()
-                .rangeHorizontal(config.scanRangeHorizontal())
-                .rangeVertical(config.scanRangeVertical())
-                .build();
-        this.preconditions.add(this.nearbyMilkableCowExistsCondition);
+        this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, Cow>builder()
+                .entityType(Cow.class)
+                .filter((villager, cow) -> isMilkable(cow))
+                .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BUCKET_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.target = null;
@@ -132,8 +132,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         this.milkCountRemaining = this.config.expertiseMilkLimit().getOrDefault(expertise.getConfigName(), 1);
         this.shouldRewardExperience = false;
 
-        List<Cow> targets = this.nearbyMilkableCowExistsCondition.getTargets();
-        if (targets.isEmpty()) {
+        Optional<Cow> targetCandidate = this.findClosestMilkableCow(villager);
+        if (targetCandidate.isEmpty()) {
             this.requestStop("No milkable cows found");
             return;
         }
@@ -143,7 +143,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        this.target = targets.getFirst();
+        this.target = targetCandidate.get();
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
     }
 
@@ -193,6 +193,21 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         this.shouldRewardExperience = true;
 
         return StepResult.noOp();
+    }
+
+    private Optional<Cow> findClosestMilkableCow(@Nonnull BaseVillager villager) {
+        return this.getPerceivedEntities(villager)
+                .closest(Cow.class, MilkCowBehavior::isMilkable, villager);
+    }
+
+    private PerceivedEntities getPerceivedEntities(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty());
+    }
+
+    private static boolean isMilkable(@Nonnull Cow cow) {
+        return cow.isAlive() && !cow.isBaby();
     }
 
 }

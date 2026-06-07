@@ -164,7 +164,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
             log.behaviorStatus("Trade initiation evaluating {} active demands for villager {}: {}",
                     activeDemands.size(), villager.getUUID(), activeDemands.stream().map(demand -> demand.match().asDebugString()).toList());
 
-            this.pendingCandidate = this.partnerScanner.findPartner(villager, activeDemands, this.config.scanRadiusBlocks())
+            this.pendingCandidate = this.partnerScanner.findPartner(villager, activeDemands)
                     .orElse(null);
             if (this.pendingCandidate == null) {
                 log.behaviorStatus("Trade initiation blocked: villager {} found no partner candidate", villager.getUUID());

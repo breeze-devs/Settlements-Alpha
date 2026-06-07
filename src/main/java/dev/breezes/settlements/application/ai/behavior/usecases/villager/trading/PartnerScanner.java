@@ -4,6 +4,8 @@ import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.catalog.TradePriceResolver;
 import dev.breezes.settlements.application.economy.demand.ActiveDemand;
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
@@ -19,13 +21,11 @@ import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
@@ -37,15 +37,15 @@ public final class PartnerScanner {
     private final VillagerWallet villagerWallet;
 
     public Optional<TradeCandidate> findPartner(@Nonnull BaseVillager buyer,
-                                                @Nonnull List<ActiveDemand> activeDemands,
-                                                int scanRadiusBlocks) {
+                                                @Nonnull List<ActiveDemand> activeDemands) {
         if (activeDemands.isEmpty()) {
             return Optional.empty();
         }
 
-        AABB searchBounds = buyer.getBoundingBox().inflate(scanRadiusBlocks, 6, scanRadiusBlocks);
-        Predicate<BaseVillager> predicate = candidate -> candidate != buyer && candidate.isTradeAvailable();
-        List<BaseVillager> candidates = buyer.level().getEntitiesOfClass(BaseVillager.class, searchBounds, predicate);
+        // Perception already excludes the buyer itself and bounds range; only tradeability matters here
+        List<BaseVillager> candidates = this.getPerceivedEntities(buyer)
+                .ofType(BaseVillager.class, candidate -> candidate != buyer && candidate.isTradeAvailable())
+                .toList();
 
         log.behaviorStatus("Scanning {} trade candidates for buyer {} across {} active demands",
                 candidates.size(), buyer.getUUID(), activeDemands.size());
@@ -61,6 +61,12 @@ public final class PartnerScanner {
         }
 
         return Optional.empty();
+    }
+
+    private PerceivedEntities getPerceivedEntities(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty());
     }
 
     private Optional<TradeCandidate> matchCandidate(@Nonnull BaseVillager buyer,

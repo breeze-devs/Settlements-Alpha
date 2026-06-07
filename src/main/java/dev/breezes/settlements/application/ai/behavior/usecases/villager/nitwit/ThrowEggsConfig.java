@@ -39,25 +39,7 @@ public record ThrowEggsConfig(
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
                 defaultValue = 90,
                 min = 1)
-        int behaviorCooldownMax,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_horizontal",
-                description = "Horizontal range (in blocks) to search for egg targets",
-                defaultValue = 16,
-                min = 5,
-                max = 128)
-        int scanRangeHorizontal,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_vertical",
-                description = "Vertical range (in blocks) to search for egg targets",
-                defaultValue = 8,
-                min = 1,
-                max = 16)
-        int scanRangeVertical
+        int behaviorCooldownMax
 ) implements BehaviorTimingConfig {
 
     public ThrowEggsConfig {

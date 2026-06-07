@@ -16,8 +16,10 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.O
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.ai.conditions.NearbyEggTargetCondition;
+import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -31,6 +33,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -42,6 +46,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @CustomLog
 public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
@@ -60,6 +65,11 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
     private static final double RELOCATE_RADIUS = 4.0;
     private static final double CLOSE_ENOUGH_DISTANCE = 1.5;
     private static final int RELOCATE_TIMEOUT_TICKS = ClockTicks.seconds(4).getTicksAsInt();
+    private static final Set<Class<?>> TARGET_CLASSES = Set.of(
+            Villager.class,
+            WanderingTrader.class,
+            Player.class
+    );
 
     private enum Stage implements StageKey {
         RELOCATE_PICK,
@@ -69,16 +79,16 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
         END
     }
 
-    private final NearbyEggTargetCondition<BaseVillager> nearbyEggTargetCondition;
-
     @Nullable
     private LivingEntity victim;
 
     public ThrowEggsBehavior(ThrowEggsConfig config, HungerConfig hungerConfig) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
-        this.nearbyEggTargetCondition = new NearbyEggTargetCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical());
-        this.preconditions.add(this.nearbyEggTargetCondition);
+        this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, LivingEntity>builder()
+                .entityType(LivingEntity.class)
+                .filter(this::isValidEggTarget)
+                .build());
 
         this.victim = null;
 
@@ -166,13 +176,11 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        List<LivingEntity> candidates = this.nearbyEggTargetCondition.getTargets();
-
-        // Re-scan if the cached result is stale (condition was tested before onBehaviorStart)
-        if (candidates.isEmpty()) {
-            this.nearbyEggTargetCondition.test(villager);
-            candidates = this.nearbyEggTargetCondition.getTargets();
-        }
+        List<LivingEntity> candidates = villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty())
+                .ofType(LivingEntity.class, target -> this.isValidEggTarget(villager, target))
+                .toList();
 
         if (candidates.isEmpty()) {
             log.behaviorStatus("No egg targets found nearby; stopping");
@@ -185,12 +193,28 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
         villager.setHeldItem(new ItemStack(Items.EGG));
     }
 
+    private boolean isValidEggTarget(@Nonnull BaseVillager villager, @Nonnull LivingEntity target) {
+        if (!target.isAlive() || target.isRemoved()) {
+            return false;
+        }
+        if (target == villager) {
+            return false;
+        }
+        if (TARGET_CLASSES.stream().noneMatch(targetClass -> targetClass.isInstance(target))) {
+            return false;
+        }
+        if (target instanceof Player player && (player.isSpectator() || player.isCreative())) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        return this.victim != null && this.victim.isAlive();
+        return this.victim != null && this.isValidEggTarget(villager, this.victim);
     }
 
     @Override

@@ -7,6 +7,8 @@ import dagger.multibindings.Multibinds;
 import dev.breezes.settlements.application.ai.sensors.BlockResource;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensor;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
+import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensor;
+import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
@@ -31,6 +33,12 @@ public abstract class SensorCatalogModule {
     @IntoSet
     static VillagerSensorFactory blockResourceSensor(BlockResourceSensorConfig config, Set<BlockResource> resources) {
         return villager -> new BlockResourceSensor(config, resources);
+    }
+
+    @Provides
+    @IntoSet
+    static VillagerSensorFactory entityPerceptionSensor(EntityPerceptionSensorConfig config) {
+        return villager -> new EntityPerceptionSensor(config, villager);
     }
 
     @Provides

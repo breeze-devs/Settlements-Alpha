@@ -1,6 +1,7 @@
 package dev.breezes.settlements.domain.ai.memory;
 
 import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -81,6 +82,11 @@ public final class MemoryTypeRegistry {
     public static final MemoryType<List<UUID>> WILLING_COURTSHIP_PARTNERS = MemoryType.<List<UUID>>builder()
             .identifier("willing_courtship_partners")
             .moduleTypeSupplier(MemoryModuleTypeRegistry.WILLING_COURTSHIP_PARTNERS)
+            .build();
+
+    public static final MemoryType<PerceivedEntities> NEARBY_SENSED_ENTITIES = MemoryType.<PerceivedEntities>builder()
+            .identifier("nearby_sensed_entities")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.NEARBY_SENSED_ENTITIES)
             .build();
 
 }

@@ -53,24 +53,6 @@ public record RepairIronGolemConfig(
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_horizontal",
-                description = "Horizontal range (in blocks) to scan for iron golems to repair",
-                defaultValue = 32,
-                min = 5,
-                max = 128)
-        int scanRangeHorizontal,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "scan_range_vertical",
-                description = "Vertical range (in blocks) to scan for iron golems to repair",
-                defaultValue = 16,
-                min = 1,
-                max = 16)
-        int scanRangeVertical,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
                 description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
                 defaultValue = 3,

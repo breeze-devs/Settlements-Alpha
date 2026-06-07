@@ -16,8 +16,10 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
-import dev.breezes.settlements.domain.ai.conditions.NearbyDamagedIronGolemExistsCondition;
+import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -36,8 +38,8 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
@@ -51,7 +53,6 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
     }
 
     private final RepairIronGolemConfig config;
-    private final NearbyDamagedIronGolemExistsCondition<BaseVillager> nearbyDamagedIronGolemExistsCondition;
 
     @Nullable
     private IronGolem targetToRepair;
@@ -67,8 +68,10 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         this.config = config;
 
         // Create behavior preconditions
-        this.nearbyDamagedIronGolemExistsCondition = new NearbyDamagedIronGolemExistsCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical(), config.repairHpPercentage());
-        this.preconditions.add(this.nearbyDamagedIronGolemExistsCondition);
+        this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, IronGolem>builder()
+                .entityType(IronGolem.class)
+                .filter((villager, golem) -> this.isSufficientlyDamaged(golem))
+                .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_INGOT_ID), 1, 50, this.getClass().getSimpleName()));
 
         // Initialize variables
@@ -135,13 +138,13 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        List<IronGolem> targets = this.nearbyDamagedIronGolemExistsCondition.getTargets();
-        if (targets.isEmpty()) {
+        Optional<IronGolem> targetCandidate = this.findClosestDamagedIronGolem(villager);
+        if (targetCandidate.isEmpty()) {
             this.requestStop("No damaged iron golem found within range");
             return;
         }
 
-        this.targetToRepair = targets.getFirst();
+        this.targetToRepair = targetCandidate.get();
         int ingotsAvailable = villager.getSettlementsInventory().count(Items.IRON_INGOT);
         int rolledAttempts = RandomUtil.randomInt(1, 3, true);
         this.remainingRepairAttempts = GeneralConfig.bypassInventoryRequirements
@@ -152,7 +155,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
             return;
         }
         this.shouldRewardExperience = false;
-        context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(this.targetToRepair))));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.targetToRepair)));
     }
 
     @Override
@@ -177,6 +180,22 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         this.targetToRepair = null;
         this.remainingRepairAttempts = 0;
         this.shouldRewardExperience = false;
+    }
+
+    private Optional<IronGolem> findClosestDamagedIronGolem(@Nonnull BaseVillager villager) {
+        return this.getPerceivedEntities(villager)
+                .closest(IronGolem.class, this::isSufficientlyDamaged, villager);
+    }
+
+    private PerceivedEntities getPerceivedEntities(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty());
+    }
+
+    private boolean isSufficientlyDamaged(@Nonnull IronGolem ironGolem) {
+        return ironGolem.isAlive()
+                && ironGolem.getHealth() < ironGolem.getMaxHealth() * this.config.repairHpPercentage();
     }
 
 }

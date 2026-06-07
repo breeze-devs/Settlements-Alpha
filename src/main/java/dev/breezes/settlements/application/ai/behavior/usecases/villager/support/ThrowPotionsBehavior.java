@@ -63,7 +63,7 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
                 config.experienceReward());
 
         // Preconditions to this behavior
-        this.nearbyFriendlyNeedsPotionCondition = new NearbyFriendlyNeedsPotionCondition<>(config.scanRangeHorizontal(), config.scanRangeVertical(), config.minimumPlayerReputation());
+        this.nearbyFriendlyNeedsPotionCondition = new NearbyFriendlyNeedsPotionCondition<>(config.minimumPlayerReputation());
         this.preconditions.add(this.nearbyFriendlyNeedsPotionCondition);
 
         // Initialize variables
@@ -123,7 +123,9 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
                                    @Nonnull BehaviorContext<BaseVillager> context) {
 
         double currentHpPercentage = Double.MAX_VALUE;
-        for (Entity entity : this.nearbyFriendlyNeedsPotionCondition.getFriendlyNeedsPotionMap().keySet()) {
+        Map<Entity, NearbyFriendlyNeedsPotionCondition.PotionType> friendlyNeedsPotionMap =
+                this.nearbyFriendlyNeedsPotionCondition.findFriendlyNeedsPotionMap(villager);
+        for (Entity entity : friendlyNeedsPotionMap.keySet()) {
             if (!(entity instanceof LivingEntity livingEntity)) {
                 continue;
             }
@@ -140,7 +142,7 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        Holder<Potion> potionNeeded = this.nearbyFriendlyNeedsPotionCondition.getFriendlyNeedsPotionMap().get(this.targetToThrow).getPotion();
+        Holder<Potion> potionNeeded = friendlyNeedsPotionMap.get(this.targetToThrow).getPotion();
         Optional<ItemStack> foundPotion = findMatchingSplashPotionInInventory(villager, potionNeeded);
         if (GeneralConfig.bypassInventoryRequirements) {
             this.potionToThrow = foundPotion.orElseGet(() -> PotionContents.createItemStack(Items.SPLASH_POTION, potionNeeded));

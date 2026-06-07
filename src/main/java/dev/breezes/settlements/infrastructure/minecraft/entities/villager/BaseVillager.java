@@ -750,7 +750,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.HARVESTABLE_SUGARCANE_SITES.getModuleType(),
                 MemoryTypeRegistry.FULL_HIVE_SITES.getModuleType(),
                 MemoryTypeRegistry.ORE_SITES.getModuleType(),
-                MemoryTypeRegistry.WILLING_COURTSHIP_PARTNERS.getModuleType()
+                MemoryTypeRegistry.WILLING_COURTSHIP_PARTNERS.getModuleType(),
+                MemoryTypeRegistry.NEARBY_SENSED_ENTITIES.getModuleType()
         );
     }
 

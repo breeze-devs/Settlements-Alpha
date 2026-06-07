@@ -43,14 +43,13 @@ public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> imp
     public boolean test(@Nullable T entity) {
         if (entity == null) {
             this.targets = Collections.emptyList();
-//            log.warn("Source entity is null, returning empty targets");
             return false;
         }
 
         AABB scanBoundary = entity.getBoundingBox().inflate(this.rangeHorizontal, this.rangeVertical, this.rangeHorizontal);
         Predicate<Entity> entityPredicate = (targetEntity) -> targetEntity.getType() == this.targetEntityType
                 && this.extraEntityCondition.test(this.targetEntityType.tryCast(targetEntity));
-        Stream<E> nearbyEntitiesStream = entity.level().getEntities(entity, scanBoundary, entityPredicate).parallelStream()
+        Stream<E> nearbyEntitiesStream = entity.level().getEntities(entity, scanBoundary, entityPredicate).stream()
                 .map(targetEntityType::tryCast)
                 .filter(Objects::nonNull)
                 .sorted((entity1, entity2) -> {
@@ -59,23 +58,15 @@ public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> imp
                     return Double.compare(distance1, distance2);
                 });
 
-        if (this.minimumTargetCount == 1) {
-            // If we only need one target, we can just find any target to optimize efficiency
-            this.targets = nearbyEntitiesStream.findAny()
-                    .map(Collections::singletonList)
-                    .orElse(Collections.emptyList());
-        } else {
-            this.targets = nearbyEntitiesStream.toList();
-        }
-
-        // LOGTODO: log.sensor something
+        this.targets = nearbyEntitiesStream.toList();
         return this.targets.size() >= this.minimumTargetCount;
     }
 
     /**
-     * Get the list of targets that satisfy the condition
+     * Get the list of targets that satisfy the condition.
      * <p>
-     * Note that the size of this list may be less than the minimum target count
+     * This legacy scan condition remains for consumers that need exact source-relative scans
+     * until they are deliberately migrated to perception-backed candidate pools.
      */
     public List<E> getTargets() {
         return Optional.ofNullable(this.targets)
