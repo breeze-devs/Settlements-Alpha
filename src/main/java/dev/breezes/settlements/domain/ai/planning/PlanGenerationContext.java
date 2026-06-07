@@ -17,6 +17,9 @@ import java.util.List;
  * Contains everything a generator needs to produce a contextually appropriate {@link DayPlan}.
  * Values must be immutable or detached snapshots because async generators may consume this context
  * away from Minecraft's server thread.
+ *
+ * @param chronotypeSeed Stable per-villager seed for deterministic chronotype offsets.
+ *                       Consumed by the generator to jitter sleep and meal anchors per villager.
  */
 @Builder
 public record PlanGenerationContext(
@@ -26,7 +29,8 @@ public record PlanGenerationContext(
         RestDayPolicy restDayPolicy,
         PlanDayType dayType,
         List<WeightedBehavior> availableBehaviors,
-        long wakeAtAbsoluteTick
+        long wakeAtAbsoluteTick,
+        long chronotypeSeed
 ) {
 
     public PlanGenerationContext {

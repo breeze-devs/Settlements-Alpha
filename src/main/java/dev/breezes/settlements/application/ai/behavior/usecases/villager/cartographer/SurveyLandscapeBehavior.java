@@ -240,8 +240,9 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
             }
 
             // Heightmap can land on non-solid surfaces (water, fluids); reject so the villager doesn't survey from mid-water
-            BlockState surfaceState = serverLevel.getBlockState(new BlockPos(x, y, z));
-            if (!surfaceState.isSolid()) {
+            BlockPos targetPos = new BlockPos(x, y, z);
+            BlockState surfaceState = serverLevel.getBlockState(targetPos);
+            if (surfaceState.getCollisionShape(serverLevel, targetPos).isEmpty()) {
                 continue;
             }
 

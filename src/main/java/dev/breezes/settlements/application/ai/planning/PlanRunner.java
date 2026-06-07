@@ -19,7 +19,6 @@ import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
-import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
@@ -232,12 +231,18 @@ public class PlanRunner {
         }
 
         IBehavior<BaseVillager> behavior = maybeBehavior.get();
+
+        // The plan model creates a fresh behavior instance per slot (catalog factory, not cached),
+        // so the per-instance RandomRangeTickable cooldowns start armed at their initial value and
+        // would prevent the precondition check from running on the very first tick. forceComplete()
+        // bypasses that: cadence is now enforced at plan-generation time (slot spacing in
+        // WindowPacker), not at runtime.
         behavior.getBehaviorCoolDown().forceComplete();
         behavior.getPreconditionCheckCooldown().forceComplete();
 
         if (!behavior.tickPreconditions(1, level, villager)) {
             if (slot.isFlexible()) {
-                log.behaviorStatus("Plan slot skipped for villager {}: behavior '{}' preconditions not met",
+                log.behaviorTrace("Plan slot skipped for villager {}: behavior '{}' preconditions not met",
                         villager.getUUID(), slot.getBehaviorKey());
                 slot.markStatus(PlanSlotStatus.SKIPPED);
                 this.clearPlanActiveMemory(villager);
@@ -292,6 +297,7 @@ public class PlanRunner {
                 .dayType(dayType)
                 .availableBehaviors(this.behaviorPoolResolver.resolve(professionKey))
                 .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
+                .chronotypeSeed(chronotypeSeedFor(villager))
                 .build();
     }
 
@@ -466,8 +472,15 @@ public class PlanRunner {
         VillagerProfessionKey professionKey = new VillagerProfessionKey(profession.name());
         ScheduleProfile scheduleProfile = ScheduleProfile.defaultFor(professionKey);
         PlanDayType dayType = this.weekCycleProvider.getDayType(calendarDay);
-        GeneticsProfile genetics = villager.getGenetics();
-        return this.wakeTickResolver.resolveWakeTick(scheduleProfile, genetics, dayType);
+        return this.wakeTickResolver.resolveWakeTick(scheduleProfile, dayType, chronotypeSeedFor(villager));
+    }
+
+    /**
+     * Derives a stable, per-villager seed from the UUID so chronotype offsets are reproducible across
+     * all call sites that need the same wake tick (scheduling and plan adoption must agree).
+     */
+    private static long chronotypeSeedFor(@Nonnull BaseVillager villager) {
+        return villager.getUUID().getMostSignificantBits() ^ villager.getUUID().getLeastSignificantBits();
     }
 
     @VisibleForTesting

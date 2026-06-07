@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HeuristicPlanGeneratorTest {
 
-    private final HeuristicPlanGenerator generator = new HeuristicPlanGenerator(new WakeTickResolver());
+    private final HeuristicPlanGenerator generator = new HeuristicPlanGenerator();
 
     @Test
     void generate_producesValidWorkDayPlanForEveryDefaultProfession() {
@@ -214,7 +214,11 @@ class HeuristicPlanGeneratorTest {
     private static PlanGenerationContext context(VillagerProfessionKey profession, PlanDayType dayType,
                                                  GeneticsProfile genetics,
                                                  List<BehaviorPlanningMetadata> descriptors) {
-        return context(profession, dayType, genetics, descriptors, 42L);
+        // Use the profession's default wake tick as the absolute tick so epoch = defaultWakeTick.
+        // The generator now derives epoch from wakeAtAbsoluteTick % TICKS_PER_DAY, so the value must
+        // be consistent with the schedule or the activity blocks and window bounds will be wrong.
+        ScheduleProfile profile = ScheduleProfile.defaultFor(profession);
+        return context(profession, dayType, genetics, descriptors, profile.defaultWakeTick());
     }
 
     private static PlanGenerationContext context(VillagerProfessionKey profession, PlanDayType dayType,

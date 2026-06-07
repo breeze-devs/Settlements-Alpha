@@ -1,10 +1,18 @@
 package dev.breezes.settlements.application.ai.trading;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.timing.BehaviorTimingConfig;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 
+/**
+ * Trading is precondition-gated on a nearby willing partner, so low cooldowns are intentional —
+ * a villager will repeatedly check availability rather than wait a long time between attempts.
+ * The BehaviorTimingConfig interface maps to the initiator role (the primary actor). The
+ * responder-side (acceptor) cooldowns are accessed via the accept-prefixed methods below,
+ * used directly by the catalog to construct per-role CooldownRange values.
+ */
 @BehaviorConfig(name = "trading", type = ConfigurationType.BEHAVIOR)
 public record TradingConfig(
 
@@ -91,7 +99,8 @@ public record TradingConfig(
                 defaultValue = 1,
                 min = 1)
         int walkawayDurationSeconds
-) {
+
+) implements BehaviorTimingConfig {
 
     public TradingConfig {
         if (initiateBehaviorCooldownSecondsMin > initiateBehaviorCooldownSecondsMax) {
@@ -100,6 +109,27 @@ public record TradingConfig(
         if (acceptBehaviorCooldownSecondsMin > acceptBehaviorCooldownSecondsMax) {
             throw new IllegalArgumentException("Accept behavior cooldown min must be <= max");
         }
+    }
+
+    // BehaviorTimingConfig — maps to the initiator role, which is the primary actor
+    @Override
+    public int preconditionCheckCooldownMin() {
+        return this.initiatePreconditionCooldownSeconds;
+    }
+
+    @Override
+    public int preconditionCheckCooldownMax() {
+        return this.initiatePreconditionCooldownSeconds;
+    }
+
+    @Override
+    public int behaviorCooldownMin() {
+        return this.initiateBehaviorCooldownSecondsMin;
+    }
+
+    @Override
+    public int behaviorCooldownMax() {
+        return this.initiateBehaviorCooldownSecondsMax;
     }
 
     public ClockTicks negotiationRoundDuration() {

@@ -8,7 +8,7 @@ import dev.breezes.settlements.domain.time.TimeOfDay;
  * A calendar day spans midnight to midnight in real-world terms, regardless of when each
  * villager wakes. Minecraft's tick-zero falls at 06:00 (dawn) rather than midnight, so a
  * plain {@code dayTime / TICKS_PER_DAY} would put pre-dawn moments on the previous day —
- * which desynchronises early-wake professions from the rest of the village. This helper
+ * which desynchronizes early-wake professions from the rest of the village. This helper
  * shifts the day boundary onto midnight so that, for example, a farmer waking at 04:30 and
  * a librarian waking at 08:00 on the same morning share the same calendar day.
  */

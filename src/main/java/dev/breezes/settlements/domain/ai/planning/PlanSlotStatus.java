@@ -26,8 +26,7 @@ public enum PlanSlotStatus {
     COMPLETED,
 
     /**
-     * The slot was bypassed because its behavior's preconditions failed and the slot
-     * is {@link PlanSlot#isFlexible() flexible}. Rigid slots are never skipped.
+     * The slot was bypassed because its behavior's preconditions failed.
      */
     SKIPPED,
 

@@ -45,6 +45,9 @@ public class BehaviorPlanningMetadata {
     private final String preconditionSummary;
     private final boolean interruptible;
 
+    @Builder.Default
+    private final CooldownRange cooldown = CooldownRange.ofSeconds(1, 1);
+
     /**
      * Returns {@code true} if this behavior and {@code other} could run concurrently —
      * i.e. their required {@link BehaviorChannel} sets are disjoint.

@@ -56,7 +56,7 @@ class InMemorySocketRegistryTest {
 
         // Assert
         assertEquals(SocketId.CROSSED_ARMS_CENTER, resolved.getId());
-        assertEquals(ModelPartRef.ARMS, resolved.getBone());
+        assertEquals(ModelPartRef.ARMS_CROSSED_SOCKET, resolved.getBone());
         assertTrue(resolved.isInheritsBoneTransform());
     }
 

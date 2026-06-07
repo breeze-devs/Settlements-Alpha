@@ -5,12 +5,12 @@ import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.WeightedBehavior;
 import dev.breezes.settlements.domain.ai.catalog.WorkIntensity;
+import dev.breezes.settlements.domain.ai.planning.Chronotype;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.DayPlanActivityBlock;
 import dev.breezes.settlements.domain.ai.planning.DayPlanActivityContext;
 import dev.breezes.settlements.domain.ai.planning.DayPlanSchedule;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
-import dev.breezes.settlements.domain.ai.planning.IWakeTickResolver;
 import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
 import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
@@ -21,15 +21,12 @@ import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.time.GameTicks;
 import dev.breezes.settlements.domain.time.TimeOfDay;
-import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -43,10 +40,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
     private static final int LUNCH_TICK = TimeOfDay.AT_12_00.getTick();
     private static final int DINNER_TICK = TimeOfDay.AT_17_30.getTick();
 
-    private static final int MINIMUM_SLOT_SPACING_TICKS = GameTicks.minutes(20).getTicksAsInt();
-
-    private final IWakeTickResolver wakeTickResolver;
-
     @Override
     public DayPlan generate(PlanGenerationContext context) {
         // availableBehaviors is pre-filtered by profession by BehaviorPoolResolver; rest-day policy is applied by PlannerPalette
@@ -57,14 +50,17 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         PlannerPalette palette = new PlannerPalette(availableBehaviors);
         List<PlanSlot> slots = new ArrayList<>();
 
-        // All internal range arithmetic uses a linear offset from wake (epoch) to handle early-bird professions
-        // whose wake tick is numerically > 0 (e.g., 5 am is at tick 23,000).
-        int epoch = this.computeWakeTick(schedule, context.genetics(), context.dayType());
+        // Derive epoch from the wake tick already computed by PlanRunner so this generator and the
+        // runner always agree — avoids a second (potentially divergent) wake computation.
+        int epoch = Math.floorMod(context.wakeAtAbsoluteTick(), TimeOfDay.TICKS_PER_DAY);
+
+        // Compute the chronotype once and reuse within this generation call.
+        Chronotype chronotype = Chronotype.of(context.chronotypeSeed());
 
         int workStartLinear = Math.max(GameTicks.minutes(30).getTicksAsInt(), toLinear(schedule.workStartTick(), epoch));
         int workEndLinear = toLinear(this.computeWorkEndTick(schedule, context.genetics(), context.dayType()), epoch);
         int lunchLinear = toLinear(LUNCH_TICK, epoch);
-        DayPlanSchedule daySchedule = this.buildActivitySchedule(context, schedule, epoch, workStartLinear, workEndLinear);
+        DayPlanSchedule daySchedule = this.buildActivitySchedule(context, schedule, epoch, workStartLinear, workEndLinear, chronotype);
 
         slots.add(PlanSlot.builder()
                 .startTick(clampTick(epoch))
@@ -81,8 +77,12 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
             this.addWorkDaySlots(slots, context, palette, workStartLinear, workEndLinear, lunchLinear, epoch);
         }
 
+        // Meal jitter shifts the lunch and dinner anchor per villager. The shift is small so the
+        // village still has a rough shared meal window (social availability); only the exact lockstep
+        // is broken. Breakfast already anchors to epoch and shifts with wake automatically.
+        int mealOffset = chronotype.mealOffsetTicks();
         slots.add(PlanSlot.builder()
-                .startTick(clampTick(LUNCH_TICK))
+                .startTick(clampTick(LUNCH_TICK + mealOffset))
                 .behaviorKey(BehaviorKey.EAT_FOOD)
                 .priority(95)
                 .flexible(false)
@@ -92,7 +92,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         this.addAfternoonSlots(slots, context, restDayPolicy, palette,
                 Math.max(workEndLinear, lunchLinear + 1_000), epoch);
         slots.add(PlanSlot.builder()
-                .startTick(clampTick(DINNER_TICK))
+                .startTick(clampTick(DINNER_TICK + mealOffset))
                 .behaviorKey(BehaviorKey.EAT_FOOD)
                 .priority(90)
                 .flexible(false)
@@ -113,11 +113,15 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                                                   ScheduleProfile schedule,
                                                   int wakeTick,
                                                   int workStartLinear,
-                                                  int workEndLinear) {
-        int bedtimeLinear = toLinear(schedule.defaultSleepTick(), wakeTick);
+                                                  int workEndLinear,
+                                                  Chronotype chronotype) {
+        // Sleep shifts with the same chronotype offset as wake so early birds sleep early and night
+        // owls sleep late — the two are correlated, which is the "early bird / night owl" personality.
+        int sleepTick = clampTick(schedule.defaultSleepTick() + chronotype.wakeSleepOffsetTicks());
+        int bedtimeLinear = toLinear(sleepTick, wakeTick);
         DayPlanSchedule.DayPlanScheduleBuilder builder = DayPlanSchedule.builder()
                 .wakeTick(wakeTick)
-                .bedtimeTick(schedule.defaultSleepTick());
+                .bedtimeTick(sleepTick);
 
         // Build rest days or nitwit with no work blocks
         if (context.dayType() == PlanDayType.REST_DAY || context.profession().equals(VillagerProfessionKey.NITWIT)) {
@@ -179,7 +183,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
             return;
         }
 
-        int minEndLinear = workStartLinear + MINIMUM_SLOT_SPACING_TICKS;
+        int minEndLinear = workStartLinear + WindowPacker.MINIMUM_SLOT_SPACING_TICKS;
 
         // Ensure the max upper bound (Lunch) is NEVER smaller than the minimum bound.
         // If work starts after lunch, this safely pushes the max bound forward.
@@ -187,7 +191,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
 
         int endLinear = Math.clamp(workEndLinear, minEndLinear, maxEndLinear);
 
-        this.packWindow(slots, workBehaviors, workStartLinear, endLinear, 70, epoch, true,
+        this.packWindow(slots, workBehaviors, workStartLinear, endLinear, 70, epoch,
                 behavior -> 1.0D,
                 "Profession work block selected by the deterministic heuristic planner.");
     }
@@ -199,7 +203,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         int firstOpenLinear = GameTicks.minutes(40).getTicksAsInt();
         int endLinear = toLinear(LUNCH_TICK, epoch) - 500;
 
-        this.packWindow(slots, restOptions, firstOpenLinear, endLinear, 55, epoch, false,
+        this.packWindow(slots, restOptions, firstOpenLinear, endLinear, 55, epoch,
                 behavior -> restDayMultiplier(behavior.descriptor(), policy),
                 "Rest days favor low-intensity, social, and leisure behaviors.");
     }
@@ -207,133 +211,53 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
     private void addAfternoonSlots(List<PlanSlot> slots, PlanGenerationContext context, RestDayPolicy policy,
                                    PlannerPalette palette, int earliestLinear, int epoch) {
         int afternoonStartLinear = Math.max(earliestLinear, toLinear(TimeOfDay.AT_13_00.getTick(), epoch));
-        int afternoonEndLinear = Math.min(
-                toLinear(DINNER_TICK, epoch) - 500,
-                toLinear(TimeOfDay.AT_16_30.getTick(), epoch));
+        int afternoonEndLinear = Math.min(toLinear(DINNER_TICK, epoch) - 500, toLinear(TimeOfDay.AT_16_30.getTick(), epoch));
+
+        // TODO: A SOCIAL weight multiplier seeded from CHA is the planned follow-up (context-aware weight extension).
         List<WeightedBehavior> candidates = palette.afternoonCandidates(context.genetics());
 
         EffectiveWeightMultiplier multiplier = context.dayType() == PlanDayType.REST_DAY
                 ? behavior -> restDayMultiplier(behavior.descriptor(), policy)
                 : behavior -> 1.0D;
-        this.packWindow(slots, candidates, afternoonStartLinear, afternoonEndLinear, 50, epoch, true, multiplier,
+        this.packWindow(slots, candidates, afternoonStartLinear, afternoonEndLinear, 50, epoch, multiplier,
                 "Afternoon slots mix remaining duties with decompression and social time.");
     }
 
     /**
-     * Fills a linear window with repeated behavior slots according to effective weights.
+     * Fills a linear window with behavior slots using the greedy cooldown-aware packer.
      * <p>
-     * Weight math stays floating-point until Hamilton allocation so rest-day multipliers can reduce
-     * heavy work without deleting light work through premature rounding.
+     * Delegates to {@link WindowPacker#pack} which enforces per-key cadence spacing, prefers
+     * never-emitted keys (coverage-first), and leaves gaps when the pool is exhausted — so
+     * single-behavior pools like Nitwit produce sparsity rather than repeats.
      */
     private void packWindow(List<PlanSlot> slots, List<WeightedBehavior> pool, int startLinear, int endLinear,
-                            int priority, int epoch, boolean enforceMinOne,
-                            EffectiveWeightMultiplier multiplier, String reason) {
+                            int priority, int epoch, EffectiveWeightMultiplier multiplier, String reason) {
         if (pool.isEmpty() || endLinear <= startLinear) {
             return;
         }
 
-        List<AllocationCandidate> candidates = pool.stream()
-                .map(behavior -> new AllocationCandidate(behavior, Math.max(0.0D, behavior.weight() * multiplier.apply(behavior))))
-                .filter(candidate -> candidate.effectiveWeight() > 0.0D)
+        // Build packing candidates — effective weight folds the day-type multiplier in, so rest-day
+        // suppression of heavy work is invisible to the packer itself (it just sees lower weight → 0).
+        List<WindowPacker.PackingCandidate> candidates = pool.stream()
+                .map(behavior -> new WindowPacker.PackingCandidate(
+                        behavior.key(),
+                        Math.max(0.0D, behavior.weight() * multiplier.apply(behavior)),
+                        durationTicks(behavior),
+                        behavior.descriptor().getCooldown()))
                 .toList();
-        double totalEffectiveWeight = candidates.stream()
-                .mapToDouble(AllocationCandidate::effectiveWeight)
-                .sum();
-        if (totalEffectiveWeight <= 0.0D) {
-            log.behaviorWarn("packWindow skipped: zero total effective weight");
-            return;
-        }
 
-        int windowLength = endLinear - startLinear;
-        double weightedAverageDuration = candidates.stream()
-                .mapToDouble(candidate -> durationTicks(candidate.behavior()) * candidate.effectiveWeight())
-                .sum() / totalEffectiveWeight;
-        int capacity = Math.max(1, (int) (windowLength / Math.max(1.0D, weightedAverageDuration)));
+        List<WindowPacker.PackedSlot> packed = WindowPacker.pack(candidates, startLinear, endLinear, priority);
 
-        List<AllocatedBehavior> allocation = this.allocateHamilton(candidates, totalEffectiveWeight, capacity, enforceMinOne);
-        ArrayList<WeightedBehavior> packed = new ArrayList<>();
-        for (AllocatedBehavior allocated : allocation) {
-            for (int count = 0; count < allocated.count(); count++) {
-                packed.add(allocated.behavior());
-            }
-        }
-        RandomUtil.shuffle(packed);
-
-        int cursor = startLinear;
-        int emitted = 0;
-        for (WeightedBehavior behavior : packed) {
-            int duration = durationTicks(behavior);
-            if (cursor + duration > endLinear) {
-                continue;
-            }
+        for (WindowPacker.PackedSlot packedSlot : packed) {
             slots.add(PlanSlot.builder()
-                    .startTick(clampTick(fromLinear(cursor, epoch)))
-                    .behaviorKey(behavior.key())
-                    .priority(Math.max(0, priority - emitted))
+                    .startTick(clampTick(fromLinear(packedSlot.startLinear(), epoch)))
+                    .behaviorKey(packedSlot.key())
+                    .priority(packedSlot.priority())
                     .flexible(true)
-                    .estimatedDurationTicks(duration)
+                    .estimatedDurationTicks(packedSlot.durationTicks())
                     .reason(reason)
                     .build());
-            emitted++;
-            cursor += Math.max(duration, MINIMUM_SLOT_SPACING_TICKS);
-            if (cursor >= endLinear) {
-                return;
-            }
         }
-    }
-
-    private List<AllocatedBehavior> allocateHamilton(List<AllocationCandidate> candidates, double totalEffectiveWeight,
-                                                     int capacity, boolean enforceMinOne) {
-        List<MutableAllocation> allocations = new ArrayList<>();
-        int allocatedCount = 0;
-        for (AllocationCandidate candidate : candidates) {
-            double rawShare = (candidate.effectiveWeight() / totalEffectiveWeight) * capacity;
-            int floorShare = (int) Math.floor(rawShare);
-            int count = enforceMinOne && candidate.behavior().weight() > 0 ? Math.max(1, floorShare) : floorShare;
-            allocations.add(new MutableAllocation(candidate.behavior(), count, rawShare - floorShare));
-            allocatedCount += count;
-        }
-
-        // Pre-shuffle so equal remainders break ties randomly under stable sort, instead of by alphabetical key id.
-        Collections.shuffle(allocations, RandomUtil.RANDOM);
-
-        if (allocatedCount > capacity) {
-            // When many positive entries compete for a tiny window, trim smallest shares first so capacity remains meaningful.
-            allocations.sort(Comparator.comparingDouble(MutableAllocation::remainder));
-            int overage = allocatedCount - capacity;
-            for (MutableAllocation allocation : allocations) {
-                if (overage <= 0) {
-                    break;
-                }
-                if (allocation.count() > 0) {
-                    allocation.decrement();
-                    overage--;
-                }
-            }
-        } else if (allocatedCount < capacity) {
-            allocations.sort(Comparator.comparingDouble(MutableAllocation::remainder).reversed());
-            int remaining = capacity - allocatedCount;
-            for (int index = 0; index < remaining; index++) {
-                allocations.get(index % allocations.size()).increment();
-            }
-        }
-
-        return allocations.stream()
-                .filter(allocation -> allocation.count() > 0)
-                .map(allocation -> new AllocatedBehavior(allocation.behavior(), allocation.count()))
-                .toList();
-    }
-
-    /**
-     * Computes the villager's wake tick for the day.
-     * CON determines adherence: high CON wakes on time, low CON sleeps in up to ±30 game minutes.
-     * Rest days add a 1-hour (game time) sleep-in regardless of CON.
-     * <p>
-     * The result may be in the pre-dawn range (ticks > 18,000, i.e. before 6am) for early-bird
-     * professions. {@link DayPlan} handles cross-boundary ordering via its {@code dayStartTick} epoch.
-     */
-    private int computeWakeTick(ScheduleProfile schedule, GeneticsProfile genetics, PlanDayType dayType) {
-        return this.wakeTickResolver.resolveWakeTick(schedule, genetics, dayType);
     }
 
     /**
@@ -410,6 +334,10 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         /**
          * Afternoon candidates ordered by social preference: social-first for high-CHA villagers,
          * social-last for low-CHA — then light work, then leisure fills the remainder.
+         * <p>
+         * NOTE: under the new weighted-random pick in {@link WindowPacker}, the list ORDER no longer
+         * affects which key is chosen — only weight does. The CHA-ordering here is preserved for
+         * readability/future use; a proper SOCIAL weight multiplier from CHA is the planned fix.
          */
         List<WeightedBehavior> afternoonCandidates(GeneticsProfile genetics) {
             boolean socialPreference = genetics.getGeneValue(GeneType.CHARISMA) >= 0.45;
@@ -424,12 +352,15 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
             if (socialPreference) {
                 candidates.addAll(social);
             }
+
             candidates.addAll(lightWork);
             candidates.addAll(selfCare);
             candidates.addAll(leisure);
+
             if (!socialPreference) {
                 candidates.addAll(social);
             }
+
             return candidates;
         }
 
@@ -444,46 +375,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
     @FunctionalInterface
     private interface EffectiveWeightMultiplier {
         double apply(WeightedBehavior behavior);
-    }
-
-    private record AllocationCandidate(WeightedBehavior behavior, double effectiveWeight) {
-    }
-
-    private record AllocatedBehavior(WeightedBehavior behavior, int count) {
-    }
-
-    private static final class MutableAllocation {
-
-        private final WeightedBehavior behavior;
-        private int count;
-        private final double remainder;
-
-        private MutableAllocation(WeightedBehavior behavior, int count, double remainder) {
-            this.behavior = behavior;
-            this.count = count;
-            this.remainder = remainder;
-        }
-
-        private WeightedBehavior behavior() {
-            return this.behavior;
-        }
-
-        private int count() {
-            return this.count;
-        }
-
-        private double remainder() {
-            return this.remainder;
-        }
-
-        private void increment() {
-            this.count++;
-        }
-
-        private void decrement() {
-            this.count--;
-        }
-
     }
 
 }
