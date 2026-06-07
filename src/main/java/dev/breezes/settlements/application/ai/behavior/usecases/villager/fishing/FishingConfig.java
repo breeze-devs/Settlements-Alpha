@@ -42,7 +42,7 @@ public record FishingConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-                defaultValue = 40,
+                defaultValue = 20,
                 min = 1)
         int behaviorCooldownMax,
 

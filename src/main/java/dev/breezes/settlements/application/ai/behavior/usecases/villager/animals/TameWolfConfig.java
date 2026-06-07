@@ -33,7 +33,7 @@ public record TameWolfConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-                defaultValue = 120,
+                defaultValue = 60,
                 min = 1)
         int behaviorCooldownMin,
 
@@ -41,7 +41,7 @@ public record TameWolfConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-                defaultValue = 240,
+                defaultValue = 120,
                 min = 1)
         int behaviorCooldownMax,
 

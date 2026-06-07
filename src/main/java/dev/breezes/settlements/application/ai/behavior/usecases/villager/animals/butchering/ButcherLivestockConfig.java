@@ -34,7 +34,7 @@ public record ButcherLivestockConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-                defaultValue = 120,
+                defaultValue = 20,
                 min = 1)
         int behaviorCooldownMin,
 
@@ -42,7 +42,7 @@ public record ButcherLivestockConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-                defaultValue = 300,
+                defaultValue = 30,
                 min = 1)
         int behaviorCooldownMax,
 

@@ -38,6 +38,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -337,6 +339,9 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .onEnd(context -> {
                     this.restoreIdle(context.getInitiator().getMinecraftEntity());
                     context.getInitiator().clearHeldItem();
+
+                    // Add absorption to prevent too much pufferfish damage
+                    context.getInitiator().addEffect(new MobEffectInstance(MobEffects.ABSORPTION, ClockTicks.seconds(30).getTicksAsInt(), 9, true, true));
                     return StepResult.transition(FishingStage.COLLECT_FISH);
                 })
                 .build();

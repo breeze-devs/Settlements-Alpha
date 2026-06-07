@@ -41,7 +41,7 @@ public record ShearSheepConfig(
         @IntegerConfig(type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-                defaultValue = 60,
+                defaultValue = 20,
                 min = 1)
         int behaviorCooldownMin,
 
@@ -49,7 +49,7 @@ public record ShearSheepConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-                defaultValue = 240,
+                defaultValue = 30,
                 min = 1)
         int behaviorCooldownMax,
 

@@ -37,7 +37,7 @@ public record TakeFromChestConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-                defaultValue = 120,
+                defaultValue = 60,
                 min = 1)
         int behaviorCooldownMax
 ) implements BehaviorTimingConfig {
