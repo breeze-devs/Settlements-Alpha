@@ -34,7 +34,6 @@ public abstract class TransformedDisplay {
         this.spawned = false;
     }
 
-    @Nonnull
     public Display spawn(@Nonnull Location location) {
         if (this.spawned) {
             throw new IllegalStateException("Tried to spawn a display entity that has already been spawned!");
@@ -45,7 +44,6 @@ public abstract class TransformedDisplay {
         return this.displayEntity;
     }
 
-    @Nonnull
     protected abstract Display createEntity(@Nonnull Location location);
 
     public void remove() {
@@ -55,7 +53,6 @@ public abstract class TransformedDisplay {
         this.spawned = false;
     }
 
-    @Nonnull
     public abstract TransformedDisplay cloneWithoutEntity();
 
     public void setTransformation(@Nonnull TransformationMatrix newTransformation) {

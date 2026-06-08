@@ -6,6 +6,7 @@
   "mixins": [
     "BlockDisplayMixin",
     "DisplayEntityMixin",
+    "ItemDisplayMixin",
     "CatMixin",
     "WolfMixin",
     "VillagerMixin",

@@ -113,6 +113,7 @@ public final class PoolModule {
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.LEATHERWORKER)
                 .entry(PoolEntry.of(BehaviorKey.BREED_COWS))
+                .entry(PoolEntry.of(BehaviorKey.WASH_LEATHER))
                 .build();
     }
 

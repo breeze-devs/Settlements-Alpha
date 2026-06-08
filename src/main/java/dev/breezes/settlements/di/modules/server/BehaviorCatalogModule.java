@@ -55,6 +55,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellBehavior;
@@ -1094,6 +1096,35 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("lead"))
                         .build())
                 .factory(() -> new WalkDogBehavior(config, hungerConfig))
+                .build();
+    }
+
+    // =========================================================================
+    // Leatherworking
+    // =========================================================================
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry washLeather(WashLeatherConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.WASH_LEATHER)
+                        .displayName("Wash Leather")
+                        .description("Wash leather in the cauldron")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.WASH_LEATHER.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("leather"))
+                        .build())
+                .factory(() -> new WashLeatherBehavior(config, hungerConfig))
                 .build();
     }
 

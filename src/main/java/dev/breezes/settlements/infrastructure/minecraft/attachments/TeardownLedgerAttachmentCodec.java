@@ -7,6 +7,7 @@ import dev.breezes.settlements.application.ai.behavior.teardown.DiscardEntityObl
 import dev.breezes.settlements.application.ai.behavior.teardown.DropLeashObligation;
 import dev.breezes.settlements.application.ai.behavior.teardown.LedgerEntry;
 import dev.breezes.settlements.application.ai.behavior.teardown.ResetBlockStateObligation;
+import dev.breezes.settlements.application.ai.behavior.teardown.RestoreBlockObligation;
 import dev.breezes.settlements.application.ai.behavior.teardown.TeardownObligation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
@@ -40,6 +41,13 @@ public final class TeardownLedgerAttachmentCodec {
                     Codec.STRING.fieldOf("property_name").forGetter(ResetBlockStateObligation::propertyName),
                     Codec.STRING.fieldOf("reset_value").forGetter(ResetBlockStateObligation::resetValue)
             ).apply(instance, ResetBlockStateObligation::new));
+
+    private static final MapCodec<RestoreBlockObligation> RESTORE_BLOCK_CODEC = RecordCodecBuilder.mapCodec(instance ->
+            instance.group(
+                    BlockPos.CODEC.fieldOf("pos").forGetter(RestoreBlockObligation::pos),
+                    ResourceLocation.CODEC.fieldOf("restore_block").forGetter(RestoreBlockObligation::restoreBlockId),
+                    ResourceLocation.CODEC.fieldOf("owned_block").forGetter(RestoreBlockObligation::ownedBlockId)
+            ).apply(instance, RestoreBlockObligation::new));
 
     // -------------------------------------------------------------------------
     // Dispatched obligation codec
@@ -94,6 +102,9 @@ public final class TeardownLedgerAttachmentCodec {
         if (obligation instanceof ResetBlockStateObligation) {
             return "reset_block_state";
         }
+        if (obligation instanceof RestoreBlockObligation) {
+            return "restore_block";
+        }
         throw new IllegalArgumentException("Unknown TeardownObligation type for serialization: "
                 + obligation.getClass().getName()
                 + " — add it to TeardownLedgerAttachmentCodec");
@@ -104,6 +115,7 @@ public final class TeardownLedgerAttachmentCodec {
             case "discard_entity" -> DISCARD_ENTITY_CODEC;
             case "drop_leash" -> DROP_LEASH_CODEC;
             case "reset_block_state" -> RESET_BLOCK_STATE_CODEC;
+            case "restore_block" -> RESTORE_BLOCK_CODEC;
             default -> throw new IllegalArgumentException("Unknown TeardownObligation type key: '" + typeKey + "'");
         };
     }

@@ -37,6 +37,10 @@ public class TransformationMatrix {
                 true);
     }
 
+    public TransformationMatrix(Matrix4f matrix) {
+        this.matrix = matrix;
+    }
+
     public Transformation getMinecraftTransformation() {
         return new Transformation(this.matrix);
     }

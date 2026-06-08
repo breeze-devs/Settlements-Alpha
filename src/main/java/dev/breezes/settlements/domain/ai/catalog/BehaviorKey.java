@@ -79,6 +79,9 @@ public record BehaviorKey(String id) {
     // ---- Enchanting ----
     public static final BehaviorKey ENCHANT_ITEM = new BehaviorKey("enchant_item");
 
+    // ---- Leatherworking ----
+    public static final BehaviorKey WASH_LEATHER = new BehaviorKey("wash_leather");
+
     public BehaviorKey {
         if (StringUtils.isBlank(id)) {
             throw new IllegalArgumentException("BehaviorKey id must not be blank");
