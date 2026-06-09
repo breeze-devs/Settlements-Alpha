@@ -36,7 +36,8 @@ public class BehaviorPoolResolver {
             PoolEntry.of(BehaviorKey.TRADE_ACCEPT),
             PoolEntry.of(BehaviorKey.COURTSHIP_INITIATE),
             PoolEntry.of(BehaviorKey.COURTSHIP_ACCEPT),
-            PoolEntry.of(BehaviorKey.TAKE_FROM_CHEST)
+            PoolEntry.of(BehaviorKey.TAKE_FROM_CHEST),
+            PoolEntry.of(BehaviorKey.COLLECT_DEMANDED_ITEM)
     );
 
     private final IBehaviorCatalog catalog;

@@ -4,6 +4,8 @@ import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.fishing.FishCatchEntry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.util.RandomUtil;
+import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
@@ -19,7 +21,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
@@ -40,6 +46,9 @@ public class VillagerFishingHook extends Projectile {
     private static final double CAST_VELOCITY_SCALE = 0.6;
     private static final double CAST_VERTICAL_VELOCITY_OFFSET = 0.2;
     private static final double CAST_VELOCITY_RANDOM_TRIANGLE = 0.0103365;
+    private static final double DEFAULT_ENTITY_SCALE = 1.0;
+    public static final double MIN_CATCH_ENTITY_SCALE = 0.20;
+    public static final double MAX_CATCH_ENTITY_SCALE = 2.00;
 
     private enum HookState {
         FLYING,
@@ -300,7 +309,27 @@ public class VillagerFishingHook extends Projectile {
         }
 
         this.selectedCatchEntry = entry;
+        entity.ifPresent(this::randomizeCatchEntityScale);
         return entity;
+    }
+
+    private void randomizeCatchEntityScale(@Nonnull Entity entity) {
+        if (!(entity instanceof LivingEntity livingEntity)) {
+            return;
+        }
+
+        AttributeInstance scale = livingEntity.getAttribute(Attributes.SCALE);
+        if (scale == null) {
+            return;
+        }
+
+        double targetScale = RandomUtil.randomDouble(MIN_CATCH_ENTITY_SCALE, MAX_CATCH_ENTITY_SCALE);
+        scale.addPermanentModifier(new AttributeModifier(ResourceLocationUtil.mod("fish_scale"),
+                toAddMultipliedTotalScaleModifier(targetScale), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+    }
+
+    private double toAddMultipliedTotalScaleModifier(double targetScale) {
+        return targetScale - DEFAULT_ENTITY_SCALE;
     }
 
     @Override

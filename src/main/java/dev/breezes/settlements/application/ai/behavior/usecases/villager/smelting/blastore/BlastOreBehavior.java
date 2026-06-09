@@ -16,6 +16,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
@@ -51,6 +52,8 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
     private static final ClockTicks ITEM_INTERACTION_DURATION = ClockTicks.seconds(1);
     private static final ClockTicks BLASTING_DURATION = ClockTicks.seconds(8);
 
+    private static final int DAZE_STAR_EMIT_INTERVAL = 10;
+
     private static final List<BlastOreRecipe> RECIPES = List.of(
             BlastOreRecipe.builder()
                     .input(Items.RAW_IRON)
@@ -73,6 +76,9 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     private final BlastRecipeAvailableCondition blastRecipeAvailableCondition;
 
+    private final float explosionChance;
+    private final ClockTicks dazeDuration;
+
     @Nullable
     private PhysicalBlock blastFurnace;
     @Nullable
@@ -80,10 +86,15 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
     @Nullable
     private TemporaryArtifactHandle litHandle;
 
+    private boolean misfired;
+
     public BlastOreBehavior(BlastOreConfig config,
                             HungerConfig hungerConfig) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
+
+        this.explosionChance = config.explosionChance();
+        this.dazeDuration = ClockTicks.seconds(config.dazeDurationSeconds());
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));
@@ -96,6 +107,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         this.blastFurnace = null;
         this.currentRecipe = null;
         this.litHandle = null;
+        this.misfired = false;
 
         this.initializeStateMachine(this.createControlStep(), BlastStage.END);
     }
@@ -115,6 +127,8 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
+        this.misfired = false;
+
         if (this.jobSiteBlockExistsCondition.getJobSiteBlock().isEmpty()) {
             this.requestStop("No blast furnace block found at job site");
             return;
@@ -144,6 +158,9 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
+
+        villager.setSooty(false);
+        this.misfired = false;
 
         // Lit reset is handled by teardownAll() via the tracked obligation; clear the handle
         // for next-run reuse (this behavior instance is reused across runs).
@@ -201,12 +218,37 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                         this.litHandle.dispose(ctx.getLevel());
                         this.litHandle = null;
                     }
+
                     BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
+                    // The ingot is always banked regardless of misfire — the gag is purely cosmetic
                     villager.getSettlementsInventory().add(this.currentRecipe.createOutputStack());
 
-                    ctx.getInitiator().setHeldItem(this.currentRecipe.createOutputStack());
-                    villager.triggerMotion(AnimationArchetype.INTERACT);
-                    SoundRegistry.ITEM_POP_OUT.playGlobally(this.blastFurnace.getLocation(true).add(0, 0.5, 0, false), SoundSource.BLOCKS);
+                    // Resolve furnace top location here before entering the misfire branch so
+                    // neither branch has to handle a potential null dereference separately
+                    Location furnaceTop = this.blastFurnace.getLocation(true).add(0, 0.5, 0, false);
+
+                    if (RandomUtil.chance(this.explosionChance)) {
+                        this.misfired = true;
+
+                        // Smoke puff at the furnace
+                        furnaceTop.displayParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, 100, 3, 1.5, 3, 0.1);
+                        furnaceTop.displayParticles(ParticleTypes.LARGE_SMOKE, 20, 0.4, 0.4, 0.4, 0.02);
+                        furnaceTop.displayParticles(ParticleTypes.EXPLOSION, 4, 0.4, 0.4, 0.4, 0.1);
+
+                        Location face = Location.fromEntity(villager, true);
+                        face.displayParticles(ParticleTypes.ANGRY_VILLAGER, 3, 0.1, 0.1, 0.1, 0.4);
+
+                        SoundRegistry.BLAST_MISFIRE.playGlobally(face, SoundSource.BLOCKS);
+                        villager.setSooty(true);
+
+                        // Skip the normal hand-off; the ingot is already in inventory
+                        ctx.getInitiator().clearHeldItem();
+                    } else {
+                        ctx.getInitiator().setHeldItem(this.currentRecipe.createOutputStack());
+                        villager.triggerMotion(AnimationArchetype.INTERACT);
+                        SoundRegistry.ITEM_POP_OUT.playGlobally(furnaceTop, SoundSource.BLOCKS);
+                    }
+
                     return StepResult.noOp();
                 })
                 .build();
@@ -220,10 +262,36 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                 })
                 .build();
 
+        TimeBasedStep<BaseVillager> daze = TimeBasedStep.<BaseVillager>builder()
+                .withTickable(this.dazeDuration.asTickable())
+                .onStart(ctx -> {
+                    if (!this.misfired) {
+                        // Normal run — no daze needed; complete immediately to skip to the end
+                        return StepResult.complete();
+                    }
+
+                    BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
+                    villager.clearHeldItem();
+                    villager.setMotion(AnimationArchetype.IDLE);
+                    return StepResult.noOp();
+                })
+                .addPeriodicStep(DAZE_STAR_EMIT_INTERVAL, ctx -> {
+                    BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
+                    // Spawn above eye level so the ring floats over the head rather than through it
+                    Location starOrigin = Location.fromEntity(villager, true).add(0, 0.5, 0, false);
+                    starOrigin.displayParticles(ParticleTypeRegistry.STUNNED_STAR.get(), 2, 0.0, 0.03, 0.0, 0.0);
+                    return StepResult.noOp();
+                })
+                .onEnd(ctx -> {
+                    ctx.getInitiator().getMinecraftEntity().setSooty(false);
+                    return StepResult.complete();
+                })
+                .build();
+
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
                 .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
-                .actionStep(new SequencedStep<>("BlastOreBehavior.sequence", List.of(setup, blasting, takeOut)))
+                .actionStep(new SequencedStep<>("BlastOreBehavior.sequence", List.of(setup, blasting, takeOut, daze)))
                 .build();
     }
 

@@ -1,15 +1,14 @@
-package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore;
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.timing.BehaviorTimingConfig;
 import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;
 import dev.breezes.settlements.application.config.validation.BehaviorCooldownValidator;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
-import dev.breezes.settlements.infrastructure.config.annotations.floats.FloatConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 
-@BehaviorConfig(name = "blast_ore", type = ConfigurationType.BEHAVIOR)
-public record BlastOreConfig(
+@BehaviorConfig(name = "collect_demanded_item", type = ConfigurationType.BEHAVIOR)
+public record CollectDemandedItemConfig(
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
@@ -30,7 +29,7 @@ public record BlastOreConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-                defaultValue = 30,
+                defaultValue = 20,
                 min = 1)
         int behaviorCooldownMin,
 
@@ -38,37 +37,12 @@ public record BlastOreConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MAX_DESCRIPTION,
-                defaultValue = 60,
+                defaultValue = 40,
                 min = 1)
-        int behaviorCooldownMax,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,
-                description = BehaviorConfigConstants.EXPERIENCE_REWARD_DESCRIPTION,
-                defaultValue = 1,
-                min = 0)
-        int experienceReward,
-
-        @FloatConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "explosion_chance",
-                description = "Probability (0-1) that a completed blast misfires into a cosmetic soot puff",
-                defaultValue = 0.05F,
-                min = 0.0F,
-                max = 1.0F)
-        float explosionChance,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "daze_duration_seconds",
-                description = "How long the villager stays dazed and sooty after a misfire (in seconds)",
-                defaultValue = 5,
-                min = 1)
-        int dazeDurationSeconds
+        int behaviorCooldownMax
 ) implements BehaviorTimingConfig {
 
-    public BlastOreConfig {
+    public CollectDemandedItemConfig {
         BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
                 behaviorCooldownMin, behaviorCooldownMax);
     }

@@ -62,6 +62,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
     private static final double COLLECT_DISTANCE_SQUARED = 9.0;
     private static final int MAX_CAST_RETRIES = 5;
     private static final int FIGHT_FISH_CYCLES = 2;
+    private static final double DEFAULT_CATCH_RATE = 0.30;
 
     private enum FishingStage implements StageKey {
         NAVIGATE_TO_WATER,
@@ -319,13 +320,21 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     }
 
                     Location hookLocation = Location.fromEntity(this.activeHook, false);
-                    this.fishedEntity = this.activeHook.reelIn().orElse(null);
-                    this.caughtFishEntry = this.activeHook.getSelectedCatchEntry();
-                    this.caughtItem = this.fishToItem(this.caughtFishEntry).orElse(null);
+                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
+                    if (this.isEmptyCatch(villager)) {
+                        this.activeHook.discard();
+                        this.fishedEntity = null;
+                        this.caughtFishEntry = null;
+                        this.caughtItem = null;
+                        this.showEmptyCatchSadness(villager);
+                    } else {
+                        this.fishedEntity = this.activeHook.reelIn().orElse(null);
+                        this.caughtFishEntry = this.activeHook.getSelectedCatchEntry();
+                        this.caughtItem = this.fishToItem(this.caughtFishEntry).orElse(null);
+                    }
                     this.activeHook = null;
                     context.getInitiator().getMinecraftEntity().setBobberDeployed(false);
 
-                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
                     SoundRegistry.FISHING_SPLASH.playGlobally(hookLocation, SoundSource.NEUTRAL);
                     SoundRegistry.FISHING_REEL.playGlobally(Location.fromEntity(villager, false), SoundSource.NEUTRAL);
                     return StepResult.noOp();
@@ -411,6 +420,19 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
 
         log.behaviorStatus("Casted fishing hook, fish will appear in {} ticks", biteTimeTicks);
         return StepResult.noOp();
+    }
+
+    private boolean isEmptyCatch(@Nonnull BaseVillager villager) {
+        Expertise expertise = villager.getExpertise();
+        double catchRate = this.config.expertiseCatchRate().getOrDefault(expertise.getConfigName(), DEFAULT_CATCH_RATE);
+        return !RandomUtil.chance(RandomUtil.clamp(catchRate, 0.0, 1.0));
+    }
+
+    private void showEmptyCatchSadness(@Nonnull BaseVillager villager) {
+        Location villagerHead = Location.fromEntity(villager, true);
+        villagerHead.displayParticles(ParticleTypes.ANGRY_VILLAGER, 6, 0.3, 0.2, 0.3, 0.01);
+        villagerHead.playSound(SoundEvents.VILLAGER_NO, 0.8f, 1.0f, SoundSource.NEUTRAL);
+        log.behaviorStatus("Villager reeled in nothing while fishing");
     }
 
     private StepResult collectAndComplete(@Nonnull BehaviorContext<BaseVillager> context) {

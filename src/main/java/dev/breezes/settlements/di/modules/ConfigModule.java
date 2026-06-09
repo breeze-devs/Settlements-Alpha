@@ -28,6 +28,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsConfig;
@@ -272,6 +273,12 @@ public final class ConfigModule {
     @Singleton
     static TakeFromChestConfig takeFromChestConfig() {
         return ConfigFactory.create(TakeFromChestConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static CollectDemandedItemConfig collectDemandedItemConfig() {
+        return ConfigFactory.create(CollectDemandedItemConfig.class);
     }
 
 }

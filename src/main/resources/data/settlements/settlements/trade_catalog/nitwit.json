@@ -10,6 +10,15 @@
       "desiredMinCount": 32,
       "basePricePerUnit": 3,
       "basePriority": 100
+    },
+    {
+      "id": "nitwit_eggs",
+      "match": {
+        "item": "minecraft:egg"
+      },
+      "desiredMinCount": 32,
+      "basePricePerUnit": 3,
+      "basePriority": 90
     }
   ]
 }

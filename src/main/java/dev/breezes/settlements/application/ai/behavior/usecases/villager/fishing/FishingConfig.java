@@ -96,6 +96,20 @@ public record FishingConfig(
                 })
         Map<String, Double> expertiseWaitTimeScale,
 
+        @MapConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = "expertise_catch_rate",
+                description = "Chance for a hooked bite to produce an actual catch per expertise level. Lower values mean more empty catches.",
+                deserializer = "StringToDouble",
+                defaultValue = {
+                        @MapEntry(key = "novice", value = "0.40"),
+                        @MapEntry(key = "apprentice", value = "0.50"),
+                        @MapEntry(key = "journeyman", value = "0.75"),
+                        @MapEntry(key = "expert", value = "0.90"),
+                        @MapEntry(key = "master", value = "1.0")
+                })
+        Map<String, Double> expertiseCatchRate,
+
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER,

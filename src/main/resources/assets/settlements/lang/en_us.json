@@ -53,6 +53,7 @@
   "ui.settlements.behavior.behavior.feed_wolf": "Feed Dog",
   "ui.settlements.behavior.behavior.ring_bell": "Ring Bell",
   "ui.settlements.behavior.behavior.throw_eggs": "Throw Eggs",
+  "ui.settlements.behavior.behavior.collect_demanded_item": "Collect Items",
   "ui.settlements.behavior.behavior.survey_landscape": "Survey Landscape",
   "ui.settlements.behavior.behavior.courtship_initiate": "Initiate Courtship",
   "ui.settlements.behavior.behavior.courtship_accept": "Accept Courtship",

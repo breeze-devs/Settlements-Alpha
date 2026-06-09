@@ -8,6 +8,7 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.rendering.SettlementsVillagerRenderer;
 import dev.breezes.settlements.infrastructure.rendering.particles.EggSplatParticle;
+import dev.breezes.settlements.infrastructure.rendering.particles.StunnedStarParticle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.entity.CatRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
@@ -79,6 +80,7 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(ParticleTypeRegistry.EGG_SPLAT.get(), EggSplatParticle.Provider::new);
+        event.registerSpriteSet(ParticleTypeRegistry.STUNNED_STAR.get(), StunnedStarParticle.Provider::new);
     }
 
 }

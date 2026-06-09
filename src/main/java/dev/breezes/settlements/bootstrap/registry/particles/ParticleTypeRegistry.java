@@ -17,6 +17,9 @@ public class ParticleTypeRegistry {
     public static final Supplier<SimpleParticleType> EGG_SPLAT =
             REGISTRY.register("egg_splat", () -> new SimpleParticleType(false));
 
+    public static final Supplier<SimpleParticleType> STUNNED_STAR =
+            REGISTRY.register("stunned_star", () -> new SimpleParticleType(false));
+
     public static void register(IEventBus bus) {
         REGISTRY.register(bus);
     }

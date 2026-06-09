@@ -59,6 +59,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.leather
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellBehavior;
@@ -149,6 +151,32 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("chest"))
                         .build())
                 .factory(() -> new TakeFromChestBehavior(config, hungerConfig, demandEvaluator))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry collectDemandedItem(CollectDemandedItemConfig config,
+                                                    HungerConfig hungerConfig,
+                                                    DemandEvaluator demandEvaluator) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.COLLECT_DEMANDED_ITEM)
+                        .displayName("Collect Items")
+                        .description("Pick up a wanted item dropped nearby")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(15).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.COLLECT_DEMANDED_ITEM.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("hopper"))
+                        .build())
+                .factory(() -> new CollectDemandedItemBehavior(config, hungerConfig, demandEvaluator))
                 .build();
     }
 

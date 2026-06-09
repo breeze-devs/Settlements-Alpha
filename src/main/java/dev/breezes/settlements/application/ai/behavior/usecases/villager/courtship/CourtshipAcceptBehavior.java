@@ -12,16 +12,20 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.courtship.ChoreographyTimeline;
 import dev.breezes.settlements.application.ai.courtship.CourtshipChoreographyLibrary;
+import dev.breezes.settlements.application.ai.courtship.CourtshipCloseReason;
 import dev.breezes.settlements.application.ai.courtship.CourtshipConstants;
+import dev.breezes.settlements.application.ai.courtship.CourtshipInvite;
 import dev.breezes.settlements.application.ai.courtship.CourtshipPhase;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSession;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -43,6 +47,11 @@ public final class CourtshipAcceptBehavior extends VillagerStateMachineBehavior 
     private final CourtshipSessionRegistry sessionRegistry;
     private final CourtshipPresenter courtshipPresenter;
     private final CourtshipChoreographyLibrary choreographyLibrary;
+
+    private static final double BASE_ACCEPTANCE_CHANCE = 0.65D;
+    private static final double CHARISMA_DIFFERENCE_WEIGHT = 0.35D;
+    private static final double MIN_ACCEPTANCE_CHANCE = 0.15D;
+    private static final double MAX_ACCEPTANCE_CHANCE = 0.95D;
 
     @Nullable
     private UUID activeSessionId;
@@ -85,6 +94,33 @@ public final class CourtshipAcceptBehavior extends VillagerStateMachineBehavior 
 
         long now = world.getGameTime();
         if (this.sessionRegistry.hasInviteFor(villager.getUUID())) {
+            CourtshipInvite invite = this.sessionRegistry.getInvite(villager.getUUID()).orElse(null);
+            if (invite == null) {
+                return;
+            }
+
+            CourtshipSession pendingSession = this.sessionRegistry.getActiveSession(villager.getUUID()).orElse(null);
+            if (pendingSession == null) {
+                return;
+            }
+
+            if (!(world instanceof ServerLevel serverLevel)) {
+                this.sessionRegistry.closeSession(pendingSession.getSessionId(), CourtshipCloseReason.EXTERNAL_CANCEL);
+                return;
+            }
+
+            BaseVillager presenter = resolveParticipant(serverLevel, invite.presenterId()).orElse(null);
+            if (presenter == null) {
+                this.sessionRegistry.closeSession(pendingSession.getSessionId(), CourtshipCloseReason.ABORTED_PARTNER_GONE);
+                return;
+            }
+
+            if (!RandomUtil.chance(charismaAcceptanceChance(presenter, villager))) {
+                courtshipPresenter.presentAbort(pendingSession, villager);
+                this.sessionRegistry.closeSession(pendingSession.getSessionId(), CourtshipCloseReason.REJECTED_CHARISMA);
+                return;
+            }
+
             this.sessionRegistry.acceptInvite(villager.getUUID(), now);
         }
 
@@ -146,6 +182,14 @@ public final class CourtshipAcceptBehavior extends VillagerStateMachineBehavior 
         }
 
         return StepResult.noOp();
+    }
+
+    private static double charismaAcceptanceChance(@Nonnull BaseVillager presenter, @Nonnull BaseVillager receiver) {
+        double presenterCharisma = presenter.getGenetics().getGeneValue(GeneType.CHARISMA);
+        double receiverCharisma = receiver.getGenetics().getGeneValue(GeneType.CHARISMA);
+
+        double socialFit = BASE_ACCEPTANCE_CHANCE + (presenterCharisma - receiverCharisma) * CHARISMA_DIFFERENCE_WEIGHT;
+        return Math.clamp(socialFit, MIN_ACCEPTANCE_CHANCE, MAX_ACCEPTANCE_CHANCE);
     }
 
     private boolean isReactionReady(@Nonnull CourtshipSession session, int beat, long now) {

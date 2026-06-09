@@ -127,6 +127,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             .serializer(EntityDataSerializers.BOOLEAN)
             .defaultValue(false)
             .build();
+    private static final SyncedDataWrapper<Boolean> DATA_SOOTY = SyncedDataWrapper.<Boolean>builder()
+            .entityClass(BaseVillager.class)
+            .serializer(EntityDataSerializers.BOOLEAN)
+            .defaultValue(false)
+            .build();
 
     private final GeneticsProfile genetics;
     private final IBrain settlementsBrain;
@@ -186,6 +191,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         DATA_MOTION_ARCHETYPE.define(builder);
         DATA_MOTION_GENERATION.define(builder);
         DATA_BOBBER_DEPLOYED.define(builder);
+        DATA_SOOTY.define(builder);
     }
 
     /**
@@ -236,6 +242,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     public boolean isBobberDeployed() {
         return DATA_BOBBER_DEPLOYED.get(this.entityData);
+    }
+
+    public void setSooty(boolean sooty) {
+        DATA_SOOTY.set(this.entityData, sooty);
+    }
+
+    public boolean isSooty() {
+        return DATA_SOOTY.get(this.entityData);
     }
 
     private void addStartingFood(@Nonnull VillagerInventory inventory) {

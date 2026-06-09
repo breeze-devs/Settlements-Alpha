@@ -51,6 +51,7 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
         this.addLayer(this.attachmentRenderLayer);
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
         this.addLayer(new VillagerProfessionLayer<>(this, context.getResourceManager(), "villager"));
+        this.addLayer(new SootOverlayRenderLayer(this));
     }
 
     @Override
