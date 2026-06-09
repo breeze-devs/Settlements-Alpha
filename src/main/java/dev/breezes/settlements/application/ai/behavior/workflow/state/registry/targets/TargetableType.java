@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.behavior.workflow.state.registry.
 public enum TargetableType {
 
     ENTITY,
-    BLOCK;
+    BLOCK,
+    LOCATION;
 
 }

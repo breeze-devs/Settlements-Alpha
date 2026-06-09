@@ -6,6 +6,7 @@
   "mixins": [
     "BlockDisplayMixin",
     "DisplayEntityMixin",
+    "ArmorStandMixin",
     "ItemDisplayMixin",
     "CatMixin",
     "WolfMixin",

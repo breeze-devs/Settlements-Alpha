@@ -52,11 +52,11 @@ public class WashLeatherBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
-    private static final ClockTicks FILL_DURATION = ClockTicks.seconds(1.5);
+    private static final ClockTicks FILL_DURATION = ClockTicks.seconds(0.5);
     private static final ClockTicks HOLD_LEATHER_DURATION = ClockTicks.seconds(1);
     private static final ClockTicks WASH_DURATION = ClockTicks.seconds(5);
     private static final ClockTicks REMOVE_LEATHER_DURATION = ClockTicks.seconds(1);
-    private static final ClockTicks DRAIN_DURATION = ClockTicks.seconds(1.5);
+    private static final ClockTicks DRAIN_DURATION = ClockTicks.seconds(0.5);
 
     // Dirty water color (murky brown) particle color
     private static final int DIRTY_WATER_COLOR = 0xFF6F5A3D;
@@ -166,11 +166,7 @@ public class WashLeatherBehavior extends VillagerStateMachineBehavior {
                     ctx.getInitiator().setHeldItem(Items.WATER_BUCKET.getDefaultInstance());
                     ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
 
-                    // Fill straight to full in a single step so the world state matches what the player sees
                     this.setCauldronWaterLevel(ctx.getLevel(), 3);
-
-                    // Track the restoration obligation the moment water first appears, minimising
-                    // the window in which a crash would leave a permanently-filled cauldron.
                     this.restoreHandle = ctx.getTeardownScope().track(new RestoreBlockObligation(this.cauldronPos,
                             BuiltInRegistries.BLOCK.getKey(Blocks.CAULDRON), BuiltInRegistries.BLOCK.getKey(Blocks.WATER_CAULDRON)));
 
@@ -292,7 +288,6 @@ public class WashLeatherBehavior extends VillagerStateMachineBehavior {
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
-                    // Drain straight to empty in a single step
                     this.setCauldronWaterLevel(ctx.getLevel(), 0);
                     if (this.restoreHandle != null) {
                         this.restoreHandle.dispose(ctx.getLevel());
@@ -314,9 +309,7 @@ public class WashLeatherBehavior extends VillagerStateMachineBehavior {
     }
 
     /**
-     * Sets the cauldron water level directly, using the live world state rather than the
-     * cached PhysicalBlock snapshot. Guards against clobbering any block a player may have
-     * placed during the behavior. Level 0 converts back to an empty cauldron.
+     * Sets the cauldron water level directly. Level 0 converts back to an empty cauldron.
      */
     private void setCauldronWaterLevel(@Nonnull Level level, int waterLevel) {
         if (this.cauldronPos == null) {

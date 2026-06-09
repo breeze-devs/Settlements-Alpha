@@ -19,6 +19,10 @@ public interface Targetable {
         return new TargetableBlock(block);
     }
 
+    static Targetable fromLocation(@Nonnull Location location) {
+        return new TargetableLocation(location);
+    }
+
     /**
      * Get the target as an entity
      *

@@ -3,7 +3,7 @@ package dev.breezes.settlements.application.ai.behavior.runtime;
 import dev.breezes.settlements.application.ai.behavior.teardown.ProvidesTeardownLedger;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.look.LookQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
@@ -73,7 +73,7 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
 
         StepResult result = this.controlStep.tick(context);
         if (this.lookControlCooldown.tickCheckAndReset(1) && this.shouldLookAtActiveTarget()) {
-            TargetQueries.firstTargetLocation(context).ifPresent(entity::lookAt);
+            LookQueries.resolveLookLocation(context).ifPresent(entity::lookAt);
         }
         this.handleStepResult(result, this.expectedEndStage, this.getClass().getSimpleName());
     }
@@ -120,9 +120,11 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
     }
 
     /**
-     * Whether the entity should automatically face its active {@code TargetState} target each tick
-     * while this behavior runs. Defaults to {@code true}; behaviors that point the head somewhere
-     * other than their target (or manage look themselves) override this to {@code false}.
+     * Whether the framework should automatically resolve and apply a gaze direction each tick.
+     * The resolved direction is the explicit {@code LookState} if the behavior set one, otherwise
+     * the navigation target — so most behaviors get correct look-at-target behavior for free.
+     * Override to {@code false} only when the behavior manages two-party gaze itself (e.g. a trade
+     * interaction driven by {@code EntityTracker}) and must not have any auto-look applied.
      */
     protected boolean shouldLookAtActiveTarget() {
         return true;

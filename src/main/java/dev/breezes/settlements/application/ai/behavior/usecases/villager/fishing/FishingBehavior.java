@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.look.LookState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -41,8 +42,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -132,6 +131,9 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 villager.level().getBlockState(shorePosition.get()));
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(shoreBlock)));
 
+        // Gaze at the water rather than the shore block
+        context.setState(BehaviorStateType.LOOK_TARGET, LookState.ofLocation(Location.of(this.waterTarget, villager.level())));
+
         log.behaviorStatus("Starting fishing behavior at shore position {} and water position {}",
                 shorePosition, this.waterTarget);
         this.castRetryCount = 0;
@@ -215,7 +217,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     ISettlementsVillager villager = context.getInitiator();
                     context.getInitiator().triggerMotion(AnimationArchetype.CAST);
                     villager.setHeldItem(ItemRegistry.VILLAGER_FISHING_ROD.get().getDefaultInstance());
-                    this.lookAtWater(villager);
                     return StepResult.noOp();
                 })
                 .addKeyFrame(ClockTicks.of(FishingAnimations.CAST_IMPACT_TICK), context -> {
@@ -266,7 +267,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     return StepResult.noOp();
                 })
                 .addPeriodicStep(ClockTicks.of(20).getTicksAsInt(), context -> {
-                    this.lookAtWater(context.getInitiator());
                     context.getInitiator().setHeldItem(ItemRegistry.VILLAGER_FISHING_ROD.get().getDefaultInstance());
                     return StepResult.noOp();
                 })
@@ -295,11 +295,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     villagerHead.playSound(SoundEvents.VILLAGER_YES, 0.8f, 1.0f, SoundSource.NEUTRAL);
 
                     villager.setMotion(AnimationArchetype.REEL_OUT);
-                    this.lookAtWater(context.getInitiator());
-                    return StepResult.noOp();
-                })
-                .addPeriodicStep(ClockTicks.of(20).getTicksAsInt(), context -> {
-                    this.lookAtWater(context.getInitiator());
                     return StepResult.noOp();
                 })
                 .onEnd(context -> StepResult.transition(FishingStage.REEL_IN))
@@ -315,7 +310,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .onStart(context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
                     villager.triggerMotion(AnimationArchetype.REEL_IN);
-                    this.lookAtWater(context.getInitiator());
                     return StepResult.noOp();
                 })
                 .addKeyFrame(ClockTicks.of(FishingAnimations.REEL_IMPACT_TICK), context -> {
@@ -376,18 +370,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     return collectAndComplete(context);
                 })
                 .build();
-    }
-
-    @Override
-    protected boolean shouldLookAtActiveTarget() {
-        // Faces the water, not the shore block stored as the TargetState target.
-        return false;
-    }
-
-    private void lookAtWater(@Nonnull ISettlementsVillager villager) {
-        if (this.waterTarget != null) {
-            villager.getMinecraftEntity().getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(this.waterTarget));
-        }
     }
 
     private void restoreIdle(@Nonnull BaseVillager villager) {

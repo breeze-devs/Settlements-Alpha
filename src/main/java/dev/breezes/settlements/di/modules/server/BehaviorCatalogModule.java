@@ -55,6 +55,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
@@ -1102,6 +1104,31 @@ public final class BehaviorCatalogModule {
     // =========================================================================
     // Leatherworking
     // =========================================================================
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry dyeLeather(DyeLeatherConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.DYE_LEATHER)
+                        .displayName("Dye Leather")
+                        .description("Dye leather armor on an armor stand")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.DYE_LEATHER.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("leather_chestplate"))
+                        .build())
+                .factory(() -> new DyeLeatherBehavior(config, hungerConfig))
+                .build();
+    }
 
     @Provides
     @IntoSet

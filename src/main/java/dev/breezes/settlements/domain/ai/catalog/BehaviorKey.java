@@ -81,6 +81,7 @@ public record BehaviorKey(String id) {
 
     // ---- Leatherworking ----
     public static final BehaviorKey WASH_LEATHER = new BehaviorKey("wash_leather");
+    public static final BehaviorKey DYE_LEATHER = new BehaviorKey("dye_leather");
 
     public BehaviorKey {
         if (StringUtils.isBlank(id)) {
