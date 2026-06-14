@@ -20,6 +20,7 @@ import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsConditi
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -40,6 +41,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,12 +53,18 @@ import java.util.Set;
 @CustomLog
 public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
 
-    private static final int BURST_DURATION_TICKS = 15;
+    private static final int BURST_DURATION_TICKS = 30;
     private static final int BURST_ROUNDS_MIN = 2;
     private static final int BURST_ROUNDS_MAX = 4;
 
     private static final float EGG_VELOCITY = 1.5f;
     private static final float EGG_INACCURACY = 8.0f;
+
+    // Spawn offsets that place the egg at the windmill's overhead release point rather than the
+    // body center: just above the head, shifted to the active shoulder, a touch ahead of the torso.
+    private static final double HAND_LATERAL_OFFSET = 0.4;
+    private static final double HAND_FORWARD_OFFSET = 0.1;
+    private static final double HAND_RAISED_ABOVE_HEAD = 0.15;
 
     private static final int ANGRY_VILLAGER_PARTICLE_COUNT = 1;
     private static final double ANGRY_VILLAGER_PARTICLE_OFFSET = 0.3;
@@ -81,6 +89,8 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
 
     @Nullable
     private LivingEntity victim;
+    // Flips each throw so eggs leave the raised left and right fists in turn
+    private int eggsThrown;
 
     public ThrowEggsBehavior(ThrowEggsConfig config, HungerConfig hungerConfig) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
@@ -130,6 +140,9 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
 
                     BaseVillager villager = ctx.getInitiator();
                     Level world = villager.level();
+
+                    // Drop the windmill while scampering so the run reads as normal locomotion
+                    villager.setMotion(AnimationArchetype.IDLE);
 
                     // Project a random angle around the victim and snap to surface height
                     double angle = RandomUtil.randomDouble(0, 2 * Math.PI);
@@ -190,7 +203,10 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
 
         // Pick a random target rather than always the closest, for mischievous unpredictability
         this.victim = RandomUtil.choice(candidates);
+        this.eggsThrown = 0;
+        // Both hands carry an egg so the straight-arm windmill throw reads as dual-fisted mischief
         villager.setHeldItem(new ItemStack(Items.EGG));
+        villager.setOffhandItem(new ItemStack(Items.EGG));
     }
 
     private boolean isValidEggTarget(@Nonnull BaseVillager villager, @Nonnull LivingEntity target) {
@@ -220,7 +236,9 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         villager.getNavigationManager().stop();
+        villager.setMotion(AnimationArchetype.IDLE);
         villager.clearHeldItem();
+        villager.clearOffhandItem();
         this.victim = null;
     }
 
@@ -232,6 +250,8 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
                     if (this.victim != null) {
                         ctx.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.victim)));
                     }
+                    // Sustained windmill while the burst is in progress; relocate/stop reset it to IDLE
+                    ctx.getInitiator().setMotion(AnimationArchetype.THROW);
                     return StepResult.noOp();
                 })
                 .addPeriodicStep(ClockTicks.of(3).getTicksAsInt(), this::throwEggAtVictim)
@@ -247,17 +267,44 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
         BaseVillager villager = context.getInitiator();
         Level world = villager.level();
 
-        Location villagerLocation = Location.fromEntity(villager, true);
+        // Alternate hands each throw; the egg leaves the raised fist rather than the body center
+        boolean rightHand = (this.eggsThrown % 2 == 0);
+        this.eggsThrown++;
+
+        Vec3 handPosition = this.computeRaisedHandPosition(villager, rightHand);
+        Location handLocation = Location.of(handPosition.x, handPosition.y, handPosition.z, world);
         Location victimLocation = Location.fromEntity(this.victim, true);
-        Vector direction = villagerLocation.getDirectionTo(victimLocation);
+        Vector direction = handLocation.getDirectionTo(victimLocation);
 
         SettlementsEgg egg = new SettlementsEgg(world, villager);
+        egg.setPos(handPosition.x, handPosition.y, handPosition.z);
         egg.shoot(direction.getX(), direction.getY(), direction.getZ(), EGG_VELOCITY, EGG_INACCURACY);
         world.addFreshEntity(egg);
 
-        SoundRegistry.THROW_EGG.playGlobally(villagerLocation, SoundSource.NEUTRAL);
+        SoundRegistry.THROW_EGG.playGlobally(handLocation, SoundSource.NEUTRAL);
         this.spawnAngryVillagerParticleOnVictim(world);
         return StepResult.noOp();
+    }
+
+    /**
+     * Resolves the world position of the windmill's overhead release point for the active hand.
+     * The throw arc raises a straight arm fully overhead, so the egg originates just above the head,
+     * shifted to the throwing shoulder and slightly forward — not from the villager's eye-center
+     * (where the projectile's shooter constructor would otherwise place it).
+     */
+    private Vec3 computeRaisedHandPosition(@Nonnull BaseVillager villager, boolean rightHand) {
+        Vec3 look = villager.getLookAngle();
+        Vec3 forward = new Vec3(look.x, 0.0, look.z);
+        // Fall back to body forward if the gaze is near-vertical and the horizontal component collapses
+        forward = forward.lengthSqr() < 1.0e-4 ? villager.getForward() : forward.normalize();
+        // Horizontal right-hand perpendicular to facing
+        Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+        double lateral = rightHand ? HAND_LATERAL_OFFSET : -HAND_LATERAL_OFFSET;
+
+        return new Vec3(
+                villager.getX() + right.x * lateral + forward.x * HAND_FORWARD_OFFSET,
+                villager.getY() + villager.getBbHeight() + HAND_RAISED_ABOVE_HEAD,
+                villager.getZ() + right.z * lateral + forward.z * HAND_FORWARD_OFFSET);
     }
 
     private void spawnAngryVillagerParticleOnVictim(@Nonnull Level world) {

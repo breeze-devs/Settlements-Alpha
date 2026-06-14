@@ -208,6 +208,16 @@ public final class AnimationTargets {
             .policy(AnimationTargetPolicy.ADDITIVE)
             .build();
 
+    // Per-axis mouth scale. Neutral is unit (1,1,1) and the policy is MULTIPLICATIVE so a missing
+    // target leaves the mesh at its authored size — used for the squash/stretch snore in the sleep clip.
+    public static final AnimationTarget<Vector3f> MOUTH_SCALE = AnimationTarget.<Vector3f>builder()
+            .id("model_part:mouth.scale")
+            .valueType(Vector3f.class)
+            .neutralValue(new Vector3f(1.0F, 1.0F, 1.0F))
+            .interpolator(Interpolators.VECTOR3F)
+            .policy(AnimationTargetPolicy.MULTIPLICATIVE)
+            .build();
+
     public static final AnimationTarget<Vec3> EYELID_LEFT_TRANSLATION = AnimationTarget.<Vec3>builder()
             .id("model_part:eyelid_left.translation")
             .valueType(Vec3.class)

@@ -584,6 +584,20 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
     }
 
+    public void setOffhandItem(@Nonnull ItemStack itemStack) {
+        this.setItemInHand(InteractionHand.OFF_HAND, itemStack);
+        if (this.settlementsInventory != null) {
+            this.settlementsInventory.setEquipped(EquipmentSlot.OFF_HAND, itemStack);
+        }
+    }
+
+    public void clearOffhandItem() {
+        this.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+        if (this.settlementsInventory != null) {
+            this.settlementsInventory.setEquipped(EquipmentSlot.OFF_HAND, ItemStack.EMPTY);
+        }
+    }
+
     @Override
     @Nonnull
     public ITeardownLedger getTeardownLedger() {

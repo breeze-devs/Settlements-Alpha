@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.behavior.usecases.villager.courts
 import dev.breezes.settlements.application.ai.courtship.ChoreographyTimeline;
 import dev.breezes.settlements.application.ai.courtship.CourtshipBeat;
 import dev.breezes.settlements.application.ai.courtship.CourtshipChoreographyLibrary;
+import dev.breezes.settlements.application.ai.courtship.CourtshipCloseReason;
 import dev.breezes.settlements.application.ai.courtship.CourtshipRole;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSession;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
@@ -17,6 +18,7 @@ import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundEvents;
@@ -37,9 +39,28 @@ public final class CourtshipPresenter {
     private static final ClockTicks APPROACH_BUBBLE_TTL = ClockTicks.seconds(10);
     private static final ClockTicks BEAT_BUBBLE_TTL = ClockTicks.seconds(4);
     private static final ClockTicks BIRTH_BUBBLE_TTL = ClockTicks.seconds(3);
+    private static final ClockTicks FAILURE_BUBBLE_TTL = ClockTicks.seconds(4);
     private static final String COURTSHIP_SOURCE = "courtship";
 
     private static final BubbleSegment POPPY_ICON = BubbleSegment.Item.iconOnly(BuiltInRegistries.ITEM.getKey(Items.POPPY));
+    private static final BubbleSegment BED_ICON = BubbleSegment.Item.iconOnly(BuiltInRegistries.ITEM.getKey(Items.RED_BED));
+    private static final BubbleSegment CLOCK_ICON = BubbleSegment.Item.iconOnly(BuiltInRegistries.ITEM.getKey(Items.CLOCK));
+    private static final BubbleSegment BREAD_ICON = BubbleSegment.Item.iconOnly(BuiltInRegistries.ITEM.getKey(Items.BREAD));
+
+    // A red cross appended after the reason icon, reading as "no <icon>" / failure. Mirrors the trade walk-away marker.
+    private static final BubbleSegment FAILURE_CROSS = BubbleSegment.Text.builder()
+            .literal("✖")
+            .color(ChatFormatting.RED)
+            .bold(true)
+            .scale(0.9F)
+            .build();
+    // Stand-in icon for "partner vanished" since no vanilla item depicts a missing villager cleanly.
+    private static final BubbleSegment PARTNER_GONE_MARK = BubbleSegment.Text.builder()
+            .literal("?")
+            .color(ChatFormatting.WHITE)
+            .bold(true)
+            .scale(1.0F)
+            .build();
 
     private final VillagerBubbleService villagerBubbleService;
     private final CourtshipChoreographyLibrary choreographyLibrary;
@@ -106,13 +127,47 @@ public final class CourtshipPresenter {
     }
 
     /**
-     * Abort: anger puff event + NO sound. Called when courtship fails (no bed, willingness lost, partner gone).
+     * Abort: anger puff event + NO sound, plus a bubble depicting why the courtship failed.
+     * <p>
+     * The reason bubble uses a distinct owner key from the in-progress poppy bubble so that the
+     * subsequent {@link #presentEnd} cleanup (which targets the in-progress key) leaves it standing
+     * to live out its short TTL rather than wiping it the same tick.
      */
-    public void presentAbort(@Nonnull CourtshipSession session, @Nonnull BaseVillager self) {
+    public void presentAbort(@Nonnull CourtshipSession session, @Nonnull BaseVillager self, @Nonnull CourtshipCloseReason reason) {
         Location location = Location.fromEntity(self, true);
         location.displayParticles(ParticleTypes.ANGRY_VILLAGER, 3, 0.2, 0.2, 0.2, 0.1);
         location.playSound(SoundEvents.VILLAGER_NO, 0.8f, 1.0f, SoundSource.NEUTRAL);
-        removeByOwner(self, session, self.level().getGameTime());
+
+        List<BubbleSegment> reasonSegments = failureSegments(reason);
+        if (reasonSegments.isEmpty()) {
+            // Non-presentable reason (e.g. chunk unload): just clear the in-progress bubble, show nothing.
+            removeByOwner(self, session, self.level().getGameTime());
+            return;
+        }
+
+        // Upserting onto the single-slot BEHAVIOR channel evicts the in-progress poppy bubble for us.
+        upsertResult(self, session, BubbleMessage.builder()
+                .priority(15)
+                .ttl(FAILURE_BUBBLE_TTL)
+                .sourceType(COURTSHIP_SOURCE)
+                .segments(reasonSegments)
+                .build());
+    }
+
+    /**
+     * Maps a close reason to the icons that explain it: a reason-specific icon followed by a red cross.
+     * Returns an empty list for reasons that should not surface a bubble (success or silent cancellation).
+     */
+    private static List<BubbleSegment> failureSegments(@Nonnull CourtshipCloseReason reason) {
+        return switch (reason) {
+            case REJECTED_CHARISMA -> List.of(POPPY_ICON, FAILURE_CROSS);
+            case ABORTED_NO_BED -> List.of(BED_ICON, FAILURE_CROSS);
+            case TIMEOUT -> List.of(CLOCK_ICON, FAILURE_CROSS);
+            case ABORTED_WILLINGNESS -> List.of(BREAD_ICON, FAILURE_CROSS);
+            case ABORTED_PARTNER_GONE -> List.of(PARTNER_GONE_MARK, FAILURE_CROSS);
+            case ABORTED_SPAWN_FAILED -> List.of(FAILURE_CROSS);
+            case COMPLETED, EXTERNAL_CANCEL -> List.of();
+        };
     }
 
     /**
@@ -131,6 +186,13 @@ public final class CourtshipPresenter {
                 self.level().getGameTime());
     }
 
+    private void upsertResult(@Nonnull BaseVillager self,
+                              @Nonnull CourtshipSession session,
+                              @Nonnull BubbleMessage message) {
+        this.villagerBubbleService.applyCommand(self, new BubbleCommand.Upsert(BubbleChannel.BEHAVIOR, resultOwnerKey(session.getSessionId()), message),
+                self.level().getGameTime());
+    }
+
     private void removeByOwner(@Nonnull BaseVillager self,
                                @Nonnull CourtshipSession session,
                                long gameTime) {
@@ -139,6 +201,10 @@ public final class CourtshipPresenter {
 
     private static String ownerKey(@Nonnull UUID sessionId) {
         return "courtship-" + sessionId;
+    }
+
+    private static String resultOwnerKey(@Nonnull UUID sessionId) {
+        return "courtship-result-" + sessionId;
     }
 
 }

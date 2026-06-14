@@ -152,7 +152,9 @@ Motion is named in **archetypal** terms, not items or tasks. A butcher swinging 
 
 **File:** [AnimationArchetype.java](../../src/main/java/dev/breezes/settlements/domain/animation/AnimationArchetype.java)
 
-A small enum of motion intents — `IDLE`, `SWING_HEAVY`, `CAST`, `REEL_IN`, `REEL_OUT`, `POINT`, `INTERACT`, `SURVEY_WITH_SPYGLASS`, `WRITE_TO_MAP`, `EAT`, `WAVE`, `PICK_UP`, `HARVEST`. Provides `toNetworkByte()` / `fromNetworkByte()` with safe fallback to `IDLE` on unknown values.
+A small enum of motion intents — `IDLE`, `SWING_HEAVY`, `CAST`, `REEL_IN`, `REEL_OUT`, `POINT`, `INTERACT`, `SURVEY_WITH_SPYGLASS`, `WRITE_TO_MAP`, `EAT`, `WAVE`, `PICK_UP`, `HARVEST`, `FISHING_WAIT`, `THROW`, `SLEEP`. Provides `toNetworkByte()` / `fromNetworkByte()` with safe fallback to `IDLE` on unknown values.
+
+> `SLEEP` is the one archetype **never written to the motion byte.** Sleep is already a vanilla-synced entity state, so the client reads it off `isSleeping()` directly; the enum value exists only as the library key for resolving the sleep clip. See [Sleep override](#sleep-override).
 
 Encoded as `byte` (the ordinal) because one byte through `SynchedEntityData` is the cheapest possible sync surface. **Order is the wire format** — append new values, do not reorder.
 
@@ -162,8 +164,8 @@ Encoded as `byte` (the ordinal) because one byte through `SynchedEntityData` is 
 
 The motion state is two synced bytes — the archetype and a **generation counter** — written through two methods, **unchanged in name and contract from v2**:
 
-- `setMotion(AnimationArchetype)` ([:216](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/BaseVillager.java:216)) — **idempotent / continuous.** Writes only the archetype byte; setting the same archetype repeatedly does not restart. Use it for sustained states (`IDLE`, the `REEL_OUT` jig-fight loop, the `EAT` loop) and for teardown (`setMotion(IDLE)`).
-- `triggerMotion(AnimationArchetype)` ([:231](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/BaseVillager.java:231)) — **one-shot.** Bumps `DATA_MOTION_GENERATION` *and* writes the archetype, forcing replay from frame 0 even when the archetype is unchanged. Use it for discrete actions (`SWING_HEAVY`, `INTERACT`, `CAST`, `REEL_IN`, `HARVEST`, `PICK_UP`, …). The counter is a `byte` and intentionally wraps `127 → -128`; only inequality matters.
+- `setMotion(AnimationArchetype)` ([:216](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/BaseVillager.java:216)) — **idempotent / continuous.** Writes only the archetype byte; setting the same archetype repeatedly does not restart. Use it for sustained states (`IDLE`, the `REEL_OUT` jig-fight loop, the `FISHING_WAIT` loop) and for teardown (`setMotion(IDLE)`).
+- `triggerMotion(AnimationArchetype)` ([:231](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/BaseVillager.java:231)) — **one-shot.** Bumps `DATA_MOTION_GENERATION` *and* writes the archetype, forcing replay from frame 0 even when the archetype is unchanged. Use it for discrete actions (`SWING_HEAVY`, `INTERACT`, `CAST`, `REEL_IN`, `HARVEST`, `PICK_UP`, `EAT`, …). `EAT` plays once per food item — its clip length defines the eating duration. The counter is a `byte` and intentionally wraps `127 → -128`; only inequality matters.
 - `getMotion()` / `getMotionGeneration()` — read back during render.
 
 **How the two setters become layer lifetimes** ([VillagerAnimator.onMotionChanged:50](../../src/main/java/dev/breezes/settlements/domain/animation/VillagerAnimator.java:50)): the synced delta is mapped to the action layer — `IDLE` ⇒ `clearAction()`; a **generation bump** ⇒ `triggerAction(...)` (transient, auto-pops); same generation, new archetype ⇒ `setSustainedAction(...)` (persistent until cleared). So `triggerMotion` clips return to idle on their own, while `setMotion` loops persist until the behavior ends them — which is correct, since leaving a loop *is* a state change.
@@ -341,7 +343,7 @@ A typed handle for one addressable animated property. Carries `id` (globally uni
 
 ### Target catalog
 
-**[AnimationTargets.java](../../src/main/java/dev/breezes/settlements/domain/animation/AnimationTargets.java)** owns every model-part target — **28** of them. All rotations are `Vector3f` (radians, neutral zero); all translations are `Vec3` (neutral `Vec3.ZERO`).
+**[AnimationTargets.java](../../src/main/java/dev/breezes/settlements/domain/animation/AnimationTargets.java)** owns every model-part target — **29** of them. All rotations are `Vector3f` (radians, neutral zero); all translations are `Vec3` (neutral `Vec3.ZERO`); `MOUTH_SCALE` is the one `Vector3f` scale (neutral `(1,1,1)`, `MULTIPLICATIVE`).
 
 | Group | Targets | Policy | Consumed by |
 |---|---|---|---|
@@ -351,9 +353,9 @@ A typed handle for one addressable animated property. Carries `id` (globally uni
 | **Nose (2)** | `NOSE_ROTATION`, `NOSE_TRANSLATION` | `ADDITIVE` | gait + idle secondary motion |
 | **Legs (2)** | `LEG_LEFT/RIGHT_ROTATION_OVERRIDE` | `ABSOLUTE` | gait clips |
 | **Root (2)** | `ROOT_TRANSLATION`, `ROOT_ROTATION` | `ADDITIVE` | (scaffolding — boss/emote) |
-| **Face (7)** | `MONOBROW_TRANSLATION/ROTATION`, `MOUTH_TRANSLATION`, `EYELID_LEFT/RIGHT_TRANSLATION`, `PUPIL_LEFT/RIGHT_TRANSLATION` | `ADDITIVE` | eyelids/pupils by blink + glance; brow/mouth unused |
+| **Face (8)** | `MONOBROW_TRANSLATION/ROTATION`, `MOUTH_TRANSLATION`, `MOUTH_SCALE`, `EYELID_LEFT/RIGHT_TRANSLATION`, `PUPIL_LEFT/RIGHT_TRANSLATION` | `ADDITIVE` (`MOUTH_SCALE` is `MULTIPLICATIVE`) | eyelids/pupils by blink + glance; eyelids + mouth (+ scale) by the sleep clip; brow unused |
 
-> **Scaffolding status changed.** In v2 the leg, root, and face blocks had no consumers. V3 now drives legs and body/nose from the gait clips, and eyelids/pupils from idle-life. Still unconsumed: the straight-arm/individual-arm targets, root motion, and the `MONOBROW`/`MOUTH` face targets — which remain flagged **PROVISIONAL** in source ([AnimationTargets.java:184](../../src/main/java/dev/breezes/settlements/domain/animation/AnimationTargets.java:184)) pending the first authored expression clip. Do not remove them as "unused"; prefer consuming them over inventing new targets.
+> **Scaffolding status changed.** In v2 the leg, root, and face blocks had no consumers. V3 now drives legs and body/nose from the gait clips, eyelids/pupils from idle-life, and the mouth (`MOUTH_TRANSLATION` + `MOUTH_SCALE`) from the sleep clip. Still unconsumed: the straight-arm/individual-arm targets, root motion, and the `MONOBROW` face targets — which remain flagged **PROVISIONAL** in source ([AnimationTargets.java:184](../../src/main/java/dev/breezes/settlements/domain/animation/AnimationTargets.java:184)) pending the first authored expression clip. Do not remove them as "unused"; prefer consuming them over inventing new targets.
 
 **[SlotTargets.java](../../src/main/java/dev/breezes/settlements/domain/animation/SlotTargets.java)** — per-slot targets, interned via `ConcurrentHashMap` so repeated lookups return the same instance:
 
@@ -427,10 +429,11 @@ The action library is wired in [ClientAnimationModule.animationLibrary](../../sr
 | `(INTERACT, GENERIC)` | `InteractAnimations.interact()` |
 | `(SURVEY_WITH_SPYGLASS, SPYGLASS)` | `CartographerAnimations.surveyWithSpyglass()` |
 | `(WRITE_TO_MAP, MAP)` | `CartographerAnimations.markMap()` |
-| `(EAT, GENERIC)` | `EatingAnimations.eat()` |
+| `(EAT, GENERIC)` | `EatingAnimations.eat()` (one-shot chew cycle, 40 ticks) |
 | `(WAVE, GENERIC)` | `WaveAnimations.wave()` |
 | `(PICK_UP, GENERIC)` | `PickUpAnimations.pickUp()` |
 | `(HARVEST, GENERIC)` | `HarvestCropAnimations.harvestCrop()` |
+| `(SLEEP, GENERIC)` | `SleepingAnimations.sleeping()` (resolved client-side, not via the motion byte — see [Sleep override](#sleep-override)) |
 
 The four legacy pose-authored clips (Cartographer / Eating / Fishing / Interact) were migrated to tracks during the cutover. `POINT` exists as an archetype but has no library entry yet (it resolves through the fallback chain to the empty idle).
 
@@ -469,6 +472,12 @@ One animator per villager. It is now a thin owner of a [LayerStack](../../src/ma
 ### Motion change → routed to the action layer
 
 `onMotionChanged(archetype, generation, context, gameTime)` ([:39](../../src/main/java/dev/breezes/settlements/domain/animation/VillagerAnimator.java:39)) early-returns if both archetype and generation are unchanged. Otherwise it resolves the animation and routes it: `IDLE` → `clearAction()`, a generation bump → `triggerAction(...)`, same generation → `setSustainedAction(...)`. Including the generation in the guard is what lets `triggerMotion` replay the same archetype.
+
+### Sleep override
+
+Sleep is **not** a motion-plane archetype routed through the action layer — it is a vanilla-synced entity state, so threading it through `SynchedEntityData` would duplicate state the client already has. Instead the renderer reads `villager.isSleeping()` each frame (exactly as it reads the gait byte) and polls `animator.setSleeping(sleeping, gameTime)` ([VillagerAnimator:setSleeping](../../src/main/java/dev/breezes/settlements/domain/animation/VillagerAnimator.java)).
+
+While sleeping, the animator's `sample(...)` / `currentArmConfiguration(...)` **bypass the `LayerStack` entirely** and return the resolved `SLEEP` clip sampled from sleep onset. This is what fixes "idle plays while sleeping": skipping the fold means no base idle, no locomotion, and crucially **no Idle-Life** — a sleeping villager neither breathes idly, blinks, nor fidgets; only the authored sleep clip drives the pose (folded arms rising with breath, eyes held shut, periodic snore via `MOUTH_TRANSLATION` + `MOUTH_SCALE`). The sleep clip's `HEAD_ROTATION_OVERRIDE` (`ABSOLUTE`) also suppresses look-tracking, and the whole body is already laid flat by vanilla `setupRotations`. Entering sleep restarts the clip phase so breathing always begins from neutral; the Idle-Life blink/fidget timers simply freeze (they only advance when the stack is sampled) and resume on wake. The animator resolves the clip once at construction via `resolve(SLEEP, GENERIC)`, which falls back gracefully to the empty idle if unregistered.
 
 ### Equipment-sync lag correction
 
@@ -583,7 +592,7 @@ Append-only, one byte each, on the cheap `SynchedEntityData` surface:
 | `DATA_MOTION_GENERATION` | bump to replay a one-shot |
 | `DATA_LOCOMOTION_NAVIGATION_TYPE` | the gait intent (`NavigationType`) |
 
-Base and Idle-Life add nothing to the wire — they are client-only.
+Base and Idle-Life add nothing to the wire — they are client-only. **Sleep** also adds nothing: it rides vanilla's existing sleeping-state sync and is read off `isSleeping()` on the client (see [Sleep override](#sleep-override)).
 
 ---
 

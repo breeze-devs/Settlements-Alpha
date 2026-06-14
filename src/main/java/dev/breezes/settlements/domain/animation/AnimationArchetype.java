@@ -15,6 +15,9 @@ public enum AnimationArchetype {
     WAVE,
     PICK_UP,
     HARVEST,
+    FISHING_WAIT,
+    THROW,
+    SLEEP,
     ;
 
     private static final AnimationArchetype[] VALUES = values();

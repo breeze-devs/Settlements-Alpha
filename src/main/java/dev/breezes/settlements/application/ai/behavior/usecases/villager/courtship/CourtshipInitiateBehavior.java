@@ -372,7 +372,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     private StepResult doAbort(@Nonnull BaseVillager self,
                                @Nonnull CourtshipSession session,
                                @Nonnull CourtshipCloseReason reason) {
-        this.courtshipPresenter.presentAbort(session, self);
+        this.courtshipPresenter.presentAbort(session, self, reason);
         this.sessionRegistry.closeSession(session.getSessionId(), reason);
         return StepResult.complete();
     }

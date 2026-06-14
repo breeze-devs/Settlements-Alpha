@@ -70,9 +70,10 @@ class ClientAnimatorRegistryTest {
                 .blendOutTicks(0)
                 .tracks(List.of())
                 .build();
+        // The animator resolves both the IDLE base clip and the SLEEP override at construction.
         return (archetype, context) -> {
-            if (archetype != AnimationArchetype.IDLE) {
-                throw new IllegalArgumentException("Registry test only expects idle initialization");
+            if (archetype != AnimationArchetype.IDLE && archetype != AnimationArchetype.SLEEP) {
+                throw new IllegalArgumentException("Registry test only expects idle/sleep initialization");
             }
             return idle;
         };

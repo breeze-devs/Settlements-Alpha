@@ -116,7 +116,7 @@ public final class CourtshipAcceptBehavior extends VillagerStateMachineBehavior 
             }
 
             if (!RandomUtil.chance(charismaAcceptanceChance(presenter, villager))) {
-                courtshipPresenter.presentAbort(pendingSession, villager);
+                courtshipPresenter.presentAbort(pendingSession, villager, CourtshipCloseReason.REJECTED_CHARISMA);
                 this.sessionRegistry.closeSession(pendingSession.getSessionId(), CourtshipCloseReason.REJECTED_CHARISMA);
                 return;
             }

@@ -8,9 +8,10 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.EatingAnimations;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
-import dev.breezes.settlements.domain.time.RandomRangeTickable;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -38,14 +39,16 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
         END;
     }
 
-    private static final ClockTicks EATING_DURATION = ClockTicks.seconds(3);
-    private static final ClockTicks PARTICLE_MAX_INTERVAL = ClockTicks.of(12);
-    private static final ClockTicks PARTICLE_MIN_INTERVAL = ClockTicks.of(8);
+    private static final ClockTicks EATING_DURATION = ClockTicks.of(EatingAnimations.EAT_DURATION_TICKS);
+    private static final ClockTicks PARTICLE_INTERVAL = ClockTicks.of(2);
+    private static final ClockTicks CHEW_SOUND_INTERVAL = ClockTicks.of(4);
 
     @Nullable
     private ItemStack selectedFood;
     @Nullable
-    private RandomRangeTickable particleTimer;
+    private Tickable particleTimer;
+    @Nullable
+    private Tickable chewSoundTimer;
 
     public EatFoodBehavior(@Nonnull HungerConfig hungerConfig) {
         super(log, ClockTicks.seconds(10).asTickable(), ClockTicks.seconds(20).asTickable(), hungerConfig);
@@ -58,6 +61,7 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
 
         this.selectedFood = null;
         this.particleTimer = null;
+        this.chewSoundTimer = null;
 
         this.initializeStateMachine(this.createControlStep(), EatStage.END);
     }
@@ -82,8 +86,9 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
                     }
 
                     villager.setHeldItem(this.selectedFood.copy());
-                    villager.setMotion(AnimationArchetype.EAT);
-                    this.particleTimer = RandomRangeTickable.of(PARTICLE_MAX_INTERVAL, PARTICLE_MIN_INTERVAL);
+                    villager.triggerMotion(AnimationArchetype.EAT);
+                    this.particleTimer = PARTICLE_INTERVAL.asTickable();
+                    this.chewSoundTimer = CHEW_SOUND_INTERVAL.asTickable();
                     return StepResult.noOp();
                 })
                 .everyTick(context -> {
@@ -91,19 +96,19 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    if (this.particleTimer == null) {
-                        this.particleTimer = RandomRangeTickable.of(PARTICLE_MAX_INTERVAL, PARTICLE_MIN_INTERVAL);
-                    }
-                    if (!this.particleTimer.tickAndCheck(1)) {
-                        return StepResult.noOp();
-                    }
-
-                    this.particleTimer.reset();
-
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
                     Location villagerHead = Location.fromEntity(villager, true);
-                    villagerHead.playSound(SoundEvents.GENERIC_EAT, 0.6f, 1.0f, SoundSource.NEUTRAL);
-                    villagerHead.displayParticles(new ItemParticleOption(ParticleTypes.ITEM, this.selectedFood.copy()), 6, 0.2, 0.2, 0.2, 0.02);
+
+                    // Particle timer fires every 2 ticks for a dense item-crumb spray.
+                    if (this.particleTimer.tickCheckAndReset(1)) {
+                        villagerHead.displayParticles(new ItemParticleOption(ParticleTypes.ITEM, this.selectedFood.copy()), 2, 0.2, 0.2, 0.2, 0.02);
+                    }
+
+                    // Chew sound fires every 8 ticks so it doesn't machine-gun.
+                    if (this.chewSoundTimer.tickCheckAndReset(1)) {
+                        villagerHead.playSound(SoundEvents.GENERIC_EAT, 0.6f, 1.0f, SoundSource.NEUTRAL);
+                    }
+
                     return StepResult.noOp();
                 })
                 .onEnd(context -> {
@@ -121,6 +126,7 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
         villager.clearHeldItem();
         this.selectedFood = null;
         this.particleTimer = null;
+        this.chewSoundTimer = null;
     }
 
     private void finishEating(@Nonnull BaseVillager villager) {

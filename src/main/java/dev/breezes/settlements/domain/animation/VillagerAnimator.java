@@ -17,6 +17,13 @@ public final class VillagerAnimator {
     private AnimationSelectionContext lastResolvedContext;
     private final LayerStack layerStack;
 
+    // Sleep is a vanilla-synced state read off the client, not a motion-plane archetype. While it is
+    // active the animator samples the sleep clip directly and bypasses the whole base/locomotion/
+    // idle-life/action fold, so a sleeping villager neither breathes idly, blinks, nor fidgets.
+    private final KeyframeAnimation sleepAnimation;
+    private boolean sleeping;
+    private long sleepStartGameTime;
+
     public VillagerAnimator(@Nonnull AnimationResolver animationResolver) {
         this(animationResolver, IdleLifeAnimator.NONE, LocomotionAnimator.NONE, 0);
     }
@@ -34,6 +41,20 @@ public final class VillagerAnimator {
                 idleLifeAnimator,
                 locomotionAnimator,
                 entityId);
+        this.sleepAnimation = animationResolver.resolve(AnimationArchetype.SLEEP, AnimationSelectionContext.generic());
+        this.sleeping = false;
+        this.sleepStartGameTime = 0L;
+    }
+
+    /**
+     * Polls the villager's vanilla sleep state each frame. Entering sleep restarts the loop phase so
+     * the breathing cycle always begins from the neutral keyframe rather than mid-breath.
+     */
+    public void setSleeping(boolean sleeping, long gameTime) {
+        if (sleeping && !this.sleeping) {
+            this.sleepStartGameTime = gameTime;
+        }
+        this.sleeping = sleeping;
     }
 
     public void onMotionChanged(@Nonnull AnimationArchetype newArchetype,
@@ -99,23 +120,44 @@ public final class VillagerAnimator {
     }
 
     public ArmConfiguration currentArmConfiguration(long gameTime, float partialTicks) {
+        if (this.sleeping) {
+            return this.sleepArmConfiguration(gameTime, partialTicks);
+        }
         return this.layerStack.armConfiguration(gameTime, partialTicks);
     }
 
     public ArmConfiguration currentArmConfiguration(long gameTime,
                                                     float partialTicks,
                                                     @Nonnull LocomotionAnimationContext locomotionContext) {
+        if (this.sleeping) {
+            return this.sleepArmConfiguration(gameTime, partialTicks);
+        }
         return this.layerStack.armConfiguration(gameTime, partialTicks, locomotionContext);
     }
 
     public AnimationFrame sample(long gameTime, float partialTicks) {
+        if (this.sleeping) {
+            return this.sleepAnimation.sample(this.sleepElapsedTicks(gameTime, partialTicks));
+        }
         return this.layerStack.sample(gameTime, partialTicks);
     }
 
     public AnimationFrame sample(long gameTime,
                                  float partialTicks,
                                  @Nonnull LocomotionAnimationContext locomotionContext) {
+        if (this.sleeping) {
+            return this.sleepAnimation.sample(this.sleepElapsedTicks(gameTime, partialTicks));
+        }
         return this.layerStack.sample(gameTime, partialTicks, locomotionContext);
+    }
+
+    private ArmConfiguration sleepArmConfiguration(long gameTime, float partialTicks) {
+        return this.sleepAnimation.armConfigurationAt(this.sleepElapsedTicks(gameTime, partialTicks))
+                .orElse(ArmConfiguration.BOTH_CROSSED);
+    }
+
+    private float sleepElapsedTicks(long gameTime, float partialTicks) {
+        return Math.max(0.0F, (gameTime - this.sleepStartGameTime) + partialTicks);
     }
 
 }

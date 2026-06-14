@@ -398,6 +398,7 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         applyTranslation(this.monobrow, frame.get(AnimationTargets.MONOBROW_TRANSLATION));
         applyRotation(this.monobrow, frame.get(AnimationTargets.MONOBROW_ROTATION));
         applyTranslation(this.mouth, frame.get(AnimationTargets.MOUTH_TRANSLATION));
+        applyScale(this.mouth, frame.get(AnimationTargets.MOUTH_SCALE));
         applyTranslation(this.eyelid_left, frame.get(AnimationTargets.EYELID_LEFT_TRANSLATION));
         applyTranslation(this.eyelid_right, frame.get(AnimationTargets.EYELID_RIGHT_TRANSLATION));
         applyTranslation(this.pupil_left, frame.get(AnimationTargets.PUPIL_LEFT_TRANSLATION));
@@ -420,6 +421,13 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         part.xRot = rotation.x();
         part.yRot = rotation.y();
         part.zRot = rotation.z();
+    }
+
+    // Multiplicative onto resetPose's unit scale, so the unit-neutral (1,1,1) is a no-op.
+    private static void applyScale(ModelPart part, Vector3f scale) {
+        part.xScale *= scale.x();
+        part.yScale *= scale.y();
+        part.zScale *= scale.z();
     }
 
 }

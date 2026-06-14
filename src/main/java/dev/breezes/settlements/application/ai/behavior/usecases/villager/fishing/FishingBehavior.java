@@ -239,6 +239,11 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createWaitForBiteStep() {
         return TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(config.maxWaitTimeSeconds()).asTickable())
+                .onStart(context -> {
+                    // Sustained idle-while-fishing loop holds the rod out until a bite (or a retry/timeout)
+                    context.getInitiator().getMinecraftEntity().setMotion(AnimationArchetype.FISHING_WAIT);
+                    return StepResult.noOp();
+                })
                 .addPeriodicStep(5, context -> {
                     if (this.activeHook != null && this.activeHook.isRemoved() && this.activeHook.isMissedWater()) {
                         if (this.castRetryCount < MAX_CAST_RETRIES) {
@@ -285,7 +290,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
      */
     private BehaviorStep<BaseVillager> createFightFishStep() {
         return TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.of(FishingAnimations.JIG_FIGHT_DURATION_TICKS * FIGHT_FISH_CYCLES).asTickable())
+                .withTickable(ClockTicks.of(FishingAnimations.FIGHT_FISH_DURATION_TICKS * FIGHT_FISH_CYCLES).asTickable())
                 .onStart(context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
                     Location villagerHead = Location.fromEntity(villager, true);

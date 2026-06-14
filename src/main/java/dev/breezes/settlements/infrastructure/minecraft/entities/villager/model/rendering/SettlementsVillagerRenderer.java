@@ -87,6 +87,11 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
         VillagerAnimator animator = SettlementsDagger.clientSessionOrThrow()
                 .clientAnimatorRegistry()
                 .getOrCreate(villager);
+
+        // Sleep is read straight off the vanilla-synced state; while asleep the animator plays the
+        // sleep clip and suppresses the idle ambience entirely (no new sync surface needed).
+        animator.setSleeping(villager.isSleeping(), gameTime);
+
         AnimationArchetype currentMotion = villager.getMotion();
         byte currentGeneration = villager.getMotionGeneration();
 
