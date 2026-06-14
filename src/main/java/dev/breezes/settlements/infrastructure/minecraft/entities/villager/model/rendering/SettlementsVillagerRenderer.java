@@ -8,12 +8,10 @@ import dev.breezes.settlements.domain.animation.AnimationFrame;
 import dev.breezes.settlements.domain.animation.AnimationSelectionContext;
 import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.domain.inventory.EquipmentSlot;
-import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import dev.breezes.settlements.domain.presentation.ItemCategory;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.EquipmentLookup;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
-import dev.breezes.settlements.infrastructure.rendering.animation.debug.DebugPoseOverride;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import lombok.CustomLog;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -32,8 +30,6 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
     private static final float BABY_SCALE = 0.5F;
 
     private final AttachmentRenderLayer attachmentRenderLayer;
-    private final DebugPoseOverride debugPoseOverride;
-    private AnimationFrame currentFrame = AnimationFrame.EMPTY;
 
     public SettlementsVillagerRenderer(@Nonnull EntityRendererProvider.Context context) {
         super(context, new SettlementsVillagerModel<>(context.bakeLayer(SettlementsVillagerModel.LAYER)), SHADOW_RADIUS);
@@ -47,7 +43,6 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
                 clientComponent.slotAnchorRegistry(),
                 clientComponent.socketRegistry(),
                 clientComponent.attachmentDisplayProfileRegistry());
-        this.debugPoseOverride = clientComponent.debugPoseOverride();
         this.addLayer(this.attachmentRenderLayer);
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
         this.addLayer(new VillagerProfessionLayer<>(this, context.getResourceManager(), "villager"));
@@ -72,22 +67,16 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
 
         long gameTime = villager.level().getGameTime();
         VillagerAnimator animator = this.getOrUpdateAnimator(villager, gameTime);
-        this.currentFrame = this.debugPoseOverride.applyTo(animator.sample(gameTime, partialTicks));
-        this.model.setAnimationFrame(this.currentFrame);
-        // Arm config is read from the animator after sampling so the same resolved animation
-        // drives both the frame and the per-arm geometry visibility.
-        this.model.setArmConfiguration(animator.currentArmConfiguration());
+        this.model.prepareAnimation(animator, villager.getLocomotionNavigationType(), gameTime, partialTicks);
         try {
             super.render(villager, yaw, partialTicks, poseStack, buffer, packedLight);
         } finally {
-            this.currentFrame = AnimationFrame.EMPTY;
-            this.model.setAnimationFrame(null);
-            this.model.setArmConfiguration(ArmConfiguration.BOTH_CROSSED);
+            this.model.clearPreparedAnimation();
         }
     }
 
     public AnimationFrame currentFrame() {
-        return this.currentFrame;
+        return this.model.getResolvedAnimationFrame();
     }
 
     /**

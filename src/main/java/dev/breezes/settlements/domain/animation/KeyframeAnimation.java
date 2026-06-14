@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Getter
 public final class KeyframeAnimation {
@@ -20,10 +21,10 @@ public final class KeyframeAnimation {
     private final int blendInTicks;
     private final int blendOutTicks;
     private final List<AnimationTrack<?>> tracks;
-    private final ArmConfiguration armConfiguration;
+    private final ArmConfigurationTimeline armConfigurationTimeline;
 
-    public static PoseAnimationBuilder fromPoses() {
-        return new PoseAnimationBuilder();
+    public static TrackAnimationBuilder fromTracks() {
+        return new TrackAnimationBuilder();
     }
 
     @Builder
@@ -33,7 +34,9 @@ public final class KeyframeAnimation {
                               int blendInTicks,
                               int blendOutTicks,
                               @Nonnull List<AnimationTrack<?>> tracks,
-                              @Nullable ArmConfiguration armConfiguration) {
+                              @Nullable ArmConfiguration armConfiguration,
+                              @Nullable ArmConfigurationTimeline armConfigurationTimeline,
+                              @Nullable List<ArmConfigurationKeyframe> armConfigurationKeyframes) {
         if (durationTicks < 0) {
             throw new IllegalArgumentException("Animation duration must be non-negative");
         }
@@ -47,7 +50,19 @@ public final class KeyframeAnimation {
         this.blendInTicks = blendInTicks;
         this.blendOutTicks = blendOutTicks;
         this.tracks = List.copyOf(tracks);
-        this.armConfiguration = armConfiguration == null ? ArmConfiguration.BOTH_CROSSED : armConfiguration;
+        this.armConfigurationTimeline = resolveArmConfigurationTimeline(
+                armConfiguration,
+                armConfigurationTimeline,
+                armConfigurationKeyframes);
+    }
+
+    public Optional<ArmConfiguration> armConfigurationOverride() {
+        return this.armConfigurationAt(0.0F);
+    }
+
+    public Optional<ArmConfiguration> armConfigurationAt(float elapsedTicks) {
+        float animationTick = this.loopMode.resolveTick(elapsedTicks, this.durationTicks);
+        return this.armConfigurationTimeline.sample(animationTick);
     }
 
     public AnimationFrame sample(float elapsedTicks) {
@@ -60,7 +75,26 @@ public final class KeyframeAnimation {
         for (AnimationTrack<?> track : this.tracks) {
             values.put(track.getTarget(), track.sample(animationTick));
         }
-        return AnimationFrame.of(values);
+        return AnimationFrame.ofOwned(values);
+    }
+
+    private static ArmConfigurationTimeline resolveArmConfigurationTimeline(
+            @Nullable ArmConfiguration armConfiguration,
+            @Nullable ArmConfigurationTimeline armConfigurationTimeline,
+            @Nullable List<ArmConfigurationKeyframe> armConfigurationKeyframes) {
+        if (armConfigurationTimeline != null && armConfigurationKeyframes != null && !armConfigurationKeyframes.isEmpty()) {
+            throw new IllegalArgumentException("Use either armConfigurationTimeline or armConfigurationKeyframes, not both");
+        }
+        if (armConfigurationTimeline != null) {
+            return armConfigurationTimeline;
+        }
+        if (armConfigurationKeyframes != null && !armConfigurationKeyframes.isEmpty()) {
+            return ArmConfigurationTimeline.of(armConfigurationKeyframes);
+        }
+        if (armConfiguration != null) {
+            return ArmConfigurationTimeline.of(List.of(new ArmConfigurationKeyframe(0, armConfiguration)));
+        }
+        return ArmConfigurationTimeline.EMPTY;
     }
 
 }

@@ -9,7 +9,6 @@ import dev.breezes.settlements.domain.presentation.AttachmentDisplayProfileRegis
 import dev.breezes.settlements.domain.presentation.SlotAnchorRegistry;
 import dev.breezes.settlements.domain.presentation.SocketRegistry;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketReceiver;
-import dev.breezes.settlements.infrastructure.rendering.animation.debug.DebugPoseOverride;
 import dev.breezes.settlements.infrastructure.rendering.debug.SettlementDebugOverlayState;
 import dev.breezes.settlements.presentation.ui.sync.UiClientState;
 
@@ -28,8 +27,6 @@ public interface ClientComponent {
     UiClientState uiClientState();
 
     SettlementDebugOverlayState settlementDebugOverlayState();
-
-    DebugPoseOverride debugPoseOverride();
 
     Set<AttachmentProvider> attachmentProviders();
 

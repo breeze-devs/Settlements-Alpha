@@ -43,6 +43,7 @@ public class VanillaMemoryNavigationManager<T extends BaseVillager> implements I
         if (!this.canReach(target, completionRange)) {
             return;
         }
+        this.villager.setLocomotionNavigationType(type);
         villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
                 new WalkTarget(target.toBlockPos(), this.speedFor(type), completionRange));
     }

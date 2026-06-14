@@ -57,4 +57,45 @@ class AnimationFrameTest {
         assertEquals(5.0F, blended.get(AnimationTestTargets.FLOAT), 0.0001F);
         assertEquals(10.0F, blended.get(AnimationTestTargets.OTHER_FLOAT), 0.0001F);
     }
+
+    @Test
+    void composeOver_additivePolicyAddsWeightedDeltaFromNeutral() {
+        // Arrange
+        AnimationFrame base = AnimationFrame.of(Map.of(AnimationTestTargets.FLOAT, 10.0F));
+        AnimationFrame over = AnimationFrame.of(Map.of(AnimationTestTargets.FLOAT, 6.0F));
+
+        // Act
+        AnimationFrame composed = base.composeOver(over, 0.5F);
+
+        // Assert
+        assertEquals(13.0F, composed.get(AnimationTestTargets.FLOAT), 0.0001F);
+    }
+
+    @Test
+    void composeOver_multiplicativePolicyAppliesWeightedFactor() {
+        // Arrange
+        AnimationFrame base = AnimationFrame.of(Map.of(AnimationTestTargets.MULTIPLICATIVE_FLOAT, 4.0F));
+        AnimationFrame over = AnimationFrame.of(Map.of(AnimationTestTargets.MULTIPLICATIVE_FLOAT, 3.0F));
+
+        // Act
+        AnimationFrame composed = base.composeOver(over, 0.5F);
+
+        // Assert
+        assertEquals(8.0F, composed.get(AnimationTestTargets.MULTIPLICATIVE_FLOAT), 0.0001F);
+    }
+
+    @Test
+    void composeOver_absolutePolicyOnlyMarksTargetsPresentInOverlay() {
+        // Arrange
+        AnimationFrame base = AnimationFrame.EMPTY;
+        AnimationFrame over = AnimationFrame.of(Map.of(AnimationTestTargets.ABSOLUTE_FLOAT, 12.0F));
+
+        // Act
+        AnimationFrame composed = base.composeOver(over, 0.5F);
+
+        // Assert
+        assertTrue(composed.has(AnimationTestTargets.ABSOLUTE_FLOAT));
+        assertEquals(6.0F, composed.get(AnimationTestTargets.ABSOLUTE_FLOAT), 0.0001F);
+        assertFalse(base.has(AnimationTestTargets.ABSOLUTE_FLOAT));
+    }
 }

@@ -16,7 +16,7 @@ import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.animation.PickUpAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -87,7 +87,7 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createCollectStep() {
         TimeBasedStep<BaseVillager> pickupStep = TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.seconds(1).asTickable())
+                .withTickable(ClockTicks.of(PickUpAnimations.PICK_UP_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
                     if (this.resolution == null) {
                         return StepResult.fail("No resolution available for pickup");
@@ -96,10 +96,10 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
                     if (!this.resolution.item().isAlive()) {
                         return StepResult.fail("Target item is no longer present");
                     }
-                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.PICK_UP);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), ctx -> {
+                .addKeyFrame(ClockTicks.of(PickUpAnimations.PICK_UP_AT_TICK), ctx -> {
                     if (this.resolution == null) {
                         return StepResult.fail("No resolution available for pickup");
                     }

@@ -1,8 +1,11 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.villager.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationFrame;
 import dev.breezes.settlements.domain.animation.AnimationTargets;
+import dev.breezes.settlements.domain.animation.LocomotionAnimationContext;
+import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import dev.breezes.settlements.domain.presentation.ArmPose;
 import dev.breezes.settlements.domain.presentation.ModelPartRef;
@@ -28,6 +31,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Vector3f;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @CustomLog
@@ -40,9 +44,6 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
     private static final float UNHAPPY_HEAD_ROLL_AMPLITUDE = 0.3F;
     private static final float UNHAPPY_HEAD_ROLL_FREQUENCY = 0.45F;
     private static final float UNHAPPY_HEAD_PITCH_RAD = 0.4F;
-    private static final float LEG_SWING_FREQUENCY = 0.6662F;
-    private static final float LEG_SWING_AMPLITUDE = 1.4F;
-    private static final float LEG_SWING_SCALE = 0.5F;
 
     private final ModelPart root;
     private final ModelPart villager;
@@ -82,8 +83,14 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
     private final ModelPart feet_center_socket;
     @Nullable
     private AnimationFrame animationFrame;
+    private AnimationFrame resolvedAnimationFrame = AnimationFrame.EMPTY;
     // Snapped once per render call from the animator so per-arm visibility and socket selection stay in sync.
     private ArmConfiguration armConfiguration = ArmConfiguration.BOTH_CROSSED;
+    @Nullable
+    private VillagerAnimator animator;
+    private NavigationType locomotionNavigationType = NavigationType.STROLL;
+    private long animationGameTime;
+    private float animationPartialTicks;
 
     public SettlementsVillagerModel(ModelPart root) {
         this.root = root.getChild("root");
@@ -237,12 +244,14 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
             this.head.zRot = 0.0F;
         }
 
-        // Leg swing uses new-rig part names but the same vanilla cosine formula.
-        this.leg_right.xRot = Mth.cos(limbSwing * LEG_SWING_FREQUENCY) * LEG_SWING_AMPLITUDE * limbSwingAmount * LEG_SWING_SCALE;
-        this.leg_left.xRot = Mth.cos(limbSwing * LEG_SWING_FREQUENCY + (float) Math.PI) * LEG_SWING_AMPLITUDE * limbSwingAmount * LEG_SWING_SCALE;
+        // Authored locomotion now owns leg motion. Leaving resetPose's neutral leg rotation at
+        // standstill avoids a second procedural gait fighting the distance-phased locomotion layer.
+        this.leg_right.xRot = 0.0F;
+        this.leg_left.xRot = 0.0F;
         this.leg_right.yRot = 0.0F;
         this.leg_left.yRot = 0.0F;
 
+        this.resolveAnimationFrame(limbSwing, limbSwingAmount);
         this.applyAnimationFrame();
     }
 
@@ -276,12 +285,44 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         }
     }
 
-    public void setAnimationFrame(@Nullable AnimationFrame animationFrame) {
-        this.animationFrame = animationFrame;
+    public void prepareAnimation(@Nonnull VillagerAnimator animator,
+                                 @Nonnull NavigationType locomotionNavigationType,
+                                 long gameTime,
+                                 float partialTicks) {
+        this.animator = animator;
+        this.locomotionNavigationType = locomotionNavigationType;
+        this.animationGameTime = gameTime;
+        this.animationPartialTicks = partialTicks;
+    }
+
+    public void clearPreparedAnimation() {
+        this.animator = null;
+        this.locomotionNavigationType = NavigationType.STROLL;
+        this.animationGameTime = 0L;
+        this.animationPartialTicks = 0.0F;
+        this.resolvedAnimationFrame = AnimationFrame.EMPTY;
+        this.animationFrame = null;
+        this.armConfiguration = ArmConfiguration.BOTH_CROSSED;
     }
 
     public void setArmConfiguration(ArmConfiguration armConfiguration) {
         this.armConfiguration = armConfiguration;
+    }
+
+    private void resolveAnimationFrame(float limbSwing, float limbSwingAmount) {
+        if (this.animator == null) {
+            this.resolvedAnimationFrame = this.animationFrame == null ? AnimationFrame.EMPTY : this.animationFrame;
+            return;
+        }
+
+        LocomotionAnimationContext context = new LocomotionAnimationContext(
+                this.locomotionNavigationType,
+                limbSwing,
+                limbSwingAmount);
+        AnimationFrame sampledFrame = this.animator.sample(this.animationGameTime, this.animationPartialTicks, context);
+        this.resolvedAnimationFrame = sampledFrame;
+        this.animationFrame = this.resolvedAnimationFrame;
+        this.armConfiguration = this.animator.currentArmConfiguration(this.animationGameTime, this.animationPartialTicks, context);
     }
 
     @Override
@@ -327,6 +368,9 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         applyTranslation(this.arm_straight_right, frame.get(AnimationTargets.ARM_STRAIGHT_RIGHT_TRANSLATION));
 
         applyRotation(this.torso, frame.get(AnimationTargets.BODY_ROTATION));
+        applyTranslation(this.torso, frame.get(AnimationTargets.BODY_TRANSLATION));
+        applyRotation(this.nose, frame.get(AnimationTargets.NOSE_ROTATION));
+        applyTranslation(this.nose, frame.get(AnimationTargets.NOSE_TRANSLATION));
 
         // Absolute head override: only applied when the frame explicitly carries this target,
         // so normal yaw/pitch tracking from setupAnim is not clobbered during idle.

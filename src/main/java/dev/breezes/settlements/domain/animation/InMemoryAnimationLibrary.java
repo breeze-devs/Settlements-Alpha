@@ -14,7 +14,7 @@ public final class InMemoryAnimationLibrary implements AnimationLibrary {
     private static final KeyframeAnimation DEFAULT_IDLE = KeyframeAnimation.builder()
             .id(ResourceLocationUtil.mod("animation/idle"))
             .durationTicks(0)
-            .loopMode(LoopMode.HOLD_LAST)
+            .loopMode(LoopMode.ONCE)
             .blendInTicks(0)
             .blendOutTicks(0)
             .tracks(List.of())

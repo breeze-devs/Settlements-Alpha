@@ -1,8 +1,12 @@
 package dev.breezes.settlements.domain.animation;
 
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
+import dev.breezes.settlements.shared.util.RotationUtil;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.joml.Vector3f;
+
+import java.util.List;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class EatingAnimations {
@@ -14,15 +18,19 @@ public final class EatingAnimations {
 
     public static KeyframeAnimation eat() {
         // Loop closes on the same pose it opens so the seam is invisible at the repeat boundary.
-        return KeyframeAnimation.fromPoses()
+        return KeyframeAnimation.fromTracks()
                 .id(ResourceLocationUtil.mod("animation/eating/eat"))
                 .durationTicks(EAT_LOOP_DURATION_TICKS)
                 .loopMode(LoopMode.LOOP)
                 .blendInTicks(BLEND_IN_TICKS)
                 .blendOutTicks(BLEND_OUT_TICKS)
-                .at(0, EatingPoses.ARMS_EAT_LOW, Easing.EASE_IN_OUT)
-                .at(8, EatingPoses.ARMS_EAT_HIGH, Easing.EASE_IN_OUT)
-                .at(EAT_LOOP_DURATION_TICKS, EatingPoses.ARMS_EAT_LOW, Easing.EASE_IN_OUT)
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.ARMS_CROSSED_ROTATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, RotationUtil.degrees(-50.0F, 0.0F, 0.0F), Easing.EASE_IN_OUT),
+                                new Keyframe<>(8, RotationUtil.degrees(-60.0F, 0.0F, 0.0F), Easing.EASE_IN_OUT),
+                                new Keyframe<>(EAT_LOOP_DURATION_TICKS, RotationUtil.degrees(-50.0F, 0.0F, 0.0F), Easing.EASE_IN_OUT)))
+                        .build())
                 .build();
     }
 

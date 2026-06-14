@@ -149,7 +149,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
             this.fishedEntity.discard();
         }
 
-        this.restoreIdle(villager);
+        villager.setMotion(AnimationArchetype.IDLE);
         villager.clearHeldItem();
         villager.setBobberDeployed(false);
 
@@ -228,10 +228,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
                     return this.castHook(villager);
                 })
-                .onEnd(context -> {
-                    context.getInitiator().getMinecraftEntity().setMotion(AnimationArchetype.IDLE);
-                    return StepResult.transition(FishingStage.WAIT_FOR_BITE);
-                })
+                .onEnd(context -> StepResult.transition(FishingStage.WAIT_FOR_BITE))
                 .build();
     }
 
@@ -253,7 +250,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                             return StepResult.transition(FishingStage.CAST_LINE);
                         }
                         log.behaviorWarn("Hook missed water, no retries left");
-                        this.restoreIdle(context.getInitiator().getMinecraftEntity());
+                        context.getInitiator().getMinecraftEntity().setBobberDeployed(false);
                         return StepResult.complete();
                     }
 
@@ -277,7 +274,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                         this.activeHook.discard();
                         this.activeHook = null;
                     }
-                    this.restoreIdle(context.getInitiator().getMinecraftEntity());
+                    context.getInitiator().getMinecraftEntity().setBobberDeployed(false);
                     return StepResult.complete();
                 })
                 .build();
@@ -315,7 +312,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 })
                 .addKeyFrame(ClockTicks.of(FishingAnimations.REEL_IMPACT_TICK), context -> {
                     if (this.activeHook == null || this.activeHook.isRemoved()) {
-                        this.restoreIdle(context.getInitiator().getMinecraftEntity());
+                        context.getInitiator().getMinecraftEntity().setBobberDeployed(false);
                         return StepResult.noOp();
                     }
 
@@ -340,7 +337,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     return StepResult.noOp();
                 })
                 .onEnd(context -> {
-                    this.restoreIdle(context.getInitiator().getMinecraftEntity());
+                    context.getInitiator().getMinecraftEntity().setBobberDeployed(false);
                     context.getInitiator().clearHeldItem();
 
                     // Add absorption to prevent too much pufferfish damage
@@ -379,11 +376,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     return collectAndComplete(context);
                 })
                 .build();
-    }
-
-    private void restoreIdle(@Nonnull BaseVillager villager) {
-        villager.setMotion(AnimationArchetype.IDLE);
-        villager.setBobberDeployed(false);
     }
 
     private StepResult castHook(@Nonnull BaseVillager villager) {

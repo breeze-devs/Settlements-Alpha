@@ -17,7 +17,8 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.SwingAnimations;
+import dev.breezes.settlements.domain.animation.ChopAnimations;
+import dev.breezes.settlements.domain.animation.PickUpAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -102,7 +103,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createButcherStep() {
         TimeBasedStep<BaseVillager> butcherStep = TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.of(SwingAnimations.SWING_DURATION_TICKS).asTickable())
+                .withTickable(ClockTicks.of(ChopAnimations.CHOP_DURATION_TICKS).asTickable())
                 .onStart(context -> {
                     BaseVillager villager = context.getInitiator();
                     villager.setHeldItem(Items.IRON_AXE.getDefaultInstance());
@@ -111,9 +112,8 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                     context.getInitiator().triggerMotion(AnimationArchetype.SWING_HEAVY);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(SwingAnimations.SWING_IMPACT_TICKS), context -> {
+                .addKeyFrame(ClockTicks.of(ChopAnimations.CHOP_IMPACT_TICKS), context -> {
                     if (this.target == null || !this.target.isAlive()) {
-                        context.getInitiator().setMotion(AnimationArchetype.IDLE);
                         return StepResult.complete();
                     }
 
@@ -125,7 +125,6 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                 })
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
-                    context.getInitiator().setMotion(AnimationArchetype.IDLE);
                     return StepResult.transition(ButcherStage.COLLECT_DROPS);
                 })
                 .build();
@@ -139,12 +138,20 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createCollectDropsStep() {
         return TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.seconds(1).asTickable())
-                .onEnd(context -> {
+                .withTickable(ClockTicks.of(PickUpAnimations.PICK_UP_DURATION_TICKS).asTickable())
+                .onStart(context -> {
+                    context.getInitiator().triggerMotion(AnimationArchetype.PICK_UP);
+                    return StepResult.noOp();
+                })
+                .addKeyFrame(ClockTicks.of(PickUpAnimations.PICK_UP_AT_TICK), context -> {
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
 
                     List<ItemEntity> drops = this.findReservedDropsNearVillager(villager);
                     drops.forEach(itemEntity -> context.getInitiator().pickUp(itemEntity));
+                    return StepResult.noOp();
+                })
+                .onEnd(context -> {
+                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
 
                     if (this.butcherCountRemaining <= 0 || this.selectedAnimalType == null) {
                         return StepResult.complete();

@@ -15,4 +15,17 @@ public enum NavigationType {
 
     private final float baseModifier;
 
+    public byte toNetworkByte() {
+        return (byte) this.ordinal();
+    }
+
+    public static NavigationType fromNetworkByte(byte encoded) {
+        NavigationType[] values = NavigationType.values();
+        int index = Byte.toUnsignedInt(encoded);
+        if (index >= values.length) {
+            return WALK;
+        }
+        return values[index];
+    }
+
 }

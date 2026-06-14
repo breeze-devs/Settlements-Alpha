@@ -2,7 +2,10 @@ package dev.breezes.settlements.infrastructure.rendering.animation;
 
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.AnimationResolver;
+import dev.breezes.settlements.domain.animation.IdleLifeAnimator;
+import dev.breezes.settlements.domain.animation.IdleLifeAnimatorFactory;
 import dev.breezes.settlements.domain.animation.KeyframeAnimation;
+import dev.breezes.settlements.domain.animation.LocomotionAnimator;
 import dev.breezes.settlements.domain.animation.LoopMode;
 import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
@@ -22,7 +25,7 @@ class ClientAnimatorRegistryTest {
     @Test
     void getOrCreate_reusesAnimatorForSameVillagerId() {
         // Arrange
-        ClientAnimatorRegistry registry = new ClientAnimatorRegistry(resolver());
+        ClientAnimatorRegistry registry = new ClientAnimatorRegistry(resolver(), idleLifeAnimatorFactory(), LocomotionAnimator.NONE);
         int villagerId = 42;
         IntPredicate entityExists = ignored -> true;
 
@@ -38,7 +41,7 @@ class ClientAnimatorRegistryTest {
     @Test
     void getOrCreate_prunesAnimatorStateWhenEntityNoLongerExists() {
         // Arrange
-        ClientAnimatorRegistry registry = new ClientAnimatorRegistry(resolver());
+        ClientAnimatorRegistry registry = new ClientAnimatorRegistry(resolver(), idleLifeAnimatorFactory(), LocomotionAnimator.NONE);
         int villagerId = 42;
         Set<Integer> liveEntityIds = ConcurrentHashMap.newKeySet();
         liveEntityIds.add(villagerId);
@@ -62,7 +65,7 @@ class ClientAnimatorRegistryTest {
         KeyframeAnimation idle = KeyframeAnimation.builder()
                 .id(ResourceLocationUtil.mod("animation/test/registry_idle"))
                 .durationTicks(0)
-                .loopMode(LoopMode.HOLD_LAST)
+                .loopMode(LoopMode.ONCE)
                 .blendInTicks(0)
                 .blendOutTicks(0)
                 .tracks(List.of())
@@ -73,6 +76,10 @@ class ClientAnimatorRegistryTest {
             }
             return idle;
         };
+    }
+
+    private static IdleLifeAnimatorFactory idleLifeAnimatorFactory() {
+        return entityId -> IdleLifeAnimator.NONE;
     }
 
 }

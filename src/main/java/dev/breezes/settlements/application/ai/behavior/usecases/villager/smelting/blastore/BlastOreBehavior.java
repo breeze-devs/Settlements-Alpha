@@ -192,7 +192,6 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     }
 
                     ctx.getInitiator().clearHeldItem();
-                    ctx.getInitiator().getMinecraftEntity().setMotion(AnimationArchetype.IDLE);
                     this.setFurnaceLitState(true);
 
                     BlockPos furnacePos = this.blastFurnace.getLocation(false).toBlockPos();
@@ -270,9 +269,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
-                    villager.clearHeldItem();
-                    villager.setMotion(AnimationArchetype.IDLE);
+                    ctx.getInitiator().getMinecraftEntity().clearHeldItem();
                     return StepResult.noOp();
                 })
                 .addPeriodicStep(DAZE_STAR_EMIT_INTERVAL, ctx -> {

@@ -6,6 +6,8 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.i
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.PickUpAnimations;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.Builder;
@@ -29,6 +31,8 @@ import javax.annotation.Nullable;
 public class PickupItemsStep extends AbstractStep<BaseVillager> {
 
     private final StageKey nextStage;
+    private int elapsedTicks;
+    private boolean pickedUp;
 
     @Builder
     private PickupItemsStep(@Nonnull String name,
@@ -37,16 +41,42 @@ public class PickupItemsStep extends AbstractStep<BaseVillager> {
                             @Nullable StageKey timeoutTransition) {
         super(name, timeoutTicks, timeoutTransition);
         this.nextStage = nextStage;
+        this.elapsedTicks = 0;
+        this.pickedUp = false;
     }
 
     @Override
     protected StepResult doTick(@Nonnull BehaviorContext<BaseVillager> context) {
+        this.elapsedTicks++;
+
+        if (this.elapsedTicks == 1) {
+            context.getInitiator().triggerMotion(AnimationArchetype.PICK_UP);
+        }
+
+        if (!this.pickedUp && this.elapsedTicks >= PickUpAnimations.PICK_UP_AT_TICK) {
+            this.pickUpItems(context);
+            this.pickedUp = true;
+        }
+
+        if (this.elapsedTicks >= PickUpAnimations.PICK_UP_DURATION_TICKS) {
+            return StepResult.transition(this.nextStage);
+        }
+
+        return StepResult.noOp();
+    }
+
+    private void pickUpItems(@Nonnull BehaviorContext<BaseVillager> context) {
         ISettlementsVillager villager = context.getInitiator();
         context.getState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.class)
                 .ifPresent(items -> items.getItems().stream()
                         .filter(ItemEntity::isAlive)
                         .forEach(villager::pickUp));
-        return StepResult.transition(this.nextStage);
+    }
+
+    @Override
+    protected void doOnEnter() {
+        this.elapsedTicks = 0;
+        this.pickedUp = false;
     }
 
 }

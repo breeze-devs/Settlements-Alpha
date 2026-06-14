@@ -63,7 +63,7 @@ class InMemoryAnimationLibraryTest {
         return KeyframeAnimation.builder()
                 .id(ResourceLocationUtil.mod("animation/test/" + name))
                 .durationTicks(10)
-                .loopMode(LoopMode.HOLD_LAST)
+                .loopMode(LoopMode.ONCE)
                 .blendInTicks(0)
                 .blendOutTicks(0)
                 .tracks(List.of())

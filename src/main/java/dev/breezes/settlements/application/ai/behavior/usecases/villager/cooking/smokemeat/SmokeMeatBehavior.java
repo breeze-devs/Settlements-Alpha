@@ -170,7 +170,6 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
                     }
 
                     ctx.getInitiator().clearHeldItem();
-                    ctx.getInitiator().getMinecraftEntity().setMotion(AnimationArchetype.IDLE);
                     this.setSmokerLitState(true);
 
                     // Track a crash-recovery obligation for the lit state.  The smoking step's

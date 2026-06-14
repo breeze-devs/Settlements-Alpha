@@ -26,7 +26,7 @@ import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.SwingAnimations;
+import dev.breezes.settlements.domain.animation.ChopAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.AabbBlockScan;
 import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
@@ -155,13 +155,13 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createChopStep() {
         return TimeBasedStep.<BaseVillager>builder()
                 .name("ChopPumpkin")
-                .withTickable(ClockTicks.of(SwingAnimations.SWING_DURATION_TICKS).asTickable())
+                .withTickable(ClockTicks.of(ChopAnimations.CHOP_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
                     ctx.getInitiator().setHeldItem(Items.IRON_AXE.getDefaultInstance());
                     ctx.getInitiator().triggerMotion(AnimationArchetype.SWING_HEAVY);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(SwingAnimations.SWING_IMPACT_TICKS), ctx -> {
+                .addKeyFrame(ClockTicks.of(ChopAnimations.CHOP_IMPACT_TICKS), ctx -> {
                     Optional<BlockPos> target = TargetQueries.firstBlockPos(ctx);
                     if (target.isEmpty()) {
                         return StepResult.noOp();

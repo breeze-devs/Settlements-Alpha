@@ -2,6 +2,8 @@ package dev.breezes.settlements.infrastructure.rendering.animation;
 
 import dev.breezes.settlements.di.ClientSessionScope;
 import dev.breezes.settlements.domain.animation.AnimationResolver;
+import dev.breezes.settlements.domain.animation.IdleLifeAnimatorFactory;
+import dev.breezes.settlements.domain.animation.LocomotionAnimator;
 import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -19,12 +21,18 @@ public final class ClientAnimatorRegistry {
     private static final int PRUNE_INTERVAL_LOOKUPS = 600;
 
     private final AnimationResolver animationResolver;
+    private final IdleLifeAnimatorFactory idleLifeAnimatorFactory;
+    private final LocomotionAnimator locomotionAnimator;
     private final Map<Integer, VillagerAnimator> animatorsByEntityId = new ConcurrentHashMap<>();
     private int lookupCount;
 
     @Inject
-    ClientAnimatorRegistry(@Nonnull AnimationResolver animationResolver) {
+    ClientAnimatorRegistry(@Nonnull AnimationResolver animationResolver,
+                           @Nonnull IdleLifeAnimatorFactory idleLifeAnimatorFactory,
+                           @Nonnull LocomotionAnimator locomotionAnimator) {
         this.animationResolver = animationResolver;
+        this.idleLifeAnimatorFactory = idleLifeAnimatorFactory;
+        this.locomotionAnimator = locomotionAnimator;
     }
 
     public VillagerAnimator getOrCreate(@Nonnull BaseVillager villager) {
@@ -33,7 +41,8 @@ public final class ClientAnimatorRegistry {
 
     VillagerAnimator getOrCreate(int entityId, @Nonnull IntPredicate entityExists) {
         this.prunePeriodically(entityExists);
-        return this.animatorsByEntityId.computeIfAbsent(entityId, ignored -> new VillagerAnimator(this.animationResolver));
+        return this.animatorsByEntityId.computeIfAbsent(entityId, ignored ->
+                new VillagerAnimator(this.animationResolver, this.idleLifeAnimatorFactory.create(entityId), this.locomotionAnimator, entityId));
     }
 
     public int size() {

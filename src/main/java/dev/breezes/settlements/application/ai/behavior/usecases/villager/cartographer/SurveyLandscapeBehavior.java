@@ -153,9 +153,7 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                     return StepResult.noOp();
                 })
                 .onEnd(context -> {
-                    BaseVillager villager = context.getInitiator();
-                    villager.clearHeldItem();
-                    villager.setMotion(AnimationArchetype.IDLE);
+                    context.getInitiator().clearHeldItem();
                     return StepResult.transition(SurveyStage.MARK_MAP);
                 })
                 .build();
@@ -179,9 +177,7 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                     return StepResult.noOp();
                 })
                 .onEnd(context -> {
-                    BaseVillager villager = context.getInitiator();
-                    villager.clearHeldItem();
-                    villager.setMotion(AnimationArchetype.IDLE);
+                    context.getInitiator().clearHeldItem();
                     this.shouldRewardExperience = true;
 
                     if (this.remainingPoints.isEmpty()) {

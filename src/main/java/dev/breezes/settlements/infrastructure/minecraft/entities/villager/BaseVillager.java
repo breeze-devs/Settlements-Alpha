@@ -122,6 +122,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             .serializer(EntityDataSerializers.BYTE)
             .defaultValue((byte) 0)
             .build();
+    private static final SyncedDataWrapper<Byte> DATA_LOCOMOTION_NAVIGATION_TYPE = SyncedDataWrapper.<Byte>builder()
+            .entityClass(BaseVillager.class)
+            .serializer(EntityDataSerializers.BYTE)
+            .defaultValue(NavigationType.STROLL.toNetworkByte())
+            .build();
     private static final SyncedDataWrapper<Boolean> DATA_BOBBER_DEPLOYED = SyncedDataWrapper.<Boolean>builder()
             .entityClass(BaseVillager.class)
             .serializer(EntityDataSerializers.BOOLEAN)
@@ -190,6 +195,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         super.defineSynchedData(builder);
         DATA_MOTION_ARCHETYPE.define(builder);
         DATA_MOTION_GENERATION.define(builder);
+        DATA_LOCOMOTION_NAVIGATION_TYPE.define(builder);
         DATA_BOBBER_DEPLOYED.define(builder);
         DATA_SOOTY.define(builder);
     }
@@ -234,6 +240,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     public byte getMotionGeneration() {
         return DATA_MOTION_GENERATION.get(this.entityData);
+    }
+
+    public void setLocomotionNavigationType(@Nonnull NavigationType navigationType) {
+        DATA_LOCOMOTION_NAVIGATION_TYPE.set(this.entityData, navigationType.toNetworkByte());
+    }
+
+    public NavigationType getLocomotionNavigationType() {
+        return NavigationType.fromNetworkByte(DATA_LOCOMOTION_NAVIGATION_TYPE.get(this.entityData));
     }
 
     public void setBobberDeployed(boolean deployed) {

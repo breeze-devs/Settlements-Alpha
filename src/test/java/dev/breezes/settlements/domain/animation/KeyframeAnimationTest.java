@@ -1,6 +1,7 @@
 package dev.breezes.settlements.domain.animation;
 
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
+import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -35,9 +36,9 @@ class KeyframeAnimationTest {
     }
 
     @Test
-    void sample_holdLastClampsAtDuration() {
+    void sample_onceClampsAtDuration() {
         // Arrange
-        KeyframeAnimation animation = animation(LoopMode.HOLD_LAST, List.of(track()));
+        KeyframeAnimation animation = animation(LoopMode.ONCE, List.of(track()));
 
         // Act
         AnimationFrame frame = animation.sample(15.0F);
@@ -56,6 +57,27 @@ class KeyframeAnimationTest {
 
         // Assert
         assertEquals(5.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
+    }
+
+    @Test
+    void armConfigurationAt_samplesDiscreteTimeline() {
+        // Arrange
+        KeyframeAnimation animation = KeyframeAnimation.builder()
+                .id(ResourceLocationUtil.mod("animation/test/arm_timeline"))
+                .durationTicks(30)
+                .loopMode(LoopMode.ONCE)
+                .blendInTicks(0)
+                .blendOutTicks(0)
+                .tracks(List.of())
+                .armConfigurationKeyframes(List.of(
+                        new ArmConfigurationKeyframe(0, ArmConfiguration.BOTH_STRAIGHT),
+                        new ArmConfigurationKeyframe(20, ArmConfiguration.BOTH_CROSSED)))
+                .build();
+
+        // Act, Assert
+        assertEquals(ArmConfiguration.BOTH_STRAIGHT, animation.armConfigurationAt(19.9F).orElseThrow());
+        assertEquals(ArmConfiguration.BOTH_CROSSED, animation.armConfigurationAt(20.0F).orElseThrow());
+        assertEquals(ArmConfiguration.BOTH_CROSSED, animation.armConfigurationAt(40.0F).orElseThrow());
     }
 
     private static KeyframeAnimation animation(LoopMode loopMode, List<AnimationTrack<?>> tracks) {

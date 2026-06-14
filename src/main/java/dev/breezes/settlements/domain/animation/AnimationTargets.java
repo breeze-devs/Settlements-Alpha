@@ -120,6 +120,31 @@ public final class AnimationTargets {
             .policy(AnimationTargetPolicy.ADDITIVE)
             .build();
 
+    public static final AnimationTarget<Vec3> BODY_TRANSLATION = AnimationTarget.<Vec3>builder()
+            .id("model_part:body.translation")
+            .valueType(Vec3.class)
+            .neutralValue(Vec3.ZERO)
+            .interpolator(Interpolators.VEC3)
+            .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
+    // Nose secondary-motion targets
+    public static final AnimationTarget<Vector3f> NOSE_ROTATION = AnimationTarget.<Vector3f>builder()
+            .id("model_part:nose.rotation")
+            .valueType(Vector3f.class)
+            .neutralValue(new Vector3f())
+            .interpolator(Interpolators.VECTOR3F)
+            .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
+    public static final AnimationTarget<Vec3> NOSE_TRANSLATION = AnimationTarget.<Vec3>builder()
+            .id("model_part:nose.translation")
+            .valueType(Vec3.class)
+            .neutralValue(Vec3.ZERO)
+            .interpolator(Interpolators.VEC3)
+            .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
     // Leg overrides use ABSOLUTE policy (not additive) so an animation can suppress the vanilla walk-swing entirely
     public static final AnimationTarget<Vector3f> LEG_LEFT_ROTATION_OVERRIDE = AnimationTarget.<Vector3f>builder()
             .id("model_part:leg_left.rotation_override")

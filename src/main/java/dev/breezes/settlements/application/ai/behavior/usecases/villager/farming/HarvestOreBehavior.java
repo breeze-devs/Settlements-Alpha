@@ -26,7 +26,7 @@ import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.SwingAnimations;
+import dev.breezes.settlements.domain.animation.ChopAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.AabbBlockScan;
 import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
@@ -154,13 +154,13 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createHarvestStep() {
         return TimeBasedStep.<BaseVillager>builder()
                 .name("HarvestOre")
-                .withTickable(ClockTicks.of(SwingAnimations.SWING_DURATION_TICKS).asTickable())
+                .withTickable(ClockTicks.of(ChopAnimations.CHOP_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
                     ctx.getInitiator().setHeldItem(Items.IRON_PICKAXE.getDefaultInstance());
                     ctx.getInitiator().triggerMotion(AnimationArchetype.SWING_HEAVY);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(SwingAnimations.SWING_IMPACT_TICKS), this::replaceOre)
+                .addKeyFrame(ClockTicks.of(ChopAnimations.CHOP_IMPACT_TICKS), this::replaceOre)
                 .onEnd(ctx -> {
                     ctx.getInitiator().clearHeldItem();
                     return StepResult.transition(Stage.SETTLE);

@@ -11,10 +11,23 @@ public final class AnimationFrame {
     private final Map<AnimationTarget<?>, Object> values;
 
     private AnimationFrame(@Nonnull Map<AnimationTarget<?>, Object> values) {
-        this.values = Map.copyOf(values);
+        this.values = values;
     }
 
     public static AnimationFrame of(@Nonnull Map<AnimationTarget<?>, Object> values) {
+        if (values.isEmpty()) {
+            return EMPTY;
+        }
+        // Defensive copy: the caller keeps ownership of its map and may mutate it afterward.
+        return new AnimationFrame(Map.copyOf(values));
+    }
+
+    /**
+     * Ownership-transfer factory for internally built frames. The caller hands off a freshly created
+     * map it neither retains nor mutates, so we skip the defensive copy that {@link #of} makes.
+     * Per-frame compositing builds and discards several of these per villager, so the copy adds up.
+     */
+    static AnimationFrame ofOwned(@Nonnull Map<AnimationTarget<?>, Object> values) {
         if (values.isEmpty()) {
             return EMPTY;
         }
@@ -48,7 +61,7 @@ public final class AnimationFrame {
         }
         Map<AnimationTarget<?>, Object> merged = new HashMap<>(this.values);
         merged.putAll(overrides);
-        return AnimationFrame.of(merged);
+        return AnimationFrame.ofOwned(merged);
     }
 
     public AnimationFrame blendTo(@Nonnull AnimationFrame other, float t) {
@@ -57,7 +70,17 @@ public final class AnimationFrame {
         other.values.keySet().stream()
                 .filter(target -> !blended.containsKey(target))
                 .forEach(target -> blendTargetInto(blended, target, this, other, t));
-        return AnimationFrame.of(blended);
+        return AnimationFrame.ofOwned(blended);
+    }
+
+    public AnimationFrame composeOver(@Nonnull AnimationFrame over, float weight) {
+        if (over.values.isEmpty() || weight <= 0.0F) {
+            return this;
+        }
+
+        Map<AnimationTarget<?>, Object> composed = new HashMap<>(this.values);
+        over.values.keySet().forEach(target -> composeTargetInto(composed, target, over, weight));
+        return AnimationFrame.ofOwned(composed);
     }
 
     private static <V> void blendTargetInto(@Nonnull Map<AnimationTarget<?>, Object> blended,
@@ -69,6 +92,15 @@ public final class AnimationFrame {
         V fromValue = from.get(target);
         V toValue = to.get(target);
         blended.put(target, target.blend(fromValue, toValue, t));
+    }
+
+    private static <V> void composeTargetInto(@Nonnull Map<AnimationTarget<?>, Object> composed,
+                                              @Nonnull AnimationTarget<V> target,
+                                              @Nonnull AnimationFrame over,
+                                              float weight) {
+        V baseValue = target.getValueType().cast(composed.getOrDefault(target, target.getNeutralValue()));
+        V overValue = over.get(target);
+        composed.put(target, target.compose(baseValue, overValue, weight));
     }
 
 }

@@ -26,7 +26,7 @@ import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.animation.HarvestCropAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.AabbBlockScan;
 import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
@@ -155,13 +155,13 @@ public class HarvestRipeCropsBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createHarvestStep() {
         return TimeBasedStep.<BaseVillager>builder()
                 .name("HarvestRipeCrop")
-                .withTickable(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS).asTickable())
+                .withTickable(ClockTicks.of(HarvestCropAnimations.HARVEST_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
                     // No held item for hand-pulling crops — bare-hand interaction.
-                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.HARVEST);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_PEAK_TICK), ctx -> {
+                .addKeyFrame(ClockTicks.of(HarvestCropAnimations.HARVEST_AT_TICK), ctx -> {
                     Optional<BlockPos> target = TargetQueries.firstBlockPos(ctx);
                     if (target.isEmpty()) {
                         return StepResult.noOp();

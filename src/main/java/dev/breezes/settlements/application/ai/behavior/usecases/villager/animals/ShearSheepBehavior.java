@@ -27,6 +27,7 @@ import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.animation.PickUpAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
@@ -83,6 +84,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
     private enum ShearStage implements StageKey {
         SHEAR_SHEEP,
+        PICKUP_WOOL,
         END;
     }
 
@@ -136,7 +138,9 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                     return StepResult.noOp();
                 })
                 .initialStage(ShearStage.SHEAR_SHEEP)
-                .stageStepMap(Map.of(ShearStage.SHEAR_SHEEP, this.createShearSheepStep()))
+                .stageStepMap(Map.of(
+                        ShearStage.SHEAR_SHEEP, this.createShearSheepStep(),
+                        ShearStage.PICKUP_WOOL, this.createPickupWoolStep()))
                 .nextStage(ShearStage.END)
                 .onEnd(context -> {
                     log.behaviorStatus("Removing speech bubble");
@@ -188,12 +192,32 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                 })
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
+                    return StepResult.transition(ShearStage.PICKUP_WOOL);
+                })
+                .build();
 
-                    // Pick up wool items
+        return StayCloseStep.<BaseVillager>builder()
+                .closeEnoughDistance(2.0)
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .actionStep(shearStep)
+                .build();
+    }
+
+    private BehaviorStep<BaseVillager> createPickupWoolStep() {
+        return TimeBasedStep.<BaseVillager>builder()
+                .withTickable(ClockTicks.of(PickUpAnimations.PICK_UP_DURATION_TICKS).asTickable())
+                .onStart(context -> {
+                    context.getInitiator().triggerMotion(AnimationArchetype.PICK_UP);
+                    return StepResult.noOp();
+                })
+                .addKeyFrame(ClockTicks.of(PickUpAnimations.PICK_UP_AT_TICK), context -> {
                     context.getState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.class)
-                            .ifPresent(itemState -> itemState.getItems()
+                            .ifPresent(itemState -> itemState.getItems().stream()
+                                    .filter(ItemEntity::isAlive)
                                     .forEach(itemEntity -> context.getInitiator().pickUp(itemEntity)));
-
+                    return StepResult.noOp();
+                })
+                .onEnd(context -> {
                     // Determine if there are more sheep to shear; only scan when quota remains
                     if (this.shearCount.get() > 0) {
                         List<Targetable> nearbySheep = this.findShearableSheep(context.getInitiator().getMinecraftEntity()).stream()
@@ -208,12 +232,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
                     return StepResult.complete();
                 })
-                .build();
-
-        return StayCloseStep.<BaseVillager>builder()
-                .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
-                .actionStep(shearStep)
                 .build();
     }
 
