@@ -72,10 +72,7 @@ public final class PartnerScanner {
     private Optional<TradeCandidate> matchCandidate(@Nonnull BaseVillager buyer,
                                                     @Nonnull BaseVillager seller,
                                                     @Nonnull ActiveDemand activeDemand) {
-        // TODO: make this a getter in BaseVillager
-        VillagerProfessionKey sellerProfession = VillagerProfessionKey.fromResourceLocation(
-                BuiltInRegistries.VILLAGER_PROFESSION.getKey(seller.getVillagerData().getProfession())
-        );
+        VillagerProfessionKey sellerProfession = seller.getProfession();
         VillagerInventory sellerInventory = seller.getSettlementsInventory();
         int buyerBalance = this.villagerWallet.getBalance(buyer);
 

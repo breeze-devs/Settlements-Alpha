@@ -5,6 +5,7 @@ import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import lombok.AllArgsConstructor;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -13,13 +14,10 @@ import java.util.Locale;
 /**
  * Heuristic gate for deciding which observations are important enough for memory promotion.
  */
+@AllArgsConstructor(onConstructor_ = @Inject)
 public class MemoryImportanceGate {
 
     public static final float PROMOTION_THRESHOLD = 2.0F;
-
-    @Inject
-    public MemoryImportanceGate() {
-    }
 
     public float score(Observation observation, VillagerProfessionKey profession, GeneticsProfile genetics) {
         return this.score(observation, profession, genetics, List.of());
@@ -29,8 +27,21 @@ public class MemoryImportanceGate {
                        VillagerProfessionKey profession,
                        GeneticsProfile genetics,
                        List<Observation> recentObservations) {
+        int similarPeerCount = 0;
+        for (Observation recent : recentObservations) {
+            if (recent.type() == observation.type()) {
+                similarPeerCount++;
+            }
+        }
+        return this.score(observation, profession, genetics, similarPeerCount);
+    }
+
+    public float score(Observation observation,
+                       VillagerProfessionKey profession,
+                       GeneticsProfile genetics,
+                       int similarPeerCount) {
         float base = observation.baseImportance();
-        float novelty = this.computeNovelty(observation, recentObservations);
+        float novelty = this.computeNovelty(similarPeerCount);
         float geneModifier = this.computeGeneModifier(observation, genetics);
         float professionRelevance = this.computeProfessionRelevance(observation, profession);
 
@@ -41,18 +52,14 @@ public class MemoryImportanceGate {
         return score >= PROMOTION_THRESHOLD;
     }
 
-    private float computeNovelty(Observation observation, List<Observation> recentObservations) {
-        long similarCount = recentObservations.stream()
-                .filter(recent -> recent.type() == observation.type())
-                .count();
-
-        if (similarCount == 0) {
+    private float computeNovelty(int similarPeerCount) {
+        if (similarPeerCount == 0) {
             return 1.5F;
         }
-        if (similarCount == 1) {
+        if (similarPeerCount == 1) {
             return 1.0F;
         }
-        if (similarCount <= 3) {
+        if (similarPeerCount <= 3) {
             return 0.5F;
         }
         return 0.1F;

@@ -26,6 +26,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.investigate.InvestigateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
@@ -36,10 +37,12 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.smeltin
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
+import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 
 import javax.inject.Singleton;
@@ -117,6 +120,12 @@ public final class ConfigModule {
     @Singleton
     static CourtshipInitiateConfig courtshipInitiateConfig() {
         return ConfigFactory.create(CourtshipInitiateConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static InvestigateConfig investigateConfig() {
+        return ConfigFactory.create(InvestigateConfig.class);
     }
 
     @Provides
@@ -279,6 +288,18 @@ public final class ConfigModule {
     @Singleton
     static CollectDemandedItemConfig collectDemandedItemConfig() {
         return ConfigFactory.create(CollectDemandedItemConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static DialogueConfig dialogueConfig() {
+        return ConfigFactory.create(DialogueConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static EventLaneConfig eventLaneConfig() {
+        return ConfigFactory.create(EventLaneConfig.class);
     }
 
 }

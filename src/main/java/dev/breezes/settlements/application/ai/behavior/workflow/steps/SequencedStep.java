@@ -12,6 +12,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Executes child steps in strict serial order.
@@ -79,7 +80,7 @@ public class SequencedStep<T extends ISettlementsBrainEntity> extends AbstractSt
         this.cascade(BehaviorStep::reset);
     }
 
-    private void cascade(@Nonnull java.util.function.Consumer<BehaviorStep<T>> hook) {
+    private void cascade(@Nonnull Consumer<BehaviorStep<T>> hook) {
         Set<BehaviorStep<T>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         for (BehaviorStep<T> step : this.steps) {
             if (!visited.add(step)) {

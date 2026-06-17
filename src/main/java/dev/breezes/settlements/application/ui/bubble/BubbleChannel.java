@@ -7,6 +7,12 @@ public enum BubbleChannel {
 
     BEHAVIOR,
     CHAT,
-    SYSTEM
+    SYSTEM,
+
+    /**
+     * Short-lived ambient flavor, e.g. waves, greetings, ambient one-liners.
+     */
+    FLAVOR,
+    ;
 
 }

@@ -25,6 +25,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.ChopAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -72,10 +73,12 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
 
     private final HarvestMelonConfig config;
     private final BlockMemoryTargetResolver targetResolver;
+    private final WorldEventEmitter worldEventEmitter;
 
     public HarvestMelonBehavior(@Nonnull HarvestMelonConfig config,
                                 @Nonnull HungerConfig hungerConfig,
-                                @Nonnull BlockMemoryTargetResolver targetResolver) {
+                                @Nonnull BlockMemoryTargetResolver targetResolver,
+                                @Nonnull WorldEventEmitter worldEventEmitter) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
@@ -83,6 +86,7 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
                 config.experienceReward());
         this.config = config;
         this.targetResolver = targetResolver;
+        this.worldEventEmitter = worldEventEmitter;
         this.ripeMelonMatcher = BlockMatchers.HARVESTABLE_MELON;
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
@@ -215,9 +219,19 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.harvestSucceeded()) {
+            this.worldEventEmitter.emitCropHarvested(villager);
+        }
+
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
+    }
+
+    private boolean harvestSucceeded() {
+        return this.getContextState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.class)
+                .map(InteractionOutcomeState::isSuccess)
+                .orElse(false);
     }
 
 }

@@ -25,6 +25,7 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
@@ -71,6 +72,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
     private final DemandEvaluator demandEvaluator;
     private final PartnerScanner partnerScanner;
     private final NegotiationEngine negotiationEngine;
+    private final WorldEventEmitter worldEventEmitter;
 
     @Nullable
     private PartnerScanner.TradeCandidate pendingCandidate;
@@ -91,7 +93,8 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
                                  @Nonnull TradeSessionPresenter tradeSessionPresenter,
                                  @Nonnull DemandEvaluator demandEvaluator,
                                  @Nonnull PartnerScanner partnerScanner,
-                                 @Nonnull NegotiationEngine negotiationEngine) {
+                                 @Nonnull NegotiationEngine negotiationEngine,
+                                 @Nonnull WorldEventEmitter worldEventEmitter) {
         super(log,
                 ClockTicks.seconds(config.initiatePreconditionCooldownSeconds()).asTickable(),
                 RandomRangeTickable.of(
@@ -110,6 +113,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         this.demandEvaluator = demandEvaluator;
         this.partnerScanner = partnerScanner;
         this.negotiationEngine = negotiationEngine;
+        this.worldEventEmitter = worldEventEmitter;
 
         this.preconditions.add(this.canInitiateTrade());
         this.initializeStateMachine(this.createControlStep(), Stage.CLOSED);
@@ -225,6 +229,9 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
                 currentGameTime);
         this.pendingCandidate = null;
         this.activeSessionId = session.getSessionId();
+
+        this.worldEventEmitter.emitTradeInviteSent(buyer, session.getResponderId(), session.getSessionId());
+
         return StepResult.transition(Stage.WAIT_FOR_ACCEPT);
     }
 
@@ -344,6 +351,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.DEAL);
+        this.worldEventEmitter.emitTradeCompleted(buyer, session.getResponderId(), session.getSessionId());
         return StepResult.complete();
     }
 
@@ -359,6 +367,8 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.WALK_AWAY);
+        // Emit on walk-away as well — TRADE_COMPLETED covers both deal and walk-away outcomes
+        this.worldEventEmitter.emitTradeCompleted(buyer, session.getResponderId(), session.getSessionId());
         return StepResult.complete();
     }
 

@@ -1,9 +1,10 @@
 package dev.breezes.settlements.domain.ai.observation;
 
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,11 +105,12 @@ class ObservationBufferTest {
 
     private static Observation observation(long timestamp) {
         return Observation.builder()
+                .id(UUID.randomUUID())
                 .timestampTick(timestamp)
                 .type(ObservationType.ENVIRONMENT)
+                .eventType(WorldEventType.CROP_HARVESTED)
                 .content("observation " + timestamp)
                 .baseImportance(1.0F)
-                .metadata(Map.of())
                 .build();
     }
 

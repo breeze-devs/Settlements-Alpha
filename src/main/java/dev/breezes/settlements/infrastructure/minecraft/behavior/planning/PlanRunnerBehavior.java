@@ -71,12 +71,20 @@ public class PlanRunnerBehavior extends Behavior<Villager> {
 
         Brain<?> brain = villager.getBrain();
         boolean isSafe = !VillagerPanicTrigger.isHurt(villager) && !VillagerPanicTrigger.hasHostile(villager);
-        Optional<Activity> activeActivity = brain.getActiveNonCoreActivity();
+
+        // Panic aborts everything. forceStop discharges both the override slot and active behavior
         if (!isSafe) {
-            this.planRunner.suspendIfActive(level, baseVillager);
+            this.planRunner.forceStop(level, baseVillager);
             return;
         }
 
+        // Override evaluation runs BEFORE the activity gate, so reactive accepts fire first
+        if (this.planRunner.tickOverride(level, baseVillager)) {
+            // Override slot is active (or was just installed); do not also tick the plan.
+            return;
+        }
+
+        Optional<Activity> activeActivity = brain.getActiveNonCoreActivity();
         if (activeActivity.isEmpty() || !MANAGED_ACTIVITIES.contains(activeActivity.get())) {
             this.planRunner.suspendIfActive(level, baseVillager);
             this.planRunner.ensureValidPlan(level, baseVillager);

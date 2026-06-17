@@ -25,6 +25,7 @@ import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsConditi
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.animation.PickUpAnimations;
@@ -89,17 +90,20 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private final ShearSheepConfig config;
+    private final WorldEventEmitter worldEventEmitter;
 
     private final AtomicInteger shearCount;
     private boolean shouldRewardExperience;
 
     public ShearSheepBehavior(@Nonnull ShearSheepConfig config,
                               @Nonnull HungerConfig hungerConfig,
-                              @Nonnull DemandSignalService demandSignalService) {
+                              @Nonnull DemandSignalService demandSignalService,
+                              @Nonnull WorldEventEmitter worldEventEmitter) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
         this.config = config;
+        this.worldEventEmitter = worldEventEmitter;
         this.shearCount = new AtomicInteger(0);
         this.shouldRewardExperience = false;
 
@@ -261,6 +265,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         if (this.shouldRewardExperience) {
             this.rewardExperience(villager);
+            this.worldEventEmitter.emitSheepSheared(villager);
         }
 
         villager.getNavigationManager().stop();

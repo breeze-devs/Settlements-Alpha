@@ -5,6 +5,7 @@ import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -85,9 +86,9 @@ class DefaultLocomotionAnimatorTest {
                 .loopMode(LoopMode.LOOP)
                 .blendInTicks(0)
                 .blendOutTicks(0)
-                .tracks(java.util.List.of(AnimationTrack.<Float>builder()
+                .tracks(List.of(AnimationTrack.<Float>builder()
                         .target(AnimationTestTargets.FLOAT)
-                        .keyframes(java.util.List.of(new Keyframe<>(0, value, Easing.LINEAR)))
+                        .keyframes(List.of(new Keyframe<>(0, value, Easing.LINEAR)))
                         .build()))
                 .armConfiguration(ArmConfiguration.BOTH_CROSSED)
                 .build();
@@ -100,9 +101,9 @@ class DefaultLocomotionAnimatorTest {
                 .loopMode(LoopMode.LOOP)
                 .blendInTicks(0)
                 .blendOutTicks(0)
-                .tracks(java.util.List.of(AnimationTrack.<Float>builder()
+                .tracks(List.of(AnimationTrack.<Float>builder()
                         .target(AnimationTestTargets.FLOAT)
-                        .keyframes(java.util.List.of(
+                        .keyframes(List.of(
                                 new Keyframe<>(0, 0.0F, Easing.LINEAR),
                                 new Keyframe<>(5, 5.0F, Easing.LINEAR),
                                 new Keyframe<>(10, 10.0F, Easing.LINEAR)))

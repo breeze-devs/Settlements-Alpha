@@ -29,6 +29,10 @@ public final class ServerLifecycleEvents {
         NeoForge.EVENT_BUS.register(serverComponent.settlementMetadataPersistenceServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.uiSyncServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.courtshipSessionReaperServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.worldEventBusReaperServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.credibilityDecayServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.eveningDialoguePackSweepServerEvents());
     }
 
     @SubscribeEvent
@@ -44,6 +48,10 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.settlementMetadataPersistenceServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.uiSyncServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.courtshipSessionReaperServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.worldEventBusReaperServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.credibilityDecayServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.eveningDialoguePackSweepServerEvents());
         }
 
         log.info("Clearing server subcomponent");

@@ -24,6 +24,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -56,6 +57,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     private final BedReservationService bedReservationService;
     private final CourtshipPresenter courtshipPresenter;
     private final CourtshipChoreographyLibrary choreographyLibrary;
+    private final WorldEventEmitter worldEventEmitter;
 
     @Nullable
     private UUID activeSessionId;
@@ -65,7 +67,8 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
                                      @Nonnull CourtshipSessionRegistry sessionRegistry,
                                      @Nonnull BedReservationService bedReservationService,
                                      @Nonnull CourtshipPresenter courtshipPresenter,
-                                     @Nonnull CourtshipChoreographyLibrary choreographyLibrary) {
+                                     @Nonnull CourtshipChoreographyLibrary choreographyLibrary,
+                                     @Nonnull WorldEventEmitter worldEventEmitter) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
@@ -75,6 +78,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         this.bedReservationService = bedReservationService;
         this.courtshipPresenter = courtshipPresenter;
         this.choreographyLibrary = choreographyLibrary;
+        this.worldEventEmitter = worldEventEmitter;
 
         this.preconditions.add(this.canInitiateCourtship());
         this.initializeStateMachine(this.createControlStep(), Stage.CLOSED);
@@ -184,6 +188,8 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         int placeholderDuration = 300;
         CourtshipSession session = this.sessionRegistry.sendInvite(self, partner, placeholderDuration, self.level().getGameTime());
         this.activeSessionId = session.getSessionId();
+
+        this.worldEventEmitter.emitCourtshipInviteSent(self, partner.getUUID(), session.getSessionId());
 
         return StepResult.transition(Stage.WAIT_FOR_ACCEPT);
     }
@@ -349,6 +355,9 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         session.markBirthCompleted();
         this.courtshipPresenter.presentBirth(session, self, partner);
         this.sessionRegistry.closeSession(session.getSessionId(), CourtshipCloseReason.COMPLETED);
+
+        // Emit a WORLD event so observers know this courtship ended.
+        this.worldEventEmitter.emitCourtshipCompleted(self, session.getReceiverId(), session.getSessionId());
 
         return StepResult.complete();
     }

@@ -16,7 +16,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
 
 import javax.annotation.Nonnull;
@@ -77,7 +76,7 @@ public class PlanContextSwitcher extends Behavior<Villager> {
         Optional<DayPlan> currentPlan = this.currentPlan(level, villager);
         if (currentPlan.isEmpty()) {
             // Missing or stale plans should still give villagers vanilla-shaped ambient life instead of freezing activity transitions.
-            return this.fallbackActivity(villager.getVillagerData().getProfession(), dayTick);
+            return this.fallbackActivity(villager.getProfession(), dayTick);
         }
 
         DayPlanSchedule schedule = currentPlan.get().getSchedule();
@@ -144,9 +143,8 @@ public class PlanContextSwitcher extends Behavior<Villager> {
         };
     }
 
-    private Activity fallbackActivity(@Nonnull VillagerProfession profession, int dayTick) {
-        VillagerProfessionKey professionKey = new VillagerProfessionKey(profession.name());
-        ScheduleProfile profile = ScheduleProfile.defaultFor(professionKey);
+    private Activity fallbackActivity(@Nonnull VillagerProfessionKey profession, int dayTick) {
+        ScheduleProfile profile = ScheduleProfile.defaultFor(profession);
         // Fallback is computed directly in linear time to avoid constructing wraparound blocks for early-bird professions.
         int bedtimeLinear = this.toLinear(profile.defaultSleepTick(), profile.defaultWakeTick());
         int nowLinear = this.toLinear(dayTick, profile.defaultWakeTick());

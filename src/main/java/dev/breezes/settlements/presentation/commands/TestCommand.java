@@ -19,6 +19,8 @@ import dev.breezes.settlements.application.ui.bubble.SpriteRef;
 import dev.breezes.settlements.application.ui.bubble.TradeMarker;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.di.SettlementsDagger;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventBus;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
@@ -27,6 +29,7 @@ import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.survey.SurveyBounds;
 import dev.breezes.settlements.domain.generation.model.survey.TerrainGrid;
+import dev.breezes.settlements.domain.settlement.model.SettlementMetadata;
 import dev.breezes.settlements.domain.settlement.query.BuildingContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementPositionContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
@@ -84,6 +87,7 @@ import java.util.concurrent.TimeUnit;
 public class TestCommand {
 
     private static final int GENERATION_SAMPLE_INTERVAL = 4;
+    private static final int EVENT_TAIL_LIMIT = 20;
 
     // Argument names for the bubble subcommand
     private static final String ARG_ITEM_ID = "item_id";
@@ -151,7 +155,12 @@ public class TestCommand {
                                                 .then(Commands.argument("seed", LongArgumentType.longArg())
                                                         .executes(TestCommand::generateSettlement))))))
                 .then(Commands.literal("info").executes(TestCommand::settlementInfo))
-                .then(buildBubbleCommand()));
+                .then(buildBubbleCommand())
+                .then(Commands.literal("events")
+                        .then(Commands.literal("tail")
+                                .executes(TestCommand::tailVillagerEvents))
+                        .then(Commands.literal("bus")
+                                .executes(TestCommand::tailBusLog))));
     }
 
     private static int settlementInfo(CommandContext<CommandSourceStack> context) {
@@ -188,7 +197,7 @@ public class TestCommand {
     }
 
     private static void sendSettlementDebugOverlay(@Nonnull ServerPlayer player,
-                                                   @Nonnull dev.breezes.settlements.domain.settlement.model.SettlementMetadata settlementMetadata) {
+                                                   @Nonnull SettlementMetadata settlementMetadata) {
         SettlementStructureLocator settlementStructureLocator = SettlementsDagger.serverOrThrow().settlementStructureLocator();
         Optional<StructureStart> structureStart = settlementStructureLocator.locate(player.serverLevel(), player.blockPosition());
         if (structureStart.isEmpty()) {
@@ -567,6 +576,89 @@ public class TestCommand {
                         + " | villager=" + villager.getUUID()
                         + " | removed=" + removedCount);
         context.getSource().sendSuccess(() -> successMessage, false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * Tails the WorldEventBus log for events where the actor or target is the looked-at villager.
+     * Prints the most recent events (up to MAX_TAIL_EVENTS) to the command sender's chat.
+     */
+    private static int tailVillagerEvents(CommandContext<CommandSourceStack> context) {
+        Optional<ISettlementsVillager> villagerOptional = getLookedAtVillager(context);
+        if (villagerOptional.isEmpty()) {
+            return 0;
+        }
+
+        UUID villagerUUID = villagerOptional.get().getUUID();
+
+        WorldEventBus bus = SettlementsDagger.serverOrThrow().worldEventBus();
+        List<WorldEvent> log = bus.snapshotLog();
+
+        List<WorldEvent> filtered = log.stream()
+                .filter(event -> villagerUUID.equals(event.getActorId()) || villagerUUID.equals(event.getTargetId()))
+                .toList();
+
+        if (filtered.isEmpty()) {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "[EventBus] No events found for villager " + villagerUUID + " (bus size=" + log.size() + ")"), false);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        context.getSource().sendSuccess(() -> Component.literal(
+                "[EventBus] Events for villager " + villagerUUID + " (" + filtered.size() + " of " + log.size() + " total):"), false);
+
+        // Show most recent first — reverse the filtered list.
+        List<WorldEvent> recent = filtered.reversed();
+        int limit = Math.min(recent.size(), EVENT_TAIL_LIMIT);
+        for (int i = 0; i < limit; i++) {
+            WorldEvent event = recent.get(i);
+            String role = villagerUUID.equals(event.getActorId()) ? "actor" : "target";
+            String targetSuffix = event.getTargetId() != null ? " → " + event.getTargetId() : "";
+            String metaSuffix = event.getMetadata() != null ? " [" + event.getMetadata() + "]" : "";
+            String regSuffix = event.getRegistryId() != null ? " reg=" + event.getRegistryId() : "";
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  seq=" + event.getSequence()
+                            + " tick=" + event.getGameTick()
+                            + " " + event.getType().name()
+                            + " (" + role + ")"
+                            + targetSuffix
+                            + metaSuffix
+                            + regSuffix), false);
+        }
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * Shows a summary snapshot of the entire WorldEventBus log.
+     * Useful for verifying that events are being emitted at all.
+     */
+    private static int tailBusLog(CommandContext<CommandSourceStack> context) {
+        WorldEventBus bus = SettlementsDagger.serverOrThrow().worldEventBus();
+        List<WorldEvent> log = bus.snapshotLog();
+
+        if (log.isEmpty()) {
+            context.getSource().sendSuccess(() -> Component.literal("[EventBus] Log is empty."), false);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        context.getSource().sendSuccess(() -> Component.literal(
+                "[EventBus] Log snapshot: " + log.size() + " events. Showing last " + EVENT_TAIL_LIMIT + ":"), false);
+
+        List<WorldEvent> recent = log.reversed();
+        int limit = Math.min(recent.size(), EVENT_TAIL_LIMIT);
+        for (int i = 0; i < limit; i++) {
+            WorldEvent event = recent.get(i);
+            String metaSuffix = event.getMetadata() != null ? " [" + event.getMetadata() + "]" : "";
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  seq=" + event.getSequence()
+                            + " tick=" + event.getGameTick()
+                            + " " + event.getType().getNamespace().name()
+                            + "/" + event.getType().name()
+                            + " actor=" + event.getActorId()
+                            + metaSuffix), false);
+        }
+
         return Command.SINGLE_SUCCESS;
     }
 

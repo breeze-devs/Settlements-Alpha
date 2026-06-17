@@ -12,6 +12,7 @@ import dev.breezes.settlements.domain.generation.survey.BiomeSurveyLookup;
 import lombok.CustomLog;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +125,7 @@ public class SettlementLayoutEngine {
             BuildingDefinition signature = pool.stream()
                     .filter(building -> building.requiresResources().isEmpty())
                     .filter(building -> building.traitAffinities().containsKey(trait))
-                    .max(java.util.Comparator.comparingDouble(building -> building.traitAffinities().get(trait) * building.placementPriority()))
+                    .max(Comparator.comparingDouble(building -> building.traitAffinities().get(trait) * building.placementPriority()))
                     .orElse(null);
             if (signature != null) {
                 signatureBuildings.add(signature);
@@ -148,7 +149,7 @@ public class SettlementLayoutEngine {
         );
         List<BuildingDefinition> bonusBuildings = pool.stream()
                 .filter(building -> building.requiresResources().isEmpty())
-                .sorted(java.util.Comparator.comparingInt(BuildingDefinition::placementPriority).reversed())
+                .sorted(Comparator.comparingInt(BuildingDefinition::placementPriority).reversed())
                 .limit(bonusCount)
                 .toList();
         pool.removeAll(bonusBuildings);

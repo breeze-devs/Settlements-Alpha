@@ -18,7 +18,6 @@ import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.C
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerTradeCatalogSnapshotPacket;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -174,11 +173,8 @@ public final class VillagerStatsSnapshotPublisher implements UiSnapshotPublisher
         session.markSnapshotSent(gameTime);
     }
 
-    @Nonnull
     private static VillagerProfessionKey resolveProfessionKey(@Nonnull BaseVillager villager) {
-        return VillagerProfessionKey.fromResourceLocation(
-                BuiltInRegistries.VILLAGER_PROFESSION.getKey(villager.getVillagerData().getProfession())
-        );
+        return villager.getProfession();
     }
 
     private static int demandDisplayVersion(@Nonnull BaseVillager villager,

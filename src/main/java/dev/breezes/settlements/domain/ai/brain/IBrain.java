@@ -2,6 +2,7 @@ package dev.breezes.settlements.domain.ai.brain;
 
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -20,6 +21,17 @@ public interface IBrain {
      * Called every delta ticks to update the brain, this should be called frequently
      */
     void tick(int delta);
+
+    /**
+     * Forces all sensors to run their sensing action immediately, bypassing their internal cooldowns.
+     * <p>
+     * Used by the Investigate behavior on arrival at a tip location so memories reflect the
+     * current world state precisely at the moment of investigation rather than waiting for
+     * the natural sensor cadence — which might be many ticks away.
+     *
+     * @param world the server level to sense in
+     */
+    void forceSensorScan(Level world);
 
     /*
      * Memory management methods

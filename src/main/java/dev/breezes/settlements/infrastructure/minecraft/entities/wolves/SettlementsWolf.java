@@ -69,9 +69,11 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
         this.followOwnerLocks = new HashSet<>();
         this.dirty = false;
 
-        // Initialize goals
-        this.initGoals();
-        this.initBehaviors();
+        if (!level.isClientSide()) {
+            // Behaviors run only on the server
+            this.initGoals();
+            this.initBehaviors();
+        }
 
         // If not tamed by a villager, set as tamed by a random UUID to prevent players from taming it
         if (this.getOwnerUUID() == null) {

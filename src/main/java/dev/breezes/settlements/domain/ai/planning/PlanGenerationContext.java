@@ -18,8 +18,12 @@ import java.util.List;
  * Values must be immutable or detached snapshots because async generators may consume this context
  * away from Minecraft's server thread.
  *
- * @param chronotypeSeed Stable per-villager seed for deterministic chronotype offsets.
- *                       Consumed by the generator to jitter sleep and meal anchors per villager.
+ * @param chronotypeSeed             Stable per-villager seed for deterministic chronotype offsets.
+ *                                   Consumed by the generator to jitter sleep and meal anchors per villager.
+ * @param pendingInvestigateTipCount Number of unverified hearsay tips in the villager's knowledge store
+ *                                   at plan-generation time. A value &gt; 0 causes the planner to inject
+ *                                   an Investigate scout slot into the morning work block.
+ *                                   Defaults to 0 when not supplied by the caller.
  */
 @Builder
 public record PlanGenerationContext(
@@ -30,7 +34,8 @@ public record PlanGenerationContext(
         PlanDayType dayType,
         List<WeightedBehavior> availableBehaviors,
         long wakeAtAbsoluteTick,
-        long chronotypeSeed
+        long chronotypeSeed,
+        int pendingInvestigateTipCount
 ) {
 
     public PlanGenerationContext {

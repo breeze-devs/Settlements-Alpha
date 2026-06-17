@@ -10,11 +10,15 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedg
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerCredibilityAttachmentCodec;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerCredibilityAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachmentCodec;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachmentState;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -73,6 +77,18 @@ public final class AttachmentRegistry {
             "villager_teardown_ledger",
             () -> AttachmentType.builder(TeardownLedgerAttachmentState::empty)
                     .serialize(TeardownLedgerAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    public static final Supplier<AttachmentType<VillagerKnowledgeAttachmentState>> VILLAGER_KNOWLEDGE = REGISTRY.register(
+            "villager_knowledge",
+            () -> AttachmentType.builder(VillagerKnowledgeAttachmentState::empty)
+                    .serialize(VillagerKnowledgeAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    public static final Supplier<AttachmentType<VillagerCredibilityAttachmentState>> VILLAGER_CREDIBILITY = REGISTRY.register(
+            "villager_credibility",
+            () -> AttachmentType.builder(VillagerCredibilityAttachmentState::empty)
+                    .serialize(VillagerCredibilityAttachmentCodec.STATE_CODEC)
                     .build());
 
     public static void register(IEventBus eventBus) {

@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackag
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VillagerBrain;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
+import dev.breezes.settlements.application.ai.socialcue.SocialCueRuntimeState;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
@@ -21,18 +22,23 @@ import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sensors.SensorTypeRegistry;
+import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
+import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
+import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.observation.ObservationBuffer;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.entities.hunger.IVillagerHunger;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.EquipmentSlot;
@@ -42,10 +48,12 @@ import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerCredibilityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedger;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedgerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
@@ -57,6 +65,7 @@ import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import dev.breezes.settlements.shared.util.SyncedDataWrapper;
 import lombok.CustomLog;
 import lombok.Getter;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -111,7 +120,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static final float BREED_HUNGER_THRESHOLD = 0.7F;
     private static final int BREED_FOOD_REQUIREMENT = 32;
     private static final ItemMatch FOODS_MATCH = new ItemMatch.TagRef(Tags.Items.FOODS);
+
     private static final ClockTicks RECONCILER_COOLDOWN_TICKS = ClockTicks.seconds(5);
+    // Perception drains the WorldEventBus on a 1 Hz cadence instead of every tick. The bus is a
+    // catch-up cursor, so batching only enlarges each delta — no events are missed as long as this
+    // interval stays well under the bus TTL (EventLaneConfig.worldEventTtlTicks, default 100 ticks).
+    private static final ClockTicks PERCEPTION_COOLDOWN_TICKS = ClockTicks.seconds(1);
+
     private static final SyncedDataWrapper<Byte> DATA_MOTION_ARCHETYPE = SyncedDataWrapper.<Byte>builder()
             .entityClass(BaseVillager.class)
             .serializer(EntityDataSerializers.BYTE)
@@ -142,6 +157,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private final IBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
     private final PlanRuntimeState planRuntimeState;
+    private final SocialCueRuntimeState socialCueRuntimeState;
+    private final VillagerKnowledgeStore knowledgeStore;
     @Nullable
     private VillagerInventory settlementsInventory;
 
@@ -152,17 +169,35 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     private VillagerTeardownLedger teardownLedger;
     private final ITickable reconcilerCooldown;
+    private final ITickable perceptionCooldown;
+    @Nullable
+    private VillagerProfession cachedProfession;
+    @Nullable
+    private VillagerProfessionKey cachedProfessionKey;
 
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
 
+        // TODO: I think we need to check dist side? i.e. most of this should run on server side
         this.genetics = new GeneticsProfile();
 
         this.settlementsBrain = new VillagerBrain(this);
 
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
+
         this.planRuntimeState = new PlanRuntimeState();
+        EventLaneConfig eventLaneConfig = eventLaneConfigOrNull();
+        int observationBufferCapacity = eventLaneConfig == null
+                ? ObservationBuffer.DEFAULT_CAPACITY
+                : eventLaneConfig.observationBufferCapacity();
+        int knowledgeStoreMaxEntries = eventLaneConfig == null
+                ? VillagerKnowledgeStore.MAX_ENTRIES
+                : eventLaneConfig.knowledgeStoreMaxEntries();
+        this.socialCueRuntimeState = new SocialCueRuntimeState(observationBufferCapacity);
+
+        this.knowledgeStore = new VillagerKnowledgeStore(knowledgeStoreMaxEntries);
+
         // VillagerPathNavigation navigation = new VillagerPathNavigation(this,
         // this.level());
         // navigation.setCanOpenDoors(true);
@@ -176,6 +211,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         // Start with an empty ledger; load() will replace it with the NBT-backed one.
         this.teardownLedger = new VillagerTeardownLedger(List.of());
         this.reconcilerCooldown = RECONCILER_COOLDOWN_TICKS.asTickable();
+        this.perceptionCooldown = PERCEPTION_COOLDOWN_TICKS.asTickable();
+    }
+
+    @Nullable
+    private static EventLaneConfig eventLaneConfigOrNull() {
+        ServerComponent server = SettlementsDagger.serverOrNull();
+        return server == null ? null : server.eventLaneConfig();
     }
 
     @Override
@@ -284,6 +326,17 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         return this.settlementsInventory != null;
     }
 
+    public VillagerProfessionKey getProfession() {
+        VillagerProfession currentProfession = this.getVillagerData().getProfession();
+        if (this.cachedProfession != currentProfession || this.cachedProfessionKey == null) {
+            // Profession is stable for long stretches but can change through vanilla data updates, so invalidate lazily.
+            this.cachedProfession = currentProfession;
+            this.cachedProfessionKey = VillagerProfessionKey.fromResourceLocation(BuiltInRegistries.VILLAGER_PROFESSION.getKey(currentProfession));
+        }
+
+        return this.cachedProfessionKey;
+    }
+
     @Nullable
     @Override
     public BaseVillager getBreedOffspring(@Nonnull ServerLevel level, @Nonnull AgeableMob otherParent) {
@@ -343,6 +396,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         return finalizedSpawnData;
     }
 
+    /**
+     * Only ran on the server side
+     */
     @Override
     public void addAdditionalSaveData(@Nonnull CompoundTag nbtTag) {
         super.addAdditionalSaveData(nbtTag);
@@ -351,6 +407,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         VillagerInventoryAttachment.saveFrom(this, this.getSettlementsInventory());
         VillagerBrainAttachment.saveFrom(this);
         VillagerTeardownLedgerAttachment.saveFrom(this, this.teardownLedger);
+        VillagerKnowledgeAttachment.saveFrom(this, this.knowledgeStore);
+
+        ServerComponent server = SettlementsDagger.serverOrThrow();
+        VillagerCredibilityAttachment.saveFrom(this, server.reputationUtil());
     }
 
     @Override
@@ -369,6 +429,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             // No persisted attachment state exists yet, so seed the default starting inventory.
             this.addStartingFood(this.settlementsInventory);
         }
+
+        // Restore episodic knowledge so investigation history and tip cooldowns survive restarts.
+        VillagerKnowledgeAttachment.loadInto(this, this.knowledgeStore);
+
+        // Restore credibility state into ReputationUtil so trust relationships survive log-in/out cycles.
+        ServerComponent server = SettlementsDagger.serverOrThrow();
+        VillagerCredibilityAttachment.loadInto(this, server.reputationUtil());
     }
 
     @Override
@@ -383,10 +450,62 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     @Override
     protected void customServerAiStep() {
+        ServerComponent server = SettlementsDagger.serverOrThrow();
+
+        // Seed the event bus cursor before the brain tick so the override detector
+        // (called inside the brain tick via PlanRunner.tickOverride) never drains
+        // pre-load history on a freshly loaded villager. The cursor is transient and
+        // is not persisted; the seed is a one-time skip-history operation.
+        this.seedEventCursorOnFirstTick(server);
+
         super.customServerAiStep();
 
         this.settlementsBrain.tick(1);
+        this.tickSocialCue(server);
+        this.tickPerception(server);
         this.tickReconciler();
+    }
+
+    /**
+     * On the first server AI step, seeds the WorldEventBus cursor to the current high-water mark
+     * so this villager does not replay events that predate its load.
+     */
+    private void seedEventCursorOnFirstTick(@Nonnull ServerComponent server) {
+        if (this.socialCueRuntimeState.getLastSeenSeq() != 0L) {
+            return;
+        }
+
+        long currentBusSeq = server.worldEventBus().currentSeq();
+        if (currentBusSeq > 0L) {
+            this.socialCueRuntimeState.seedCursor(currentBusSeq);
+        }
+    }
+
+    /**
+     * Advances the SocialCue lane
+     * <p>
+     * Runs after the brain so the arbiter sees the freshest channel occupancy from the plan lane
+     */
+    private void tickSocialCue(@Nonnull ServerComponent server) {
+        server.socialCueArbiter().tick(this, this.socialCueRuntimeState, this.level().getGameTime());
+    }
+
+    /**
+     * Runs the perception pipeline
+     * <p>
+     * Runs after the brain tick (freshest sensor data) and the SocialCue tick.
+     * Throttled to {@link #PERCEPTION_COOLDOWN_TICKS}; the pipeline is a catch-up cursor drain,
+     * so a coarser cadence only batches the delta rather than dropping events.
+     */
+    private void tickPerception(@Nonnull ServerComponent server) {
+        if (!this.perceptionCooldown.tickCheckAndReset(1)) {
+            return;
+        }
+
+        long perceptionGameTime = this.getServer() != null
+                ? this.getServer().overworld().getGameTime()
+                : this.level().getGameTime();
+        server.perceptionPipeline().tick(this, this.socialCueRuntimeState, perceptionGameTime);
     }
 
     /**
@@ -461,6 +580,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         this.planRuntimeState.clearPendingGeneration();
+
+        // Credibility is persisted on the entity, so the server-scope cache should only retain loaded observers
+        if (!this.level().isClientSide() && shouldEvictCredibility(reason)) {
+            ServerComponent server = SettlementsDagger.serverOrThrow();
+            server.reputationUtil().removeObserver(this.getUUID());
+        }
+
         super.remove(reason);
     }
 
@@ -496,8 +622,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             PlanRunnerBehavior planRunnerBehavior = SettlementsDagger.serverOrThrow()
                     .planRunnerBehaviorProvider()
                     .get();
-            PlanContextSwitcher planContextSwitcher = new PlanContextSwitcher();
             corePackage.add(Pair.of(20, planRunnerBehavior));
+
+            PlanContextSwitcher planContextSwitcher = new PlanContextSwitcher();
             corePackage.add(Pair.of(98, planContextSwitcher));
         }
         brain.addActivity(Activity.CORE, ImmutableList.copyOf(corePackage));
@@ -643,6 +770,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     public void removeBubbleByOwner(@Nonnull BubbleChannel channel, @Nonnull String ownerKey) {
         BubbleCommand.RemoveByOwner command = new BubbleCommand.RemoveByOwner(channel, ownerKey);
         this.bubbleService().applyCommand(this, command, this.level().getGameTime());
+    }
+
+    private static boolean shouldEvictCredibility(@Nonnull RemovalReason reason) {
+        return reason == RemovalReason.KILLED
+                || reason == RemovalReason.DISCARDED
+                || reason.shouldSave();
     }
 
     private VillagerBubbleService bubbleService() {

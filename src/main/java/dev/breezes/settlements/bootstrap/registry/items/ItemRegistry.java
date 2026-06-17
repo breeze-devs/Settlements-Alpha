@@ -20,6 +20,9 @@ public final class ItemRegistry {
     public static final DeferredHolder<Item, Item> VILLAGER_FISHING_ROD = REGISTRY.register("villager_fishing_rod",
             () -> new Item(new Item.Properties().stacksTo(1)));
 
+    public static final DeferredHolder<Item, Item> HAMMER = REGISTRY.register("hammer",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
     }

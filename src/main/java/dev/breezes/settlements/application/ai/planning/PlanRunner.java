@@ -1,10 +1,18 @@
 package dev.breezes.settlements.application.ai.planning;
 
 import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
+import dev.breezes.settlements.application.ai.override.OverridePolicy;
+import dev.breezes.settlements.application.ai.override.OverrideRequest;
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.domain.ai.behavior.contracts.ConfirmableOverride;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
+import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
+import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
+import dev.breezes.settlements.domain.ai.knowledge.KnowledgeResolution;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.IAsyncPlanGenerator;
@@ -18,6 +26,7 @@ import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -26,12 +35,15 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.npc.VillagerProfession;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
@@ -50,6 +62,14 @@ public class PlanRunner {
     private static final String RESET_REASON_BACKWARD_JUMP = "backward dayTime jump";
     private static final String RESET_REASON_BACKWARD_WHILE_UNLOADED = "backward dayTime jump while unloaded";
     private static final String RESET_REASON_CALENDAR_DAY_MISMATCH = "calendar day mismatch";
+    private static final String RESET_REASON_INVESTIGATE_CONFIRMED = "investigate confirmed tip";
+
+    private static final int OVERRIDE_TICK_DELTA = 1;
+
+    private static final Comparator<OverridePolicy> OVERRIDE_POLICY_PRECEDENCE = Comparator
+            .comparingInt(OverridePolicy::priority)
+            .reversed()
+            .thenComparing(policy -> policy.getClass().getName());
 
     private final IBehaviorCatalog catalog;
     private final BehaviorPoolResolver behaviorPoolResolver;
@@ -57,6 +77,31 @@ public class PlanRunner {
     private final IAsyncPlanGenerator asyncPlanGenerator;
     private final IWeekCycleProvider weekCycleProvider;
     private final IWakeTickResolver wakeTickResolver;
+    private final Set<OverridePolicy> overridePolicies;
+    private final WorldEventEmitter worldEventEmitter;
+    private final ReputationQuery reputationQuery;
+
+    /**
+     * TODO:CONFIRM -- would this also be useful for player injecting an override? e.g. test/debug command to tell
+     *    farmer to harvest pumpkin right now; or in the future, conversation & player suggests to do X behavior rn
+     * Evaluates and ticks the override slot. Must be called at the top of the behavior
+     * wrapper's tick, before the activity gate, so reactive accepts fire under any brain
+     * Activity (WORK, MEET, IDLE, REST, etc.) and the plan slot never concurrently runs
+     * alongside an active override.
+     * <p>
+     * Returns {@code true} when the override slot was active this tick, signaling the caller
+     * to skip the normal plan tick entirely.
+     */
+    public boolean tickOverride(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
+        PlanRuntimeState runtime = villager.getPlanRuntimeState();
+
+        if (runtime.isOverrideActive()) {
+            this.tickActiveOverride(level, villager, runtime);
+            return true;
+        }
+
+        return this.tryStartOverride(level, villager, runtime);
+    }
 
     public void tick(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
         PlanRuntimeState runtime = villager.getPlanRuntimeState();
@@ -147,14 +192,7 @@ public class PlanRunner {
         } else {
             resetReason = RESET_REASON_MISSING_SUCCESSOR;
         }
-        this.hardReset(level, villager, runtime, dayTime, resetReason,
-                DeltaResult.builder()
-                        .deltaTicks(1)
-                        .backwardJump(false)
-                        .firstTick(false)
-                        .rawDelta(0L)
-                        .previousDayTime(runtime.getPreviousPlanTickDayTime())
-                        .build());
+        this.hardReset(level, villager, runtime, dayTime, resetReason, singleTickDelta(runtime));
         log.behaviorStatus("Plan regenerated for villager {} during unmanaged activity: dayTime={}",
                 villager.getUUID(), dayTime);
     }
@@ -181,6 +219,14 @@ public class PlanRunner {
 
     public void forceStop(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
         PlanRuntimeState runtime = villager.getPlanRuntimeState();
+
+        // Stop the override slot first
+        IBehavior<BaseVillager> override = runtime.getOverrideBehavior();
+        if (override != null && override.getStatus() != BehaviorStatus.STOPPED) {
+            override.stop(level, villager);
+        }
+        runtime.clearOverride();
+
         IBehavior<BaseVillager> behavior = runtime.getCurrentBehavior();
         if (behavior != null && behavior.getStatus() != BehaviorStatus.STOPPED) {
             behavior.stop(level, villager);
@@ -256,6 +302,8 @@ public class PlanRunner {
         this.setPlanActiveMemory(villager);
         slot.markStatus(PlanSlotStatus.ACTIVE);
         plan.markStatus(PlanStatus.ACTIVE);
+
+        this.worldEventEmitter.emitBehaviorStarted(villager, slot.getBehaviorKey());
     }
 
     private void tickActiveSlot(@Nonnull ServerLevel level,
@@ -275,10 +323,163 @@ public class PlanRunner {
         behavior.tick(delta, level, villager);
         if (behavior.getStatus() == BehaviorStatus.STOPPED) {
             slot.markStatus(PlanSlotStatus.COMPLETED);
+            this.worldEventEmitter.emitBehaviorCompleted(villager, slot.getBehaviorKey());
             runtime.clearCurrentBehavior();
             this.clearPlanActiveMemory(villager);
             plan.advanceSlot();
         }
+    }
+
+    /**
+     * Advances the running override behavior by one tick.
+     * <p>
+     * On completion the interrupted plan slot is restored to PENDING so the plan retries
+     * it on the next tick if the time window is still open.
+     */
+    private void tickActiveOverride(@Nonnull ServerLevel level,
+                                    @Nonnull BaseVillager villager,
+                                    @Nonnull PlanRuntimeState runtime) {
+        IBehavior<BaseVillager> override = runtime.getOverrideBehavior();
+        if (override == null) {
+            // Slot was cleared externally (e.g. panic forceStop); nothing to do.
+            runtime.clearOverride();
+            return;
+        }
+
+        override.tick(OVERRIDE_TICK_DELTA, level, villager);
+
+        if (override.getStatus() == BehaviorStatus.STOPPED) {
+            this.onOverrideCompleted(level, villager, runtime, runtime.getOverrideBehaviorKey(), override);
+        }
+    }
+
+    /**
+     * TODO:CONFIRM -- if we used llm-based plan gen here, which takes some period of time to complete, this could be bad
+     * Handles override completion. A confirmed Investigate override regenerates the day
+     * plan so the freshly verified resource can be acted on — the interrupted plan was authored
+     * before the tip was known, so blindly resuming it would ignore the discovery (the roadmap's
+     * "onConfirm follow-up"). Every other override — and a refuted or unreachable Investigate —
+     * simply re-queues the interrupted slot, which is the existing Phase 2 resume behavior.
+     */
+    private void onOverrideCompleted(@Nonnull ServerLevel level,
+                                     @Nonnull BaseVillager villager,
+                                     @Nonnull PlanRuntimeState runtime,
+                                     @Nullable BehaviorKey completedKey,
+                                     @Nonnull IBehavior<BaseVillager> completed) {
+        // Behaviors that implement ConfirmableOverride signal when their outcome warrants
+        // a plan regeneration. Any confirmed resource discovery should update the plan so
+        // the freshly verified fact can influence what happens next.
+        boolean shouldRegeneratePlan = completed instanceof ConfirmableOverride confirmable
+                && confirmable.didConfirm();
+        runtime.clearOverride();
+
+        if (shouldRegeneratePlan) {
+            log.behaviorStatus("Override '{}' confirmed for villager {}; regenerating plan", completedKey, villager.getUUID());
+            this.hardReset(level, villager, runtime, level.getDayTime(),
+                    RESET_REASON_INVESTIGATE_CONFIRMED, singleTickDelta(runtime));
+            return;
+        }
+
+        log.behaviorStatus("Override '{}' completed for villager {}; re-queuing interrupted plan slot", completedKey, villager.getUUID());
+        this.reAttemptInterruptedSlot(villager);
+    }
+
+    /**
+     * Evaluates pending override triggers by explicit policy priority. When one is found,
+     * suspends the active plan behavior, installs the override slot, and starts it.
+     * <p>
+     * Returns {@code true} if an override was installed (caller must skip the plan tick),
+     * {@code false} when no policy fires.
+     */
+    private boolean tryStartOverride(@Nonnull ServerLevel level,
+                                     @Nonnull BaseVillager villager,
+                                     @Nonnull PlanRuntimeState runtime) {
+        if (!canInterruptCurrentPlanBehavior(runtime.getCurrentDescriptor())) {
+            return false;
+        }
+
+        OverrideRequest request = null;
+        for (OverridePolicy policy : orderedOverridePolicies(this.overridePolicies)) {
+            Optional<OverrideRequest> maybeRequest = policy.evaluate(level, villager);
+            if (maybeRequest.isPresent()) {
+                request = maybeRequest.get();
+                break;
+            }
+        }
+
+        if (request == null) {
+            return false;
+        }
+
+        BehaviorKey key = request.getBehaviorKey();
+        IBehavior<BaseVillager> behavior = catalog.createBehavior(key).orElse(null);
+        if (behavior == null) {
+            log.behaviorWarn("Override behavior '{}' not found in catalog for villager {}", key, villager.getUUID());
+            return false;
+        }
+
+        behavior.getBehaviorCoolDown().forceComplete();
+        behavior.getPreconditionCheckCooldown().forceComplete();
+
+        if (!behavior.tickPreconditions(OVERRIDE_TICK_DELTA, level, villager)) {
+            // Policy fired but preconditions not yet met. The policy polls every tick, so the
+            // still-live trigger is re-evaluated next tick — nothing is consumed.
+            log.behaviorTrace("Override preconditions not met for '{}' on villager {}", key, villager.getUUID());
+            return false;
+        }
+
+        // Suspend the running plan behavior so navigation and teardown obligations are
+        // discharged before we hand the body to the override.
+        this.suspendIfActive(level, villager);
+        this.reAttemptInterruptedSlot(villager);
+
+        behavior.start(level, villager);
+        runtime.installOverride(behavior, key);
+        this.setPlanActiveMemory(villager);
+        log.behaviorStatus("Override '{}' installed for villager {}", key, villager.getUUID());
+        return true;
+    }
+
+    @VisibleForTesting
+    static boolean canInterruptCurrentPlanBehavior(@Nullable BehaviorPlanningMetadata descriptor) {
+        return descriptor == null || descriptor.isInterruptible();
+    }
+
+    @VisibleForTesting
+    static List<OverridePolicy> orderedOverridePolicies(@Nonnull Collection<OverridePolicy> policies) {
+        return policies.stream().sorted(OVERRIDE_POLICY_PRECEDENCE).toList();
+    }
+
+    /**
+     * Flips the current plan slot from INTERRUPTED back to PENDING so the plan runner
+     * retries the same work on the next ordinary tick.
+     * <p>
+     * If the slot's time window has since closed, it will be skipped by the seek loop
+     * that runs at the start of each ordinary plan tick — no special handling needed here.
+     */
+    private void reAttemptInterruptedSlot(@Nonnull BaseVillager villager) {
+        DayPlan plan = villager.getDayPlan();
+        if (plan == null) {
+            return;
+        }
+        plan.getCurrentSlot()
+                .filter(slot -> slot.getStatus() == PlanSlotStatus.INTERRUPTED)
+                .ifPresent(slot -> slot.markStatus(PlanSlotStatus.PENDING));
+    }
+
+    /**
+     * A one-tick-forward {@link DeltaResult} for hard resets triggered outside the normal clock
+     * advance (unmanaged-activity revalidation, override-confirm regeneration): no backward jump,
+     * not the first tick — just "advance by one and regenerate".
+     */
+    private static DeltaResult singleTickDelta(@Nonnull PlanRuntimeState runtime) {
+        return DeltaResult.builder()
+                .deltaTicks(1)
+                .backwardJump(false)
+                .firstTick(false)
+                .rawDelta(0L)
+                .previousDayTime(runtime.getPreviousPlanTickDayTime())
+                .build();
     }
 
     private DayPlan generatePlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, long wakeAtAbsoluteTick) {
@@ -286,9 +487,17 @@ public class PlanRunner {
     }
 
     private PlanGenerationContext createGenerationContext(@Nonnull BaseVillager villager, long wakeAtAbsoluteTick) {
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerProfessionKey professionKey = new VillagerProfessionKey(profession.name());
+        VillagerProfessionKey professionKey = villager.getProfession();
         PlanDayType dayType = this.weekCycleProvider.getDayType(WorldCalendar.calendarDayOf(wakeAtAbsoluteTick));
+
+        // Count unverified hearsay tips so the planner can inject Investigate scout slots.
+        int pendingTipCount = 0;
+        for (KnowledgeEntry entry : villager.getKnowledgeStore().entriesView()) {
+            if (entry.isHearsay() && entry.getResolution() == KnowledgeResolution.UNRESOLVED) {
+                pendingTipCount++;
+            }
+        }
+
         return PlanGenerationContext.builder()
                 .profession(professionKey)
                 .genetics(villager.getGenetics().copy())
@@ -298,6 +507,7 @@ public class PlanRunner {
                 .availableBehaviors(this.behaviorPoolResolver.resolve(professionKey))
                 .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
                 .chronotypeSeed(chronotypeSeedFor(villager))
+                .pendingInvestigateTipCount(pendingTipCount)
                 .build();
     }
 
@@ -326,6 +536,8 @@ public class PlanRunner {
         DayPlan newPlan = this.regeneratePlan(level, villager, dayTime);
         runSeekLoop(newPlan, currentDayTick(dayTime), newPlan.getDayStartTick());
 
+        this.worldEventEmitter.emitDayPlanInvalidated(villager);
+
         this.logHardReset(villager, dayTime, reason, delta);
         return newPlan;
     }
@@ -334,7 +546,9 @@ public class PlanRunner {
                               long dayTime,
                               @Nonnull String reason,
                               @Nonnull DeltaResult delta) {
-        if (RESET_REASON_MISSING_PLAN.equals(reason) || RESET_REASON_MISSING_SUCCESSOR.equals(reason)) {
+        if (RESET_REASON_MISSING_PLAN.equals(reason)
+                || RESET_REASON_MISSING_SUCCESSOR.equals(reason)
+                || RESET_REASON_INVESTIGATE_CONFIRMED.equals(reason)) {
             log.behaviorStatus("Plan hard reset for villager {}: reason={}, dayTime={}, previousDayTime={}, rawDelta={}",
                     villager.getUUID(), reason, dayTime, delta.previousDayTime(), delta.rawDelta());
             return;
@@ -412,6 +626,7 @@ public class PlanRunner {
         runtime.clearCurrentBehavior();
         if (!runtime.isPlanExhausted()) {
             runtime.markPlanExhausted();
+            this.worldEventEmitter.emitPlanExhausted(villager);
             this.submitNextPlanAsync(level, villager, runtime, plan);
         }
     }
@@ -468,8 +683,7 @@ public class PlanRunner {
     }
 
     private int wakeTickFor(@Nonnull BaseVillager villager, long calendarDay) {
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerProfessionKey professionKey = new VillagerProfessionKey(profession.name());
+        VillagerProfessionKey professionKey = villager.getProfession();
         ScheduleProfile scheduleProfile = ScheduleProfile.defaultFor(professionKey);
         PlanDayType dayType = this.weekCycleProvider.getDayType(calendarDay);
         return this.wakeTickResolver.resolveWakeTick(scheduleProfile, dayType, chronotypeSeedFor(villager));

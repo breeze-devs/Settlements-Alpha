@@ -8,7 +8,6 @@ import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import net.minecraft.core.registries.BuiltInRegistries;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -29,9 +28,7 @@ public final class DemandEvaluator {
     // TODO: efficiency optimization. This can likely be optimized
     public List<ActiveDemand> resolve(@Nonnull BaseVillager villager) {
         long currentGameTime = villager.level().getGameTime();
-        VillagerProfessionKey profession = VillagerProfessionKey.fromResourceLocation(
-                BuiltInRegistries.VILLAGER_PROFESSION.getKey(villager.getVillagerData().getProfession())
-        );
+        VillagerProfessionKey profession = villager.getProfession();
 
         List<DemandEntry> staticDemands = this.tradeCatalogRegistry.demandsFor(profession);
         Map<ItemMatch, ActiveDemand> activeByMatch = new LinkedHashMap<>();

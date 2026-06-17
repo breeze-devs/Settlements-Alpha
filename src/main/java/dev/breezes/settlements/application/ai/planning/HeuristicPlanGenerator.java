@@ -77,6 +77,11 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
             this.addWorkDaySlots(slots, context, palette, workStartLinear, workEndLinear, lunchLinear, epoch);
         }
 
+        // Inject a morning scout slot when the villager has unverified hearsay tips
+        if (context.pendingInvestigateTipCount() > 0) {
+            addInvestigateScoutSlot(slots, epoch, workStartLinear);
+        }
+
         // Meal jitter shifts the lunch and dinner anchor per villager. The shift is small so the
         // village still has a rough shared meal window (social availability); only the exact lockstep
         // is broken. Breakfast already anchors to epoch and shifts with wake automatically.
@@ -221,6 +226,32 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                 : behavior -> 1.0D;
         this.packWindow(slots, candidates, afternoonStartLinear, afternoonEndLinear, 50, epoch, multiplier,
                 "Afternoon slots mix remaining duties with decompression and social time.");
+    }
+
+    /**
+     * Injects a single Investigate scout slot
+     * <p>
+     * The slot fires just after work starts so the villager can verify a tip and return
+     * to normal work with fresh knowledge before the main work block runs. The slot is
+     * flexible: if the behavior's precondition fails (e.g. no tip configured yet) the
+     * slot is skipped cleanly and the rest of the plan is unaffected.
+     * <p>
+     * Only one slot is injected per plan regardless of how many pending tips exist —
+     * re-planning the next morning handles subsequent tips, preventing a single gossip
+     * session from dominating an entire day's schedule.
+     */
+    private static void addInvestigateScoutSlot(List<PlanSlot> slots, int epoch, int workStartLinear) {
+        // Place the scout 20 minutes into the work block so breakfast and any early fixed
+        // slots have already resolved; avoids a time-0 collision with the breakfast anchor.
+        int scoutLinear = workStartLinear + GameTicks.minutes(20).getTicksAsInt();
+        slots.add(PlanSlot.builder()
+                .startTick(clampTick(fromLinear(scoutLinear, epoch)))
+                .behaviorKey(BehaviorKey.INVESTIGATE)
+                .priority(75)
+                .flexible(true)
+                .estimatedDurationTicks(GameTicks.minutes(2).getTicksAsInt())
+                .reason("Unverified hearsay tip warrants an early morning scout to confirm or refute the claim.")
+                .build());
     }
 
     /**

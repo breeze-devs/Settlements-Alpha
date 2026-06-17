@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.planning;
 
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -20,6 +21,21 @@ public class PlanRuntimeState {
 
     @Nullable
     private BehaviorPlanningMetadata currentDescriptor;
+
+    /**
+     * Transient override slot. Non-null only while a reactive override behavior
+     * is running. Ticked by PlanRunner before the plan slot.
+     * Structured as a single slot here; the field could become a Deque later
+     * to support a small priority stack without changing callers.
+     */
+    @Nullable
+    private IBehavior<BaseVillager> overrideBehavior;
+
+    /**
+     * The catalog key of {@link #overrideBehavior}, retained for diagnostics.
+     */
+    @Nullable
+    private BehaviorKey overrideBehaviorKey;
 
     @Setter
     @Nullable
@@ -49,6 +65,8 @@ public class PlanRuntimeState {
     public void reset() {
         this.currentBehavior = null;
         this.currentDescriptor = null;
+        this.overrideBehavior = null;
+        this.overrideBehaviorKey = null;
         this.clearPendingGeneration();
         this.pendingNextPlan = null;
         this.planExhausted = false;
@@ -69,6 +87,20 @@ public class PlanRuntimeState {
                                    @Nullable BehaviorPlanningMetadata descriptor) {
         this.currentBehavior = behavior;
         this.currentDescriptor = descriptor;
+    }
+
+    public boolean isOverrideActive() {
+        return this.overrideBehavior != null;
+    }
+
+    public void installOverride(@Nonnull IBehavior<BaseVillager> behavior, @Nonnull BehaviorKey key) {
+        this.overrideBehavior = behavior;
+        this.overrideBehaviorKey = key;
+    }
+
+    public void clearOverride() {
+        this.overrideBehavior = null;
+        this.overrideBehaviorKey = null;
     }
 
     public void markPlanExhausted() {

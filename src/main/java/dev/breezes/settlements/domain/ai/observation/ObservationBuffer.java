@@ -1,6 +1,7 @@
 package dev.breezes.settlements.domain.ai.observation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -74,6 +75,10 @@ public class ObservationBuffer {
         return this.size;
     }
 
+    public int capacity() {
+        return this.buffer.length;
+    }
+
     public boolean isEmpty() {
         return this.size == 0;
     }
@@ -92,9 +97,7 @@ public class ObservationBuffer {
     }
 
     private void clear() {
-        for (int index = 0; index < this.buffer.length; index++) {
-            this.buffer[index] = null;
-        }
+        Arrays.fill(this.buffer, null);
         this.writeHead = 0;
         this.size = 0;
     }

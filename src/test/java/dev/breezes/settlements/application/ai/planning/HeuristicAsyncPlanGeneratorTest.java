@@ -7,6 +7,7 @@ import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,7 +32,7 @@ class HeuristicAsyncPlanGeneratorTest {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         HeuristicAsyncPlanGenerator asyncGenerator = new HeuristicAsyncPlanGenerator(syncGenerator, executor);
         PlanGenerationContext context = PlanGenerationContext.builder()
-                .availableBehaviors(java.util.List.of())
+                .availableBehaviors(List.of())
                 .dayType(PlanDayType.WORK_DAY)
                 .wakeAtAbsoluteTick(24_000L)
                 .build();

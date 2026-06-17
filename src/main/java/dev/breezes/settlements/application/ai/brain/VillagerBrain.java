@@ -48,6 +48,17 @@ public class VillagerBrain implements IBrain {
     }
 
     @Override
+    public void forceSensorScan(@Nonnull Level world) {
+        // Run each sensor's doSense unconditionally, bypassing internal cooldown timers.
+        // Writes are applied to the brain's memory immediately so the postcondition of the
+        // Investigate behavior (memories updated) is deterministic on the same tick.
+        for (ISensor<BaseVillager> sensor : this.sensors) {
+            sensor.doSense(world, this.villager)
+                    .forEach(write -> write.applyTo(this));
+        }
+    }
+
+    @Override
     public <T> Optional<T> getMemory(@Nonnull MemoryType<T> type) {
         return this.villager.getBrain().getMemory(type.getModuleType());
     }

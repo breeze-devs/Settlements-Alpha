@@ -3,6 +3,8 @@ package dev.breezes.settlements.application.ai.behavior.runtime;
 import dev.breezes.settlements.application.ai.behavior.teardown.ProvidesTeardownLedger;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.look.LookQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
@@ -110,6 +112,19 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
             return Optional.empty();
         }
         return Optional.ofNullable(this.controlStep.getCurrentStage().name());
+    }
+
+    /**
+     * Reads a state from the live behavior context, or {@link Optional#empty()} when no run is
+     * active. Intended for terminal hooks such as {@link #onBehaviorStop} that must inspect the
+     * run's accumulated outcome before the context is torn down.
+     */
+    protected final <S extends BehaviorState> Optional<S> getContextState(@Nonnull BehaviorStateType type,
+                                                                          @Nonnull Class<S> castTo) {
+        if (this.context == null) {
+            return Optional.empty();
+        }
+        return this.context.getState(type, castTo);
     }
 
     protected boolean preTickGuard(int delta,

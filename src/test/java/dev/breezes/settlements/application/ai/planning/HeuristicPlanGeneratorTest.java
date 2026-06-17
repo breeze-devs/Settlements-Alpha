@@ -26,6 +26,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -269,7 +270,7 @@ class HeuristicPlanGeneratorTest {
         }
 
         Set<BehaviorKey> allowedKeys = Stream.concat(universalKeys.stream(), professionKeys.stream())
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
         return descriptors.stream()
                 .filter(descriptor -> allowedKeys.contains(descriptor.getKey()))

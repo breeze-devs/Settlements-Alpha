@@ -1,8 +1,8 @@
 package dev.breezes.settlements.application.economy.catalog;
 
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.DemandEntry;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
@@ -10,7 +10,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import net.minecraft.core.registries.BuiltInRegistries;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -24,16 +23,12 @@ public final class TradePriceResolver {
     private final TradeCatalogRegistry tradeCatalogRegistry;
 
     public Optional<Integer> resolveDemandPrice(@Nonnull BaseVillager buyer, @Nonnull ItemMatch want) {
-        VillagerProfessionKey profession = VillagerProfessionKey.fromResourceLocation(
-                BuiltInRegistries.VILLAGER_PROFESSION.getKey(buyer.getVillagerData().getProfession())
-        );
+        VillagerProfessionKey profession = buyer.getProfession();
         return this.resolveDemandPrice(profession, want);
     }
 
     public Optional<Integer> resolveOfferBundlePrice(@Nonnull BaseVillager seller, @Nonnull ItemMatch want) {
-        VillagerProfessionKey profession = VillagerProfessionKey.fromResourceLocation(
-                BuiltInRegistries.VILLAGER_PROFESSION.getKey(seller.getVillagerData().getProfession())
-        );
+        VillagerProfessionKey profession = seller.getProfession();
         return this.resolveOfferBundlePrice(profession, want);
     }
 

@@ -24,6 +24,7 @@ public final class VillagerBubbleService {
     private static final ClockTicks DEFAULT_BEHAVIOR_TTL_CAP = ClockTicks.seconds(30);
     private static final ClockTicks DEFAULT_CHAT_TTL_CAP = ClockTicks.seconds(20);
     private static final ClockTicks DEFAULT_SYSTEM_TTL_CAP = ClockTicks.seconds(10);
+    private static final ClockTicks DEFAULT_FLAVOR_TTL_CAP = ClockTicks.seconds(5);
 
     private final EnumMap<BubbleChannel, ChannelPolicy> policies;
     private final Comparator<BubbleEntry> renderComparator;
@@ -48,6 +49,12 @@ public final class VillagerBubbleService {
                 .overflowPolicy(ChannelPolicy.OverflowPolicy.DROP_OLDEST)
                 .renderOrder(2)
                 .defaultTtlCap(DEFAULT_SYSTEM_TTL_CAP)
+                .build());
+        this.policies.put(BubbleChannel.FLAVOR, ChannelPolicy.builder()
+                .maxActive(1)
+                .overflowPolicy(ChannelPolicy.OverflowPolicy.REPLACE_EXISTING)
+                .renderOrder(3)
+                .defaultTtlCap(DEFAULT_FLAVOR_TTL_CAP)
                 .build());
 
         this.renderComparator = buildRenderComparator(this.policies);

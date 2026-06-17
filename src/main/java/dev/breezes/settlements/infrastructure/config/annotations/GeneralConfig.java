@@ -8,7 +8,7 @@ public class GeneralConfig {
     @BooleanConfig(type = ConfigurationType.GENERAL,
             identifier = "enable_client",
             description = "Governs whether client functionalities are enabled",
-            defaultValue = false)
+            defaultValue = true)
     public static boolean clientEnabled;
 
     @StringConfig(type = ConfigurationType.GENERAL,
@@ -27,7 +27,7 @@ public class GeneralConfig {
             identifier = "bypass_inventory_requirements",
             description = "When true, behaviors run without requiring or emitting demand signals for their input items. " +
                     "If the villager happens to have the item, it is still consumed.",
-            defaultValue = false)
+            defaultValue = true)
     public static boolean bypassInventoryRequirements;
 
 }

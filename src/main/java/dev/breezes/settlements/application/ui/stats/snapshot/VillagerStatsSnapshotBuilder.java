@@ -28,7 +28,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.schedule.Activity;
 
@@ -91,12 +90,12 @@ public final class VillagerStatsSnapshotBuilder {
     }
 
     public VillagerTradeCatalogSnapshot buildTradeCatalog(@Nonnull BaseVillager villager) {
-        var professionKey = resolveProfessionKey(villager);
+        VillagerProfessionKey professionKey = resolveProfessionKey(villager);
         return new VillagerTradeCatalogSnapshot(this.tradeCatalogRegistry.offersFor(professionKey));
     }
 
     public VillagerDemandDisplaySnapshot buildDemandSnapshot(@Nonnull BaseVillager villager, long gameTime) {
-        var professionKey = resolveProfessionKey(villager);
+        VillagerProfessionKey professionKey = resolveProfessionKey(villager);
         List<ActiveDemand> activeDemands = this.demandEvaluator.resolve(villager);
         Map<ItemMatch, ActiveDemand> activeByMatch = activeDemands.stream()
                 .collect(Collectors.toMap(ActiveDemand::match, demand -> demand, (left, right) -> left, LinkedHashMap::new));
@@ -128,9 +127,7 @@ public final class VillagerStatsSnapshotBuilder {
     }
 
     private static VillagerProfessionKey resolveProfessionKey(@Nonnull BaseVillager villager) {
-        return VillagerProfessionKey.fromResourceLocation(
-                BuiltInRegistries.VILLAGER_PROFESSION.getKey(villager.getVillagerData().getProfession())
-        );
+        return villager.getProfession();
     }
 
     private static Optional<BlockPos> extractMemoryPos(@Nonnull BaseVillager villager,

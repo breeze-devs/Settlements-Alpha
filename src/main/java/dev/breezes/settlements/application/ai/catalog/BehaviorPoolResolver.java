@@ -33,9 +33,7 @@ public class BehaviorPoolResolver {
     private static final List<PoolEntry> UNIVERSAL_ENTRIES = List.of(
             PoolEntry.of(BehaviorKey.EAT_FOOD),
             PoolEntry.of(BehaviorKey.TRADE_INITIATE),
-            PoolEntry.of(BehaviorKey.TRADE_ACCEPT),
             PoolEntry.of(BehaviorKey.COURTSHIP_INITIATE),
-            PoolEntry.of(BehaviorKey.COURTSHIP_ACCEPT),
             PoolEntry.of(BehaviorKey.TAKE_FROM_CHEST),
             PoolEntry.of(BehaviorKey.COLLECT_DEMANDED_ITEM)
     );
