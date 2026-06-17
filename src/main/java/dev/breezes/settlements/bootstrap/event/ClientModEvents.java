@@ -7,8 +7,10 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.client.Villager
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.rendering.SettlementsVillagerRenderer;
+import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
 import dev.breezes.settlements.infrastructure.rendering.particles.EggSplatParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.StunnedStarParticle;
+import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.entity.CatRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
@@ -50,10 +52,17 @@ public class ClientModEvents {
     }
 
     private static void registerItemProperties(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> ItemProperties.register(
-                ItemRegistry.VILLAGER_FISHING_ROD.get(),
-                ResourceLocation.withDefaultNamespace("cast"),
-                ClientModEvents::villagerFishingRodCastPredicate));
+        event.enqueueWork(() -> {
+            ItemProperties.register(
+                    ItemRegistry.VILLAGER_FISHING_ROD.get(),
+                    ResourceLocation.withDefaultNamespace("cast"),
+                    ClientModEvents::villagerFishingRodCastPredicate);
+            ItemProperties.register(
+                    ItemRegistry.VILLAGER_TOTEM.get(),
+                    ResourceLocationUtil.mod("totem_mode"),
+                    (stack, level, entity, seed) -> VillagerTotemItem.getMode(stack).getSerializedId()
+            );
+        });
     }
 
     private static float villagerFishingRodCastPredicate(ItemStack stack,

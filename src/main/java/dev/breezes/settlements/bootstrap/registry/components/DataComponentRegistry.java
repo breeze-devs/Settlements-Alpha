@@ -20,6 +20,12 @@ public class DataComponentRegistry {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build());
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> VILLAGER_TOTEM_MODE =
+            REGISTRY.register("villager_totem_mode", () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.INT)
+                    .build());
+
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
     }

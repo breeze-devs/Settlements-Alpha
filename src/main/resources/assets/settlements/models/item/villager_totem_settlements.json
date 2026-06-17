@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "settlements:item/villager_totem_settlements"
+  }
+}

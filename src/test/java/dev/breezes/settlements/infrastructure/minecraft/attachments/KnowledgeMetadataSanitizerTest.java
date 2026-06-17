@@ -1,5 +1,6 @@
 package dev.breezes.settlements.infrastructure.minecraft.attachments;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -101,7 +102,7 @@ class KnowledgeMetadataSanitizerTest {
 
         // Act, Assert
         assertFalse(sanitized.isEmpty());
-        org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,
+        Assertions.assertThrows(UnsupportedOperationException.class,
                 () -> sanitized.put("event_meta", "mutated"));
     }
 

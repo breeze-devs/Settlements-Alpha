@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.items;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
@@ -22,6 +23,9 @@ public final class ItemRegistry {
 
     public static final DeferredHolder<Item, Item> HAMMER = REGISTRY.register("hammer",
             () -> new Item(new Item.Properties().stacksTo(1)));
+
+    public static final DeferredHolder<Item, Item> VILLAGER_TOTEM = REGISTRY.register("villager_totem",
+            () -> new VillagerTotemItem(new Item.Properties().stacksTo(1)));
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

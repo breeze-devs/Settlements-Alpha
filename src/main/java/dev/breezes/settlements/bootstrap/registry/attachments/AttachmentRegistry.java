@@ -8,6 +8,7 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttac
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.TotemTargetAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerCredibilityAttachmentCodec;
@@ -89,6 +90,16 @@ public final class AttachmentRegistry {
             "villager_credibility",
             () -> AttachmentType.builder(VillagerCredibilityAttachmentState::empty)
                     .serialize(VillagerCredibilityAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    /**
+     * Transient marker for the villager a player has locked onto while channeling the villager totem. It is not
+     * serialized: it is ephemeral channel state, and lives on the player rather than the totem stack, whose mutation
+     * mid-use would cancel the channel.
+     */
+    public static final Supplier<AttachmentType<Integer>> PLAYER_TOTEM_TARGET = REGISTRY.register(
+            "totem_target",
+            () -> AttachmentType.builder(() -> TotemTargetAttachment.NO_TARGET)
                     .build());
 
     public static void register(IEventBus eventBus) {

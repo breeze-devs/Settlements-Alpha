@@ -18,8 +18,9 @@ public final class CreativeTabRegistry {
     public static final Supplier<CreativeModeTab> SETTLEMENTS_TAB = REGISTRY.register("settlements", () -> CreativeModeTab.builder()
             .title(Component.translatable("creative_tab.settlements"))
             .icon(Items.EMERALD::getDefaultInstance)
-            .displayItems(((pParameters, pOutput) -> {
-                pOutput.accept(ItemRegistry.BASE_VILLAGER_SPAWN_EGG.get());
+            .displayItems(((parameters, output) -> {
+                output.accept(ItemRegistry.BASE_VILLAGER_SPAWN_EGG.get());
+                output.accept(ItemRegistry.VILLAGER_TOTEM.get());
             }))
             .build());
 

@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ACF",
+    " E ",
+    " S "
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "C": {
+      "item": "minecraft:soul_campfire"
+    },
+    "F": {
+      "item": "minecraft:fermented_spider_eye"
+    },
+    "E": {
+      "item": "minecraft:emerald_block"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "id": "settlements:villager_totem"
+  }
+}

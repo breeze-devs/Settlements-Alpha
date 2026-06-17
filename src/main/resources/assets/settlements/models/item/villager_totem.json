@@ -1,0 +1,26 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "settlements:item/villager_totem_settlements"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "settlements:totem_mode": 0
+      },
+      "model": "settlements:item/villager_totem_vanilla"
+    },
+    {
+      "predicate": {
+        "settlements:totem_mode": 1
+      },
+      "model": "settlements:item/villager_totem_settlements"
+    },
+    {
+      "predicate": {
+        "settlements:totem_mode": 2
+      },
+      "model": "settlements:item/villager_totem_stasis"
+    }
+  ]
+}
