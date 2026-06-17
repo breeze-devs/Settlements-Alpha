@@ -6,6 +6,7 @@ import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.time.TimeOfDay;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerWasCuredAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.server.MinecraftServer;
@@ -122,8 +123,11 @@ public final class EveningDialoguePackSweepServerEvents {
         String professionKey = villager.getVillagerData().getProfession().toString();
 
         // Minimal persona card: two lines to keep the prompt short.
-        String personaCard = "Profession: %s. Personality: diligent, sociable."
-                .formatted(professionKey);
+        // Provisional was-cured injection — the LLM rework (docs/working/llm-rework.md) will fold
+        // this into the persona token bundle rather than appending it here.
+        String personaCard = "Profession: %s. Personality: diligent, sociable.%s"
+                .formatted(professionKey,
+                        VillagerWasCuredAttachment.wasCured(villager) ? " Survived being a zombie and was cured." : "");
 
         // Pull at most 5 knowledge entries as topic seeds; entriesView() is insertion-ordered.
         VillagerDialogueContext.VillagerDialogueContextBuilder builder =

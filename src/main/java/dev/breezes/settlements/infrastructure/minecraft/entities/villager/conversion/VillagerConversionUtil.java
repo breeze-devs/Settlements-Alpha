@@ -11,6 +11,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class VillagerConversionUtil {
@@ -39,17 +40,18 @@ public final class VillagerConversionUtil {
         oldVillager.discard();
     }
 
-    public static void convertToSettlements(@Nonnull ServerLevel level,
-                                            @Nonnull Villager oldVillager) {
+    @Nullable
+    public static BaseVillager convertToSettlements(@Nonnull ServerLevel level,
+                                                    @Nonnull Villager oldVillager) {
         if (oldVillager instanceof BaseVillager) {
             applyVanillaState(oldVillager, false);
-            return;
+            return null;
         }
 
         CompoundTag tag = copyEntityTagWithoutIdentity(oldVillager);
         BaseVillager newVillager = EntityRegistry.BASE_VILLAGER.get().create(level);
         if (newVillager == null) {
-            return;
+            return null;
         }
 
         newVillager.load(tag);
@@ -60,6 +62,8 @@ public final class VillagerConversionUtil {
 
         releasePoiTickets(oldVillager);
         oldVillager.discard();
+
+        return newVillager;
     }
 
     private static void releasePoiTickets(@Nonnull Villager villager) {

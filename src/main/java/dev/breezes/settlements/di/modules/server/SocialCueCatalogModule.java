@@ -22,6 +22,7 @@ import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerWasCuredAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.world.entity.player.Player;
 
@@ -330,9 +331,12 @@ public abstract class SocialCueCatalogModule {
      */
     private static DialogueContext buildAmbientContext(BaseVillager villager) {
         // TODO:CONFIRM & TODO:LLM; this is hard coded
+        // Provisional was-cured injection — the LLM rework (docs/working/llm-rework.md) will fold
+        // this into the persona token bundle rather than appending it here.
         DialogueContext.DialogueContextBuilder builder = DialogueContext.builder()
-                .personaCard("Profession: %s. Personality: diligent, sociable."
-                        .formatted(villager.getVillagerData().getProfession().toString()))
+                .personaCard("Profession: %s. Personality: diligent, sociable.%s"
+                        .formatted(villager.getVillagerData().getProfession().toString(),
+                                VillagerWasCuredAttachment.wasCured(villager) ? " Survived being a zombie and was cured." : ""))
                 .priority(DialoguePriority.AMBIENT);
 
         int seedCount = 0;

@@ -23,6 +23,7 @@ import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
+import dev.breezes.settlements.bootstrap.event.VillagerZombificationServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldEventBusReaperServerEvents;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
@@ -140,6 +141,8 @@ public interface ServerComponent {
     EventLaneConfig eventLaneConfig();
 
     EveningDialoguePackSweepServerEvents eveningDialoguePackSweepServerEvents();
+
+    VillagerZombificationServerEvents villagerZombificationServerEvents();
 
     Set<VillagerSensorFactory> villagerSensorFactories();
 

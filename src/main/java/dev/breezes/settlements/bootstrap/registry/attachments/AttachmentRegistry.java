@@ -93,6 +93,26 @@ public final class AttachmentRegistry {
                     .build());
 
     /**
+     * Serialized boolean stamped on a ZombieVillager that originated from a BaseVillager conversion.
+     * Survives save/unload so the cure handler still recognizes the zombie after a server restart.
+     */
+    public static final Supplier<AttachmentType<Boolean>> ZOMBIE_SETTLEMENTS_ORIGIN = REGISTRY.register(
+            "zombie_settlements_origin",
+            () -> AttachmentType.builder(() -> false)
+                    .serialize(Codec.BOOL)
+                    .build());
+
+    /**
+     * Serialized boolean flag on a BaseVillager that was restored via zombie-villager curing.
+     * Acts as a permanent core-memory fact (brain was eaten, survived, was cured).
+     */
+    public static final Supplier<AttachmentType<Boolean>> VILLAGER_WAS_CURED = REGISTRY.register(
+            "villager_was_cured",
+            () -> AttachmentType.builder(() -> false)
+                    .serialize(Codec.BOOL)
+                    .build());
+
+    /**
      * Transient marker for the villager a player has locked onto while channeling the villager totem. It is not
      * serialized: it is ephemeral channel state, and lives on the player rather than the totem stack, whose mutation
      * mid-use would cancel the channel.
