@@ -123,6 +123,8 @@
   "ui.settlements.dayplan.status.skipped": "SKIPPED",
   "ui.settlements.dayplan.status.interrupted": "INTERRUPTED",
   "ui.settlements.dayplan.behavior.unknown": "Unknown Behavior",
+  "entity.settlements.settlements_wolf": "Wolf",
+  "entity.settlements.settlements_cat": "Cat",
   "entity.settlements.base_villager.armorer": "Armorer",
   "entity.settlements.base_villager.butcher": "Butcher",
   "entity.settlements.base_villager.cartographer": "Cartographer",

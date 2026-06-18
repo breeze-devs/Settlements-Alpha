@@ -209,7 +209,8 @@ class WorldEventBusTest {
     }
 
     private static EventLaneConfig eventLaneConfigWithTtl(int ttlTicks) {
-        return new EventLaneConfig(ttlTicks, 50, 200, 25, 9.627044E-6f);
+        return new EventLaneConfig(ttlTicks, 50, 200, 25,
+                120, 120, 10, 300, 4.0, 0.5, 0.25, "exponential", 9.627044E-6f);
     }
 
 }

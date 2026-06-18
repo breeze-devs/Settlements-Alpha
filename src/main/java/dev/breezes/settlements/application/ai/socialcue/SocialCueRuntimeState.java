@@ -75,6 +75,13 @@ public final class SocialCueRuntimeState {
     private long lastSeenSeq;
 
     /**
+     * Whether the per-villager random scan-phase offset has been seeded on the first idle tick.
+     * False until the arbiter calls {@link #markAdmissionScanInitialized()} so the one-time
+     * phase jitter is applied exactly once per villager lifetime (reset on {@link #reset()}).
+     */
+    private boolean admissionScanInitialized;
+
+    /**
      * Per-villager ring buffer for observations produced during the perception gate pass.
      * Populated by {@code PerceptionPipeline} from admitted world-events; drained by
      * the importance gate for memory promotion. Kept here rather than on a separate domain
@@ -123,12 +130,48 @@ public final class SocialCueRuntimeState {
     }
 
     /**
+     * Marks the admission-scan phase as initialized so the arbiter applies the one-time
+     * random phase offset exactly once per villager lifetime.
+     */
+    public void markAdmissionScanInitialized() {
+        this.admissionScanInitialized = true;
+    }
+
+    /**
+     * Cancels the active cue without recording a per-key cooldown.
+     * <p>
+     * Used when external state makes the villager transiently unavailable for social cues (e.g.
+     * sleep). Recording a cooldown here would penalise the villager on wake-up — the cue was
+     * interrupted, not completed, so the social lane should be fully available immediately after
+     * the suppression condition lifts.
+     */
+    public void cancelActiveCue() {
+        this.activeCue = null;
+        this.activeCueEntry = null;
+        this.nextStepIndex = 0;
+        this.gazeLookTarget = null;
+    }
+
+    /**
      * Finishes the active cue, records the per-key cooldown, and clears transient state.
+     * Uses the cue's own base cooldown; call {@link #finish(long, long)} to supply a
+     * jittered cooldown instead.
      */
     public void finish(long gameTime) {
+        long baseCooldownTicks = this.activeCue != null ? this.activeCue.getCooldown().getTicks() : 0L;
+        this.finish(gameTime, baseCooldownTicks);
+    }
+
+    /**
+     * Finishes the active cue with an explicit (e.g. CHA-weighted and jittered) cooldown
+     * rather than the cue's own base cooldown value, then clears the transient state.
+     *
+     * @param gameTime      the current game tick
+     * @param cooldownTicks the desynchronized cooldown to record for this cue key
+     */
+    public void finish(long gameTime, long cooldownTicks) {
         if (this.activeCue != null) {
-            long cooldownExpiry = gameTime + this.activeCue.getCooldown().getTicks();
-            this.cueCooldowns.put(this.activeCue.getKey(), cooldownExpiry);
+            this.cueCooldowns.put(this.activeCue.getKey(), gameTime + cooldownTicks);
         }
 
         this.activeCue = null;
@@ -191,6 +234,7 @@ public final class SocialCueRuntimeState {
         this.targetCooldowns.clear();
         this.nextAdmissionScanTick = 0L;
         this.lastSeenSeq = 0L;
+        this.admissionScanInitialized = false;
     }
 
 }

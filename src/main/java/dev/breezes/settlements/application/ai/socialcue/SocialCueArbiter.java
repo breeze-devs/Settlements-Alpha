@@ -4,6 +4,8 @@ import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
+import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
+import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
@@ -44,16 +46,43 @@ public final class SocialCueArbiter {
      */
     private static final ClockTicks ADMISSION_SCAN_INTERVAL = ClockTicks.seconds(1);
 
+    /**
+     * First-scan spread: each villager delays its first admission scan by a random offset in
+     * [0, this) so a freshly-loaded crowd does not all act on the same tick.
+     */
+    private static final ClockTicks INITIAL_ADMISSION_SPREAD = ClockTicks.seconds(4);
+
     private final Set<SocialCueCatalogEntry> catalog;
     private final SocialCuePresenter presenter;
+    private final EventLaneConfig eventLaneConfig;
 
     /**
      * Should be called from AI step
      */
     public void tick(BaseVillager villager, SocialCueRuntimeState runtimeState, long gameTime) {
+        // Suppress the entire social cue lane when the villager is unavailable (e.g. sleeping).
+        // Cancelling any in-flight cue here prevents a villager that falls asleep mid-cue from
+        // freezing with a stale gaze or gesture locked until the cue's natural finish tick.
+        if (villager.isSociallyUnavailable()) {
+            if (runtimeState.isCueActive()) {
+                runtimeState.cancelActiveCue();
+            }
+            return;
+        }
+
         // Active-cue dispatch must run every tick so gaze/gesture/bubble steps stay smooth.
         if (runtimeState.isCueActive()) {
             tickActiveCue(villager, runtimeState, gameTime);
+            return;
+        }
+
+        // First idle visit: establish a per-villager random scan phase so a freshly-loaded crowd
+        // does not all scan — and therefore act — on the same tick.
+        if (!runtimeState.isAdmissionScanInitialized()) {
+            runtimeState.markAdmissionScanInitialized();
+            long phase = SocialCueCadencePolicy.initialScanPhaseTicks(
+                    INITIAL_ADMISSION_SPREAD.getTicks(), villager.getRandom().nextDouble());
+            runtimeState.scheduleNextAdmissionScan(gameTime + phase);
             return;
         }
 
@@ -90,7 +119,14 @@ public final class SocialCueArbiter {
                 entry.fireOnComplete(villager, cue.getContextKey());
             }
 
-            runtimeState.finish(gameTime);
+            long cooldownTicks = SocialCueCadencePolicy.cooldownTicks(cue.getCooldown().getTicks(),
+                    villager.getGenetics().getGeneValue(GeneType.CHARISMA),
+                    this.eventLaneConfig.socialCueLowCharismaCooldownMultiplier(),
+                    this.eventLaneConfig.socialCueHighCharismaCooldownMultiplier(),
+                    SocialCueCooldownScaling.fromConfig(this.eventLaneConfig.socialCueCharismaCooldownScaling()),
+                    this.eventLaneConfig.socialCueCooldownJitterFraction(),
+                    villager.getRandom().nextDouble());
+            runtimeState.finish(gameTime, cooldownTicks);
         }
     }
 

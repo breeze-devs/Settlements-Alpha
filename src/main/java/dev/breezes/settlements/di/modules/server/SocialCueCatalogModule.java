@@ -22,9 +22,15 @@ import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.PlayerGreetCooldownAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerWasCuredAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+
+import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +47,8 @@ import java.util.function.Predicate;
 @Module
 public abstract class SocialCueCatalogModule {
 
+    private static final ClockTicks PLAYER_GREET_GLOBAL_COOLDOWN = ClockTicks.minutes(2);
+
     @Multibinds
     abstract Set<SocialCueCatalogEntry> socialCueCatalogEntries();
 
@@ -55,7 +63,6 @@ public abstract class SocialCueCatalogModule {
                 .key("greet_player")
                 .channel(BehaviorChannel.SOCIAL)
                 .channel(BehaviorChannel.INTERACTION)
-                // TODO:CONFIRM this cooldown could depend on the CHA gene -- should be random too
                 .cooldown(ClockTicks.seconds(60))
                 .perTargetCooldown(ClockTicks.minutes(10))
                 .scriptFactory(villager -> {
@@ -78,7 +85,22 @@ public abstract class SocialCueCatalogModule {
                             .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
                             .orElse(PerceivedEntities.empty())
                             .closest(Player.class, p -> !p.isSpectator(), villager);
+                    if (player.isEmpty()) {
+                        return Optional.empty();
+                    }
+                    // Global per-player greet cooldown: do not greet a player another villager just greeted.
+                    if (!PlayerGreetCooldownAttachment.canBeGreeted(player.get(), villager.level().getGameTime())) {
+                        return Optional.empty();
+                    }
                     return player.map(p -> p.getUUID().toString());
+                })
+                .onAdmit((villager, playerUuidStr) -> {
+                    // Stamp the global per-player greet cooldown
+                    Player player = resolvePlayer(villager, playerUuidStr);
+                    if (player != null) {
+                        long nextGreetable = villager.level().getGameTime() + PLAYER_GREET_GLOBAL_COOLDOWN.getTicks();
+                        PlayerGreetCooldownAttachment.markGreeted(player, nextGreetable);
+                    }
                 })
                 .build();
     }
@@ -90,13 +112,13 @@ public abstract class SocialCueCatalogModule {
      */
     @Provides
     @IntoSet
-    static SocialCueCatalogEntry villagerChatter(DialogueProvider dialogueProvider) {
+    static SocialCueCatalogEntry villagerChatter(DialogueProvider dialogueProvider,
+                                                 EventLaneConfig eventLaneConfig) {
         return SocialCueCatalogEntry.builder()
                 .key("villager_chatter")
                 .channel(BehaviorChannel.SOCIAL)
                 .channel(BehaviorChannel.INTERACTION)
-                // TODO:CONFIRM this cooldown could depend on the CHA gene -- should be random too
-                .cooldown(ClockTicks.minutes(2))
+                .cooldown(ClockTicks.seconds(eventLaneConfig.villagerChatterCooldownSeconds()))
                 .perTargetCooldown(ClockTicks.ZERO)
                 .trigger(villager -> {
                     if (!dialogueProvider.isEnabled()) {
@@ -135,9 +157,8 @@ public abstract class SocialCueCatalogModule {
                 .key("gossip_initiate")
                 .channel(BehaviorChannel.SOCIAL)
                 .channel(BehaviorChannel.INTERACTION)
-                // TODO:CONFIRM this cooldown could depend on the CHA gene -- should be random too
-                .cooldown(ClockTicks.seconds(45))
-                .perTargetCooldown(ClockTicks.seconds(180))
+                .cooldown(ClockTicks.seconds(eventLaneConfig.gossipInitiateCooldownSeconds()))
+                .perTargetCooldown(ClockTicks.seconds(eventLaneConfig.gossipTargetCooldownSeconds()))
                 .trigger(initiator -> {
                     // Pure predicate: determine whether this cue should fire and who the receiver
                     // is, without touching the registry.
@@ -209,12 +230,13 @@ public abstract class SocialCueCatalogModule {
     @Provides
     @IntoSet
     static SocialCueCatalogEntry gossipAccept(GossipSessionRegistry gossipSessionRegistry,
-                                              ReputationQuery reputationQuery) {
+                                              ReputationQuery reputationQuery,
+                                              EventLaneConfig eventLaneConfig) {
         return SocialCueCatalogEntry.builder()
                 .key("gossip_accept")
                 .channel(BehaviorChannel.SOCIAL)
                 .channel(BehaviorChannel.INTERACTION)
-                .cooldown(ClockTicks.seconds(5))
+                .cooldown(ClockTicks.seconds(eventLaneConfig.gossipAcceptCooldownSeconds()))
                 // Per-target cooldown is zero: the context key is a unique session UUID, so a
                 // per-target rate limit keyed on it can never match across sessions and would
                 // misleadingly imply a limit that does not actually fire.
@@ -284,17 +306,23 @@ public abstract class SocialCueCatalogModule {
                 .build();
     }
 
-    // -------------------------------------------------------------------------
-    // Gossip helpers (package-private for testability)
-    // -------------------------------------------------------------------------
+    @Nullable
+    private static Player resolvePlayer(BaseVillager villager, String playerUuidStr) {
+        if (!(villager.level() instanceof ServerLevel serverLevel)) {
+            return null;
+        }
+        Entity entity = serverLevel.getEntity(UUID.fromString(playerUuidStr));
+        return entity instanceof Player player ? player : null;
+    }
 
     /**
      * Selects the single most-important shareable entry to share during a gossip exchange.
-     * Prefers first-hand entries over hearsay (lower hop = more trustworthy), then falls
-     * back to highest weight for tie-breaking.
+     * Prefers first-hand entries to hearsay (lower hop = more trustworthy), then falls
+     * back to the highest weight for tiebreaking.
      */
-    static KnowledgeEntry selectBestEntry(List<KnowledgeEntry> shareable) {
-        KnowledgeEntry best = shareable.get(0);
+    @VisibleForTesting
+    protected static KnowledgeEntry selectBestEntry(List<KnowledgeEntry> shareable) {
+        KnowledgeEntry best = shareable.getFirst();
         for (KnowledgeEntry candidate : shareable) {
             if (candidate.getHop() < best.getHop()) {
                 best = candidate;

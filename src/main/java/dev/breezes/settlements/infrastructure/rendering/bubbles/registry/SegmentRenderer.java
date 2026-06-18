@@ -22,6 +22,9 @@ import java.util.List;
 @CustomLog
 public final class SegmentRenderer {
 
+    private static final int DEFAULT_TEXT_MAX_WIDTH = 140;
+    private static final int ITEM_COUNT_TEXT_MAX_WIDTH = 60;
+
     public static BubbleInnerElement toElement(@Nonnull BubbleSegment segment) {
         return switch (segment) {
             case BubbleSegment.Item item -> buildItem(item);
@@ -55,13 +58,17 @@ public final class SegmentRenderer {
                                 .color(ChatFormatting.BLACK)
                                 .bold(true)
                                 .scale(0.7F)
-                                .build())
+                                .build(), ITEM_COUNT_TEXT_MAX_WIDTH)
                 ))
                 .gap(2)
                 .build();
     }
 
     private static BubbleInnerElement buildText(BubbleSegment.Text text) {
+        return buildText(text, DEFAULT_TEXT_MAX_WIDTH);
+    }
+
+    private static BubbleInnerElement buildText(BubbleSegment.Text text, int maxWidth) {
         MutableComponent component = Component.literal(text.literal()).withStyle(text.color());
         if (text.bold()) {
             component = component.withStyle(ChatFormatting.BOLD);
@@ -69,7 +76,7 @@ public final class SegmentRenderer {
         return BubbleTextElement.builder()
                 .component(component)
                 .scale(text.scale())
-                .maxWidth(60)
+                .maxWidth(maxWidth)
                 .build();
     }
 

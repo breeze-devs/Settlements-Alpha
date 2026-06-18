@@ -122,6 +122,17 @@ public final class AttachmentRegistry {
             () -> AttachmentType.builder(() -> TotemTargetAttachment.NO_TARGET)
                     .build());
 
+    /**
+     * Transient global greet cooldown: the absolute game-tick after which any villager may next
+     * greet this player. Stops an entire crowd from waving the instant a player walks in — the first
+     * villager to greet stamps it, the rest read it and stay quiet. Not serialized: ephemeral social
+     * state that should reset on relog.
+     */
+    public static final Supplier<AttachmentType<Long>> PLAYER_GREET_COOLDOWN = REGISTRY.register(
+            "greet_cooldown",
+            () -> AttachmentType.builder(() -> 0L)
+                    .build());
+
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
     }

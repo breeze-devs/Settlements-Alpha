@@ -378,6 +378,32 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         return this.getSettlementsInventory().countMatching(FOODS_MATCH) >= BREED_FOOD_REQUIREMENT;
     }
 
+    /**
+     * Returns true when this villager should not run or accept new social cues.
+     * <p>
+     * Future states (e.g. stunned, panicking, in-dialogue) should be added here rather than
+     * in the arbiter so the arbiter stays free of lifecycle details.
+     */
+    public boolean isSociallyUnavailable() {
+        if (this.isSleeping()) {
+            return false;
+        }
+
+
+        // Check active brain activity
+        Optional<Activity> activity = this.getBrain().getActiveNonCoreActivity();
+        if (activity.isEmpty()) {
+            // If no activity is active, then we are socially available
+            return true;
+        }
+
+        if (activity.get() == Activity.HIDE) {
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level,
                                         @Nonnull DifficultyInstance difficulty,

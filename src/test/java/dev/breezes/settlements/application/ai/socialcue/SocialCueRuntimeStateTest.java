@@ -271,6 +271,140 @@ class SocialCueRuntimeStateTest {
     }
 
     // -------------------------------------------------------------------------
+    // Explicit-cooldown overload of finish
+    // -------------------------------------------------------------------------
+
+    @Test
+    void finish_withExplicitCooldown_recordsThatCooldownNotCueCooldown() {
+        // Arrange
+        SocialCue cue = buildCue("greet"); // base cooldown = 100 ticks
+        this.state.start(cue, null, 0L);
+        long explicitCooldown = 777L;
+
+        // Act
+        this.state.finish(0L, explicitCooldown);
+
+        // Assert: the cue key is gated by the explicit value, not the cue's own 100-tick cooldown.
+        assertTrue(this.state.isCueOnCooldown("greet", 776L),
+                "should still be on cooldown one tick before explicit expiry");
+        assertFalse(this.state.isCueOnCooldown("greet", 777L),
+                "should be off cooldown at the explicit expiry tick");
+        // Verify the explicit cooldown (777) is longer than the cue's base (100): still active at 500.
+        assertTrue(this.state.isCueOnCooldown("greet", 500L),
+                "should still be on cooldown well past the cue's own base (100 ticks) — explicit cooldown governs");
+    }
+
+    @Test
+    void finish_withExplicitCooldown_clearsCueAndGaze() {
+        // Arrange
+        SocialCue cue = buildCue("greet");
+        this.state.start(cue, null, 0L);
+        this.state.setGazeLookTarget(Location.of(1, 64, 1, null));
+
+        // Act
+        this.state.finish(0L, 500L);
+
+        // Assert
+        assertFalse(this.state.isCueActive());
+        assertNull(this.state.getGazeLookTarget());
+    }
+
+    // -------------------------------------------------------------------------
+    // admissionScanInitialized flag
+    // -------------------------------------------------------------------------
+
+    @Test
+    void admissionScanInitialized_falseOnInit() {
+        assertFalse(this.state.isAdmissionScanInitialized());
+    }
+
+    @Test
+    void markAdmissionScanInitialized_flipsFlag() {
+        // Act
+        this.state.markAdmissionScanInitialized();
+
+        // Assert
+        assertTrue(this.state.isAdmissionScanInitialized());
+    }
+
+    @Test
+    void reset_clearsAdmissionScanInitializedFlag() {
+        // Arrange
+        this.state.markAdmissionScanInitialized();
+
+        // Act
+        this.state.reset();
+
+        // Assert
+        assertFalse(this.state.isAdmissionScanInitialized());
+    }
+
+    // -------------------------------------------------------------------------
+    // cancelActiveCue — sleep/suppression path
+    // -------------------------------------------------------------------------
+
+    @Test
+    void cancelActiveCue_clearsCueAndGaze_withoutRecordingCooldown() {
+        // Arrange – start a cue so the lane is active and a gaze target is set.
+        SocialCue cue = buildCue("greet");
+        this.state.start(cue, null, 100L);
+        this.state.setGazeLookTarget(Location.of(5, 64, 5, null));
+
+        // Act – cancel mid-flight (e.g. villager falls asleep).
+        this.state.cancelActiveCue();
+
+        // Assert – lane is idle and gaze is cleared.
+        assertFalse(this.state.isCueActive());
+        assertNull(this.state.getGazeLookTarget());
+        // No cooldown was recorded: the cue key should be admissible again immediately.
+        assertFalse(this.state.isCueOnCooldown("greet", 100L),
+                "cancelled cue must not impose a cooldown — the lane should be fully open on wake-up");
+    }
+
+    @Test
+    void cancelActiveCue_resetsStepIndex() {
+        // Arrange – advance a step so nextStepIndex > 0.
+        SocialCue cue = buildCue("greet");
+        this.state.start(cue, null, 0L);
+        this.state.advance();
+
+        // Act
+        this.state.cancelActiveCue();
+
+        // Assert – step index reset so a future start() begins from step 0.
+        Assertions.assertEquals(0, this.state.getNextStepIndex());
+    }
+
+    @Test
+    void cancelActiveCue_noOp_whenNoCueIsActive() {
+        // Arrange – no cue running.
+        assertFalse(this.state.isCueActive());
+
+        // Act – should not throw and state should remain clean.
+        this.state.cancelActiveCue();
+
+        // Assert
+        assertFalse(this.state.isCueActive());
+        assertNull(this.state.getGazeLookTarget());
+    }
+
+    @Test
+    void cancelActiveCue_targetCooldownsUnaffected() {
+        // Arrange – a per-target cooldown exists before and during a cue.
+        UUID playerId = UUID.randomUUID();
+        this.state.recordTargetGreeted(playerId, 0L, 500L);
+        SocialCue cue = buildCue("greet");
+        this.state.start(cue, null, 0L);
+
+        // Act – cancel (e.g. sleep interrupts the wave).
+        this.state.cancelActiveCue();
+
+        // Assert – target cooldown must survive; we already greeted them.
+        assertTrue(this.state.isTargetOnCooldown(playerId, 0L),
+                "per-target cooldown must not be cleared by a cancel — the greeting already happened");
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
