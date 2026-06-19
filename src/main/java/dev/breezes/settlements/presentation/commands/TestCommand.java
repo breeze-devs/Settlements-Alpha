@@ -1,5 +1,9 @@
 package dev.breezes.settlements.presentation.commands;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -9,10 +13,6 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.application.ai.dialogue.Occasion;
 import dev.breezes.settlements.application.ai.inference.InferenceCapability;
@@ -27,11 +27,11 @@ import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.SpriteRef;
 import dev.breezes.settlements.application.ui.bubble.TradeMarker;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
+import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventBus;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
@@ -48,6 +48,7 @@ import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.generation.debug.GenerationResultSerializer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.TransformedBlockDisplay;
 import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models.TransformationMatrix;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.TerrainGridFactory;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementBuildingPiece;
@@ -57,6 +58,7 @@ import dev.breezes.settlements.shared.util.CoordinateHashUtil;
 import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -86,8 +88,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -195,7 +197,7 @@ public class TestCommand {
             return Command.SINGLE_SUCCESS;
         }
 
-        var settlementMetadata = positionContext.settlement().orElseThrow().metadata();
+        SettlementMetadata settlementMetadata = positionContext.settlement().orElseThrow().metadata();
         context.getSource().sendSuccess(() -> Component.literal("Settlement: " + settlementMetadata.name()), false);
         context.getSource().sendSuccess(() -> Component.literal("Scale tier: " + settlementMetadata.scaleTier()), false);
         context.getSource().sendSuccess(() -> Component.literal("Primary trait: " + settlementMetadata.primaryTrait()), false);
@@ -375,8 +377,8 @@ public class TestCommand {
                 .setMirror(Mirror.NONE)
                 .setIgnoreEntities(false);
 
-        var origin = player.blockPosition();
-        var placementOrigin = template.getZeroPositionWithTransform(origin, Mirror.NONE, rotation);
+        BlockPos origin = player.blockPosition();
+        BlockPos placementOrigin = template.getZeroPositionWithTransform(origin, Mirror.NONE, rotation);
         boolean placed = template.placeInWorld(level, placementOrigin, placementOrigin, settings, level.random, Block.UPDATE_ALL);
         if (!placed) {
             context.getSource().sendFailure(Component.literal(
@@ -498,7 +500,7 @@ public class TestCommand {
             return 0;
         }
 
-        var removed = existing.get();
+        BubbleEntry removed = existing.get();
         Component successMessage = Component.literal(
                 "Removed bubble " + bubbleId
                         + " | villager=" + villager.getUUID()
@@ -544,7 +546,7 @@ public class TestCommand {
             return 0;
         }
 
-        var removed = existing.get();
+        BubbleEntry removed = existing.get();
         Component successMessage = Component.literal(
                 "Removed bubble by owner"
                         + " | villager=" + villager.getUUID()
@@ -924,7 +926,7 @@ public class TestCommand {
         }
         List<Occasion> occasions = requestedOccasions.get();
 
-        var server = SettlementsDagger.serverOrThrow();
+        ServerComponent server = SettlementsDagger.serverOrThrow();
         MonologueRequestAssembler assembler = server.monologueRequestAssembler();
         InferenceTransport transport = server.inferenceTransport();
 

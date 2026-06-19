@@ -175,7 +175,7 @@ class OverridePolicyTest {
         }
 
         Optional<OverrideRequest> evaluateDirect() {
-            var behaviorKey = this.detector.detect(this.villagerId);
+            BehaviorKey behaviorKey = this.detector.detect(this.villagerId);
             if (behaviorKey == null) {
                 return Optional.empty();
             }

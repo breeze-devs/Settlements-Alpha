@@ -24,6 +24,7 @@ import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.Settleme
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementRoadPiece;
 import dev.breezes.settlements.shared.util.CoordinateHashUtil;
 import lombok.CustomLog;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.structure.StructureType;
@@ -78,7 +79,7 @@ public class SettlementStructure extends SettlementsStructure {
 
             log.info("Resolved template for {}: {}", assignment.building().id(), resolvedTemplate.get());
             ResourceLocation templateId = ResourceLocation.parse(resolvedTemplate.get().templatePath());
-            var plotAnchor = BlockPositionConverter.toMinecraft(assignment.plot().bounds().min().withY(assignment.plot().targetY()));
+            BlockPos plotAnchor = BlockPositionConverter.toMinecraft(assignment.plot().bounds().min().withY(assignment.plot().targetY()));
             builder.addPiece(new SettlementBuildingPiece(
                     context.structureTemplateManager(),
                     templateId,

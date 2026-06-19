@@ -4,10 +4,10 @@ import dagger.Subcomponent;
 import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
+import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.dialogue.DialogueProvider;
 import dev.breezes.settlements.application.ai.genetics.PersonalityDeriver;
 import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
-import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
@@ -26,6 +26,7 @@ import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.RehearsedDialogueSweepServerEvents;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
+import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerZombificationServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldEventBusReaperServerEvents;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
@@ -152,6 +153,8 @@ public interface ServerComponent {
     RehearsedDialogueSweepServerEvents eveningDialoguePackSweepServerEvents();
 
     VillagerZombificationServerEvents villagerZombificationServerEvents();
+
+    VillageAnimalSpawnerServerEvents villageAnimalSpawnerServerEvents();
 
     Set<VillagerSensorFactory> villagerSensorFactories();
 

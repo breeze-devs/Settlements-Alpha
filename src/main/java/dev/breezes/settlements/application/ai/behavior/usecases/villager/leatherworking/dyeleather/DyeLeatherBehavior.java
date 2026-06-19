@@ -417,10 +417,7 @@ public class DyeLeatherBehavior extends VillagerStateMachineBehavior {
             }
         }
 
-        if (placements.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(RandomUtil.choice(placements));
+        return RandomUtil.choice(placements);
     }
 
     /**

@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 
@@ -188,7 +189,7 @@ public class ScrollableList extends BaseElement {
         int topY = b.y() + this.padding.top() - 1;
         int bottomY = b.y() + this.padding.top() + getMaxVisibleRows() * this.rowHeight - 7;
 
-        var font = Minecraft.getInstance().font;
+        Font font = Minecraft.getInstance().font;
         if (this.scrollOffset > 0) {
             graphics.drawString(font, "▲", indicatorX, topY, SCROLL_HINT_COLOR, false);
         }

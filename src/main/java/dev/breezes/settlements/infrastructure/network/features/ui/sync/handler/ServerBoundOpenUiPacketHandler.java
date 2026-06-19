@@ -20,6 +20,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
@@ -46,7 +47,7 @@ public class ServerBoundOpenUiPacketHandler implements ServerSidePacketHandler<S
             return;
         }
 
-        var unavailableReason = definition.getValidator().validate(villager);
+        Optional<String> unavailableReason = definition.getValidator().validate(villager);
         if (unavailableReason.isPresent()) {
             PacketDistributor.sendToPlayer(player, new ClientBoundUiUnavailablePacket(packet.channel(), 0L, unavailableReason.get()));
             return;

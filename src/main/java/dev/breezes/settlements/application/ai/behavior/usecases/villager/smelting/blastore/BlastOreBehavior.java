@@ -140,7 +140,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        this.currentRecipe = RandomUtil.choice(validRecipes);
+        this.currentRecipe = RandomUtil.choice(validRecipes).orElseThrow();
 
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.blastFurnace)));
     }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 public class RandomUtil {
@@ -33,8 +34,11 @@ public class RandomUtil {
         return Mth.clamp(value, min, max);
     }
 
-    public static <T> T choice(List<T> list) {
-        return list.get(RANDOM.nextInt(list.size()));
+    public static <T> Optional<T> choice(List<T> list) {
+        if (list.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(list.get(RANDOM.nextInt(list.size())));
     }
 
     public static <T> T choice(T[] list) {

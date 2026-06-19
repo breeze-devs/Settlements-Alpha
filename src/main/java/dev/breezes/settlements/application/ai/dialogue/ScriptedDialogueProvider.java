@@ -40,7 +40,7 @@ public final class ScriptedDialogueProvider implements DialogueProvider {
     }
 
     private static String chooseKey(List<String> keys) {
-        return RandomUtil.choice(keys);
+        return RandomUtil.choice(keys).orElse("dialogue.settlements.generic.idle.1");
     }
 
 }

@@ -127,7 +127,7 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
         this.stoneCutter = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.stoneCutter)));
 
-        this.currentRecipe = RandomUtil.choice(RECIPES);
+        this.currentRecipe = RandomUtil.choice(RECIPES).orElseThrow();
         Direction direction = this.stoneCutter.getBlockState().getValue(StonecutterBlock.FACING);
         Direction.Axis axis = direction.getAxis();
         int axisDirection = direction.getAxisDirection().getStep();

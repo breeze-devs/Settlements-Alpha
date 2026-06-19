@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.override;
 
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -31,7 +32,7 @@ public final class SocialAcceptOverridePolicy implements OverridePolicy {
 
     @Override
     public Optional<OverrideRequest> evaluate(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
-        var behaviorKey = this.overrideTriggerDetector.detect(villager.getUUID());
+        BehaviorKey behaviorKey = this.overrideTriggerDetector.detect(villager.getUUID());
         if (behaviorKey == null) {
             return Optional.empty();
         }

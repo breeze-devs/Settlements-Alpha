@@ -201,9 +201,9 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        // Pick a random target rather than always the closest, for mischievous unpredictability
-        this.victim = RandomUtil.choice(candidates);
+        this.victim = RandomUtil.choice(candidates).orElseThrow();
         this.eggsThrown = 0;
+
         // Both hands carry an egg so the straight-arm windmill throw reads as dual-fisted mischief
         villager.setHeldItem(new ItemStack(Items.EGG));
         villager.setOffhandItem(new ItemStack(Items.EGG));

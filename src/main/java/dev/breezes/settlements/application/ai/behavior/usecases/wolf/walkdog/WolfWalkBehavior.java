@@ -169,11 +169,13 @@ public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
         BaseVillager owner = wolf.getOwner();
         AABB scanBox = wolf.getBoundingBox().inflate(this.config.entityTargetScanRange());
         List<Entity> targets = wolf.level().getEntities(wolf, scanBox, entity -> isSniffableEntity(wolf, owner, entity));
+
         log.behaviorTrace("Entity scan found {} candidates (range={})", targets.size(), this.config.entityTargetScanRange());
         if (targets.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(Targetable.fromEntity(RandomUtil.choice(targets)));
+
+        return Optional.of(Targetable.fromEntity(RandomUtil.choice(targets).orElseThrow()));
     }
 
     private Optional<Targetable> pickBlockTarget(@Nonnull SettlementsWolf wolf) {

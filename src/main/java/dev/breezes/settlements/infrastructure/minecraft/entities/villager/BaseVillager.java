@@ -387,7 +387,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
      * in the arbiter so the arbiter stays free of lifecycle details.
      */
     public boolean isSociallyAvailable() {
-        if (this.isSleeping()) {
+        if (this.isSleeping() || this.isBaby()) {
             return false;
         }
 

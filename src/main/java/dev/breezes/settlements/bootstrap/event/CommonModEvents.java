@@ -9,6 +9,9 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.cats.Settlement
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import lombok.CustomLog;
+import net.minecraft.world.entity.SpawnPlacementTypes;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -18,6 +21,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -38,14 +42,20 @@ public class CommonModEvents {
     }
 
     @SubscribeEvent
+    public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
+        // Register on-ground placement so SpawnPlacements.isSpawnPositionOk behaves correctly
+        // for the VillageAnimalSpawner's positional check.
+        event.register(EntityRegistry.SETTLEMENTS_WOLF.get(), SpawnPlacementTypes.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                Animal::checkAnimalSpawnRules, RegisterSpawnPlacementsEvent.Operation.OR);
+    }
+
+    @SubscribeEvent
     public static void onCommonSetup(@Nonnull FMLCommonSetupEvent event) {
         // Register packets
         event.enqueueWork(() -> {
 //            log.debug("Registering packets...");
 //            PacketHandler.registerPackets();
 //            log.debug("Packet registration complete");
-
-            // TODO: add more common setup tasks here
         });
     }
 

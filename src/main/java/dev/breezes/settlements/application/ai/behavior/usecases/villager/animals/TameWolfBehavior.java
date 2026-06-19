@@ -7,6 +7,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.B
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetableType;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
@@ -16,7 +17,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
-import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
@@ -30,18 +30,21 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.entity.animal.WolfVariant;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,7 +67,9 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
     private final TameWolfConfig config;
 
-    private final NearbyEntityExistsCondition<BaseVillager, Wolf> nearbyUntamedWolfExistsCondition;
+    // Cached from the most recent precondition scan; reset each precondition check.
+    // Using a field here (not Optional) because the list is internal scan state, not a return value.
+    private List<Wolf> nearbyUntamedWolves;
 
     private int attemptsRemaining;
     private boolean shouldRewardExperience;
@@ -77,15 +82,23 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
         this.attemptsRemaining = 0;
         this.shouldRewardExperience = false;
+        this.nearbyUntamedWolves = List.of();
 
-        // Precondition: at least one untamed wolf nearby
-        this.nearbyUntamedWolfExistsCondition = new NearbyEntityExistsCondition<>(
-                config.scanRangeHorizontal(),
-                config.scanRangeVertical(),
-                EntityType.WOLF,
-                wolf -> wolf != null && !wolf.isTame(),
-                1);
-        this.preconditions.add(this.nearbyUntamedWolfExistsCondition);
+        // NearbyEntityExistsCondition uses exact EntityType equality, which misses SettlementsWolf.
+        // We do a class-based scan instead so both vanilla wolves and SettlementsWolf instances
+        // (which extend Wolf) are found regardless of their registered EntityType.
+        this.preconditions.add(ICondition.named("NearbyUntamedWolfExists", villager -> {
+            AABB scanBox = villager.getBoundingBox().inflate(
+                    config.scanRangeHorizontal(),
+                    config.scanRangeVertical(),
+                    config.scanRangeHorizontal());
+            this.nearbyUntamedWolves = villager.level()
+                    .getEntitiesOfClass(Wolf.class, scanBox, wolf -> wolf != null && !wolf.isTame())
+                    .stream()
+                    .sorted(Comparator.comparingDouble(villager::distanceToSqr))
+                    .toList();
+            return !this.nearbyUntamedWolves.isEmpty();
+        }));
 
         // Precondition: has at least one bone
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BONE_ID), 1, 50, this.getClass().getSimpleName()));
@@ -163,17 +176,35 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                         wolfLoc.playSound(SoundEvents.WOLF_AMBIENT, 0.6f, 1.5f, SoundSource.NEUTRAL);
                         wolfLoc.playSound(SoundEvents.WOLF_AMBIENT, 0.6f, 1.7f, SoundSource.NEUTRAL);
 
-                        // Replace vanilla wolf with modded wolf
-                        wolf.discard();
+                        SettlementsWolf settlementsWolf;
+                        if (wolf instanceof SettlementsWolf alreadySettlementsWolf) {
+                            // Target is already a SettlementsWolf — tame it in-place to preserve its
+                            // coat variant without discarding and re-spawning the entity.
+                            alreadySettlementsWolf.setTame(true, true);
+                            alreadySettlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
+                            alreadySettlementsWolf.setCollarColor(DyeColor.LIME);
+                            settlementsWolf = alreadySettlementsWolf;
+                            log.behaviorStatus("Tamed existing SettlementsWolf {} in-place", settlementsWolf.getUUID());
+                        } else {
+                            // Vanilla Wolf: swap for a SettlementsWolf and copy the coat variant so the
+                            // visual appearance is preserved across the entity replacement.
+                            Holder<WolfVariant> variant = wolf.getVariant();
+                            boolean wasBaby = wolf.isBaby();
+                            wolf.discard();
 
-                        SettlementsWolf settlementsWolf = SettlementsWolf.spawn(wolfLoc);
-                        settlementsWolf.setTame(true, true);
-                        settlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
-                        settlementsWolf.setCollarColor(DyeColor.LIME);
+                            settlementsWolf = SettlementsWolf.spawn(wolfLoc);
+                            settlementsWolf.setVariant(variant);
+                            if (wasBaby) {
+                                settlementsWolf.setBaby(true);
+                            }
+                            settlementsWolf.setTame(true, true);
+                            settlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
+                            settlementsWolf.setCollarColor(DyeColor.LIME);
+                            log.behaviorStatus("Replaced vanilla Wolf with SettlementsWolf {}", settlementsWolf.getUUID());
+                        }
+
                         this.rememberOwnedWolf(ctx.getInitiator().getMinecraftEntity(), settlementsWolf);
                         this.shouldRewardExperience = true;
-
-                        log.behaviorStatus("Successfully tamed wolf {}", settlementsWolf.getUUID());
 
                         // Stop the behavior after success
                         return StepResult.complete();
@@ -228,12 +259,24 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        if (!this.nearbyUntamedWolfExistsCondition.test(villager)) {
+        // Re-run the class-based scan here to populate nearbyUntamedWolves for target selection.
+        // The precondition already ran but we need a fresh result tied to this exact start moment.
+        AABB scanBox = villager.getBoundingBox().inflate(
+                this.config.scanRangeHorizontal(),
+                this.config.scanRangeVertical(),
+                this.config.scanRangeHorizontal());
+        this.nearbyUntamedWolves = villager.level()
+                .getEntitiesOfClass(Wolf.class, scanBox, wolf -> wolf != null && !wolf.isTame())
+                .stream()
+                .sorted(Comparator.comparingDouble(villager::distanceToSqr))
+                .toList();
+
+        if (this.nearbyUntamedWolves.isEmpty()) {
             this.requestStop("No untamed wolves found within range");
             return;
         }
 
-        Optional<Wolf> chosenWolf = this.nearbyUntamedWolfExistsCondition.getTargets().stream().findFirst();
+        Optional<Wolf> chosenWolf = this.nearbyUntamedWolves.stream().findFirst();
         if (chosenWolf.isEmpty()) {
             this.requestStop("Chosen wolf to tame is null");
             return;
@@ -262,7 +305,13 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
     }
 
     private Optional<Wolf> getTargetWolf(@Nonnull BehaviorContext<BaseVillager> context) {
-        return TargetQueries.firstEntity(context, EntityType.WOLF, Wolf.class);
+        // TargetQueries.firstEntity uses exact EntityType equality, which misses SettlementsWolf.
+        // We match by class membership so both vanilla and Settlements wolves resolve correctly.
+        return TargetQueries.firstMatching(context,
+                        target -> target != null
+                                && target.getType() == TargetableType.ENTITY
+                                && target.getAsEntity() instanceof Wolf)
+                .map(target -> (Wolf) target.getAsEntity());
     }
 
     private static boolean ownerMatches(@Nonnull BaseVillager villager, @Nonnull Wolf wolf) {

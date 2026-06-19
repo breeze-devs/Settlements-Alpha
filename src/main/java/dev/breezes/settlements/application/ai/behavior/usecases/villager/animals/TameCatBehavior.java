@@ -29,12 +29,14 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.cats.Settlement
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Cat;
+import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -148,9 +150,17 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                         catLoc.displayParticles(ParticleTypes.HEART, 7, 0.4, 0.5, 0.4, 0.01);
                         catLoc.playSound(SoundEvents.CAT_EAT, 0.8f, 1.0f, SoundSource.NEUTRAL);
 
+                        // Preserve the cat's coat variant before discarding so the SettlementsCat
+                        // entity doesn't silently reroll to a different skin on tame.
+                        Holder<CatVariant> variant = cat.getVariant();
+                        boolean wasBaby = cat.isBaby();
                         cat.discard();
 
                         SettlementsCat settlementsCat = SettlementsCat.spawn(catLoc);
+                        settlementsCat.setVariant(variant);
+                        if (wasBaby) {
+                            settlementsCat.setBaby(true);
+                        }
                         settlementsCat.setTame(true, true);
                         settlementsCat.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
                         settlementsCat.setCollarColor(DyeColor.LIME);

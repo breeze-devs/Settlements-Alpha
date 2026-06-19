@@ -14,6 +14,7 @@ public enum ConfigurationType {
     GENERAL("general"),
     BEHAVIOR("behaviors"),
     SENSOR("sensors"),
+    FEATURE("features"),
     ;
 
     private final String filePath;
@@ -21,7 +22,7 @@ public enum ConfigurationType {
     public String getFilePath(@Nonnull String className) {
         String filePath = switch (this) {
             case GENERAL -> this.filePath;
-            case BEHAVIOR, SENSOR -> "%s/%s".formatted(this.filePath, className);
+            case BEHAVIOR, SENSOR, FEATURE -> "%s/%s".formatted(this.filePath, className);
         };
 
         return "%s/%s.toml".formatted(SettlementsMod.MOD_NAME.toLowerCase(Locale.ROOT), filePath);

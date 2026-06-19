@@ -228,7 +228,7 @@ public class TradeCatalogDataManager extends SimpleJsonResourceReloadListener im
     ) {
         // Union of both key sets to avoid double-counting professions that have both offers and demands.
         int professionCount() {
-            var all = new HashSet<>(offersByProfession.keySet());
+            HashSet<VillagerProfessionKey> all = new HashSet<>(offersByProfession.keySet());
             all.addAll(demandsByProfession.keySet());
             return all.size();
         }

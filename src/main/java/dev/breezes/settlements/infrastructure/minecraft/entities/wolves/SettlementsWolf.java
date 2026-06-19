@@ -25,15 +25,22 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NonTameRandomTargetGoal;
 import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.event.EventHooks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,7 +49,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 @CustomLog
 @Getter
@@ -73,13 +79,6 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
             // Behaviors run only on the server
             this.initGoals();
             this.initBehaviors();
-        }
-
-        // If not tamed by a villager, set as tamed by a random UUID to prevent players from taming it
-        if (this.getOwnerUUID() == null) {
-            this.setTame(true, true);
-            this.setOwnerUUID(UUID.randomUUID());
-            ((WolfMixin) this).invokeSetCollarColor(DyeColor.WHITE);
         }
     }
 
@@ -142,11 +141,71 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
         return wolf;
     }
 
+    @Override
+    public InteractionResult mobInteract(@Nonnull Player player, @Nonnull InteractionHand hand) {
+        // A villager-owned Settlements wolf stays village-bound — defer to vanilla, which won't let a
+        // non-owner player claim it.
+        if (this.isTame()) {
+            return super.mobInteract(player, hand);
+        }
+
+        // An untamed Settlements wolf can be claimed by a player with bones, but the act converts it back
+        // into an ordinary vanilla wolf: the Settlements variety remains exclusive to villagers.
+        ItemStack heldItem = player.getItemInHand(hand);
+        if (heldItem.is(Items.BONE) && !this.isAngry()) {
+            if (!this.level().isClientSide()) {
+                if (!player.getAbilities().instabuild) {
+                    heldItem.shrink(1);
+                }
+
+                // Mirror vanilla wolf taming odds (1-in-3 per bone); honor the tame event so other mods can veto.
+                if (this.random.nextInt(3) == 0 && !EventHooks.onAnimalTame(this, player)) {
+                    this.convertToVanillaWolf(player);
+                } else {
+                    this.level().broadcastEntityEvent(this, (byte) 6); // smoke: taming attempt failed
+                }
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
+        }
+
+        // No other player interaction does anything to an untamed Settlements wolf.
+        return InteractionResult.PASS;
+    }
+
+    /**
+     * Swaps this Settlements wolf for a vanilla wolf tamed by the given player, carrying over only the coat
+     * variant. We replace the entity rather than tame in place because Settlements wolves are village-only;
+     * a player's pet must be a plain vanilla wolf.
+     */
+    private void convertToVanillaWolf(@Nonnull Player player) {
+        if (!(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        Wolf vanillaWolf = EntityType.WOLF.create(serverLevel);
+        if (vanillaWolf == null) {
+            return;
+        }
+
+        vanillaWolf.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
+        vanillaWolf.setVariant(this.getVariant());
+        vanillaWolf.tame(player);
+        vanillaWolf.setOrderedToSit(true);
+
+        serverLevel.addFreshEntity(vanillaWolf);
+        serverLevel.broadcastEntityEvent(vanillaWolf, (byte) 7); // hearts: taming succeeded
+        this.discard();
+    }
+
     private void initGoals() {
         // Replace default standby & follow goals
         this.goalSelector.removeAllGoals((goal -> goal instanceof SitWhenOrderedToGoal || goal instanceof FollowOwnerGoal));
         this.goalSelector.addGoal(2, new WolfSitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(6, new WolfFollowOwnerGoal(this, 1.0D, 15.0F, 2.0F));
+
+        // Strip vanilla prey-hunting goals: wolves hunt sheep/rabbits/turtles when untamed by default,
+        // but Settlements wolves coexist peacefully with passive animals in village environments.
+        this.targetSelector.removeAllGoals(goal -> goal instanceof NonTameRandomTargetGoal<?>);
 
         // Add target to all mobs that are hostile to villagers
         ISettlementsVillager.getEnemyClasses()
