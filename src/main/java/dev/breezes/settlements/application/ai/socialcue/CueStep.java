@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.socialcue;
 
+import dev.breezes.settlements.application.ai.dialogue.DialogueLine;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -27,7 +28,7 @@ public sealed interface CueStep
     /**
      * Pushes a short-lived ambient message onto the FLAVOR bubble channel
      */
-    record Bubble(@Nonnull String text,
+    record Bubble(@Nonnull DialogueLine line,
                   @Nonnull ClockTicks ttl) implements CueStep {
     }
 

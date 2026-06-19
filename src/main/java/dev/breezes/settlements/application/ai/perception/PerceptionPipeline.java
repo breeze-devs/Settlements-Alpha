@@ -68,11 +68,6 @@ public final class PerceptionPipeline {
 
         ObservationBuffer buffer = runtimeState.getObservationBuffer();
         long newSeq = this.worldEventBus.visitDelta(lastSeenSeq, event -> {
-            // Skip events emitted by this villager itself
-            if (villager.getUUID().equals(event.getActorId())) {
-                return;
-            }
-
             if (!PerceptionGate.admits(event, villagerChunkX, villagerChunkZ)) {
                 return;
             }
@@ -100,8 +95,12 @@ public final class PerceptionPipeline {
         for (Observation observation : observations) {
             int similarPeerCount = observationTypeFrequencies[observation.type().ordinal()] - 1;
 
-            float score = this.importanceGate.score(observation, professionKey, genetics, similarPeerCount);
-            if (this.importanceGate.shouldPromote(score)) {
+            // Own deeds get a salience bump inside the gate so that meaningful completions
+            // reliably promote even when repetition dampens novelty.
+            boolean isSelfDeed = villager.getUUID().equals(observation.actorId());
+            float score = this.importanceGate.score(observation, professionKey, genetics, similarPeerCount, isSelfDeed);
+            boolean forceAdmit = isSelfDeed && observation.eventType().isSelfRememberableTerminalEvent();
+            if (forceAdmit || this.importanceGate.shouldPromote(score)) {
                 // Promote into the per-villager knowledge store. Direct observations are first-hand (hop=0, hearsay=false).
                 Map<String, String> metadata = ObservationFactory.metadataFor(observation);
                 KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(observation.id(), observation.content(),

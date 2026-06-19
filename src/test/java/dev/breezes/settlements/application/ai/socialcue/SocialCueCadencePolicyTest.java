@@ -11,6 +11,7 @@ class SocialCueCadencePolicyTest {
     private static final long BASE_TICKS = 1200L;
     private static final double LOW_CHA_MULTIPLIER = 4.0;
     private static final double HIGH_CHA_MULTIPLIER = 0.5;
+    private static final double ACTIVITY_FACTOR = 1.0;
     private static final double JITTER = 0.25;
 
     // -------------------------------------------------------------------------
@@ -24,7 +25,7 @@ class SocialCueCadencePolicyTest {
 
         // Act
         long result = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 0.5, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.LINEAR, JITTER, 0.5);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.LINEAR, ACTIVITY_FACTOR, JITTER, 0.5);
 
         // Assert
         assertEquals(expected, result);
@@ -37,7 +38,7 @@ class SocialCueCadencePolicyTest {
 
         // Act
         long result = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 1.0, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, JITTER, 0.5);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, ACTIVITY_FACTOR, JITTER, 0.5);
 
         // Assert
         assertEquals(expected, result);
@@ -50,7 +51,7 @@ class SocialCueCadencePolicyTest {
 
         // Act
         long result = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 0.0, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, JITTER, 0.5);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, ACTIVITY_FACTOR, JITTER, 0.5);
 
         // Assert
         assertEquals(expected, result);
@@ -63,7 +64,21 @@ class SocialCueCadencePolicyTest {
 
         // Act
         long result = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 0.5, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, 0.0, 0.5);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, ACTIVITY_FACTOR, 0.0, 0.5);
+
+        // Assert
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void cooldownTicks_activityFactor_multipliesCooldown() {
+        // Arrange: neutral jitter and high charisma leave activity as the extra multiplier.
+        double activityFactor = 1.3;
+        long expected = Math.round(BASE_TICKS * HIGH_CHA_MULTIPLIER * activityFactor);
+
+        // Act
+        long result = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 1.0, LOW_CHA_MULTIPLIER,
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.LINEAR, activityFactor, 0.0, 0.5);
 
         // Assert
         assertEquals(expected, result);
@@ -77,7 +92,7 @@ class SocialCueCadencePolicyTest {
 
         // Act
         long result = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 1.0, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.LINEAR, JITTER, 0.0);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.LINEAR, ACTIVITY_FACTOR, JITTER, 0.0);
 
         // Assert
         assertEquals(expected, result);
@@ -92,7 +107,7 @@ class SocialCueCadencePolicyTest {
 
         // Act
         long result = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 1.0, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.LINEAR, JITTER, random01);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.LINEAR, ACTIVITY_FACTOR, JITTER, random01);
 
         // Assert
         assertEquals(expected, result);
@@ -103,11 +118,11 @@ class SocialCueCadencePolicyTest {
         // Monotonic: a more charismatic villager should wait no longer than a less charismatic one
         // for the same random sample.
         long lowCha = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 0.0, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, JITTER, 0.5);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, ACTIVITY_FACTOR, JITTER, 0.5);
         long midCha = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 0.5, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, JITTER, 0.5);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, ACTIVITY_FACTOR, JITTER, 0.5);
         long highCha = SocialCueCadencePolicy.cooldownTicks(BASE_TICKS, 1.0, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, JITTER, 0.5);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, ACTIVITY_FACTOR, JITTER, 0.5);
 
         // Assert: strictly ordered
         assertTrue(highCha <= midCha, "CHA=1.0 should produce ≤ cooldown than CHA=0.5");
@@ -118,7 +133,7 @@ class SocialCueCadencePolicyTest {
     void cooldownTicks_neverNegative() {
         // Even with the smallest possible inputs the result must be non-negative.
         long result = SocialCueCadencePolicy.cooldownTicks(0L, 0.0, LOW_CHA_MULTIPLIER,
-                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, 0.0, 0.0);
+                HIGH_CHA_MULTIPLIER, SocialCueCooldownScaling.EXPONENTIAL, ACTIVITY_FACTOR, 0.0, 0.0);
 
         assertFalse(result < 0, "cooldownTicks must never return a negative value");
     }

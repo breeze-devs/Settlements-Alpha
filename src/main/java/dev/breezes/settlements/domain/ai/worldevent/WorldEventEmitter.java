@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.UUID;
@@ -61,21 +62,37 @@ public final class WorldEventEmitter {
                 gameTick);
     }
 
-    public void emitSheepSheared(BaseVillager actor) {
-        long gameTick = overworldTime(actor);
+    public void emitBehaviorFailed(BaseVillager villager, BehaviorKey key, @Nullable String reason) {
+        long gameTick = overworldTime(villager);
         this.bus.emit(
-                WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
-                        .type(WorldEventType.SHEEP_SHEARED)
-                        .actorId(actor.getUUID()),
+                WorldEvent.fromPos(villager.getX(), villager.getY(), villager.getZ())
+                        .type(WorldEventType.BEHAVIOR_FAILED)
+                        .actorId(villager.getUUID())
+                        .metadata(key.id())
+                        .outcome(EventOutcome.FAILURE)
+                        .reason(reason),
                 gameTick);
     }
 
-    public void emitCropHarvested(BaseVillager actor) {
+    public void emitTerminalBehaviorEvent(@Nonnull BaseVillager actor,
+                                          @Nonnull BehaviorKey key,
+                                          @Nonnull WorldEventType type,
+                                          @Nullable UUID targetId,
+                                          @Nullable UUID registryId,
+                                          @Nullable EventOutcome outcome,
+                                          @Nullable String detail,
+                                          @Nullable String reason) {
         long gameTick = overworldTime(actor);
         this.bus.emit(
                 WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
-                        .type(WorldEventType.CROP_HARVESTED)
-                        .actorId(actor.getUUID()),
+                        .type(type)
+                        .actorId(actor.getUUID())
+                        .targetId(targetId)
+                        .registryId(registryId)
+                        .metadata(key.id())
+                        .outcome(outcome)
+                        .detail(detail)
+                        .reason(reason),
                 gameTick);
     }
 
@@ -112,59 +129,6 @@ public final class WorldEventEmitter {
                         .actorId(actor.getUUID())
                         .targetId(targetId)
                         .registryId(sessionId),
-                gameTick);
-    }
-
-    public void emitTradeCompleted(BaseVillager actor, @Nullable UUID partnerId, UUID sessionId) {
-        long gameTick = overworldTime(actor);
-        this.bus.emit(
-                WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
-                        .type(WorldEventType.TRADE_COMPLETED)
-                        .actorId(actor.getUUID())
-                        .targetId(partnerId)
-                        .registryId(sessionId),
-                gameTick);
-    }
-
-    public void emitCourtshipCompleted(BaseVillager actor, @Nullable UUID partnerId, UUID sessionId) {
-        long gameTick = overworldTime(actor);
-        this.bus.emit(
-                WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
-                        .type(WorldEventType.COURTSHIP_COMPLETED)
-                        .actorId(actor.getUUID())
-                        .targetId(partnerId)
-                        .registryId(sessionId),
-                gameTick);
-    }
-
-    /**
-     * Emits a TIP_CONFIRMED event after Investigate finds the hearsay claim to be true.
-     * Perception-gate-admitted observers learn that the tip was verified, allowing
-     * downstream sensors to update their world model without re-investigating.
-     *
-     * @param actor the villager that completed the investigation
-     */
-    public void emitTipConfirmed(BaseVillager actor) {
-        long gameTick = overworldTime(actor);
-        this.bus.emit(
-                WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
-                        .type(WorldEventType.TIP_CONFIRMED)
-                        .actorId(actor.getUUID()),
-                gameTick);
-    }
-
-    /**
-     * Emits a TIP_REFUTED event after Investigate finds the hearsay claim to be false.
-     * Useful for social topics ("no melons out west") and diagnostic logging.
-     *
-     * @param actor the villager that completed the investigation
-     */
-    public void emitTipRefuted(BaseVillager actor) {
-        long gameTick = overworldTime(actor);
-        this.bus.emit(
-                WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
-                        .type(WorldEventType.TIP_REFUTED)
-                        .actorId(actor.getUUID()),
                 gameTick);
     }
 

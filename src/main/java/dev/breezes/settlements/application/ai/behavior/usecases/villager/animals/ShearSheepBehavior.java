@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedSte
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.items.ItemState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
@@ -25,7 +26,7 @@ import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsConditi
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.animation.PickUpAnimations;
@@ -90,20 +91,17 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private final ShearSheepConfig config;
-    private final WorldEventEmitter worldEventEmitter;
 
     private final AtomicInteger shearCount;
     private boolean shouldRewardExperience;
 
     public ShearSheepBehavior(@Nonnull ShearSheepConfig config,
                               @Nonnull HungerConfig hungerConfig,
-                              @Nonnull DemandSignalService demandSignalService,
-                              @Nonnull WorldEventEmitter worldEventEmitter) {
+                              @Nonnull DemandSignalService demandSignalService) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
 
         this.config = config;
-        this.worldEventEmitter = worldEventEmitter;
         this.shearCount = new AtomicInteger(0);
         this.shouldRewardExperience = false;
 
@@ -191,6 +189,8 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                         woolItems.add(woolItem);
                     }
                     context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(woolItems));
+                    context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                            .ifPresent(outcome -> outcome.recordYield(woolItems.size()));
                     this.shouldRewardExperience = true;
                     return StepResult.noOp();
                 })
@@ -244,6 +244,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
 
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.SHEEP_SHEARED, "wool"));
         Expertise expertise = context.getInitiator().getMinecraftEntity().getExpertise();
         int limit = config.expertiseShearLimit().get(expertise.getConfigName());
         this.shearCount.set(limit);
@@ -265,7 +266,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
         if (this.shouldRewardExperience) {
             this.rewardExperience(villager);
-            this.worldEventEmitter.emitSheepSheared(villager);
         }
 
         villager.getNavigationManager().stop();

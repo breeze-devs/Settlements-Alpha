@@ -28,6 +28,13 @@ class BubbleSegmentCodecTest {
                         .bold(true)
                         .scale(0.7F)
                         .build(),
+                BubbleSegment.Translatable.builder()
+                        .key("dialogue.settlements.generic.idle.1")
+                        .args(List.of("arg"))
+                        .color(ChatFormatting.BLACK)
+                        .bold(false)
+                        .scale(0.85F)
+                        .build(),
                 BubbleSegment.Sprite.builder()
                         .sprite(SpriteRef.SHEARS)
                         .frameDuration(ClockTicks.seconds(0.5))

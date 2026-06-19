@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.ai.observation;
 
+import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import lombok.Builder;
 
@@ -29,6 +30,9 @@ public record Observation(
         @Nullable UUID actorId,
         @Nullable UUID registryId,
         @Nullable String eventMetadata,
+        @Nullable EventOutcome outcome,
+        @Nullable String reason,
+        @Nullable String detail,
         double posX,
         double posY,
         double posZ

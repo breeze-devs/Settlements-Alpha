@@ -3,25 +3,18 @@ package dev.breezes.settlements.application.ai.dialogue;
 /**
  * Controls which inference path {@link DialogueProvider} uses
  * <p>
- * OFF is the default and requires no backend dialog service reachable — the mod is fully playable
- * without a dedicated dialog service endpoint. PACKS and LIVE both talk to the dialog service,
- * they differ only in when the call happens.
+ * SCRIPTED is the backend-free floor. REHEARSED layers pre-generated model lines over that floor.
  */
 public enum DialogueMode {
 
     /**
-     * No dialog generation. No network configuration is required.
+     * Hand-authored translation keys resolved locally and localized on each client.
      */
-    OFF,
+    SCRIPTED,
 
     /**
      * An evening batch generates per-villager utterance packs offline (zero daytime calls).
      */
-    PACKS,
-
-    /**
-     * A per-utterance call at speaking time with a tight deadline.
-     */
-    LIVE
+    REHEARSED
 
 }

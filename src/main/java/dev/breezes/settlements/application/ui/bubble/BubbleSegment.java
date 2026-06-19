@@ -6,6 +6,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * Closed vocabulary describing bubble content independent from concrete rendering templates.
@@ -13,7 +14,7 @@ import javax.annotation.Nonnull;
  * Keeping the wire model at this level lets application code express meaning compositionally
  * while the client remains free to decide how those primitives are drawn.
  */
-public sealed interface BubbleSegment permits BubbleSegment.Item, BubbleSegment.Text, BubbleSegment.Sprite {
+public sealed interface BubbleSegment permits BubbleSegment.Item, BubbleSegment.Text, BubbleSegment.Translatable, BubbleSegment.Sprite {
 
     @Builder
     record Item(@Nonnull ResourceLocation itemId, int count) implements BubbleSegment {
@@ -45,6 +46,24 @@ public sealed interface BubbleSegment permits BubbleSegment.Item, BubbleSegment.
         public Text {
             if (literal.isBlank()) {
                 throw new IllegalArgumentException("literal must not be blank");
+            }
+            if (scale <= 0.0F) {
+                throw new IllegalArgumentException("scale must be > 0");
+            }
+        }
+
+    }
+
+    @Builder
+    record Translatable(@Nonnull String key,
+                        @Nonnull List<String> args,
+                        @Nonnull ChatFormatting color,
+                        boolean bold,
+                        float scale) implements BubbleSegment {
+
+        public Translatable {
+            if (key.isBlank()) {
+                throw new IllegalArgumentException("key must not be blank");
             }
             if (scale <= 0.0F) {
                 throw new IllegalArgumentException("scale must be > 0");

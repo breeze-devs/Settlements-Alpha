@@ -15,9 +15,11 @@ public final class BubbleSegmentCodec {
     private static final byte TYPE_ITEM = 0x01;
     private static final byte TYPE_TEXT = 0x02;
     private static final byte TYPE_SPRITE = 0x03;
+    private static final byte TYPE_TRANSLATABLE = 0x04;
 
     public static final int MAX_SEGMENTS = 8;
     public static final int MAX_TEXT_LENGTH = 128;
+    public static final int MAX_TRANSLATABLE_ARGS = 4;
     private static final int MAX_FORMATTING_CODE_LENGTH = 1;
     private static final int MAX_SPRITE_NAME_LENGTH = 64;
 
@@ -29,6 +31,13 @@ public final class BubbleSegmentCodec {
                     .build();
             case TYPE_TEXT -> BubbleSegment.Text.builder()
                     .literal(buffer.readUtf(MAX_TEXT_LENGTH))
+                    .color(readFormatting(buffer.readUtf(MAX_FORMATTING_CODE_LENGTH)))
+                    .bold(buffer.readBoolean())
+                    .scale(buffer.readFloat())
+                    .build();
+            case TYPE_TRANSLATABLE -> BubbleSegment.Translatable.builder()
+                    .key(buffer.readUtf(MAX_TEXT_LENGTH))
+                    .args(readArgs(buffer))
                     .color(readFormatting(buffer.readUtf(MAX_FORMATTING_CODE_LENGTH)))
                     .bold(buffer.readBoolean())
                     .scale(buffer.readFloat())
@@ -54,6 +63,14 @@ public final class BubbleSegmentCodec {
                 buffer.writeUtf(String.valueOf(text.color().getChar()), MAX_FORMATTING_CODE_LENGTH);
                 buffer.writeBoolean(text.bold());
                 buffer.writeFloat(text.scale());
+            }
+            case BubbleSegment.Translatable translatable -> {
+                buffer.writeByte(TYPE_TRANSLATABLE);
+                buffer.writeUtf(translatable.key(), MAX_TEXT_LENGTH);
+                writeArgs(buffer, translatable.args());
+                buffer.writeUtf(String.valueOf(translatable.color().getChar()), MAX_FORMATTING_CODE_LENGTH);
+                buffer.writeBoolean(translatable.bold());
+                buffer.writeFloat(translatable.scale());
             }
             case BubbleSegment.Sprite sprite -> {
                 buffer.writeByte(TYPE_SPRITE);
@@ -100,6 +117,28 @@ public final class BubbleSegmentCodec {
         }
 
         throw new IllegalArgumentException("Invalid ChatFormatting code: " + formattingCode);
+    }
+
+    private static List<String> readArgs(@Nonnull FriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        if (size < 0 || size > MAX_TRANSLATABLE_ARGS) {
+            throw new IllegalArgumentException("Invalid translatable arg count: " + size);
+        }
+        List<String> args = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            args.add(buffer.readUtf(MAX_TEXT_LENGTH));
+        }
+        return args;
+    }
+
+    private static void writeArgs(@Nonnull FriendlyByteBuf buffer, @Nonnull List<String> args) {
+        if (args.size() > MAX_TRANSLATABLE_ARGS) {
+            throw new IllegalArgumentException("Invalid translatable arg count: " + args.size());
+        }
+        buffer.writeVarInt(args.size());
+        for (String arg : args) {
+            buffer.writeUtf(arg, MAX_TEXT_LENGTH);
+        }
     }
 
 }

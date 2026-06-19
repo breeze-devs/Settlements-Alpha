@@ -29,6 +29,7 @@ public final class SegmentRenderer {
         return switch (segment) {
             case BubbleSegment.Item item -> buildItem(item);
             case BubbleSegment.Text text -> buildText(text);
+            case BubbleSegment.Translatable translatable -> buildTranslatable(translatable);
             case BubbleSegment.Sprite sprite -> buildSprite(sprite);
         };
     }
@@ -77,6 +78,18 @@ public final class SegmentRenderer {
                 .component(component)
                 .scale(text.scale())
                 .maxWidth(maxWidth)
+                .build();
+    }
+
+    private static BubbleInnerElement buildTranslatable(BubbleSegment.Translatable translatable) {
+        MutableComponent component = Component.translatable(translatable.key(), translatable.args().toArray()).withStyle(translatable.color());
+        if (translatable.bold()) {
+            component = component.withStyle(ChatFormatting.BOLD);
+        }
+        return BubbleTextElement.builder()
+                .component(component)
+                .scale(translatable.scale())
+                .maxWidth(DEFAULT_TEXT_MAX_WIDTH)
                 .build();
     }
 

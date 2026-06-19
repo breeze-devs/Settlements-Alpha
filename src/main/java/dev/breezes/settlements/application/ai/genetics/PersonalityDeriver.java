@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Converts raw gene values into a short human-readable personality summary for the LLM planner.
+ * Converts raw gene values into stable personality trait tokens for inference payloads
  */
 public class PersonalityDeriver {
 
@@ -19,7 +19,7 @@ public class PersonalityDeriver {
     public PersonalityDeriver() {
     }
 
-    public String derivePersonalitySummary(GeneticsProfile genetics) {
+    public List<String> derivePersonalityTraits(GeneticsProfile genetics) {
         List<String> traits = new ArrayList<>();
 
         addTrait(traits, genetics, GeneType.STRENGTH,
@@ -35,7 +35,7 @@ public class PersonalityDeriver {
         addTrait(traits, genetics, GeneType.CHARISMA,
                 "charismatic and social", "approachable", "reserved and solitary");
 
-        return String.join(", ", traits);
+        return traits;
     }
 
     private static void addTrait(List<String> traits,

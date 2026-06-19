@@ -33,6 +33,7 @@ public final class SocialCueCadencePolicy {
      * @param lowCharismaMultiplier  the multiplier at CHA = 0.0
      * @param highCharismaMultiplier the multiplier at CHA = 1.0
      * @param scaling                the curve used to interpolate between the multiplier endpoints
+     * @param activityFactor         situation multiplier from the villager's current occasion
      * @param jitterFraction         the half-width of the uniform jitter band, e.g. 0.25 for ±25 %
      * @param random01               a uniform sample in [0,1) sourced from the villager's RandomSource
      * @return adjusted cooldown in ticks, never negative
@@ -42,11 +43,13 @@ public final class SocialCueCadencePolicy {
                                      double lowCharismaMultiplier,
                                      double highCharismaMultiplier,
                                      SocialCueCooldownScaling scaling,
+                                     double activityFactor,
                                      double jitterFraction,
                                      double random01) {
         double chaFactor = charismaFactor(charisma, lowCharismaMultiplier, highCharismaMultiplier, scaling);
+        double boundedActivityFactor = Math.max(0.0, activityFactor);
         double jitterFactor = (1.0 - jitterFraction) + random01 * (2.0 * jitterFraction);
-        return Math.max(0L, Math.round(baseTicks * chaFactor * jitterFactor));
+        return Math.max(0L, Math.round(baseTicks * chaFactor * boundedActivityFactor * jitterFactor));
     }
 
     private static double charismaFactor(double charisma,

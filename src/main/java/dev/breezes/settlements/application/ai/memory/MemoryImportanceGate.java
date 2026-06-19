@@ -19,6 +19,15 @@ public class MemoryImportanceGate {
 
     public static final float PROMOTION_THRESHOLD = 2.0F;
 
+    /**
+     * Additive bonus applied when the observing villager is the actor of the deed.
+     * <p>
+     * Sized to push a repeated own-RESOURCE deed (base 1.8, novelty tier 1.0, average genes)
+     * reliably over the promotion threshold. Low-base lifecycle terminal events may still score below
+     * threshold; the perception pipeline owns the separate self-terminal admission rule.
+     */
+    private static final float SELF_DEED_SALIENCE_BONUS = 0.5F;
+
     public float score(Observation observation, VillagerProfessionKey profession, GeneticsProfile genetics) {
         return this.score(observation, profession, genetics, List.of());
     }
@@ -40,12 +49,26 @@ public class MemoryImportanceGate {
                        VillagerProfessionKey profession,
                        GeneticsProfile genetics,
                        int similarPeerCount) {
+        return this.score(observation, profession, genetics, similarPeerCount, false);
+    }
+
+    /**
+     * Full scoring path. The {@code isSelfDeed} flag is set by the perception pipeline when
+     * the observation's actor UUID matches the observing villager, giving meaningful own deeds
+     * a salience bump so their stored weight reflects first-hand salience.
+     */
+    public float score(Observation observation,
+                       VillagerProfessionKey profession,
+                       GeneticsProfile genetics,
+                       int similarPeerCount,
+                       boolean isSelfDeed) {
         float base = observation.baseImportance();
         float novelty = this.computeNovelty(similarPeerCount);
         float geneModifier = this.computeGeneModifier(observation, genetics);
         float professionRelevance = this.computeProfessionRelevance(observation, profession);
+        float selfDeedBonus = this.computeSelfDeedBonus(observation, isSelfDeed);
 
-        return (base * novelty * geneModifier) + professionRelevance;
+        return (base * novelty * geneModifier) + professionRelevance + selfDeedBonus;
     }
 
     public boolean shouldPromote(float score) {
@@ -63,6 +86,20 @@ public class MemoryImportanceGate {
             return 0.5F;
         }
         return 0.1F;
+    }
+
+    /**
+     * Returns a salience bonus when the villager is re-experiencing its own meaningful deed.
+     * <p>
+     * This method shapes memory weight only. Admission is decided by {@code PerceptionPipeline},
+     * which force-admits self-authored terminal events while still letting observer-side lifecycle
+     * events remain low-signal background noise.
+     */
+    private float computeSelfDeedBonus(Observation observation, boolean isSelfDeed) {
+        if (!isSelfDeed) {
+            return 0.0F;
+        }
+        return SELF_DEED_SALIENCE_BONUS;
     }
 
     private float computeGeneModifier(Observation observation, GeneticsProfile genetics) {

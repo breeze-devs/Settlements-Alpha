@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetableLocation;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -21,7 +22,8 @@ import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeResolution;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
+import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -86,7 +88,6 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
 
     private final InvestigateConfig config;
     private final ReputationUtil reputationUtil;
-    private final WorldEventEmitter worldEventEmitter;
     private final ReputationQuery reputationQuery;
 
     /**
@@ -111,8 +112,7 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
     public InvestigateBehavior(@Nonnull InvestigateConfig config,
                                @Nonnull HungerConfig hungerConfig,
                                @Nonnull ReputationUtil reputationUtil,
-                               @Nonnull ReputationQuery reputationQuery,
-                               @Nonnull WorldEventEmitter worldEventEmitter) {
+                               @Nonnull ReputationQuery reputationQuery) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
@@ -121,7 +121,6 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
         this.config = config;
         this.reputationUtil = reputationUtil;
         this.reputationQuery = reputationQuery;
-        this.worldEventEmitter = worldEventEmitter;
 
         // Self-bind: on each precondition check, select the best eligible tip from the villager's
         // store. This removes the need for PlanRunner to reach in via instanceof and configure()
@@ -228,7 +227,9 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
                                     nowTick, entry.getOriginTimestampTick());
                         }
 
-                        this.worldEventEmitter.emitTipRefuted(villager);
+                        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.TIP_REFUTED, null);
+                        outcome.recordSocialOutcome(null, null, EventOutcome.SUCCESS, null, null);
+                        ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
                         log.behaviorStatus("InvestigateBehavior: soft-refuted tip {} after {} nav timeouts for villager {}",
                                 entry.getOriginObservationId(), entry.getInvestigationAttempts(), villager.getUUID());
                     } else {
@@ -271,12 +272,10 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
                                 world.getGameTime(), entry.getOriginTimestampTick());
                     }
 
-                    // Emit an observation
-                    if (confirmed) {
-                        this.worldEventEmitter.emitTipConfirmed(villager);
-                    } else {
-                        this.worldEventEmitter.emitTipRefuted(villager);
-                    }
+                    WorldEventType deedType = confirmed ? WorldEventType.TIP_CONFIRMED : WorldEventType.TIP_REFUTED;
+                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(deedType, null);
+                    outcome.recordSocialOutcome(null, null, EventOutcome.SUCCESS, null, null);
+                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
 
                     log.behaviorStatus("Investigate '{}' for villager {}: origin={} source={}",
                             resolution, villager.getUUID(), entry.getOriginObservationId(), entry.getSource());
@@ -290,6 +289,7 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.blank());
         // Place the tip position as the navigation target so StayCloseStep has something to navigate toward.
         if (this.tipEntry != null) {
             Vec3 tipPos = extractTipPosition(this.tipEntry);

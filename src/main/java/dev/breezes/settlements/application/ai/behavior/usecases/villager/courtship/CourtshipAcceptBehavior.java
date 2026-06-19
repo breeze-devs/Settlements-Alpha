@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
@@ -21,6 +22,8 @@ import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
@@ -118,6 +121,15 @@ public final class CourtshipAcceptBehavior extends VillagerStateMachineBehavior 
             if (!RandomUtil.chance(charismaAcceptanceChance(presenter, villager))) {
                 courtshipPresenter.presentAbort(pendingSession, villager, CourtshipCloseReason.REJECTED_CHARISMA);
                 this.sessionRegistry.closeSession(pendingSession.getSessionId(), CourtshipCloseReason.REJECTED_CHARISMA);
+
+                // The receiver is the only party that knows the charisma roll failed, so the
+                // rejection is published from here. The receiver is the actor; the presenter is
+                // the spurned target.
+                UUID presenterId = invite.presenterId();
+                UUID sessionId = pendingSession.getSessionId();
+                BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COURTSHIP_REJECTED, null);
+                outcome.recordSocialOutcome(presenterId, sessionId, EventOutcome.FAILURE, null, "their charm fell short");
+                context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
                 return;
             }
 

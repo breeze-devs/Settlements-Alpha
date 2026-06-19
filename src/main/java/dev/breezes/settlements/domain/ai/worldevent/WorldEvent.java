@@ -92,6 +92,30 @@ public final class WorldEvent {
     private final String metadata;
 
     /**
+     * Optional structured outcome of the event.
+     * Absent outcome is interpreted as {@link EventOutcome#SUCCESS} by all downstream
+     * consumers, so existing events that do not set this field are unaffected.
+     */
+    @Nullable
+    private final EventOutcome outcome;
+
+    /**
+     * Optional free-text reason fragment explaining the outcome.
+     * Meaningful when {@link #outcome} is {@link EventOutcome#FAILURE}.
+     * Example: "no bed available", "haggling fell through", "no one responded".
+     */
+    @Nullable
+    private final String reason;
+
+    /**
+     * Optional free-text detail string for enriching seed phrasing.
+     * Example: "3 melons", "4 bread for 1 emerald".
+     * Distinct from {@link #metadata} which carries structured behavior keys.
+     */
+    @Nullable
+    private final String detail;
+
+    /**
      * Convenience builder that derives chunk coordinates from world position.
      */
     public static WorldEventBuilder fromPos(double x, double y, double z) {

@@ -6,7 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorCo
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.blocks.VisitedBlockSitesState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.items.ItemState;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.InteractionOutcomeState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
@@ -25,6 +25,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.ChopAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -204,7 +205,8 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
         context.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
                 .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(world.dimension(), pos)));
         context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
-        context.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.success());
+        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                .ifPresent(outcome -> outcome.recordYield(totalItemCount(drops)));
         return StepResult.noOp();
     }
 
@@ -218,7 +220,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.empty());
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "ore"));
         context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
     }
 
@@ -227,6 +229,10 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
+    }
+
+    private static int totalItemCount(@Nonnull List<ItemStack> drops) {
+        return drops.stream().mapToInt(ItemStack::getCount).sum();
     }
 
 }

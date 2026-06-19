@@ -11,48 +11,39 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class DialogueModeResolutionTest {
 
     @Test
-    void resolvedMode_returnsOffForDefaultValue() {
+    void resolvedMode_returnsScriptedForDefaultValue() {
         // Arrange — the default config string per @BehaviorConfig annotation
-        DialogueConfig config = configWithMode("OFF");
+        DialogueConfig config = configWithMode("SCRIPTED");
 
         // Act / Assert
-        assertEquals(DialogueMode.OFF, config.resolvedMode());
+        assertEquals(DialogueMode.SCRIPTED, config.resolvedMode());
     }
 
     @Test
-    void resolvedMode_returnsPacks() {
+    void resolvedMode_returnsRehearsed() {
         // Arrange
-        DialogueConfig config = configWithMode("PACKS");
+        DialogueConfig config = configWithMode("REHEARSED");
 
         // Act / Assert
-        assertEquals(DialogueMode.PACKS, config.resolvedMode());
-    }
-
-    @Test
-    void resolvedMode_returnsLive() {
-        // Arrange
-        DialogueConfig config = configWithMode("LIVE");
-
-        // Act / Assert
-        assertEquals(DialogueMode.LIVE, config.resolvedMode());
+        assertEquals(DialogueMode.REHEARSED, config.resolvedMode());
     }
 
     @Test
     void resolvedMode_isCaseInsensitive() {
-        // Arrange — TOML authors might write "packs" or "Packs"
-        DialogueConfig config = configWithMode("packs");
+        // Arrange — TOML authors might write "rehearsed" or "Rehearsed"
+        DialogueConfig config = configWithMode("rehearsed");
 
         // Act / Assert
-        assertEquals(DialogueMode.PACKS, config.resolvedMode());
+        assertEquals(DialogueMode.REHEARSED, config.resolvedMode());
     }
 
     @Test
-    void resolvedMode_defaultsToOffForUnknownString() {
+    void resolvedMode_defaultsToScriptedForUnknownString() {
         // Arrange — typo in the config
         DialogueConfig config = configWithMode("UNKOWN_MODE");
 
         // Act / Assert — graceful degradation rather than crash
-        assertEquals(DialogueMode.OFF, config.resolvedMode());
+        assertEquals(DialogueMode.SCRIPTED, config.resolvedMode());
     }
 
     // -------------------------------------------------------------------------
@@ -63,15 +54,8 @@ class DialogueModeResolutionTest {
         // Construct the record with only the mode field meaningful; use defaults for the rest.
         return new DialogueConfig(
                 mode,
-                "",          // endpointBaseUrl
-                "gemma2:2b", // model
-                "",          // apiKey
-                0.8,         // temperature
-                48,          // maxOutputTokens
+                true,         // scriptedChatter
                 120,         // bubbleCharCap
-                2,           // maxConcurrentRequests
-                1500,        // liveDeadlineMillisAmbient
-                3500,        // liveDeadlineMillisPlayer
                 12,          // packLinesPerVillager
                 30           // packSweepDeadlineSeconds
         );

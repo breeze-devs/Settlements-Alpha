@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.socialcue;
 
+import dev.breezes.settlements.application.ai.dialogue.DialogueLine;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ class SocialCueTimingPolicyTest {
         SocialCueScript script = SocialCueScript.of(List.of(
                 new CueStep.Gesture(AnimationArchetype.WAVE),
                 new CueStep.Wait(ClockTicks.of(20)),
-                new CueStep.Bubble("hi", ClockTicks.of(3))
+                new CueStep.Bubble(DialogueLine.literal("hi"), ClockTicks.of(3))
         ));
         long start = 1000L;
 
@@ -129,7 +130,7 @@ class SocialCueTimingPolicyTest {
         SocialCueScript script = SocialCueScript.of(List.of(
                 new CueStep.Gaze(null),
                 new CueStep.Gesture(AnimationArchetype.WAVE),
-                new CueStep.Bubble("hi", ClockTicks.of(3)),
+                new CueStep.Bubble(DialogueLine.literal("hi"), ClockTicks.of(3)),
                 new CueStep.Wait(ClockTicks.of(40))
         ));
         long cueStart = 1000L;

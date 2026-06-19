@@ -8,10 +8,10 @@ import java.util.Random;
 
 /**
  * A per-villager set of pre-generated utterance lines, produced during the evening
- * PACKS sweep and sampled during the next day.
+ * REHEARSED sweep and sampled during the next day.
  * <p>
  * Lines are popped in a random order to avoid repetition within a day. When the pack
- * is exhausted the villager falls back to canned lines until the next evening sweep
+ * is exhausted the villager falls back to the lower dialogue rung until the next evening sweep
  * refreshes the pack.
  * <p>
  * Thread safety: this class is accessed from the server tick thread only. No external

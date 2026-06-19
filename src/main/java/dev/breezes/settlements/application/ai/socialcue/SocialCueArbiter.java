@@ -1,10 +1,13 @@
 package dev.breezes.settlements.application.ai.socialcue;
 
+import dev.breezes.settlements.application.ai.dialogue.Occasion;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
+import dev.breezes.settlements.domain.ai.planning.DayPlan;
+import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -63,7 +66,7 @@ public final class SocialCueArbiter {
         // Suppress the entire social cue lane when the villager is unavailable (e.g. sleeping).
         // Cancelling any in-flight cue here prevents a villager that falls asleep mid-cue from
         // freezing with a stale gaze or gesture locked until the cue's natural finish tick.
-        if (villager.isSociallyUnavailable()) {
+        if (!villager.isSociallyAvailable()) {
             if (runtimeState.isCueActive()) {
                 runtimeState.cancelActiveCue();
             }
@@ -124,6 +127,7 @@ public final class SocialCueArbiter {
                     this.eventLaneConfig.socialCueLowCharismaCooldownMultiplier(),
                     this.eventLaneConfig.socialCueHighCharismaCooldownMultiplier(),
                     SocialCueCooldownScaling.fromConfig(this.eventLaneConfig.socialCueCharismaCooldownScaling()),
+                    OccasionCadenceProfile.factorFor(resolveCooldownOccasion(villager)),
                     this.eventLaneConfig.socialCueCooldownJitterFraction(),
                     villager.getRandom().nextDouble());
             runtimeState.finish(gameTime, cooldownTicks);
@@ -196,6 +200,15 @@ public final class SocialCueArbiter {
         }
 
         return descriptor.getRequiredChannels();
+    }
+
+    private Occasion resolveCooldownOccasion(BaseVillager villager) {
+        DayPlan dayPlan = villager.getDayPlan();
+        if (dayPlan != null && dayPlan.getDayType() == PlanDayType.REST_DAY) {
+            return Occasion.REST_DAY;
+        }
+
+        return villager.getCurrentOccasion();
     }
 
     /**

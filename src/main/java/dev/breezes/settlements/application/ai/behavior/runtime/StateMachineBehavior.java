@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorCo
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.look.LookQueries;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
@@ -21,7 +22,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Optional;
 
-public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainEntity> extends AbstractBehavior<T> {
+public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainEntity> extends AbstractBehavior<T>
+        implements ProducesBehaviorOutcome {
 
     @Nullable
     private StagedStep<T> controlStep;
@@ -29,6 +31,9 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
     private StageKey expectedEndStage;
     @Nullable
     private BehaviorContext<T> context;
+    @Nullable
+    private BehaviorOutcome lastOutcome;
+    private BehaviorLifecycleResult lastLifecycleResult;
 
     private final ITickable lookControlCooldown;
 
@@ -37,6 +42,7 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
                                    @Nonnull ITickable behaviorCoolDown) {
         super(log, preconditionCheckCooldown, behaviorCoolDown);
         this.lookControlCooldown = ClockTicks.of(10).asTickable();
+        this.lastLifecycleResult = BehaviorLifecycleResult.clean();
     }
 
     protected final void initializeStateMachine(@Nonnull StagedStep<T> controlStep,
@@ -55,6 +61,8 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
         this.requireInitialized();
 
         this.context = new BehaviorContext<>(entity);
+        this.lastOutcome = null;
+        this.lastLifecycleResult = BehaviorLifecycleResult.clean();
         if (entity instanceof ProvidesTeardownLedger p) {
             this.context.getTeardownScope().bindLedger(p.getTeardownLedger());
         }
@@ -89,6 +97,8 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
             this.onBehaviorStop(world, entity);
         } finally {
             if (this.context != null) {
+                this.lastOutcome = this.context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                        .orElse(null);
                 this.context.getTeardownScope().teardownAll(this.context.getLevel());
             }
             this.context = null;
@@ -125,6 +135,17 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
             return Optional.empty();
         }
         return this.context.getState(type, castTo);
+    }
+
+    @Override
+    public Optional<BehaviorOutcome> getLastOutcome() {
+        return Optional.ofNullable(this.lastOutcome);
+    }
+
+    @Nonnull
+    @Override
+    public BehaviorLifecycleResult getLastLifecycleResult() {
+        return this.lastLifecycleResult;
     }
 
     protected boolean preTickGuard(int delta,
@@ -176,15 +197,18 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
         switch (result) {
             case StepResult.Transition(StageKey key) -> {
                 if (key.equals(endStage)) {
+                    this.lastLifecycleResult = BehaviorLifecycleResult.clean();
                     throw new StopBehaviorException("Behavior '%s' has ended".formatted(behaviorName));
                 }
 
                 this.getLog().behaviorError("Behavior '{}' produced unexpected transition '{}' (expected end '{}')",
                         behaviorName, key.name(), endStage.name());
+                this.lastLifecycleResult = BehaviorLifecycleResult.fail("unexpected transition '%s'".formatted(key.name()));
                 throw new StopBehaviorException("Behavior '%s' unexpected transition '%s'".formatted(behaviorName, key.name()));
             }
             case StepResult.Fail fail -> {
                 this.getLog().behaviorWarn("Behavior '{}' failed with code '{}' and details {}", behaviorName, fail.code(), fail.details());
+                this.lastLifecycleResult = BehaviorLifecycleResult.fail(fail.code());
                 throw new StopBehaviorException("Behavior '%s' failed with code '%s'".formatted(behaviorName, fail.code()));
             }
             case StepResult.Abort abort -> {
@@ -192,6 +216,7 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
                 if (abort.cause() != null) {
                     this.getLog().error(abort.cause(), "Behavior '{}' abort cause", behaviorName);
                 }
+                this.lastLifecycleResult = BehaviorLifecycleResult.abort(abort.code());
                 throw new StopBehaviorException("Behavior '%s' aborted with code '%s'".formatted(behaviorName, abort.code()));
             }
             default -> {

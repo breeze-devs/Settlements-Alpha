@@ -7,6 +7,9 @@ import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry
 import dev.breezes.settlements.application.ai.dialogue.DialogueProvider;
 import dev.breezes.settlements.application.ai.genetics.PersonalityDeriver;
 import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
+import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
+import dev.breezes.settlements.application.ai.inference.InferenceTransport;
+import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.perception.PerceptionPipeline;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueArbiter;
@@ -17,10 +20,10 @@ import dev.breezes.settlements.application.settlement.persistence.SettlementMeta
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.bootstrap.event.CourtshipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.CredibilityDecayServerEvents;
-import dev.breezes.settlements.bootstrap.event.EveningDialoguePackSweepServerEvents;
 import dev.breezes.settlements.bootstrap.event.GossipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
+import dev.breezes.settlements.bootstrap.event.RehearsedDialogueSweepServerEvents;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerZombificationServerEvents;
@@ -138,9 +141,15 @@ public interface ServerComponent {
 
     DialogueProvider dialogueProvider();
 
+    DialogueConfig dialogueConfig();
+
+    InferenceTransport inferenceTransport();
+
+    MonologueRequestAssembler monologueRequestAssembler();
+
     EventLaneConfig eventLaneConfig();
 
-    EveningDialoguePackSweepServerEvents eveningDialoguePackSweepServerEvents();
+    RehearsedDialogueSweepServerEvents eveningDialoguePackSweepServerEvents();
 
     VillagerZombificationServerEvents villagerZombificationServerEvents();
 

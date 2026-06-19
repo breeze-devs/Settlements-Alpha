@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifac
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
@@ -18,13 +19,16 @@ import dev.breezes.settlements.application.ai.courtship.CourtshipChoreographyLib
 import dev.breezes.settlements.application.ai.courtship.CourtshipCloseReason;
 import dev.breezes.settlements.application.ai.courtship.CourtshipConstants;
 import dev.breezes.settlements.application.ai.courtship.CourtshipPhase;
+import dev.breezes.settlements.application.ai.courtship.CourtshipSelfMemoryRecorder;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSession;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -58,6 +62,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     private final CourtshipPresenter courtshipPresenter;
     private final CourtshipChoreographyLibrary choreographyLibrary;
     private final WorldEventEmitter worldEventEmitter;
+    private final CourtshipSelfMemoryRecorder selfMemoryRecorder;
 
     @Nullable
     private UUID activeSessionId;
@@ -68,7 +73,8 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
                                      @Nonnull BedReservationService bedReservationService,
                                      @Nonnull CourtshipPresenter courtshipPresenter,
                                      @Nonnull CourtshipChoreographyLibrary choreographyLibrary,
-                                     @Nonnull WorldEventEmitter worldEventEmitter) {
+                                     @Nonnull WorldEventEmitter worldEventEmitter,
+                                     @Nonnull CourtshipSelfMemoryRecorder selfMemoryRecorder) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
@@ -79,6 +85,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         this.courtshipPresenter = courtshipPresenter;
         this.choreographyLibrary = choreographyLibrary;
         this.worldEventEmitter = worldEventEmitter;
+        this.selfMemoryRecorder = selfMemoryRecorder;
 
         this.preconditions.add(this.canInitiateCourtship());
         this.initializeStateMachine(this.createControlStep(), Stage.CLOSED);
@@ -88,6 +95,11 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
+        // Stay silent unless a successful birth declares the COURTSHIP_COMPLETED deed. Every abort
+        // (no bed, partner gone, willingness lost, spawn failed, timeout, external cancel) publishes
+        // nothing: the timeout case writes a private self-memory directly, and the rest are only
+        // observable as the pair breaking apart, not as a finished courtship.
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.silent());
         this.activeSessionId = null;
     }
 
@@ -356,8 +368,9 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         this.courtshipPresenter.presentBirth(session, self, partner);
         this.sessionRegistry.closeSession(session.getSessionId(), CourtshipCloseReason.COMPLETED);
 
-        // Emit a WORLD event so observers know this courtship ended.
-        this.worldEventEmitter.emitCourtshipCompleted(self, session.getReceiverId(), session.getSessionId());
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COURTSHIP_COMPLETED, null);
+        outcome.recordSocialOutcome(session.getReceiverId(), session.getSessionId(), EventOutcome.SUCCESS, null, null);
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
 
         return StepResult.complete();
     }
@@ -383,6 +396,14 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
                                @Nonnull CourtshipCloseReason reason) {
         this.courtshipPresenter.presentAbort(session, self, reason);
         this.sessionRegistry.closeSession(session.getSessionId(), reason);
+
+        // The timeout failure is private: the initiator waited in silence and no one responded.
+        // No bystander could witness this, so it is written directly into self-memory rather than
+        // broadcast on the bus. The villager still deserves to remember the unanswered attempt.
+        if (reason == CourtshipCloseReason.TIMEOUT) {
+            this.selfMemoryRecorder.recordPrivateFailure(self, session.getReceiverId(), "no one answered");
+        }
+
         return StepResult.complete();
     }
 

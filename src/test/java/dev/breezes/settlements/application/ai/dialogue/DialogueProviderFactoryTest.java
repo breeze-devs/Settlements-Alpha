@@ -2,112 +2,76 @@ package dev.breezes.settlements.application.ai.dialogue;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for {@link DialogueProviderFactory} mode resolution and the OFF fallback.
+ * Unit tests for {@link DialogueProviderFactory} mode resolution and fallback wiring.
  * No Minecraft types; pure domain logic.
  */
 class DialogueProviderFactoryTest {
 
-    private static final String VALID_ENDPOINT = "http://localhost:11434";
-
     @Test
-    void create_offMode_returnsOffProvider() {
+    void create_scriptedMode_returnsScriptedProvider() {
         // Arrange
-        DialogueConfig config = config("OFF", "");
+        DialogueConfig config = config("SCRIPTED", true);
 
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config);
+        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex());
 
         // Assert
-        assertInstanceOf(OffDialogueProvider.class, provider);
-        assertFalse(provider.isEnabled());
-    }
-
-    @Test
-    void create_packsModeWithBlankEndpoint_fallsBackToOff() {
-        // Arrange — misconfigured: PACKS selected but no endpoint set
-        DialogueConfig config = config("PACKS", "");
-
-        // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config);
-
-        // Assert — must degrade to OFF, not build a client that throws on first call
-        assertInstanceOf(OffDialogueProvider.class, provider);
-        assertFalse(provider.isEnabled());
-    }
-
-    @Test
-    void create_liveModeWithBlankEndpoint_fallsBackToOff() {
-        // Arrange
-        DialogueConfig config = config("LIVE", "");
-
-        // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config);
-
-        // Assert
-        assertInstanceOf(OffDialogueProvider.class, provider);
-        assertFalse(provider.isEnabled());
-    }
-
-    @Test
-    void create_packsModeWithEndpoint_returnsPacksProvider() {
-        // Arrange
-        DialogueConfig config = config("PACKS", VALID_ENDPOINT);
-
-        // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config);
-
-        // Assert
-        assertInstanceOf(PacksDialogueProvider.class, provider);
+        assertInstanceOf(ScriptedDialogueProvider.class, provider);
         assertTrue(provider.isEnabled());
     }
 
     @Test
-    void create_liveModeWithEndpoint_returnsLiveProvider() {
-        // Arrange
-        DialogueConfig config = config("LIVE", VALID_ENDPOINT);
+    void create_rehearsedModeWithBlankEndpoint_fallsBackToScripted() {
+        // Arrange — phase 1 keeps REHEARSED on SCRIPTED until MONOLOGUE runtime wiring lands.
+        DialogueConfig config = config("REHEARSED", true);
 
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config);
+        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex());
 
-        // Assert
-        assertInstanceOf(LiveDialogueProvider.class, provider);
+        // Assert — must degrade to SCRIPTED, not build a client that throws on first call
+        assertInstanceOf(ScriptedDialogueProvider.class, provider);
         assertTrue(provider.isEnabled());
     }
 
     @Test
-    void create_unknownModeString_defaultsToOff() {
-        // Arrange — a typo'd mode must not crash; resolvedMode() falls back to OFF
-        DialogueConfig config = config("garbage", VALID_ENDPOINT);
+    void create_rehearsedMode_degradesToScriptedDuringPhaseOne() {
+        // Arrange
+        DialogueConfig config = config("REHEARSED", true);
 
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config);
+        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex());
 
         // Assert
-        assertInstanceOf(OffDialogueProvider.class, provider);
-        assertFalse(provider.isEnabled());
+        assertInstanceOf(ScriptedDialogueProvider.class, provider);
+        assertTrue(provider.isEnabled());
+    }
+
+    @Test
+    void create_unknownModeString_defaultsToScripted() {
+        // Arrange — a typo'd mode must not crash; resolvedMode() falls back to SCRIPTED
+        DialogueConfig config = config("garbage", true);
+
+        // Act
+        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex());
+
+        // Assert
+        assertInstanceOf(ScriptedDialogueProvider.class, provider);
+        assertTrue(provider.isEnabled());
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static DialogueConfig config(String mode, String endpoint) {
+    private static DialogueConfig config(String mode, boolean scriptedChatter) {
         return new DialogueConfig(
                 mode,
-                endpoint,
-                "gemma2:2b",
-                "",     // apiKey — none
-                0.8,    // temperature
-                48,     // maxOutputTokens
+                scriptedChatter,
                 120,    // bubbleCharCap
-                2,      // maxConcurrentRequests
-                1500,   // liveDeadlineMillisAmbient
-                3500,   // liveDeadlineMillisPlayer
                 12,     // packLinesPerVillager
                 30      // packSweepDeadlineSeconds
         );

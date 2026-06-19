@@ -17,31 +17,25 @@ public interface DialogueProvider {
 
     /**
      * Samples a single ambient utterance line for the given villager to display in a FLAVOR
-     * bubble. The call returns immediately: in LIVE mode it fires an async request and
-     * returns empty until inference lands; in PACKS mode it samples a pre-generated line
-     * synchronously; in OFF mode it always returns empty.
+     * bubble. The call returns immediately: SCRIPTED returns a translatable key, while
+     * REHEARSED returns a literal model line when available and otherwise falls back to SCRIPTED.
      * <p>
      * The result, if present, has already been sanitized by {@link DialogueResponseSanitizer}.
      *
      * @param villagerUuid the unique id of the speaking villager
      * @param context      structured prompt context assembled by the caller
-     * @return a sanitized, displayable line, or empty when nothing is available yet
+     * @return a sanitized, displayable line, or empty when the configured floor is silent
      */
-    Optional<String> sampleAmbientLine(UUID villagerUuid, DialogueContext context);
+    Optional<DialogueLine> sampleAmbientLine(UUID villagerUuid, DialogueContext context);
 
     /**
-     * Kicks off the evening batch sweep: for each supplied villager context the provider
-     * generates a pack of candidate lines and stores them for daytime sampling. Called once
-     * per in-game evening from the server-tick event.
+     * Kicks off the evening batch sweep. Called once per in-game evening from the server-tick event.
      * <p>
-     * This is a no-op in OFF and LIVE modes; PACKS mode performs async generation within
+     * This is a no-op in SCRIPTED mode; REHEARSED mode performs async generation within
      * the configured sweep deadline.
-     * TODO:CONFIRM -- technically LIVE mode can benefit from having PACKS too.
-     *   if evening dialog service is not busy, we can generate a pack. if live fails we fall back to the pack
      *
-     * @param villagerContexts one context entry per villager that needs a refreshed pack
      */
-    void runEveningPackSweep(Iterable<VillagerDialogueContext> villagerContexts);
+    void runEveningPackSweep();
 
     /**
      * Returns {@code true} if this provider is effectively enabled — i.e. will ever produce
@@ -49,5 +43,12 @@ public interface DialogueProvider {
      * disabled, avoiding any wasted work.
      */
     boolean isEnabled();
+
+    /**
+     * Returns true for providers that can use evening batch context collection.
+     */
+    default boolean supportsRehearsedDialogSweep() {
+        return false;
+    }
 
 }

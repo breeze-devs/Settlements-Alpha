@@ -11,6 +11,7 @@ import dev.breezes.settlements.application.ai.behavior.teardown.TeardownObligati
 import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VillagerBrain;
+import dev.breezes.settlements.application.ai.dialogue.Occasion;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueRuntimeState;
 import dev.breezes.settlements.application.hunger.HungerConfig;
@@ -47,6 +48,7 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.ai.dialogue.ActivityOccasionMapper;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerCredibilityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
@@ -384,11 +386,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
      * Future states (e.g. stunned, panicking, in-dialogue) should be added here rather than
      * in the arbiter so the arbiter stays free of lifecycle details.
      */
-    public boolean isSociallyUnavailable() {
+    public boolean isSociallyAvailable() {
         if (this.isSleeping()) {
             return false;
         }
-
 
         // Check active brain activity
         Optional<Activity> activity = this.getBrain().getActiveNonCoreActivity();
@@ -402,6 +403,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         return true;
+    }
+
+    public Occasion getCurrentOccasion() {
+        return ActivityOccasionMapper.map(this.getBrain().getActiveNonCoreActivity().orElse(Activity.IDLE));
     }
 
     @Override

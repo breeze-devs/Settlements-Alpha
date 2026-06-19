@@ -21,6 +21,12 @@ public enum WorldEventType {
     BEHAVIOR_COMPLETED(WorldEventNamespace.WORLD),
 
     /**
+     * A villager's behavior terminated without accomplishing its intended deed. Carries the
+     * behavior key as metadata and an optional reason.
+     */
+    BEHAVIOR_FAILED(WorldEventNamespace.WORLD),
+
+    /**
      * A notable resource mutation: sheep was sheared.
      */
     SHEEP_SHEARED(WorldEventNamespace.WORLD),
@@ -43,6 +49,13 @@ public enum WorldEventType {
      * First-accept-wins resolution goes through {@code CourtshipSessionRegistry}, not the bus.
      */
     COURTSHIP_COMPLETED(WorldEventNamespace.WORLD),
+
+    /**
+     * A social act: a courtship advance was turned down. The actor is the receiver who declined;
+     * the target is the spurned presenter. Only the receiver knows why it was rejected, so this is
+     * emitted from the accept-side behavior. Carries the session registry id.
+     */
+    COURTSHIP_REJECTED(WorldEventNamespace.WORLD),
 
     /**
      * A social act: this villager sent a trade invite to a target.
@@ -82,5 +95,26 @@ public enum WorldEventType {
     ;
 
     private final WorldEventNamespace namespace;
+
+    /**
+     * Salient terminal deeds a villager always remembers about its own actions — the durable record
+     * of what a behavior run accomplished. Generic lifecycle completion/failure is excluded: it is
+     * low-signal background noise and would otherwise flood the bounded knowledge store with
+     * "finished a task" entries. Those still pass through the importance gate, which keeps them
+     * below the promotion threshold.
+     * <p>
+     * Keeping this classification next to the event registry prevents perception, inference, and
+     * future memory compaction from drifting as new terminal deeds are added.
+     */
+    public boolean isSelfRememberableTerminalEvent() {
+        return switch (this) {
+            case SHEEP_SHEARED, CROP_HARVESTED,
+                 TRADE_COMPLETED, COURTSHIP_COMPLETED, COURTSHIP_REJECTED,
+                 TIP_CONFIRMED, TIP_REFUTED -> true;
+            case BEHAVIOR_STARTED, BEHAVIOR_COMPLETED, BEHAVIOR_FAILED,
+                 TRADE_INVITE_SENT, COURTSHIP_INVITE_SENT,
+                 DAY_PLAN_INVALIDATED, PLAN_EXHAUSTED -> false;
+        };
+    }
 
 }

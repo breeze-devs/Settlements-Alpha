@@ -4,9 +4,11 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
 import dagger.multibindings.Multibinds;
+import dev.breezes.settlements.application.ai.dialogue.AmbientDialogueContextAssembler;
 import dev.breezes.settlements.application.ai.dialogue.DialogueContext;
-import dev.breezes.settlements.application.ai.dialogue.DialoguePriority;
+import dev.breezes.settlements.application.ai.dialogue.DialogueLine;
 import dev.breezes.settlements.application.ai.dialogue.DialogueProvider;
+import dev.breezes.settlements.application.ai.dialogue.Occasion;
 import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
 import dev.breezes.settlements.application.ai.socialcue.CueStep;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueCatalogEntry;
@@ -19,19 +21,21 @@ import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
+import dev.breezes.settlements.domain.ai.planning.DayPlan;
+import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.time.TimeOfDay;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.PlayerGreetCooldownAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerWasCuredAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -48,6 +52,9 @@ import java.util.function.Predicate;
 public abstract class SocialCueCatalogModule {
 
     private static final ClockTicks PLAYER_GREET_GLOBAL_COOLDOWN = ClockTicks.minutes(2);
+    private static final ClockTicks SITUATIONAL_DIALOGUE_COOLDOWN = ClockTicks.minutes(5);
+    private static final ClockTicks ZOMBIE_SIGHTED_COOLDOWN = ClockTicks.minutes(2);
+    private static final int CLOCK_WINDOW_TICKS = ClockTicks.seconds(30).getTicksAsInt();
 
     @Multibinds
     abstract Set<SocialCueCatalogEntry> socialCueCatalogEntries();
@@ -108,12 +115,13 @@ public abstract class SocialCueCatalogModule {
     /**
      * Ambient chatter cue: the villager speaks a short flavor line from the dialogue provider
      * <p>
-     * When the provider is OFF the trigger returns empty, so there is no cue, no bubble, and zero overhead
+     * When the provider is disabled the trigger returns empty, so there is no cue, no bubble, and zero overhead
      */
     @Provides
     @IntoSet
     static SocialCueCatalogEntry villagerChatter(DialogueProvider dialogueProvider,
-                                                 EventLaneConfig eventLaneConfig) {
+                                                 EventLaneConfig eventLaneConfig,
+                                                 AmbientDialogueContextAssembler contextAssembler) {
         return SocialCueCatalogEntry.builder()
                 .key("villager_chatter")
                 .channel(BehaviorChannel.SOCIAL)
@@ -127,15 +135,65 @@ public abstract class SocialCueCatalogModule {
                     return Optional.of("villager_chatter");
                 })
                 .scriptFactory(villager -> dialogueProvider
-                        .sampleAmbientLine(villager.getUUID(), buildAmbientContext(villager))
+                        .sampleAmbientLine(villager.getUUID(), contextAssembler.assemble(villager))
                         // Has ambient line: show it for 4s
-                        .map(text -> SocialCueScript.of(List.of(
-                                new CueStep.Bubble(text, ClockTicks.seconds(4)),
+                        .map(line -> SocialCueScript.of(List.of(
+                                new CueStep.Bubble(line, ClockTicks.seconds(4)),
                                 new CueStep.Wait(ClockTicks.seconds(3))
                         )))
                         // No line: an empty script occupies no time and shows nothing
                         .orElseGet(() -> SocialCueScript.of(List.of())))
                 .build();
+    }
+
+    @Provides
+    @IntoSet
+    static SocialCueCatalogEntry zombieSighted(DialogueProvider dialogueProvider,
+                                               AmbientDialogueContextAssembler contextAssembler) {
+        return SocialCueCatalogEntry.builder()
+                .key("zombie_sighted")
+                .channel(BehaviorChannel.SOCIAL)
+                .channel(BehaviorChannel.INTERACTION)
+                .cooldown(ZOMBIE_SIGHTED_COOLDOWN)
+                .perTargetCooldown(ClockTicks.minutes(5))
+                .trigger(villager -> {
+                    if (!dialogueProvider.isEnabled()) {
+                        return Optional.empty();
+                    }
+
+                    return nearestZombie(villager).map(zombie -> zombie.getUUID().toString());
+                })
+                .scriptFactory(villager -> buildDialogueScript(dialogueProvider, villager.getUUID(),
+                        contextAssembler.assemble(villager, Occasion.ZOMBIE_SIGHTED)))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static SocialCueCatalogEntry morningDialogue(DialogueProvider dialogueProvider,
+                                                 AmbientDialogueContextAssembler contextAssembler) {
+        return fixedOccasionCue("morning", Occasion.MORNING,
+                villager -> dialogueProvider.isEnabled() && isCurrentDayTickInWindow(villager, TimeOfDay.AT_07_00.getTick()),
+                dialogueProvider, contextAssembler);
+    }
+
+    @Provides
+    @IntoSet
+    static SocialCueCatalogEntry eveningDialogue(DialogueProvider dialogueProvider,
+                                                 AmbientDialogueContextAssembler contextAssembler) {
+        return fixedOccasionCue("evening", Occasion.EVENING,
+                villager -> dialogueProvider.isEnabled() && isCurrentDayTickInWindow(villager, TimeOfDay.AT_18_00.getTick()),
+                dialogueProvider, contextAssembler);
+    }
+
+    @Provides
+    @IntoSet
+    static SocialCueCatalogEntry restDayDialogue(DialogueProvider dialogueProvider,
+                                                 AmbientDialogueContextAssembler contextAssembler) {
+        return fixedOccasionCue("rest_day", Occasion.REST_DAY,
+                villager -> dialogueProvider.isEnabled() && isRestDay(villager)
+                        && isCurrentDayTickInWindow(villager, TimeOfDay.AT_10_00.getTick()),
+                dialogueProvider, contextAssembler);
     }
 
     /**
@@ -203,7 +261,7 @@ public abstract class SocialCueCatalogModule {
 
                     return SocialCueScript.of(List.of(
                             new CueStep.Gaze(gazeTarget),
-                            new CueStep.Bubble("psst...", ClockTicks.seconds(3)),
+                            new CueStep.Bubble(DialogueLine.literal("psst..."), ClockTicks.seconds(3)),
                             new CueStep.Wait(ClockTicks.seconds(2))
                     ));
                 })
@@ -260,7 +318,7 @@ public abstract class SocialCueCatalogModule {
                 .scriptFactory(receiver -> {
                     // Mirror the initiator's lean-in cue so both villagers perform the gesture.
                     return SocialCueScript.of(List.of(
-                            new CueStep.Bubble("(listening)", ClockTicks.seconds(3)),
+                            new CueStep.Bubble(DialogueLine.literal("(listening)"), ClockTicks.seconds(3)),
                             new CueStep.Wait(ClockTicks.seconds(2))
                     ));
                 })
@@ -352,30 +410,49 @@ public abstract class SocialCueCatalogModule {
                 .closest(BaseVillager.class, canGossipToPredicate, initiator);
     }
 
-    /**
-     * Builds a minimal ambient {@link DialogueContext} from the villager's profession and
-     * knowledge store: a terse persona plus up to five knowledge seeds, AMBIENT priority, no
-     * specific stimulus. Only the LIVE provider reads this; PACKS samples a pre-generated line.
-     */
-    private static DialogueContext buildAmbientContext(BaseVillager villager) {
-        // TODO:CONFIRM & TODO:LLM; this is hard coded
-        // Provisional was-cured injection — the LLM rework (docs/working/llm-rework.md) will fold
-        // this into the persona token bundle rather than appending it here.
-        DialogueContext.DialogueContextBuilder builder = DialogueContext.builder()
-                .personaCard("Profession: %s. Personality: diligent, sociable.%s"
-                        .formatted(villager.getVillagerData().getProfession().toString(),
-                                VillagerWasCuredAttachment.wasCured(villager) ? " Survived being a zombie and was cured." : ""))
-                .priority(DialoguePriority.AMBIENT);
+    private static SocialCueCatalogEntry fixedOccasionCue(String key,
+                                                          Occasion occasion,
+                                                          Predicate<BaseVillager> triggerPredicate,
+                                                          DialogueProvider dialogueProvider,
+                                                          AmbientDialogueContextAssembler contextAssembler) {
+        return SocialCueCatalogEntry.builder()
+                .key(key)
+                .channel(BehaviorChannel.SOCIAL)
+                .channel(BehaviorChannel.INTERACTION)
+                .cooldown(SITUATIONAL_DIALOGUE_COOLDOWN)
+                .perTargetCooldown(ClockTicks.ZERO)
+                .trigger(villager -> triggerPredicate.test(villager)
+                        ? Optional.of(key)
+                        : Optional.empty())
+                .scriptFactory(villager -> buildDialogueScript(dialogueProvider, villager.getUUID(),
+                        contextAssembler.assemble(villager, occasion)))
+                .build();
+    }
 
-        int seedCount = 0;
-        for (KnowledgeEntry entry : villager.getKnowledgeStore().entriesView()) {
-            if (seedCount >= 5) {
-                break;
-            }
-            builder.groundingSeed(entry.getContent());
-            seedCount++;
-        }
-        return builder.build();
+    private static SocialCueScript buildDialogueScript(DialogueProvider dialogueProvider, UUID villagerUuid, DialogueContext context) {
+        return dialogueProvider.sampleAmbientLine(villagerUuid, context)
+                .map(line -> SocialCueScript.of(List.of(
+                        new CueStep.Bubble(line, ClockTicks.seconds(4)),
+                        new CueStep.Wait(ClockTicks.seconds(3)))))
+                .orElseGet(() -> SocialCueScript.of(List.of()));
+    }
+
+    private static Optional<Zombie> nearestZombie(BaseVillager villager) {
+        return villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty())
+                .closest(Zombie.class, Zombie::isAlive, villager);
+    }
+
+    private static boolean isCurrentDayTickInWindow(BaseVillager villager, int startTick) {
+        int currentTick = Math.floorMod(villager.level().getDayTime(), TimeOfDay.TICKS_PER_DAY);
+        int elapsed = Math.floorMod(currentTick - startTick, TimeOfDay.TICKS_PER_DAY);
+        return elapsed < CLOCK_WINDOW_TICKS;
+    }
+
+    private static boolean isRestDay(BaseVillager villager) {
+        DayPlan dayPlan = villager.getDayPlan();
+        return dayPlan != null && dayPlan.getDayType() == PlanDayType.REST_DAY;
     }
 
 }

@@ -1,8 +1,10 @@
 package dev.breezes.settlements.domain.ai.perception;
 
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
+import dev.breezes.settlements.application.ai.inference.monologue.SeedPhrasebook;
 import dev.breezes.settlements.domain.ai.observation.Observation;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
+import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ObservationFactoryTest {
@@ -290,6 +293,190 @@ class ObservationFactoryTest {
 
         // Assert
         assertEquals(targetId, observation.relatedEntity());
+    }
+
+    // -------------------------------------------------------------------------
+    // WS3a: outcome / reason / detail — fromEvent propagation
+    // -------------------------------------------------------------------------
+
+    @Test
+    void fromEvent_propagatesOutcomeOntoObservation() {
+        // Arrange
+        WorldEvent event = WorldEvent.builder()
+                .sequence(1L)
+                .gameTick(100L)
+                .type(WorldEventType.COURTSHIP_COMPLETED)
+                .actorId(UUID.randomUUID())
+                .posX(0).posY(64).posZ(0)
+                .chunkX(0).chunkZ(0)
+                .outcome(EventOutcome.FAILURE)
+                .build();
+
+        // Act
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Assert
+        assertEquals(EventOutcome.FAILURE, observation.outcome());
+    }
+
+    @Test
+    void fromEvent_propagatesReasonOntoObservation() {
+        // Arrange
+        WorldEvent event = WorldEvent.builder()
+                .sequence(1L)
+                .gameTick(100L)
+                .type(WorldEventType.COURTSHIP_COMPLETED)
+                .actorId(UUID.randomUUID())
+                .posX(0).posY(64).posZ(0)
+                .chunkX(0).chunkZ(0)
+                .reason("no bed available")
+                .build();
+
+        // Act
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Assert
+        assertEquals("no bed available", observation.reason());
+    }
+
+    @Test
+    void fromEvent_propagatesDetailOntoObservation() {
+        // Arrange
+        WorldEvent event = WorldEvent.builder()
+                .sequence(1L)
+                .gameTick(100L)
+                .type(WorldEventType.CROP_HARVESTED)
+                .actorId(UUID.randomUUID())
+                .posX(0).posY(64).posZ(0)
+                .chunkX(0).chunkZ(0)
+                .detail("3 melons")
+                .build();
+
+        // Act
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Assert
+        assertEquals("3 melons", observation.detail());
+    }
+
+    @Test
+    void fromEvent_absenceOfNewFields_leavesNullsOnObservation() {
+        // Arrange — a plain event without outcome/reason/detail (mirrors all pre-WS3a events)
+        WorldEvent event = worldEvent(WorldEventType.TRADE_COMPLETED);
+
+        // Act
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Assert — nulls propagate, not defaults
+        assertNull(observation.outcome());
+        assertNull(observation.reason());
+        assertNull(observation.detail());
+    }
+
+    // -------------------------------------------------------------------------
+    // WS3a: outcome / reason / detail — metadataFor writes keys conditionally
+    // -------------------------------------------------------------------------
+
+    @Test
+    void metadataFor_writesOutcomeKeyWhenPresent() {
+        // Arrange
+        WorldEvent event = WorldEvent.builder()
+                .sequence(1L)
+                .gameTick(100L)
+                .type(WorldEventType.TRADE_COMPLETED)
+                .actorId(UUID.randomUUID())
+                .posX(0).posY(64).posZ(0)
+                .chunkX(0).chunkZ(0)
+                .outcome(EventOutcome.FAILURE)
+                .build();
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Act
+        Map<String, String> metadata = ObservationFactory.metadataFor(observation);
+
+        // Assert
+        assertEquals(EventOutcome.FAILURE.name(), metadata.get(SeedPhrasebook.METADATA_KEY_OUTCOME));
+    }
+
+    @Test
+    void metadataFor_omitsOutcomeKeyWhenAbsent() {
+        // Arrange — no outcome on the event
+        WorldEvent event = worldEvent(WorldEventType.TRADE_COMPLETED);
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Act
+        Map<String, String> metadata = ObservationFactory.metadataFor(observation);
+
+        // Assert — key must be absent, not present with a null/empty value
+        assertNull(metadata.get(SeedPhrasebook.METADATA_KEY_OUTCOME));
+    }
+
+    @Test
+    void metadataFor_writesReasonKeyWhenPresent() {
+        // Arrange
+        WorldEvent event = WorldEvent.builder()
+                .sequence(1L)
+                .gameTick(100L)
+                .type(WorldEventType.COURTSHIP_COMPLETED)
+                .actorId(UUID.randomUUID())
+                .posX(0).posY(64).posZ(0)
+                .chunkX(0).chunkZ(0)
+                .reason("target already paired")
+                .build();
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Act
+        Map<String, String> metadata = ObservationFactory.metadataFor(observation);
+
+        // Assert
+        assertEquals("target already paired", metadata.get(SeedPhrasebook.METADATA_KEY_REASON));
+    }
+
+    @Test
+    void metadataFor_omitsReasonKeyWhenAbsent() {
+        // Arrange
+        WorldEvent event = worldEvent(WorldEventType.COURTSHIP_COMPLETED);
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Act
+        Map<String, String> metadata = ObservationFactory.metadataFor(observation);
+
+        // Assert
+        assertNull(metadata.get(SeedPhrasebook.METADATA_KEY_REASON));
+    }
+
+    @Test
+    void metadataFor_writesDetailKeyWhenPresent() {
+        // Arrange
+        WorldEvent event = WorldEvent.builder()
+                .sequence(1L)
+                .gameTick(100L)
+                .type(WorldEventType.CROP_HARVESTED)
+                .actorId(UUID.randomUUID())
+                .posX(0).posY(64).posZ(0)
+                .chunkX(0).chunkZ(0)
+                .detail("3 melons")
+                .build();
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Act
+        Map<String, String> metadata = ObservationFactory.metadataFor(observation);
+
+        // Assert
+        assertEquals("3 melons", metadata.get(SeedPhrasebook.METADATA_KEY_DETAIL));
+    }
+
+    @Test
+    void metadataFor_omitsDetailKeyWhenAbsent() {
+        // Arrange
+        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED);
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Act
+        Map<String, String> metadata = ObservationFactory.metadataFor(observation);
+
+        // Assert
+        assertNull(metadata.get(SeedPhrasebook.METADATA_KEY_DETAIL));
     }
 
     // -------------------------------------------------------------------------

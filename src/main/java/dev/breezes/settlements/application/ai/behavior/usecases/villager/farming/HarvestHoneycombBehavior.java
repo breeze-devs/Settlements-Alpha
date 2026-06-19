@@ -5,7 +5,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedSte
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.blocks.VisitedBlockSitesState;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.InteractionOutcomeState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
@@ -23,6 +23,7 @@ import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -180,7 +181,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.empty());
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "honeycomb"));
         context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
 
         if (!this.canHarvest(villager)) {
@@ -219,9 +220,11 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
         String harvestedBlockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         String expertiseName = villager.getExpertise().getConfigName();
+        int harvestedCount = 0;
         for (ItemStack drop : this.yieldData.rollDrops(expertiseName, harvestedBlockId)) {
             if (!drop.isEmpty()) {
                 villager.getSettlementsInventory().add(drop);
+                harvestedCount += drop.getCount();
             }
         }
 
@@ -229,8 +232,9 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
         SoundRegistry.HARVEST_HONEYCOMB.playGlobally(Location.of(pos, level), SoundSource.BLOCKS);
         context.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
                 .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(level.dimension(), pos)));
-        context.getState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.class)
-                .ifPresent(InteractionOutcomeState::markSuccess);
+        int finalHarvestedCount = harvestedCount;
+        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                .ifPresent(outcome -> outcome.recordYield(finalHarvestedCount));
         return StepResult.noOp();
     }
 

@@ -38,6 +38,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.support
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
+import dev.breezes.settlements.application.ai.inference.InferenceConfig;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
@@ -294,6 +295,12 @@ public final class ConfigModule {
     @Singleton
     static DialogueConfig dialogueConfig() {
         return ConfigFactory.create(DialogueConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static InferenceConfig inferenceConfig() {
+        return ConfigFactory.create(InferenceConfig.class);
     }
 
     @Provides

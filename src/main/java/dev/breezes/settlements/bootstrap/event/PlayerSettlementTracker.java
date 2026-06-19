@@ -36,7 +36,7 @@ import java.util.UUID;
 @CustomLog
 public final class PlayerSettlementTracker {
 
-    private static final int POLL_INTERVAL_TICKS = ClockTicks.seconds(1).getTicksAsInt();
+    private static final int POLL_INTERVAL_TICKS = ClockTicks.seconds(5).getTicksAsInt();
 
     private final BuildingRegistry buildingRegistry;
     private final SettlementQueryService settlementQueryService;

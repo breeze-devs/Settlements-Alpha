@@ -1,6 +1,7 @@
 package dev.breezes.settlements.domain.ai.perception;
 
 import dev.breezes.settlements.domain.ai.observation.Observation;
+import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
@@ -55,6 +56,9 @@ public final class ObservationFactory {
                 .actorId(event.getActorId())
                 .registryId(event.getRegistryId())
                 .eventMetadata(event.getMetadata())
+                .outcome(event.getOutcome())
+                .reason(event.getReason())
+                .detail(event.getDetail())
                 .posX(event.getPosX())
                 .posY(event.getPosY())
                 .posZ(event.getPosZ())
@@ -66,21 +70,30 @@ public final class ObservationFactory {
      */
     public static Map<String, String> metadataFor(@Nonnull Observation observation) {
         Map<String, String> metadata = new HashMap<>(8);
-        metadata.put("event_type", observation.eventType().name());
+        metadata.put(ObservationMetadataKeys.EVENT_TYPE, observation.eventType().name());
 
         if (observation.eventMetadata() != null) {
-            metadata.put("event_meta", observation.eventMetadata());
+            metadata.put(ObservationMetadataKeys.EVENT_META, observation.eventMetadata());
         }
         if (observation.actorId() != null) {
-            metadata.put("actor_id", observation.actorId().toString());
+            metadata.put(ObservationMetadataKeys.ACTOR_ID, observation.actorId().toString());
         }
         if (observation.registryId() != null) {
-            metadata.put("registry_id", observation.registryId().toString());
+            metadata.put(ObservationMetadataKeys.REGISTRY_ID, observation.registryId().toString());
+        }
+        if (observation.outcome() != null) {
+            metadata.put(ObservationMetadataKeys.OUTCOME, observation.outcome().name());
+        }
+        if (observation.reason() != null) {
+            metadata.put(ObservationMetadataKeys.REASON, observation.reason());
+        }
+        if (observation.detail() != null) {
+            metadata.put(ObservationMetadataKeys.DETAIL, observation.detail());
         }
 
-        metadata.put("pos_x", String.valueOf(observation.posX()));
-        metadata.put("pos_y", String.valueOf(observation.posY()));
-        metadata.put("pos_z", String.valueOf(observation.posZ()));
+        metadata.put(ObservationMetadataKeys.POS_X, String.valueOf(observation.posX()));
+        metadata.put(ObservationMetadataKeys.POS_Y, String.valueOf(observation.posY()));
+        metadata.put(ObservationMetadataKeys.POS_Z, String.valueOf(observation.posZ()));
 
         return Map.copyOf(metadata);
     }
@@ -98,8 +111,9 @@ public final class ObservationFactory {
     private static ObservationType mapToObservationType(@Nonnull WorldEventType eventType) {
         return switch (eventType) {
             case BEHAVIOR_STARTED, BEHAVIOR_COMPLETED -> ObservationType.TASK_COMPLETION;
+            case BEHAVIOR_FAILED -> ObservationType.TASK_FAILURE;
             case SHEEP_SHEARED, CROP_HARVESTED -> ObservationType.RESOURCE;
-            case TRADE_COMPLETED, COURTSHIP_COMPLETED,
+            case TRADE_COMPLETED, COURTSHIP_COMPLETED, COURTSHIP_REJECTED,
                  TRADE_INVITE_SENT, COURTSHIP_INVITE_SENT -> ObservationType.SOCIAL;
             // Confirmed/refuted tips are resource-relevant observations — the investigator
             // reports on a world-state condition, not a social act.
@@ -119,7 +133,7 @@ public final class ObservationFactory {
     private static float baseImportanceFor(WorldEventType eventType) {
         return switch (eventType) {
             // Social acts are meaningful regardless of profession
-            case TRADE_COMPLETED, COURTSHIP_COMPLETED -> 2.5F;
+            case TRADE_COMPLETED, COURTSHIP_COMPLETED, COURTSHIP_REJECTED -> 2.5F;
             case TRADE_INVITE_SENT, COURTSHIP_INVITE_SENT -> 2.0F;
             // Resource events are relevant mostly to profession-matched villagers
             case SHEEP_SHEARED, CROP_HARVESTED -> 1.8F;
@@ -127,7 +141,7 @@ public final class ObservationFactory {
             case TIP_CONFIRMED -> 2.0F;
             case TIP_REFUTED -> 1.5F;
             // Lifecycle events are low-signal background noise
-            case BEHAVIOR_STARTED, BEHAVIOR_COMPLETED -> 0.8F;
+            case BEHAVIOR_STARTED, BEHAVIOR_COMPLETED, BEHAVIOR_FAILED -> 0.8F;
             // Defensively low for any system signal that slips through
             case DAY_PLAN_INVALIDATED, PLAN_EXHAUSTED -> 0.1F;
         };

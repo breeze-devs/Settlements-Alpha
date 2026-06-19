@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import lombok.CustomLog;
@@ -42,6 +43,7 @@ public final class ServerLifecycleEvents {
         ServerComponent serverComponent = SettlementsDagger.serverOrNull();
         if (serverComponent != null) {
             shutdownPlanGenerationExecutor(serverComponent.planGenerationExecutor());
+            closeInferenceTransport(serverComponent.inferenceTransport());
 
             // Because they are @ServerScoped, Dagger returns the exact instances we registered earlier
             NeoForge.EVENT_BUS.unregister(serverComponent.playerSettlementTracker());
@@ -69,6 +71,14 @@ public final class ServerLifecycleEvents {
         } catch (InterruptedException exception) {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void closeInferenceTransport(InferenceTransport transport) {
+        try {
+            transport.close();
+        } catch (RuntimeException exception) {
+            log.error("Failed to close inference transport", exception);
         }
     }
 

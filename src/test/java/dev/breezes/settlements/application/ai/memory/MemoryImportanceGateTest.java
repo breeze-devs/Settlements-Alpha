@@ -104,6 +104,80 @@ class MemoryImportanceGateTest {
         assertTrue(highCharismaScore > lowCharismaScore);
     }
 
+    // --- Self-deed salience bump tests ---
+
+    /**
+     * A RESOURCE deed at base 1.8 (e.g. CROP_HARVESTED) must promote when the actor is the
+     * observing villager (isSelfDeed=true), even under the one-peer novelty tier (novelty=1.0)
+     * that would otherwise leave it just below the threshold.
+     */
+    @Test
+    void score_ownResourceDeedAtOnePeerNoveltyPromotes() {
+        // Arrange – one peer in the batch forces novelty=1.0; without the self-deed bump
+        // base 1.8 * 1.0 novelty * ~1.1 geneModifier = ~1.98, which does not promote.
+        // Use CLERIC + unrelated content so profession relevance contributes 0.0 for both paths,
+        // isolating the self-deed bump as the sole differentiator.
+        GeneticsProfile genetics = genetics(0.5, 0.5, 0.5);
+        Observation harvest = observation(ObservationType.RESOURCE, "RESOURCE_DEED by actor", 1.8F);
+
+        // Act
+        float selfScore = this.gate.score(harvest, VillagerProfessionKey.CLERIC, genetics, 1, true);
+        float otherScore = this.gate.score(harvest, VillagerProfessionKey.CLERIC, genetics, 1, false);
+
+        // Assert – own deed promotes; observed-from-someone-else does not
+        assertTrue(this.gate.shouldPromote(selfScore), "Own RESOURCE deed should promote");
+        assertFalse(this.gate.shouldPromote(otherScore), "Others' RESOURCE deed at novelty=1.0 should not promote");
+    }
+
+    @Test
+    void score_ownLifecycleTaskCompletionReceivesSelfWeightButStillScoresBelowThreshold() {
+        // Arrange – admission for self terminal completions is owned by PerceptionPipeline;
+        // the gate only shapes the stored memory weight.
+        GeneticsProfile genetics = genetics(0.5, 0.5, 0.5);
+        Observation lifecycle = observation(ObservationType.TASK_COMPLETION, "BEHAVIOR_COMPLETED by self", 0.8F);
+
+        // Act
+        float selfScore = this.gate.score(lifecycle, VillagerProfessionKey.FARMER, genetics, 0, true);
+        float otherScore = this.gate.score(lifecycle, VillagerProfessionKey.FARMER, genetics, 0, false);
+
+        // Assert
+        assertTrue(selfScore > otherScore, "Own TASK_COMPLETION should receive the self salience weight");
+        assertFalse(this.gate.shouldPromote(otherScore), "Observed lifecycle event should remain low-signal");
+    }
+
+    @Test
+    void score_ownLifecycleTaskFailureReceivesSelfWeightButObserverSideRemainsLowSignal() {
+        // Arrange
+        GeneticsProfile genetics = genetics(0.5, 0.5, 0.5);
+        Observation failure = observation(ObservationType.TASK_FAILURE, "BEHAVIOR_FAILED by self", 0.8F);
+
+        // Act
+        float selfScore = this.gate.score(failure, VillagerProfessionKey.FARMER, genetics, 0, true);
+        float otherScore = this.gate.score(failure, VillagerProfessionKey.FARMER, genetics, 0, false);
+
+        // Assert
+        assertTrue(selfScore > otherScore, "Own TASK_FAILURE should receive the self salience weight");
+        assertFalse(this.gate.shouldPromote(otherScore), "Observed lifecycle failure should remain low-signal");
+    }
+
+    /**
+     * The self-deed bump must be perspective-specific: the same RESOURCE observation scores
+     * higher when isSelfDeed=true than when isSelfDeed=false, all else equal.
+     */
+    @Test
+    void score_selfDeedBumpIsHigherThanObservedDeed() {
+        // Arrange
+        GeneticsProfile genetics = genetics(0.5, 0.5, 0.5);
+        Observation resource = observation(ObservationType.RESOURCE, "SHEEP_SHEARED by self", 1.8F);
+
+        // Act
+        float selfScore = this.gate.score(resource, VillagerProfessionKey.SHEPHERD, genetics, 0, true);
+        float otherScore = this.gate.score(resource, VillagerProfessionKey.SHEPHERD, genetics, 0, false);
+
+        // Assert
+        assertTrue(selfScore > otherScore, "Self-deed score must exceed observed-from-other score");
+    }
+
     private static Observation observation(ObservationType type, String content, float importance) {
         return Observation.builder()
                 .id(UUID.randomUUID())

@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
@@ -25,12 +26,15 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -123,6 +127,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.TRADE_COMPLETED, null));
         this.activeDemand = null;
         this.activeSessionId = null;
         this.tradeExecuted = false;
@@ -351,7 +356,9 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.DEAL);
-        this.worldEventEmitter.emitTradeCompleted(buyer, session.getResponderId(), session.getSessionId());
+        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                .ifPresent(outcome -> outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
+                        EventOutcome.SUCCESS, buildTradeDetail(session), null));
         return StepResult.complete();
     }
 
@@ -367,8 +374,9 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.WALK_AWAY);
-        // Emit on walk-away as well — TRADE_COMPLETED covers both deal and walk-away outcomes
-        this.worldEventEmitter.emitTradeCompleted(buyer, session.getResponderId(), session.getSessionId());
+        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                .ifPresent(outcome -> outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
+                        EventOutcome.FAILURE, null, "negotiations fell through"));
         return StepResult.complete();
     }
 
@@ -457,6 +465,17 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
 
     private boolean phaseElapsed(@Nonnull TradeSession session, long currentGameTime, int durationTicks) {
         return (currentGameTime - session.getPhaseEnteredGameTime()) >= durationTicks;
+    }
+
+    /**
+     * Formats a human-readable detail string from the session's agreed prices.
+     */
+    private static String buildTradeDetail(@Nonnull TradeSession session) {
+        String itemPath = BuiltInRegistries.ITEM.getKey(session.getMatchedItem()).getPath();
+        int quantity = session.getBundleSize();
+        int price = session.getBuyerOffer();
+        String emeraldLabel = price == 1 ? "1 emerald" : price + " emeralds";
+        return quantity + " " + itemPath + " for " + emeraldLabel;
     }
 
 }

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.planning;
 
+import dev.breezes.settlements.application.ai.behavior.publication.BehaviorOutcomePublisher;
 import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
 import dev.breezes.settlements.application.ai.override.OverridePolicy;
 import dev.breezes.settlements.application.ai.override.OverrideRequest;
@@ -78,6 +79,7 @@ public class PlanRunner {
     private final IWeekCycleProvider weekCycleProvider;
     private final IWakeTickResolver wakeTickResolver;
     private final Set<OverridePolicy> overridePolicies;
+    private final BehaviorOutcomePublisher behaviorOutcomePublisher;
     private final WorldEventEmitter worldEventEmitter;
     private final ReputationQuery reputationQuery;
 
@@ -323,7 +325,7 @@ public class PlanRunner {
         behavior.tick(delta, level, villager);
         if (behavior.getStatus() == BehaviorStatus.STOPPED) {
             slot.markStatus(PlanSlotStatus.COMPLETED);
-            this.worldEventEmitter.emitBehaviorCompleted(villager, slot.getBehaviorKey());
+            this.behaviorOutcomePublisher.publishCompleted(villager, slot.getBehaviorKey(), behavior);
             runtime.clearCurrentBehavior();
             this.clearPlanActiveMemory(villager);
             plan.advanceSlot();
@@ -371,6 +373,11 @@ public class PlanRunner {
         // the freshly verified fact can influence what happens next.
         boolean shouldRegeneratePlan = completed instanceof ConfirmableOverride confirmable
                 && confirmable.didConfirm();
+        if (completedKey != null) {
+            this.behaviorOutcomePublisher.publishCompleted(villager, completedKey, completed);
+        } else {
+            log.behaviorWarn("Override completed without behavior key for villager {}", villager.getUUID());
+        }
         runtime.clearOverride();
 
         if (shouldRegeneratePlan) {

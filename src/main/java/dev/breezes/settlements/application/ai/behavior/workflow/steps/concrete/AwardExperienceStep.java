@@ -2,7 +2,7 @@ package dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete;
 
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.InteractionOutcomeState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Awards experience to the initiator villager if {@link InteractionOutcomeState#isSuccess()} is true,
+ * Awards experience to the initiator villager if {@link BehaviorOutcome#isSuccess()} is true,
  * then transitions to {@code nextStage}.
  * <p>
  * The XP gating does not gate the transition — successful or not, the step always advances. Even when
@@ -47,8 +47,8 @@ public class AwardExperienceStep extends AbstractStep<BaseVillager> {
             return StepResult.transition(this.nextStage);
         }
 
-        context.getState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.class)
-                .filter(InteractionOutcomeState::isSuccess)
+        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                .filter(BehaviorOutcome::isSuccess)
                 .ifPresent(state -> {
                     double multiplier = IntelligenceExperienceResolver.resolveMultiplier(
                             context.getInitiator().getGenetics().getGeneValue(GeneType.INTELLIGENCE));

@@ -2,18 +2,15 @@ package dev.breezes.settlements.application.ai.dialogue;
 
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
-import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfig;
+import dev.breezes.settlements.infrastructure.config.annotations.booleans.BooleanConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.strings.StringConfig;
 
 /**
- * Configuration record for the dialog service
+ * Configuration record for dialogue behavior.
  * <p>
- * {@link DialogueMode#OFF} is the default — no dialog service required, no network fields
- * are read or validated, and the mod is fully playable with no dialog backend service reachable
- * <p>
- * {@code apiKey} defaults to an empty string (treated as "no key configured")
- * It is intentionally not logged above DEBUG level and is never sent to the client
+ * {@link DialogueMode#SCRIPTED} is the default — no dialog service is required, and the mod remains
+ * fully playable with no inference backend service reachable.
  */
 @BehaviorConfig(name = "dialogue", type = ConfigurationType.GENERAL)
 public record DialogueConfig(
@@ -21,54 +18,21 @@ public record DialogueConfig(
         @StringConfig(
                 type = ConfigurationType.GENERAL,
                 identifier = "mode",
-                description = "Dialog mode: OFF (default, no dialog service), PACKS (evening batch), LIVE (per-utterance).",
-                defaultValue = "OFF")
+                description = "Dialog mode: SCRIPTED (default, localized built-in lines) or REHEARSED (dialog service batch with SCRIPTED fallback).",
+                defaultValue = "SCRIPTED")
         String mode,
 
-        @StringConfig(
+        @BooleanConfig(
                 type = ConfigurationType.GENERAL,
-                identifier = "endpoint_base_url",
-                description = "Base URL of the dialog service, e.g. http://localhost:11434. Only required when mode is PACKS or LIVE.",
-                defaultValue = "")
-        String endpointBaseUrl,
-
-        @StringConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "model",
-                description = "Model name to request from the backend, e.g. gemma4:26b",
-                defaultValue = "gemma4:26b")
-        String model,
-
-        @StringConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "api_key",
-                description = "API key for the dialog service (can be empty)",
-                defaultValue = "")
-        String apiKey,
-
-        // TODO: stuff below we should tune
-        @DoubleConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "temperature",
-                description = "Sampling temperature (0.0–2.0). Higher = more varied, lower = more deterministic.",
-                defaultValue = 0.8,
-                min = 0.0,
-                max = 2.0)
-        double temperature,
-
-        @IntegerConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "max_output_tokens",
-                description = "Hard output token cap sent to the backend. A bubble fits ~48 tokens with slack.",
-                defaultValue = 48,
-                min = 8,
-                max = 256)
-        int maxOutputTokens,
+                identifier = "scripted_chatter",
+                description = "Whether the backend-free SCRIPTED dialogue floor may emit ambient chatter.",
+                defaultValue = true)
+        boolean scriptedChatter,
 
         @IntegerConfig(
                 type = ConfigurationType.GENERAL,
                 identifier = "bubble_char_cap",
-                description = "Maximum characters of LLM output shown in a bubble after sanitization.",
+                description = "Maximum characters of generated literal text shown in a bubble after defensive truncation.",
                 defaultValue = 120,
                 min = 20,
                 max = 300)
@@ -76,38 +40,8 @@ public record DialogueConfig(
 
         @IntegerConfig(
                 type = ConfigurationType.GENERAL,
-                identifier = "max_concurrent_requests",
-                description = "Maximum in-flight LLM requests at any moment. Requests over the cap " +
-                        "are queued or dropped by priority.",
-                defaultValue = 2,
-                min = 1,
-                max = 8)
-        int maxConcurrentRequests,
-
-        @IntegerConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "live_deadline_millis_ambient",
-                description = "Deadline in ms for ambient / villager-to-villager LIVE requests. " +
-                        "Missing the deadline is cosmetically invisible; the bubble just never appears.",
-                defaultValue = 1500,
-                min = 500,
-                max = 10000)
-        int liveDeadlineMillisAmbient,
-
-        @IntegerConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "live_deadline_millis_player",
-                description = "Deadline in ms for player-to-villager LIVE requests. " +
-                        "Timeout triggers a canned fallback to keep degradation diegetic.",
-                defaultValue = 3500,
-                min = 500,
-                max = 15000)
-        int liveDeadlineMillisPlayer,
-
-        @IntegerConfig(
-                type = ConfigurationType.GENERAL,
                 identifier = "pack_lines_per_villager",
-                description = "How many candidate lines to generate per villager in the evening PACKS sweep.",
+                description = "How many candidate lines to generate per villager in the evening REHEARSED sweep.",
                 defaultValue = 12,
                 min = 1,
                 max = 50)
@@ -116,7 +50,7 @@ public record DialogueConfig(
         @IntegerConfig(
                 type = ConfigurationType.GENERAL,
                 identifier = "pack_sweep_deadline_seconds",
-                description = "Total time budget in seconds for the evening PACKS sweep across all villagers.",
+                description = "Total time budget in seconds for the evening REHEARSED sweep across all villagers.",
                 defaultValue = 30,
                 min = 5,
                 max = 120)
@@ -126,22 +60,14 @@ public record DialogueConfig(
 
     /**
      * Resolves the {@code mode} string to a {@link DialogueMode} enum value
-     * Unrecognized strings default to {@link DialogueMode#OFF}
+     * Unrecognized strings default to {@link DialogueMode#SCRIPTED}
      */
     public DialogueMode resolvedMode() {
         try {
             return DialogueMode.valueOf(this.mode.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return DialogueMode.OFF;
+            return DialogueMode.SCRIPTED;
         }
-    }
-
-    /**
-     * Returns {@code true} when the api key field contains a non-blank value that should be
-     * included as a token. Empty / whitespace-only strings mean "no key configured."
-     */
-    public boolean hasApiKey() {
-        return this.apiKey != null && !this.apiKey.isBlank();
     }
 
 }

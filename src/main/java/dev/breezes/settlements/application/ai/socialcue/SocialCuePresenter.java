@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.socialcue;
 
+import dev.breezes.settlements.application.ai.dialogue.DialogueLine;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
 import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
@@ -37,7 +38,7 @@ public final class SocialCuePresenter {
     public void dispatch(CueStep step, BaseVillager villager, SocialCueRuntimeState runtimeState) {
         switch (step) {
             case CueStep.Gesture gesture -> villager.triggerMotion(gesture.archetype());
-            case CueStep.Bubble bubble -> pushFlavorBubble(villager, bubble.text(), bubble.ttl());
+            case CueStep.Bubble bubble -> pushFlavorBubble(villager, bubble.line(), bubble.ttl());
             case CueStep.Sound sound ->
                     Location.fromEntity(villager, true).playSound(sound.soundEvent(), sound.volume(), sound.pitch(), SoundSource.NEUTRAL);
             case CueStep.Gaze gaze -> runtimeState.setGazeLookTarget(gaze.target());
@@ -47,13 +48,22 @@ public final class SocialCuePresenter {
         }
     }
 
-    private void pushFlavorBubble(BaseVillager villager, String text, ClockTicks ttl) {
-        BubbleSegment.Text segment = BubbleSegment.Text.builder()
-                .literal(text)
-                .color(ChatFormatting.BLACK)
-                .bold(false)
-                .scale(0.85F)
-                .build();
+    private void pushFlavorBubble(BaseVillager villager, DialogueLine line, ClockTicks ttl) {
+        BubbleSegment segment = switch (line) {
+            case DialogueLine.Literal literal -> BubbleSegment.Text.builder()
+                    .literal(literal.text())
+                    .color(ChatFormatting.BLACK)
+                    .bold(false)
+                    .scale(0.85F)
+                    .build();
+            case DialogueLine.Translatable translatable -> BubbleSegment.Translatable.builder()
+                    .key(translatable.key())
+                    .args(translatable.args())
+                    .color(ChatFormatting.BLACK)
+                    .bold(false)
+                    .scale(0.85F)
+                    .build();
+        };
 
         BubbleMessage message = BubbleMessage.builder()
                 .priority(5)

@@ -6,3 +6,4 @@ src/generated/**/*.json text eol=lf
 * text eol=lf
 *.png binary
 *.nbt binary
+*.ogg binary

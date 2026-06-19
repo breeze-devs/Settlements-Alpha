@@ -81,6 +81,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.TradeSessionPresenter;
 import dev.breezes.settlements.application.ai.courtship.BedReservationService;
 import dev.breezes.settlements.application.ai.courtship.CourtshipChoreographyLibrary;
+import dev.breezes.settlements.application.ai.courtship.CourtshipSelfMemoryRecorder;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
 import dev.breezes.settlements.application.ai.trading.NegotiationEngine;
@@ -283,7 +284,8 @@ public final class BehaviorCatalogModule {
                                                   BedReservationService bedReservationService,
                                                   CourtshipPresenter courtshipPresenter,
                                                   CourtshipChoreographyLibrary choreographyLibrary,
-                                                  WorldEventEmitter worldEventEmitter) {
+                                                  WorldEventEmitter worldEventEmitter,
+                                                  CourtshipSelfMemoryRecorder selfMemoryRecorder) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.COURTSHIP_INITIATE)
@@ -303,7 +305,7 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("poppy"))
                         .build())
                 .factory(() -> new CourtshipInitiateBehavior(config, hungerConfig, courtshipSessionRegistry,
-                        bedReservationService, courtshipPresenter, choreographyLibrary, worldEventEmitter))
+                        bedReservationService, courtshipPresenter, choreographyLibrary, worldEventEmitter, selfMemoryRecorder))
                 .build();
     }
 
@@ -481,8 +483,7 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry harvestNetherWart(HarvestNetherWartConfig config,
                                                   HungerConfig hungerConfig,
-                                                  BlockMemoryTargetResolver targetResolver,
-                                                  WorldEventEmitter worldEventEmitter) {
+                                                  BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_NETHER_WART)
@@ -500,7 +501,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_NETHER_WART.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("nether_wart"))
                         .build())
-                .factory(() -> new HarvestNetherWartBehavior(config, hungerConfig, targetResolver, worldEventEmitter))
+                .factory(() -> new HarvestNetherWartBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
@@ -512,8 +513,7 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry harvestSugarCane(HarvestSugarCaneConfig config,
                                                  HungerConfig hungerConfig,
-                                                 BlockMemoryTargetResolver targetResolver,
-                                                 WorldEventEmitter worldEventEmitter) {
+                                                 BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_SUGARCANE)
@@ -532,7 +532,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_SUGARCANE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("sugar_cane"))
                         .build())
-                .factory(() -> new HarvestSugarCaneBehavior(config, hungerConfig, targetResolver, worldEventEmitter))
+                .factory(() -> new HarvestSugarCaneBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
@@ -596,8 +596,7 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry harvestPumpkin(HarvestPumpkinConfig config,
                                                HungerConfig hungerConfig,
-                                               BlockMemoryTargetResolver targetResolver,
-                                               WorldEventEmitter worldEventEmitter) {
+                                               BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_PUMPKIN)
@@ -616,7 +615,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_PUMPKIN.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("pumpkin"))
                         .build())
-                .factory(() -> new HarvestPumpkinBehavior(config, hungerConfig, targetResolver, worldEventEmitter))
+                .factory(() -> new HarvestPumpkinBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
@@ -624,8 +623,7 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry harvestMelon(HarvestMelonConfig config,
                                              HungerConfig hungerConfig,
-                                             BlockMemoryTargetResolver targetResolver,
-                                             WorldEventEmitter worldEventEmitter) {
+                                             BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_MELON)
@@ -644,7 +642,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_MELON.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("melon"))
                         .build())
-                .factory(() -> new HarvestMelonBehavior(config, hungerConfig, targetResolver, worldEventEmitter))
+                .factory(() -> new HarvestMelonBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
@@ -652,8 +650,7 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry harvestSweetBerries(HarvestSweetBerriesConfig config,
                                                     HungerConfig hungerConfig,
-                                                    BlockMemoryTargetResolver targetResolver,
-                                                    WorldEventEmitter worldEventEmitter) {
+                                                    BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_SWEET_BERRIES)
@@ -671,7 +668,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_SWEET_BERRIES.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("sweet_berries"))
                         .build())
-                .factory(() -> new HarvestSweetBerriesBehavior(config, hungerConfig, targetResolver, worldEventEmitter))
+                .factory(() -> new HarvestSweetBerriesBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
@@ -679,8 +676,7 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry harvestRipeCrops(HarvestRipeCropsConfig config,
                                                  HungerConfig hungerConfig,
-                                                 BlockMemoryTargetResolver targetResolver,
-                                                 WorldEventEmitter worldEventEmitter) {
+                                                 BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.HARVEST_RIPE_CROPS)
@@ -698,7 +694,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_RIPE_CROPS.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("wheat"))
                         .build())
-                .factory(() -> new HarvestRipeCropsBehavior(config, hungerConfig, targetResolver, worldEventEmitter))
+                .factory(() -> new HarvestRipeCropsBehavior(config, hungerConfig, targetResolver))
                 .build();
     }
 
@@ -903,8 +899,7 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry shearSheep(ShearSheepConfig config,
                                            HungerConfig hungerConfig,
-                                           DemandSignalService demandSignalService,
-                                           WorldEventEmitter worldEventEmitter) {
+                                           DemandSignalService demandSignalService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.SHEAR_SHEEP)
@@ -922,7 +917,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.SHEAR_SHEEP.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
                         .build())
-                .factory(() -> new ShearSheepBehavior(config, hungerConfig, demandSignalService, worldEventEmitter))
+                .factory(() -> new ShearSheepBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 
@@ -1268,8 +1263,7 @@ public final class BehaviorCatalogModule {
     static BehaviorCatalogEntry investigate(InvestigateConfig config,
                                             HungerConfig hungerConfig,
                                             ReputationUtil reputationUtil,
-                                            ReputationQuery reputationQuery,
-                                            WorldEventEmitter worldEventEmitter) {
+                                            ReputationQuery reputationQuery) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.INVESTIGATE)
@@ -1287,7 +1281,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.INVESTIGATE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("compass"))
                         .build())
-                .factory(() -> new InvestigateBehavior(config, hungerConfig, reputationUtil, reputationQuery, worldEventEmitter))
+                .factory(() -> new InvestigateBehavior(config, hungerConfig, reputationUtil, reputationQuery))
                 .build();
     }
 

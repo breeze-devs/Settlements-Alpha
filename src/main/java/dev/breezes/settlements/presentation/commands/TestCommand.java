@@ -9,7 +9,16 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.application.ai.dialogue.Occasion;
+import dev.breezes.settlements.application.ai.inference.InferenceCapability;
+import dev.breezes.settlements.application.ai.inference.InferenceTransport;
+import dev.breezes.settlements.application.ai.inference.monologue.MonologueBatchRequest;
+import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
 import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
 import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
 import dev.breezes.settlements.application.ui.bubble.BubbleEntry;
@@ -22,6 +31,7 @@ import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventBus;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
@@ -70,9 +80,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -99,6 +113,9 @@ public class TestCommand {
     private static final String ARG_BUBBLE_ID = "bubble_id";
 
     private static final ClockTicks TEST_BUBBLE_TTL = ClockTicks.seconds(10);
+    private static final String ARG_OCCASION = "occasion";
+    private static final String OCCASION_ARG_ALL = "all";
+    private static final Gson PRETTY_GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final int SETTLEMENT_DEBUG_MIN_Y_OFFSET = -5;
     private static final int SETTLEMENT_DEBUG_MAX_Y_OFFSET = 30;
     private static final int GENERATION_SURVEY_PADDING = 30;
@@ -160,7 +177,8 @@ public class TestCommand {
                         .then(Commands.literal("tail")
                                 .executes(TestCommand::tailVillagerEvents))
                         .then(Commands.literal("bus")
-                                .executes(TestCommand::tailBusLog))));
+                                .executes(TestCommand::tailBusLog)))
+                .then(buildMonologueCommand()));
     }
 
     private static int settlementInfo(CommandContext<CommandSourceStack> context) {
@@ -860,6 +878,130 @@ public class TestCommand {
         Path outputDir = FMLPaths.GAMEDIR.get().resolve("settlements");
         String timestamp = LocalDateTime.now().format(GENERATION_TIMESTAMP_FORMAT);
         return outputDir.resolve("generation_" + timestamp + ".json");
+    }
+
+    // -------------------------------------------------------------------------
+    // stest monologue dump
+    // -------------------------------------------------------------------------
+
+    private static LiteralArgumentBuilder<CommandSourceStack> buildMonologueCommand() {
+        return Commands.literal("monologue")
+                .then(Commands.literal("dump")
+                        // No occasion arg → use the villager's current occasion
+                        .executes(TestCommand::dumpMonologue)
+                        // Optional occasion arg: a specific Occasion name or "all"
+                        .then(Commands.argument(ARG_OCCASION, StringArgumentType.word())
+                                .suggests(TestCommand::suggestOccasions)
+                                .executes(TestCommand::dumpMonologue)));
+    }
+
+    private static CompletableFuture<Suggestions> suggestOccasions(
+            CommandContext<CommandSourceStack> context,
+            SuggestionsBuilder builder) {
+        builder.suggest(OCCASION_ARG_ALL);
+        for (Occasion occasion : Occasion.values()) {
+            builder.suggest(occasion.name().toLowerCase(Locale.ROOT));
+        }
+        return builder.buildFuture();
+    }
+
+    private static int dumpMonologue(CommandContext<CommandSourceStack> context) {
+        Optional<ISettlementsVillager> villagerOptional = getLookedAtVillager(context);
+        if (villagerOptional.isEmpty()) {
+            return 0;
+        }
+
+        ISettlementsVillager villager = villagerOptional.get();
+        if (!(villager instanceof BaseVillager baseVillager)) {
+            context.getSource().sendFailure(Component.literal("Targeted entity is not a BaseVillager."));
+            return 0;
+        }
+
+        Optional<List<Occasion>> requestedOccasions = resolveRequestedOccasions(context, baseVillager);
+        if (requestedOccasions.isEmpty()) {
+            // resolveRequestedOccasions already sent the failure message
+            return 0;
+        }
+        List<Occasion> occasions = requestedOccasions.get();
+
+        var server = SettlementsDagger.serverOrThrow();
+        MonologueRequestAssembler assembler = server.monologueRequestAssembler();
+        InferenceTransport transport = server.inferenceTransport();
+
+        MonologueBatchRequest batchRequest = assembler.assembleForVillager(baseVillager, occasions);
+
+        // Use the sweep deadline as a representative budget — it is what a real overnight sweep
+        // would send, so the dump fixture is byte-faithful to production behaviour.
+        Duration deadline = Duration.ofSeconds(server.dialogueConfig().packSweepDeadlineSeconds());
+        String compactEnvelope = transport.renderEnvelope(InferenceCapability.MONOLOGUE, batchRequest, deadline);
+
+        // Wire body stays compact; only the on-disk fixture is pretty-printed for human inspection.
+        String prettyJson = prettyPrint(compactEnvelope);
+
+        Path outputPath = buildMonologueOutputPath();
+        try {
+            Files.createDirectories(outputPath.getParent());
+            Files.writeString(outputPath, prettyJson, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            context.getSource().sendFailure(Component.literal("Failed to write monologue dump: " + e.getMessage()));
+            return 0;
+        }
+
+        int knowledgeStoreSize = baseVillager.getKnowledgeStore().size();
+        int seedCount = batchRequest.getVillagers().get(0).getSeeds().size();
+        String filename = outputPath.getFileName().toString();
+
+        context.getSource().sendSuccess(() -> Component.literal(
+                "[monologue dump] villager=" + baseVillager.getUUID()
+                        + " | occasions=" + occasions.stream()
+                                .map(o -> o.name().toLowerCase(Locale.ROOT))
+                                .reduce((a, b) -> a + "," + b)
+                                .orElse("none")
+                        + " | seeds=" + seedCount + "/" + knowledgeStoreSize
+                        + " | file=" + filename), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * Resolves the occasions to include in the dump. Returns an empty Optional (after sending a
+     * failure message) when the provided occasion string is not a recognized {@link Occasion}.
+     */
+    private static Optional<List<Occasion>> resolveRequestedOccasions(CommandContext<CommandSourceStack> context,
+                                                                      BaseVillager villager) {
+        String rawOccasion;
+        try {
+            rawOccasion = StringArgumentType.getString(context, ARG_OCCASION);
+        } catch (IllegalArgumentException ignored) {
+            // Argument was omitted — use the villager's live occasion
+            return Optional.of(List.of(villager.getCurrentOccasion()));
+        }
+
+        if (OCCASION_ARG_ALL.equalsIgnoreCase(rawOccasion)) {
+            return Optional.of(List.of(Occasion.values()));
+        }
+
+        try {
+            return Optional.of(List.of(Occasion.valueOf(rawOccasion.toUpperCase(Locale.ROOT))));
+        } catch (IllegalArgumentException e) {
+            context.getSource().sendFailure(Component.literal(
+                    "Unknown occasion '" + rawOccasion + "'. Use 'all' or one of: "
+                            + Arrays.stream(Occasion.values())
+                                    .map(o -> o.name().toLowerCase(Locale.ROOT))
+                                    .reduce((a, b) -> a + ", " + b)
+                                    .orElse("")));
+            return Optional.empty();
+        }
+    }
+
+    private static String prettyPrint(String compactJson) {
+        JsonElement element = JsonParser.parseString(compactJson);
+        return PRETTY_GSON.toJson(element);
+    }
+
+    private static Path buildMonologueOutputPath() {
+        Path outputDir = FMLPaths.GAMEDIR.get().resolve("settlements");
+        String timestamp = LocalDateTime.now().format(GENERATION_TIMESTAMP_FORMAT);
+        return outputDir.resolve("monologue_payload_" + timestamp + ".json");
     }
 
 }

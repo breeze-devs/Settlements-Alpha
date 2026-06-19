@@ -6,7 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorCo
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.blocks.VisitedBlockSitesState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.items.ItemState;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.InteractionOutcomeState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
@@ -25,7 +25,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -71,17 +71,14 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
     private final int maxConfirms;
     private final HarvestSugarCaneConfig config;
     private final BlockMemoryTargetResolver targetResolver;
-    private final WorldEventEmitter worldEventEmitter;
 
     public HarvestSugarCaneBehavior(@Nonnull HarvestSugarCaneConfig config,
                                     @Nonnull HungerConfig hungerConfig,
-                                    @Nonnull BlockMemoryTargetResolver targetResolver,
-                                    @Nonnull WorldEventEmitter worldEventEmitter) {
+                                    @Nonnull BlockMemoryTargetResolver targetResolver) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
         this.config = config;
         this.targetResolver = targetResolver;
-        this.worldEventEmitter = worldEventEmitter;
         this.sugarCaneMatcher = BlockMatchers.HARVESTABLE_SUGARCANE;
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
@@ -199,7 +196,8 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
                     ctx.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
                             .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(world.dimension(), pos)));
                     ctx.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
-                    ctx.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.success());
+                    ctx.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                            .ifPresent(outcome -> outcome.recordYield(harvestedPositions.size()));
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> StepResult.transition(Stage.SETTLE))
@@ -236,24 +234,14 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.empty());
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "sugarcane"));
         context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
     }
 
     @Override
     protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
-        if (this.harvestSucceeded()) {
-            this.worldEventEmitter.emitCropHarvested(villager);
-        }
-
         villager.getNavigationManager().stop();
         villager.setMotion(AnimationArchetype.IDLE);
-    }
-
-    private boolean harvestSucceeded() {
-        return this.getContextState(BehaviorStateType.INTERACTION_OUTCOME, InteractionOutcomeState.class)
-                .map(InteractionOutcomeState::isSuccess)
-                .orElse(false);
     }
 
 }
