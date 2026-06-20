@@ -29,6 +29,7 @@ import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
@@ -66,6 +67,15 @@ public class PlanRunner {
     private static final String RESET_REASON_INVESTIGATE_CONFIRMED = "investigate confirmed tip";
 
     private static final int OVERRIDE_TICK_DELTA = 1;
+
+    /**
+     * Safety-net ceiling on how long a single override may run. Overrides are reactive and
+     * short-lived by design; one that runs past this has wedged (e.g. mirroring a trade/courtship
+     * session that never closes, or navigating to a target that never becomes reachable). When the
+     * ceiling trips, the override is force-stopped and the interrupted plan slot re-queued so the
+     * villager resumes its day instead of standing frozen until a panic clears it
+     */
+    private static final int MAX_OVERRIDE_DURATION_TICKS = ClockTicks.seconds(60).getTicksAsInt();
 
     private static final Comparator<OverridePolicy> OVERRIDE_POLICY_PRECEDENCE = Comparator
             .comparingInt(OverridePolicy::priority)
@@ -348,11 +358,37 @@ public class PlanRunner {
             return;
         }
 
+        runtime.incrementOverrideElapsedTicks(OVERRIDE_TICK_DELTA);
+        if (runtime.getOverrideElapsedTicks() > MAX_OVERRIDE_DURATION_TICKS) {
+            this.abortStuckOverride(level, villager, runtime, override);
+            return;
+        }
+
         override.tick(OVERRIDE_TICK_DELTA, level, villager);
 
         if (override.getStatus() == BehaviorStatus.STOPPED) {
             this.onOverrideCompleted(level, villager, runtime, runtime.getOverrideBehaviorKey(), override);
         }
+    }
+
+    /**
+     * Force-stops an override that has exceeded {@link #MAX_OVERRIDE_DURATION_TICKS}. Unlike a normal
+     * completion this publishes no outcome — the override never finished its work — but it still
+     * discharges teardown via {@code stop()}, clears the slot and the plan-active lock, and re-queues
+     * the interrupted plan slot so the villager resumes instead of remaining frozen.
+     */
+    private void abortStuckOverride(@Nonnull ServerLevel level,
+                                    @Nonnull BaseVillager villager,
+                                    @Nonnull PlanRuntimeState runtime,
+                                    @Nonnull IBehavior<BaseVillager> override) {
+        log.behaviorWarn("Override '{}' exceeded max duration ({} ticks) for villager {}; force-stopping wedged override",
+                runtime.getOverrideBehaviorKey(), MAX_OVERRIDE_DURATION_TICKS, villager.getUUID());
+        if (override.getStatus() != BehaviorStatus.STOPPED) {
+            override.stop(level, villager);
+        }
+        runtime.clearOverride();
+        this.clearPlanActiveMemory(villager);
+        this.reAttemptInterruptedSlot(villager);
     }
 
     /**

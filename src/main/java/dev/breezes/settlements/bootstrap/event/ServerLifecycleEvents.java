@@ -32,6 +32,7 @@ public final class ServerLifecycleEvents {
         NeoForge.EVENT_BUS.register(serverComponent.courtshipSessionReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.worldEventBusReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.tradeSessionReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.credibilityDecayServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.eveningDialoguePackSweepServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.villagerZombificationServerEvents());
@@ -54,6 +55,7 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.courtshipSessionReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.worldEventBusReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.tradeSessionReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.credibilityDecayServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.eveningDialoguePackSweepServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.villagerZombificationServerEvents());

@@ -25,6 +25,7 @@ import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.RehearsedDialogueSweepServerEvents;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
+import dev.breezes.settlements.bootstrap.event.TradeSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerZombificationServerEvents;
@@ -135,6 +136,8 @@ public interface ServerComponent {
     GossipSessionRegistry gossipSessionRegistry();
 
     GossipSessionReaperServerEvents gossipSessionReaperServerEvents();
+
+    TradeSessionReaperServerEvents tradeSessionReaperServerEvents();
 
     ReputationUtil reputationUtil();
 

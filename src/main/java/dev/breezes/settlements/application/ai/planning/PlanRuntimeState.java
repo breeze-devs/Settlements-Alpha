@@ -37,6 +37,13 @@ public class PlanRuntimeState {
     @Nullable
     private BehaviorKey overrideBehaviorKey;
 
+    /**
+     * Ticks the current override has been running. PlanRunner uses this as a safety-net ceiling to
+     * force-stop an override that has wedged (never reaches a terminal state). Reset to zero whenever
+     * the override slot is installed or cleared.
+     */
+    private int overrideElapsedTicks;
+
     @Setter
     @Nullable
     private DayPlan pendingNextPlan;
@@ -67,6 +74,7 @@ public class PlanRuntimeState {
         this.currentDescriptor = null;
         this.overrideBehavior = null;
         this.overrideBehaviorKey = null;
+        this.overrideElapsedTicks = 0;
         this.clearPendingGeneration();
         this.pendingNextPlan = null;
         this.planExhausted = false;
@@ -96,11 +104,17 @@ public class PlanRuntimeState {
     public void installOverride(@Nonnull IBehavior<BaseVillager> behavior, @Nonnull BehaviorKey key) {
         this.overrideBehavior = behavior;
         this.overrideBehaviorKey = key;
+        this.overrideElapsedTicks = 0;
     }
 
     public void clearOverride() {
         this.overrideBehavior = null;
         this.overrideBehaviorKey = null;
+        this.overrideElapsedTicks = 0;
+    }
+
+    public void incrementOverrideElapsedTicks(int delta) {
+        this.overrideElapsedTicks += delta;
     }
 
     public void markPlanExhausted() {

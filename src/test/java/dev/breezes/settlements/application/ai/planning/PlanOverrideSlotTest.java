@@ -142,6 +142,68 @@ class PlanOverrideSlotTest {
     }
 
     // -------------------------------------------------------------------------
+    // Override elapsed-ticks accounting (drives the wedged-override safety net)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void overrideElapsedTicks_zeroOnInit() {
+        assertEquals(0, runtime.getOverrideElapsedTicks());
+    }
+
+    @Test
+    void incrementOverrideElapsedTicks_accumulates() {
+        // Arrange
+        runtime.installOverride(overrideBehavior, BehaviorKey.TRADE_ACCEPT);
+
+        // Act — three single-tick advances, as PlanRunner applies one per tickActiveOverride.
+        runtime.incrementOverrideElapsedTicks(1);
+        runtime.incrementOverrideElapsedTicks(1);
+        runtime.incrementOverrideElapsedTicks(1);
+
+        // Assert
+        assertEquals(3, runtime.getOverrideElapsedTicks());
+    }
+
+    @Test
+    void installOverride_resetsElapsedTicks() {
+        // Arrange — a prior override accrued some runtime.
+        runtime.installOverride(overrideBehavior, BehaviorKey.TRADE_ACCEPT);
+        runtime.incrementOverrideElapsedTicks(42);
+
+        // Act — installing a fresh override must restart the clock.
+        runtime.installOverride(overrideBehavior, BehaviorKey.COURTSHIP_ACCEPT);
+
+        // Assert
+        assertEquals(0, runtime.getOverrideElapsedTicks());
+    }
+
+    @Test
+    void clearOverride_resetsElapsedTicks() {
+        // Arrange
+        runtime.installOverride(overrideBehavior, BehaviorKey.TRADE_ACCEPT);
+        runtime.incrementOverrideElapsedTicks(17);
+
+        // Act
+        runtime.clearOverride();
+
+        // Assert
+        assertEquals(0, runtime.getOverrideElapsedTicks());
+    }
+
+    @Test
+    void reset_resetsElapsedTicks() {
+        // Arrange
+        runtime.installOverride(overrideBehavior, BehaviorKey.TRADE_ACCEPT);
+        runtime.incrementOverrideElapsedTicks(99);
+
+        // Act
+        runtime.reset();
+
+        // Assert
+        assertEquals(0, runtime.getOverrideElapsedTicks());
+    }
+
+    // -------------------------------------------------------------------------
     // Re-attempt policy: INTERRUPTED → PENDING on override completion
     // -------------------------------------------------------------------------
 

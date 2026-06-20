@@ -19,7 +19,7 @@ public record VillageAnimalSpawnerConfig(
                 type = ConfigurationType.FEATURE,
                 identifier = "spawn_interval",
                 description = "Seconds between spawn attempts near a village",
-                defaultValue = 20,
+                defaultValue = 60,
                 min = 1,
                 max = 1200)
         int spawnIntervalSeconds,
@@ -28,7 +28,7 @@ public record VillageAnimalSpawnerConfig(
                 type = ConfigurationType.FEATURE,
                 identifier = "wolf_village_cap",
                 description = "Maximum Settlements wolves within 48 blocks of a village before wolf spawning stops",
-                defaultValue = 3,
+                defaultValue = 2,
                 min = 0,
                 max = 64)
         int wolfVillageCap,
