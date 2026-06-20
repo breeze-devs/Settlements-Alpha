@@ -6,6 +6,7 @@ import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
+import dev.breezes.settlements.infrastructure.minecraft.chest.ChestWaxService;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.resources.ResourceKey;
@@ -69,8 +70,13 @@ public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVill
         // the capability for each (demand, chest) pair. Missing chests (removed since the
         // last sensor scan) are skipped — the memory self-corrects on the next scan.
         // LinkedHashMap preserves the nearest-first iteration order of chestsByDistance.
+        // Waxed chests are also skipped here as an immediacy guard: the sensor keeps memory clean,
+        // but a chest waxed in the same tick would not yet be evicted from VILLAGE_CHESTS.
         Map<GlobalPos, IItemHandler> handlerByChest = new LinkedHashMap<>();
         for (GlobalPos chestPos : chestsByDistance) {
+            if (ChestWaxService.isWaxed(level, chestPos.pos())) {
+                continue;
+            }
             IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, chestPos.pos(), null);
             if (handler != null) {
                 handlerByChest.put(chestPos, handler);

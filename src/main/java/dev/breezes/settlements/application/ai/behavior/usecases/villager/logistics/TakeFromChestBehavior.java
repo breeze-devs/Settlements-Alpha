@@ -26,7 +26,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -39,6 +38,7 @@ import java.util.Map;
 @CustomLog
 public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
 
+    private static final int TAKE_AT_LEAST_COUNT = 8;
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0D;
     private static final int NAVIGATION_COMPLETION_DISTANCE = 1;
 
@@ -154,17 +154,7 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
 
     private static int computeTakeCount(@Nonnull ChestWithDemandedItemCondition.Resolution resolution,
                                         @Nonnull ItemStack live) {
-        return Math.min(resolution.demand().desiredCount(), live.getCount());
-    }
-
-    private static void dropItem(@Nonnull BaseVillager villager, @Nonnull ItemStack stack) {
-        if (stack.isEmpty()) {
-            return;
-        }
-        // If inventory is full the leftover drops at the villager's feet
-        Level level = villager.level();
-        ItemEntity itemEntity = new ItemEntity(level, villager.getX(), villager.getY(), villager.getZ(), stack);
-        level.addFreshEntity(itemEntity);
+        return Math.clamp(resolution.demand().desiredCount(), TAKE_AT_LEAST_COUNT, live.getCount());
     }
 
 }

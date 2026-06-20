@@ -113,6 +113,18 @@ public final class AttachmentRegistry {
                     .build());
 
     /**
+     * Serialized boolean stamped on a chest BlockEntity to opt it out of villager logistics.
+     * When true, villagers will not discover or target this chest — persists across restarts so
+     * players can permanently reserve personal storage inside a village.
+     * Both halves of a double-chest carry the flag so that isWaxed only needs to probe one side.
+     */
+    public static final Supplier<AttachmentType<Boolean>> CHEST_WAXED = REGISTRY.register(
+            "chest_waxed",
+            () -> AttachmentType.builder(() -> false)
+                    .serialize(Codec.BOOL)
+                    .build());
+
+    /**
      * Transient marker for the villager a player has locked onto while channeling the villager totem. It is not
      * serialized: it is ephemeral channel state, and lives on the player rather than the totem stack, whose mutation
      * mid-use would cancel the channel.

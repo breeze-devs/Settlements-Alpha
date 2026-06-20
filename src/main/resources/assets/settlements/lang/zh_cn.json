@@ -292,5 +292,8 @@
   "dialogue.settlements.generic.rest_day.cured.3": "能安安稳稳歇一天，真好",
 
   "subtitles.settlements.cucco_call": "鸡不祥地啼叫",
-  "subtitles.settlements.cucco_fall": "鸡不祥地坠落"
+  "subtitles.settlements.cucco_fall": "鸡不祥地坠落",
+
+  "action.settlements.chest.waxed": "箱子已涂蜡，村民不会使用它",
+  "action.settlements.chest.unwaxed": "箱子已除蜡，村民可以使用它"
 }

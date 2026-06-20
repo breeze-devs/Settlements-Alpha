@@ -292,6 +292,9 @@
   "dialogue.settlements.generic.rest_day.cured.3": "A restful day is a beautiful thing",
 
   "subtitles.settlements.cucco_call": "A chicken crows ominously",
-  "subtitles.settlements.cucco_fall": "A chicken falls ominously"
+  "subtitles.settlements.cucco_fall": "A chicken falls ominously",
+
+  "action.settlements.chest.waxed": "Chest waxed, villagers will ignore it",
+  "action.settlements.chest.unwaxed": "Chest unwaxed, villagers may use it again"
 
 }

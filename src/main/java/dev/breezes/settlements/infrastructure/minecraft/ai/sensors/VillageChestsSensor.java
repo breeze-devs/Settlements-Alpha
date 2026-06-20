@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.minecraft.ai.sensors;
 
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.infrastructure.minecraft.chest.ChestWaxService;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -84,6 +85,11 @@ public class VillageChestsSensor extends Sensor<Villager> {
                     // block exposes the full merged 54-slot inventory, so RIGHT halves are redundant.
                     if (state.hasProperty(ChestBlock.TYPE)
                             && state.getValue(ChestBlock.TYPE) == ChestType.RIGHT) {
+                        continue;
+                    }
+
+                    // Waxed chests are invisible to villager logistics
+                    if (ChestWaxService.isWaxed(level, pos)) {
                         continue;
                     }
 
