@@ -1,11 +1,9 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics;
 
-import dev.breezes.settlements.application.economy.demand.ActiveDemand;
-import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
+import dev.breezes.settlements.application.economy.supply.ActiveSupply;
+import dev.breezes.settlements.application.economy.supply.SupplyEvaluator;
 import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
-import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
-import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.infrastructure.minecraft.chest.ChestWaxService;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.core.GlobalPos;
@@ -13,21 +11,22 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVillager> {
+public class ChestWithSpaceForSurplusCondition implements IEntityCondition<BaseVillager> {
 
-    private final DemandEvaluator demandEvaluator;
+    private final SupplyEvaluator supplyEvaluator;
 
     @Nullable
     private Resolution resolution;
 
-    public ChestWithDemandedItemCondition(@Nonnull DemandEvaluator demandEvaluator) {
-        this.demandEvaluator = demandEvaluator;
+    public ChestWithSpaceForSurplusCondition(@Nonnull SupplyEvaluator supplyEvaluator) {
+        this.supplyEvaluator = supplyEvaluator;
     }
 
     @Override
@@ -37,9 +36,8 @@ public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVill
             return false;
         }
 
-        // Demands first — cheap short-circuit before touching world state.
-        List<ActiveDemand> demands = this.demandEvaluator.resolve(villager);
-        if (demands.isEmpty()) {
+        List<ActiveSupply> supplies = this.supplyEvaluator.resolve(villager);
+        if (supplies.isEmpty()) {
             return false;
         }
 
@@ -52,8 +50,14 @@ public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVill
 
         Level level = villager.level();
 
-        // Demands-outer / chests-inner preserves demand priority while allowing any valid chest to satisfy it
-        for (ActiveDemand demand : demands) {
+        // Supplies-outer preserves catalog priority so the most important overflow rule wins.
+        for (ActiveSupply supply : supplies) {
+            int targetCount = computeDepositTargetCount(supply);
+            if (targetCount <= 0) {
+                continue;
+            }
+
+            ItemStack candidate = supply.representative().copyWithCount(targetCount);
             for (GlobalPos chestPos : chests) {
                 if (!chestPos.dimension().equals(level.dimension()) || ChestWaxService.isWaxed(level, chestPos.pos())) {
                     continue;
@@ -64,13 +68,12 @@ public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVill
                     continue;
                 }
 
-                int slot = findMatchingSlot(handler, demand.match());
-                if (slot < 0) {
+                int acceptedCount = simulateAcceptedCount(handler, candidate);
+                if (acceptedCount <= 0) {
                     continue;
                 }
 
-                ItemStack matched = handler.getStackInSlot(slot);
-                this.resolution = new Resolution(chestPos, matched.copy(), demand);
+                this.resolution = new Resolution(chestPos, supply, acceptedCount);
                 return true;
             }
         }
@@ -82,21 +85,23 @@ public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVill
         return Optional.ofNullable(this.resolution);
     }
 
-    private static int findMatchingSlot(@Nonnull IItemHandler handler, @Nonnull ItemMatch match) {
-        int size = handler.getSlots();
-        for (int i = 0; i < size; i++) {
-            ItemStack stack = handler.getStackInSlot(i);
-            if (ItemMatches.test(match, stack)) {
-                return i;
-            }
+    static int computeDepositTargetCount(@Nonnull ActiveSupply supply) {
+        return Math.min(supply.dumpableCount(), supply.representative().getMaxStackSize());
+    }
+
+    static int simulateAcceptedCount(@Nonnull IItemHandler handler, @Nonnull ItemStack stack) {
+        if (stack.isEmpty()) {
+            return 0;
         }
-        return -1;
+
+        ItemStack remainder = ItemHandlerHelper.insertItemStacked(handler, stack.copy(), true);
+        return stack.getCount() - remainder.getCount();
     }
 
     public record Resolution(
             @Nonnull GlobalPos chestPos,
-            @Nonnull ItemStack matchedStack,
-            @Nonnull ActiveDemand demand
+            @Nonnull ActiveSupply supply,
+            int acceptedCount
     ) {
     }
 

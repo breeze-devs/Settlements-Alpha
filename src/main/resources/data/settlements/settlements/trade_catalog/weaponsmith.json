@@ -1,73 +1,94 @@
 {
   "profession": "minecraft:weaponsmith",
-  "offers": [
+  "stock": [
     {
-      "id": "weaponsmith_iron_sword",
-      "match": {
-        "item": "minecraft:iron_sword"
-      },
-      "bundleSize": 1,
-      "basePrice": 18,
-      "priceJitter": 3,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "weaponsmith_iron_axe",
-      "match": {
-        "item": "minecraft:iron_axe"
-      },
-      "bundleSize": 1,
-      "basePrice": 20,
-      "priceJitter": 3,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "weaponsmith_shield",
-      "match": {
-        "item": "minecraft:shield"
-      },
-      "bundleSize": 1,
-      "basePrice": 12,
-      "priceJitter": 2,
-      "surplusThreshold": 0
-    }
-  ],
-  "demands": [
-    {
-      "id": "weaponsmith_food",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 100
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      }
     },
     {
-      "id": "weaponsmith_iron_ingot",
+      "id": "buy_iron",
       "match": {
-        "tag": "c:ingots/iron"
+        "item": "minecraft:iron_ingot"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 3,
-      "basePriority": 50
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 6,
+        "priority": 50
+      }
     },
     {
-      "id": "weaponsmith_coal",
+      "id": "buy_coal",
       "match": {
-        "tag": "c:coals"
+        "item": "minecraft:coal"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 2,
-      "basePriority": 40
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 40
+      }
     },
     {
-      "id": "weaponsmith_stick",
+      "id": "buy_stick",
       "match": {
-        "tag": "c:rods/wooden"
+        "item": "minecraft:stick"
       },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 1,
-      "basePriority": 30
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 1,
+        "priority": 40
+      }
+    },
+    {
+      "id": "iron_sword",
+      "match": {
+        "item": "minecraft:iron_sword"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 12,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "iron_axe",
+      "match": {
+        "item": "minecraft:iron_axe"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 12,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "shield",
+      "match": {
+        "item": "minecraft:shield"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 10,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
     }
   ]
 }

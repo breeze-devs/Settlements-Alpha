@@ -35,6 +35,7 @@ public class BehaviorPoolResolver {
             PoolEntry.of(BehaviorKey.TRADE_INITIATE),
             PoolEntry.of(BehaviorKey.COURTSHIP_INITIATE),
             PoolEntry.of(BehaviorKey.TAKE_FROM_CHEST),
+            PoolEntry.of(BehaviorKey.DEPOSIT_SURPLUS),
             PoolEntry.of(BehaviorKey.COLLECT_DEMANDED_ITEM)
     );
 

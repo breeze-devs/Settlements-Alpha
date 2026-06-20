@@ -12,6 +12,8 @@ import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.exceptions.SpawnFailedException;
+import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfFollowOwnerGoal;
@@ -23,6 +25,7 @@ import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import lombok.CustomLog;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -55,10 +58,15 @@ import java.util.Set;
 public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     private static final String DIRTY_NBT_KEY = "Dirty";
+    private static final ClockTicks UNTAMED_LIFETIME = ClockTicks.minutes(10);
+    private static final int POOF_PARTICLE_COUNT = 12;
+    private static final double POOF_PARTICLE_OFFSET = 0.25D;
+    private static final double POOF_PARTICLE_SPEED = 0.02D;
 
     private final IBrain settlementsBrain;
     private final INavigationManager<SettlementsWolf> navigationManager;
     private final List<IBehavior<SettlementsWolf>> wolfBehaviors;
+    private final ITickable untamedLifetime;
 
     private final Set<Class<?>> followOwnerLocks;
 
@@ -72,6 +80,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
                 .build(); // TODO: implement
         this.navigationManager = new VanillaBasicNavigationManager<>(this);
         this.wolfBehaviors = new ArrayList<>();
+        this.untamedLifetime = UNTAMED_LIFETIME.asTickable();
         this.followOwnerLocks = new HashSet<>();
         this.dirty = false;
 
@@ -113,6 +122,12 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
     @Override
     protected void customServerAiStep() {
         super.customServerAiStep();
+
+        if (!this.isTame() && this.untamedLifetime.tickAndCheck(1)) {
+            this.spawnPoof();
+            this.discard();
+            return;
+        }
 
         for (IBehavior<SettlementsWolf> behavior : this.wolfBehaviors) {
             if (behavior.getStatus() == BehaviorStatus.RUNNING) {
@@ -195,6 +210,18 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
         serverLevel.addFreshEntity(vanillaWolf);
         serverLevel.broadcastEntityEvent(vanillaWolf, (byte) 7); // hearts: taming succeeded
         this.discard();
+    }
+
+    private void spawnPoof() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        serverLevel.sendParticles(ParticleTypes.CLOUD,
+                this.getX(), this.getY() + this.getBbHeight() * 0.5D, this.getZ(),
+                POOF_PARTICLE_COUNT,
+                POOF_PARTICLE_OFFSET, POOF_PARTICLE_OFFSET, POOF_PARTICLE_OFFSET,
+                POOF_PARTICLE_SPEED);
     }
 
     private void initGoals() {

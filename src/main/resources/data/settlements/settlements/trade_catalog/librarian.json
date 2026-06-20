@@ -1,92 +1,120 @@
 {
   "profession": "minecraft:librarian",
-  "offers": [
+  "stock": [
     {
-      "id": "librarian_enchanted_book",
-      "match": {
-        "item": "minecraft:enchanted_book"
-      },
-      "bundleSize": 1,
-      "basePrice": 30,
-      "priceJitter": 5,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "librarian_bookshelf",
-      "match": {
-        "item": "minecraft:bookshelf"
-      },
-      "bundleSize": 1,
-      "basePrice": 10,
-      "priceJitter": 2,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "librarian_paper",
-      "match": {
-        "item": "minecraft:paper"
-      },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "librarian_name_tag",
-      "match": {
-        "item": "minecraft:name_tag"
-      },
-      "bundleSize": 1,
-      "basePrice": 20,
-      "priceJitter": 3,
-      "surplusThreshold": 0
-    }
-  ],
-  "demands": [
-    {
-      "id": "librarian_food",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 100
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      }
     },
     {
-      "id": "librarian_sugar_cane",
+      "id": "buy_cane",
       "match": {
         "item": "minecraft:sugar_cane"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 2,
-      "basePriority": 60
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 50
+      }
     },
     {
-      "id": "librarian_leather",
+      "id": "buy_leather",
       "match": {
-        "tag": "c:leathers"
+        "item": "minecraft:leather"
       },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 3,
-      "basePriority": 50
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 40
+      }
     },
     {
-      "id": "librarian_lapis",
+      "id": "buy_lapis",
       "match": {
-        "tag": "c:gems/lapis"
+        "item": "minecraft:lapis_lazuli"
       },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 3,
-      "basePriority": 40
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 40
+      }
     },
     {
-      "id": "librarian_feather",
+      "id": "buy_feather",
       "match": {
-        "tag": "c:feathers"
+        "item": "minecraft:feather"
       },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 2,
-      "basePriority": 30
+      "restock": {
+        "below": 8,
+        "buyPricePerUnit": 2,
+        "priority": 30
+      }
+    },
+    {
+      "id": "paper",
+      "match": {
+        "item": "minecraft:paper"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 8,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "book",
+      "match": {
+        "item": "minecraft:book"
+      },
+      "offer": {
+        "above": 8,
+        "basePrice": 5,
+        "priceJitter": 1,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 64
+      }
+    },
+    {
+      "id": "enchanted_book",
+      "match": {
+        "item": "minecraft:enchanted_book"
+      },
+      "offer": {
+        "above": 0,
+        "basePrice": 30,
+        "priceJitter": 5,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "name_tag",
+      "match": {
+        "item": "minecraft:name_tag"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 12,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
     }
   ]
 }

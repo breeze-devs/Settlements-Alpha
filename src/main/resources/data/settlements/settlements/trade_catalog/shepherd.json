@@ -1,63 +1,101 @@
 {
   "profession": "minecraft:shepherd",
-  "offers": [
+  "stock": [
     {
-      "id": "shepherd_wool",
-      "match": {
-        "tag": "c:wools"
-      },
-      "bundleSize": 4,
-      "basePrice": 12,
-      "priceJitter": 1,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "shepherd_string",
-      "match": {
-        "item": "minecraft:string"
-      },
-      "bundleSize": 4,
-      "basePrice": 8,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    }
-  ],
-  "demands": [
-    {
-      "id": "shepherd_food",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 100
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      }
     },
     {
-      "id": "shepherd_needs_shears",
+      "id": "needs_shears",
       "match": {
         "item": "minecraft:shears"
       },
-      "desiredMinCount": 1,
-      "basePricePerUnit": 15,
-      "basePriority": 80
+      "restock": {
+        "below": 1,
+        "buyPricePerUnit": 12,
+        "priority": 80
+      }
     },
     {
-      "id": "shepherd_dye",
-      "match": {
-        "tag": "c:dyes"
-      },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 2,
-      "basePriority": 30
-    },
-    {
-      "id": "shepherd_wheat",
+      "id": "feed_wheat",
       "match": {
         "item": "minecraft:wheat"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 2,
-      "basePriority": 20
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 1,
+        "priority": 50
+      }
+    },
+    {
+      "id": "dyes",
+      "match": {
+        "tag": "c:dyes"
+      },
+      "restock": {
+        "below": 8,
+        "buyPricePerUnit": 2,
+        "priority": 30
+      }
+    },
+    {
+      "id": "wolf_bone",
+      "match": {
+        "item": "minecraft:bone"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 2,
+        "priority": 30
+      }
+    },
+    {
+      "id": "wolf_beef",
+      "match": {
+        "item": "minecraft:beef"
+      },
+      "restock": {
+        "below": 8,
+        "buyPricePerUnit": 3,
+        "priority": 20
+      }
+    },
+    {
+      "id": "wool",
+      "match": {
+        "tag": "c:wools"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 16,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "string",
+      "match": {
+        "item": "minecraft:string"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 8,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
     }
   ]
 }

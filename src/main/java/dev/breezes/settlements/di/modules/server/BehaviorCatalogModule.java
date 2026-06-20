@@ -63,6 +63,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.leather
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.DepositSurplusBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.DepositSurplusConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensBehavior;
@@ -94,6 +96,7 @@ import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.catalog.TradePriceResolver;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
+import dev.breezes.settlements.application.economy.supply.SupplyEvaluator;
 import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.di.catalog.BehaviorCatalogEntry;
@@ -159,6 +162,33 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("chest"))
                         .build())
                 .factory(() -> new TakeFromChestBehavior(config, hungerConfig, demandEvaluator))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry depositSurplus(DepositSurplusConfig config,
+                                               HungerConfig hungerConfig,
+                                               SupplyEvaluator supplyEvaluator) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.DEPOSIT_SURPLUS)
+                        .displayName("Deposit Surplus")
+                        .description("Deposit surplus inventory into a nearby village chest")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(15).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.DEPOSIT_SURPLUS.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("chest"))
+                        .build())
+                .factory(() -> new DepositSurplusBehavior(config, hungerConfig, supplyEvaluator))
                 .build();
     }
 

@@ -4,6 +4,10 @@ import lombok.Builder;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Read-only projection of a {@link StockPolicy} offer facet. Value invariants are enforced
+ * upstream by {@link OfferFacet}, so this carrier performs no validation of its own.
+ */
 @Builder
 public record OfferEntry(
         @Nonnull String id,
@@ -13,23 +17,4 @@ public record OfferEntry(
         int priceJitter,
         int surplusThreshold
 ) {
-
-    public OfferEntry {
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("Offer id must not be blank");
-        }
-        if (bundleSize <= 0) {
-            throw new IllegalArgumentException("Offer bundleSize must be positive");
-        }
-        if (basePrice <= 0) {
-            throw new IllegalArgumentException("Offer basePrice must be positive");
-        }
-        if (priceJitter < 0) {
-            throw new IllegalArgumentException("Offer priceJitter must be non-negative");
-        }
-        if (surplusThreshold < 0) {
-            throw new IllegalArgumentException("Offer surplusThreshold must be non-negative");
-        }
-    }
-
 }

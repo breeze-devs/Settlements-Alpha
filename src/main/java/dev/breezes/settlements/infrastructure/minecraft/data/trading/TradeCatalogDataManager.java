@@ -4,8 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import dev.breezes.settlements.domain.economy.catalog.DemandEntry;
+import dev.breezes.settlements.domain.economy.catalog.DumpFacet;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
+import dev.breezes.settlements.domain.economy.catalog.OfferFacet;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
+import dev.breezes.settlements.domain.economy.catalog.RestockFacet;
+import dev.breezes.settlements.domain.economy.catalog.StockPolicy;
+import dev.breezes.settlements.domain.economy.catalog.SupplyEntry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
@@ -20,7 +25,6 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +35,10 @@ public class TradeCatalogDataManager extends SimpleJsonResourceReloadListener im
     private static final String DIRECTORY_PATH = "settlements/trade_catalog";
     private static final Gson GSON = new GsonBuilder().create();
 
+    private Map<VillagerProfessionKey, List<StockPolicy>> stockPoliciesByProfession = Map.of();
     private Map<VillagerProfessionKey, List<OfferEntry>> offersByProfession = Map.of();
     private Map<VillagerProfessionKey, List<DemandEntry>> demandsByProfession = Map.of();
+    private Map<VillagerProfessionKey, List<SupplyEntry>> supplyByProfession = Map.of();
     private int catalogVersion = 0;
 
     @Inject
@@ -61,8 +67,10 @@ public class TradeCatalogDataManager extends SimpleJsonResourceReloadListener im
         }
 
         TradeCatalogSnapshot snapshot = buildSnapshot(definitions);
+        this.stockPoliciesByProfession = snapshot.stockPoliciesByProfession();
         this.offersByProfession = snapshot.offersByProfession();
         this.demandsByProfession = snapshot.demandsByProfession();
+        this.supplyByProfession = snapshot.supplyByProfession();
         this.catalogVersion++;
 
         log.info("Loaded trade catalog for {} professions ({} errors)",
@@ -72,6 +80,11 @@ public class TradeCatalogDataManager extends SimpleJsonResourceReloadListener im
     @VisibleForTesting
     public void loadForTest(@Nonnull Map<ResourceLocation, JsonElement> entries) {
         this.apply(entries, null, null);
+    }
+
+    @Override
+    public List<StockPolicy> stockPoliciesFor(@Nonnull VillagerProfessionKey profession) {
+        return this.stockPoliciesByProfession.getOrDefault(profession, List.of());
     }
 
     @Nonnull
@@ -104,25 +117,45 @@ public class TradeCatalogDataManager extends SimpleJsonResourceReloadListener im
     }
 
     @Override
+    public List<SupplyEntry> supplyFor(@Nonnull VillagerProfessionKey profession) {
+        return this.supplyByProfession.getOrDefault(profession, List.of());
+    }
+
+    @Override
     public int catalogVersion() {
         return this.catalogVersion;
     }
 
     private static TradeCatalogSnapshot buildSnapshot(@Nonnull List<TradeCatalogDefinition> definitions) {
+        Map<VillagerProfessionKey, LinkedHashMap<String, StockPolicy>> stockPolicies = new LinkedHashMap<>();
         Map<VillagerProfessionKey, LinkedHashMap<String, OfferEntry>> offers = new LinkedHashMap<>();
         Map<VillagerProfessionKey, LinkedHashMap<String, DemandEntry>> demands = new LinkedHashMap<>();
+        Map<VillagerProfessionKey, LinkedHashMap<String, SupplyEntry>> supply = new LinkedHashMap<>();
 
         for (TradeCatalogDefinition definition : definitions) {
-            // Last-writer-wins per entry id within a profession
+            // Data packs intentionally allow later files to replace stock policies by id.
+            LinkedHashMap<String, StockPolicy> professionStockPolicies = stockPolicies.computeIfAbsent(definition.profession(), ignored -> new LinkedHashMap<>());
             LinkedHashMap<String, OfferEntry> professionOffers = offers.computeIfAbsent(definition.profession(), ignored -> new LinkedHashMap<>());
-            for (OfferEntry offer : definition.offers()) {
-                professionOffers.put(offer.id(), offer);
-            }
-
             LinkedHashMap<String, DemandEntry> professionDemands = demands.computeIfAbsent(definition.profession(), ignored -> new LinkedHashMap<>());
-            for (DemandEntry demand : definition.demands()) {
-                professionDemands.put(demand.id(), demand);
+            LinkedHashMap<String, SupplyEntry> professionSupply = supply.computeIfAbsent(definition.profession(), ignored -> new LinkedHashMap<>());
+
+            for (StockPolicy policy : definition.stockPolicies()) {
+                professionStockPolicies.put(policy.id(), policy);
+                if (policy.offer() != null) {
+                    professionOffers.put(policy.id(), policy.toOfferEntry());
+                }
+                if (policy.restock() != null) {
+                    professionDemands.put(policy.id(), policy.toDemandEntry());
+                }
+                if (policy.dump() != null) {
+                    professionSupply.put(policy.id(), policy.toSupplyEntry());
+                }
             }
+        }
+
+        Map<VillagerProfessionKey, List<StockPolicy>> immutableStockPolicies = new LinkedHashMap<>();
+        for (Map.Entry<VillagerProfessionKey, LinkedHashMap<String, StockPolicy>> entry : stockPolicies.entrySet()) {
+            immutableStockPolicies.put(entry.getKey(), List.copyOf(entry.getValue().values()));
         }
 
         Map<VillagerProfessionKey, List<OfferEntry>> immutableOffers = new LinkedHashMap<>();
@@ -135,7 +168,12 @@ public class TradeCatalogDataManager extends SimpleJsonResourceReloadListener im
             immutableDemands.put(entry.getKey(), List.copyOf(entry.getValue().values()));
         }
 
-        return new TradeCatalogSnapshot(immutableOffers, immutableDemands);
+        Map<VillagerProfessionKey, List<SupplyEntry>> immutableSupply = new LinkedHashMap<>();
+        for (Map.Entry<VillagerProfessionKey, LinkedHashMap<String, SupplyEntry>> entry : supply.entrySet()) {
+            immutableSupply.put(entry.getKey(), List.copyOf(entry.getValue().values()));
+        }
+
+        return new TradeCatalogSnapshot(immutableStockPolicies, immutableOffers, immutableDemands, immutableSupply);
     }
 
     private static int matchPriority(@Nonnull ItemMatch catalogMatch, @Nonnull ItemMatch want) {
@@ -157,29 +195,44 @@ public class TradeCatalogDataManager extends SimpleJsonResourceReloadListener im
         }
 
         VillagerProfessionKey profession = VillagerProfessionKey.fromResourceLocation(ResourceLocation.parse(file.profession));
-        List<OfferEntry> offers = file.offers == null ? List.of() : file.offers.stream().map(TradeCatalogDataManager::parseOffer).toList();
-        List<DemandEntry> demands = file.demands == null ? List.of() : file.demands.stream().map(TradeCatalogDataManager::parseDemand).toList();
-        return new TradeCatalogDefinition(profession, offers, demands);
+        if (file.stock == null) {
+            throw new IllegalArgumentException("missing stock");
+        }
+
+        List<StockPolicy> stockPolicies = file.stock.stream().map(TradeCatalogDataManager::parseStockPolicy).toList();
+        return new TradeCatalogDefinition(profession, stockPolicies);
     }
 
-    private static OfferEntry parseOffer(@Nonnull OffersFile file) {
-        return OfferEntry.builder()
-                .id(requireNonBlank(file.id, "offer.id"))
+    private static StockPolicy parseStockPolicy(@Nonnull StockFile file) {
+        return StockPolicy.builder()
+                .id(requireNonBlank(file.id, "stock.id"))
                 .match(parseMatch(file.match))
-                .bundleSize(requirePositive(file.bundleSize, "offer.bundleSize"))
-                .basePrice(requirePositive(file.basePrice, "offer.basePrice"))
-                .priceJitter(requireNonNegative(file.priceJitter, "offer.priceJitter"))
-                .surplusThreshold(requireNonNegative(file.surplusThreshold, "offer.surplusThreshold"))
+                .restock(file.restock == null ? null : parseRestock(file.restock))
+                .offer(file.offer == null ? null : parseOffer(file.offer))
+                .dump(file.dump == null ? null : parseDump(file.dump))
                 .build();
     }
 
-    private static DemandEntry parseDemand(@Nonnull DemandsFile file) {
-        return DemandEntry.builder()
-                .id(requireNonBlank(file.id, "demand.id"))
-                .match(parseMatch(file.match))
-                .desiredMinCount(requirePositive(file.desiredMinCount, "demand.desiredMinCount"))
-                .basePricePerUnit(requirePositive(file.basePricePerUnit, "demand.basePricePerUnit"))
-                .basePriority(requireNonNegative(file.basePriority, "demand.basePriority"))
+    private static RestockFacet parseRestock(@Nonnull RestockFile file) {
+        return RestockFacet.builder()
+                .below(requirePresent(file.below, "stock.restock.below"))
+                .buyPricePerUnit(requirePresent(file.buyPricePerUnit, "stock.restock.buyPricePerUnit"))
+                .priority(requirePresent(file.priority, "stock.restock.priority"))
+                .build();
+    }
+
+    private static OfferFacet parseOffer(@Nonnull OfferFile file) {
+        return OfferFacet.builder()
+                .above(requirePresent(file.above, "stock.offer.above"))
+                .basePrice(requirePresent(file.basePrice, "stock.offer.basePrice"))
+                .priceJitter(requirePresent(file.priceJitter, "stock.offer.priceJitter"))
+                .bundleSize(requirePresent(file.bundleSize, "stock.offer.bundleSize"))
+                .build();
+    }
+
+    private static DumpFacet parseDump(@Nonnull DumpFile file) {
+        return DumpFacet.builder()
+                .above(requirePresent(file.above, "stock.dump.above"))
                 .build();
     }
 
@@ -208,53 +261,54 @@ public class TradeCatalogDataManager extends SimpleJsonResourceReloadListener im
         return value;
     }
 
-    private static int requirePositive(Integer value, String fieldName) {
-        if (value == null || value <= 0) {
-            throw new IllegalArgumentException(fieldName + " must be positive");
-        }
-        return value;
-    }
-
-    private static int requireNonNegative(Integer value, String fieldName) {
-        if (value == null || value < 0) {
-            throw new IllegalArgumentException(fieldName + " must be non-negative");
+    // Boundary mapping only checks that the field is present; the facet records own the value-range
+    // invariants, so we don't duplicate the >0 / >=0 rules here.
+    private static int requirePresent(Integer value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException("missing " + fieldName);
         }
         return value;
     }
 
     private record TradeCatalogSnapshot(
+            Map<VillagerProfessionKey, List<StockPolicy>> stockPoliciesByProfession,
             Map<VillagerProfessionKey, List<OfferEntry>> offersByProfession,
-            Map<VillagerProfessionKey, List<DemandEntry>> demandsByProfession
+            Map<VillagerProfessionKey, List<DemandEntry>> demandsByProfession,
+            Map<VillagerProfessionKey, List<SupplyEntry>> supplyByProfession
     ) {
-        // Union of both key sets to avoid double-counting professions that have both offers and demands.
         int professionCount() {
-            HashSet<VillagerProfessionKey> all = new HashSet<>(offersByProfession.keySet());
-            all.addAll(demandsByProfession.keySet());
-            return all.size();
+            return stockPoliciesByProfession.size();
         }
     }
 
     private static final class TradeCatalogFile {
         private String profession;
-        private List<OffersFile> offers;
-        private List<DemandsFile> demands;
+        private List<StockFile> stock;
     }
 
-    private static final class OffersFile {
+    private static final class StockFile {
         private String id;
         private MatchFile match;
-        private Integer bundleSize;
+        private RestockFile restock;
+        private OfferFile offer;
+        private DumpFile dump;
+    }
+
+    private static final class RestockFile {
+        private Integer below;
+        private Integer buyPricePerUnit;
+        private Integer priority;
+    }
+
+    private static final class OfferFile {
+        private Integer above;
         private Integer basePrice;
         private Integer priceJitter;
-        private Integer surplusThreshold;
+        private Integer bundleSize;
     }
 
-    private static final class DemandsFile {
-        private String id;
-        private MatchFile match;
-        private Integer desiredMinCount;
-        private Integer basePricePerUnit;
-        private Integer basePriority;
+    private static final class DumpFile {
+        private Integer above;
     }
 
     private static final class MatchFile {

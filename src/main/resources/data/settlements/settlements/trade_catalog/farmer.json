@@ -1,102 +1,272 @@
 {
   "profession": "minecraft:farmer",
-  "offers": [
+  "stock": [
     {
-      "id": "farmer_food_bundle",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "bundleSize": 8,
-      "basePrice": 8,
-      "priceJitter": 4,
-      "surplusThreshold": 32
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 1,
+        "priceJitter": 0,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
     },
     {
-      "id": "farmer_wheat",
+      "id": "wheat",
       "match": {
         "item": "minecraft:wheat"
       },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 16
+      "offer": {
+        "above": 32,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
     },
     {
-      "id": "farmer_sugar_cane",
+      "id": "carrot",
+      "match": {
+        "item": "minecraft:carrot"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "potato",
+      "match": {
+        "item": "minecraft:potato"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "beetroot",
+      "match": {
+        "item": "minecraft:beetroot"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "melon_slice",
+      "match": {
+        "item": "minecraft:melon_slice"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "sweet_berries",
+      "match": {
+        "item": "minecraft:sweet_berries"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "pumpkin",
+      "match": {
+        "item": "minecraft:pumpkin"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 6,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "sugar_cane",
       "match": {
         "item": "minecraft:sugar_cane"
       },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
+      "offer": {
+        "above": 32,
+        "basePrice": 6,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
     },
     {
-      "id": "farmer_honey_bottle",
-      "match": {
-        "item": "minecraft:honey_bottle"
-      },
-      "bundleSize": 1,
-      "basePrice": 6,
-      "priceJitter": 1,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "farmer_honeycomb",
-      "match": {
-        "item": "minecraft:honeycomb"
-      },
-      "bundleSize": 4,
-      "basePrice": 16,
-      "priceJitter": 1,
-      "surplusThreshold": 0
-    }
-  ],
-  "demands": [
-    {
-      "id": "farmer_needs_shears",
-      "match": {
-        "item": "minecraft:shears"
-      },
-      "desiredMinCount": 1,
-      "basePricePerUnit": 15,
-      "basePriority": 80
-    },
-    {
-      "id": "farmer_needs_iron_hoe",
-      "match": {
-        "item": "minecraft:iron_hoe"
-      },
-      "desiredMinCount": 1,
-      "basePricePerUnit": 15,
-      "basePriority": 60
-    },
-    {
-      "id": "farmer_bone_meal",
-      "match": {
-        "item": "minecraft:bone_meal"
-      },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 2,
-      "basePriority": 40
-    },
-    {
-      "id": "farmer_seeds",
+      "id": "seeds",
       "match": {
         "tag": "c:seeds"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 1,
-      "basePriority": 30
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 1,
+        "priority": 30
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 2,
+        "priceJitter": 0,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
     },
     {
-      "id": "farmer_beef",
+      "id": "honey_bottle",
       "match": {
-        "item": "minecraft:beef"
+        "item": "minecraft:honey_bottle"
       },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 3,
-      "basePriority": 15
+      "offer": {
+        "above": 8,
+        "basePrice": 6,
+        "priceJitter": 1,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 64
+      }
+    },
+    {
+      "id": "honeycomb",
+      "match": {
+        "item": "minecraft:honeycomb"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 8,
+        "priceJitter": 1,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "needs_shears",
+      "match": {
+        "item": "minecraft:shears"
+      },
+      "restock": {
+        "below": 1,
+        "buyPricePerUnit": 12,
+        "priority": 80
+      }
+    },
+    {
+      "id": "needs_hoe",
+      "match": {
+        "item": "minecraft:iron_hoe"
+      },
+      "restock": {
+        "below": 1,
+        "buyPricePerUnit": 12,
+        "priority": 80
+      }
+    },
+    {
+      "id": "needs_bottle",
+      "match": {
+        "item": "minecraft:glass_bottle"
+      },
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 1,
+        "priority": 40
+      }
+    },
+    {
+      "id": "needs_bucket",
+      "match": {
+        "item": "minecraft:bucket"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 5,
+        "priority": 40
+      }
+    },
+    {
+      "id": "needs_bone",
+      "match": {
+        "item": "minecraft:bone"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 2,
+        "priority": 30
+      }
+    },
+    {
+      "id": "needs_bone_meal",
+      "match": {
+        "item": "minecraft:bone_meal"
+      },
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 30
+      }
+    },
+    {
+      "id": "pet_cod",
+      "match": {
+        "item": "minecraft:cod"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 2,
+        "priority": 20
+      }
     }
   ]
 }

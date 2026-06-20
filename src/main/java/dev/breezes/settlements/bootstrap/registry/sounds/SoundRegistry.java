@@ -34,6 +34,7 @@ public enum SoundRegistry {
     MAP_FLAP(SoundEventPlayable.of(SoundEvents.BOOK_PAGE_TURN, 1.0f, 0.8f)),
     MAP_SCRIBBLE(SoundEventPlayable.of(SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 1.0f, 1.3f)),
     TAKE_FROM_CHEST(SoundEventPlayable.of(SoundEvents.CHEST_OPEN, 0.8f, 1.0f)),
+    DEPOSIT_TO_CHEST(SoundEventPlayable.of(SoundEvents.CHEST_CLOSE, 0.8f, 0.8f)),
     THROW_EGG(SoundEventPlayable.of(SoundEvents.EGG_THROW, 1.0f, 1.2f)),
     BLAST_MISFIRE(SoundEventPlayable.of(SoundEvents.GENERIC_EXPLODE.value(), 0.8f, 1.4f)),
     CUCCO_CALL(SoundEventPlayable.ofLazy(SoundEventRegistry.CUCCO_CALL, 0.8f, 1.0f)),

@@ -17,6 +17,7 @@ public record BehaviorKey(String id) {
 
     // ---- Logistics (universal) ----
     public static final BehaviorKey TAKE_FROM_CHEST = new BehaviorKey("take_from_chest");
+    public static final BehaviorKey DEPOSIT_SURPLUS = new BehaviorKey("deposit_surplus");
     public static final BehaviorKey COLLECT_DEMANDED_ITEM = new BehaviorKey("collect_demanded_item");
 
     // ---- Social (universal) ----

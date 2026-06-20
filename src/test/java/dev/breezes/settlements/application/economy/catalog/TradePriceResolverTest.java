@@ -23,14 +23,15 @@ class TradePriceResolverTest {
                 JsonParser.parseString("""
                         {
                           "profession": "minecraft:shepherd",
-                          "offers": [],
-                          "demands": [
+                          "stock": [
                             {
                               "id": "shepherd_needs_shears",
                               "match": { "item": "minecraft:shears" },
-                              "desiredMinCount": 1,
-                              "basePricePerUnit": 15,
-                              "basePriority": 2
+                              "restock": {
+                                "below": 1,
+                                "buyPricePerUnit": 15,
+                                "priority": 2
+                              }
                             }
                           ]
                         }
@@ -66,14 +67,15 @@ class TradePriceResolverTest {
                 JsonParser.parseString("""
                         {
                           "profession": "minecraft:shepherd",
-                          "offers": [],
-                          "demands": [
+                          "stock": [
                             {
                               "id": "stable_price",
                               "match": { "item": "minecraft:bread" },
-                              "desiredMinCount": 32,
-                              "basePricePerUnit": 9,
-                              "basePriority": 5
+                              "restock": {
+                                "below": 32,
+                                "buyPricePerUnit": 9,
+                                "priority": 5
+                              }
                             }
                           ]
                         }
@@ -95,17 +97,18 @@ class TradePriceResolverTest {
                 JsonParser.parseString("""
                         {
                           "profession": "minecraft:shepherd",
-                          "offers": [
+                          "stock": [
                             {
                               "id": "bundle_offer",
                               "match": { "item": "minecraft:wool" },
-                              "bundleSize": 4,
-                              "basePrice": 1,
-                              "priceJitter": 0,
-                              "surplusThreshold": 0
+                              "offer": {
+                                "above": 0,
+                                "basePrice": 1,
+                                "priceJitter": 0,
+                                "bundleSize": 4
+                              }
                             }
-                          ],
-                          "demands": []
+                          ]
                         }
                         """)
         ));

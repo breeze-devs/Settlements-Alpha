@@ -4,6 +4,10 @@ import lombok.Builder;
 
 import javax.annotation.Nonnull;
 
+/**
+ * Read-only projection of a {@link StockPolicy} restock facet. Value invariants are enforced
+ * upstream by {@link RestockFacet}, so this carrier performs no validation of its own.
+ */
 @Builder
 public record DemandEntry(
         @Nonnull String id,
@@ -12,20 +16,4 @@ public record DemandEntry(
         int basePricePerUnit,
         int basePriority
 ) {
-
-    public DemandEntry {
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("DemandEntry id must not be blank");
-        }
-        if (desiredMinCount <= 0) {
-            throw new IllegalArgumentException("DemandEntry desiredMinCount must be positive");
-        }
-        if (basePricePerUnit <= 0) {
-            throw new IllegalArgumentException("DemandEntry basePricePerUnit must be positive");
-        }
-        if (basePriority < 0) {
-            throw new IllegalArgumentException("DemandEntry basePriority must be non-negative");
-        }
-    }
-
 }

@@ -1,82 +1,116 @@
 {
   "profession": "minecraft:fletcher",
-  "offers": [
+  "stock": [
     {
-      "id": "fletcher_arrow",
-      "match": {
-        "item": "minecraft:arrow"
-      },
-      "bundleSize": 16,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "fletcher_bow",
-      "match": {
-        "item": "minecraft:bow"
-      },
-      "bundleSize": 1,
-      "basePrice": 10,
-      "priceJitter": 2,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "fletcher_crossbow",
-      "match": {
-        "item": "minecraft:crossbow"
-      },
-      "bundleSize": 1,
-      "basePrice": 16,
-      "priceJitter": 3,
-      "surplusThreshold": 0
-    }
-  ],
-  "demands": [
-    {
-      "id": "fletcher_food",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 100
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      }
     },
     {
-      "id": "fletcher_feather",
+      "id": "feather",
       "match": {
-        "tag": "c:feathers"
+        "item": "minecraft:feather"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 2,
-      "basePriority": 50
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 2,
+        "priority": 50
+      }
     },
     {
-      "id": "fletcher_stick",
+      "id": "stick",
       "match": {
-        "tag": "c:rods/wooden"
+        "item": "minecraft:stick"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 1,
-      "basePriority": 40
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 40
+      }
     },
     {
-      "id": "fletcher_string",
+      "id": "string",
       "match": {
-        "tag": "c:strings"
+        "item": "minecraft:string"
       },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 2,
-      "basePriority": 40
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 40
+      }
     },
     {
-      "id": "fletcher_flint",
+      "id": "flint",
       "match": {
         "item": "minecraft:flint"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 1,
-      "basePriority": 30
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 30
+      }
+    },
+    {
+      "id": "feed_seeds",
+      "match": {
+        "tag": "c:seeds"
+      },
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 1,
+        "priority": 30
+      }
+    },
+    {
+      "id": "arrow",
+      "match": {
+        "item": "minecraft:arrow"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 12,
+        "priceJitter": 1,
+        "bundleSize": 16
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "bow",
+      "match": {
+        "item": "minecraft:bow"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 10,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "crossbow",
+      "match": {
+        "item": "minecraft:crossbow"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 16,
+        "priceJitter": 3,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
     }
   ]
 }

@@ -8,6 +8,12 @@ import java.util.List;
 public interface TradeCatalogRegistry {
 
     /**
+     * Returns the source stock policies for the given profession. These are the canonical economic
+     * rules; demand, offer, and supply entries are projections over these policies.
+     */
+    List<StockPolicy> stockPoliciesFor(@Nonnull VillagerProfessionKey profession);
+
+    /**
      * Returns all sellable entries for the given seller's profession that could potentially satisfy
      * the buyer's want. Mixed-kind pairs (ItemRef vs. Tag want, or TagRef vs. Item want) are included
      * as candidates and sorted by specificity -- exact-kind matches first.
@@ -39,6 +45,11 @@ public interface TradeCatalogRegistry {
      * needs the full unfiltered catalog for presentation or validation.
      */
     List<DemandEntry> demandsFor(@Nonnull VillagerProfessionKey profession);
+
+    /**
+     * Returns all dumpable entries registered for the given profession, with no filtering.
+     */
+    List<SupplyEntry> supplyFor(@Nonnull VillagerProfessionKey profession);
 
     /**
      * Monotonic version of the currently loaded catalog snapshot.

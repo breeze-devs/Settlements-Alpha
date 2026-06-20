@@ -1,15 +1,16 @@
 {
   "profession": "minecraft:none",
-  "offers": [],
-  "demands": [
+  "stock": [
     {
-      "id": "none_food",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 100
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      }
     }
   ]
 }

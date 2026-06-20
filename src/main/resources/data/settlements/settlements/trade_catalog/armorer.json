@@ -1,83 +1,176 @@
 {
   "profession": "minecraft:armorer",
-  "offers": [
+  "stock": [
     {
-      "id": "armorer_iron_helmet",
-      "match": {
-        "item": "minecraft:iron_helmet"
-      },
-      "bundleSize": 1,
-      "basePrice": 20,
-      "priceJitter": 3,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "armorer_iron_chestplate",
-      "match": {
-        "item": "minecraft:iron_chestplate"
-      },
-      "bundleSize": 1,
-      "basePrice": 28,
-      "priceJitter": 3,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "armorer_iron_leggings",
-      "match": {
-        "item": "minecraft:iron_leggings"
-      },
-      "bundleSize": 1,
-      "basePrice": 24,
-      "priceJitter": 3,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "armorer_iron_boots",
-      "match": {
-        "item": "minecraft:iron_boots"
-      },
-      "bundleSize": 1,
-      "basePrice": 18,
-      "priceJitter": 3,
-      "surplusThreshold": 0
-    }
-  ],
-  "demands": [
-    {
-      "id": "armorer_food",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 100
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      }
     },
     {
-      "id": "armorer_iron_ingot",
+      "id": "buy_raw_iron",
       "match": {
-        "tag": "c:ingots/iron"
+        "item": "minecraft:raw_iron"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 3,
-      "basePriority": 50
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 3,
+        "priority": 50
+      }
     },
     {
-      "id": "armorer_coal",
+      "id": "buy_raw_gold",
       "match": {
-        "tag": "c:coals"
+        "item": "minecraft:raw_gold"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 2,
-      "basePriority": 30
+      "restock": {
+        "below": 8,
+        "buyPricePerUnit": 4,
+        "priority": 40
+      }
     },
     {
-      "id": "armorer_leather",
+      "id": "buy_raw_copper",
       "match": {
-        "tag": "c:leathers"
+        "item": "minecraft:raw_copper"
       },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 3,
-      "basePriority": 20
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 40
+      }
+    },
+    {
+      "id": "buy_coal",
+      "match": {
+        "item": "minecraft:coal"
+      },
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 2,
+        "priority": 50
+      }
+    },
+    {
+      "id": "buy_leather",
+      "match": {
+        "item": "minecraft:leather"
+      },
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 30
+      }
+    },
+    {
+      "id": "iron_ingot",
+      "match": {
+        "item": "minecraft:iron_ingot"
+      },
+      "offer": {
+        "above": 48,
+        "basePrice": 48,
+        "priceJitter": 2,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "gold_ingot",
+      "match": {
+        "item": "minecraft:gold_ingot"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 64,
+        "priceJitter": 2,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "copper_ingot",
+      "match": {
+        "item": "minecraft:copper_ingot"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 16,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "iron_helmet",
+      "match": {
+        "item": "minecraft:iron_helmet"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 10,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "iron_chestplate",
+      "match": {
+        "item": "minecraft:iron_chestplate"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 16,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "iron_leggings",
+      "match": {
+        "item": "minecraft:iron_leggings"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 14,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "iron_boots",
+      "match": {
+        "item": "minecraft:iron_boots"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 8,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
     }
   ]
 }

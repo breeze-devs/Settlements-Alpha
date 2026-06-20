@@ -1,113 +1,297 @@
 {
   "profession": "minecraft:mason",
-  "offers": [
+  "stock": [
     {
-      "id": "mason_stone_bricks",
-      "match": {
-        "item": "minecraft:stone_bricks"
-      },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "mason_bricks",
-      "match": {
-        "item": "minecraft:bricks"
-      },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "mason_polished_granite",
-      "match": {
-        "item": "minecraft:polished_granite"
-      },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "mason_polished_andesite",
-      "match": {
-        "item": "minecraft:polished_andesite"
-      },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "mason_polished_diorite",
-      "match": {
-        "item": "minecraft:polished_diorite"
-      },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "mason_quartz_block",
-      "match": {
-        "item": "minecraft:quartz_block"
-      },
-      "bundleSize": 4,
-      "basePrice": 16,
-      "priceJitter": 1,
-      "surplusThreshold": 0
-    },
-    {
-      "id": "mason_terracotta",
-      "match": {
-        "item": "minecraft:terracotta"
-      },
-      "bundleSize": 8,
-      "basePrice": 16,
-      "priceJitter": 0,
-      "surplusThreshold": 0
-    }
-  ],
-  "demands": [
-    {
-      "id": "mason_food",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 100
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      }
     },
     {
-      "id": "mason_ores",
+      "id": "needs_pickaxe",
       "match": {
-        "tag": "c:ores"
+        "item": "minecraft:iron_pickaxe"
       },
-      "desiredMinCount": 8,
-      "basePricePerUnit": 4,
-      "basePriority": 50
+      "restock": {
+        "below": 1,
+        "buyPricePerUnit": 12,
+        "priority": 60
+      }
     },
     {
-      "id": "mason_clay",
+      "id": "raw_iron",
       "match": {
-        "item": "minecraft:clay_ball"
+        "item": "minecraft:raw_iron"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 2,
-      "basePriority": 40
+      "offer": {
+        "above": 16,
+        "basePrice": 24,
+        "priceJitter": 2,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
     },
     {
-      "id": "mason_sand",
+      "id": "raw_gold",
+      "match": {
+        "item": "minecraft:raw_gold"
+      },
+      "offer": {
+        "above": 8,
+        "basePrice": 32,
+        "priceJitter": 2,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 64
+      }
+    },
+    {
+      "id": "raw_copper",
+      "match": {
+        "item": "minecraft:raw_copper"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 16,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "coal",
+      "match": {
+        "item": "minecraft:coal"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 16,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "lapis",
+      "match": {
+        "item": "minecraft:lapis_lazuli"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 16,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "redstone",
+      "match": {
+        "item": "minecraft:redstone"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 16,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "diamond",
+      "match": {
+        "item": "minecraft:diamond"
+      },
+      "offer": {
+        "above": 2,
+        "basePrice": 24,
+        "priceJitter": 4,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "gravel",
+      "match": {
+        "item": "minecraft:gravel"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 8,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "sand",
       "match": {
         "item": "minecraft:sand"
       },
-      "desiredMinCount": 16,
-      "basePricePerUnit": 1,
-      "basePriority": 30
+      "offer": {
+        "above": 32,
+        "basePrice": 8,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "clay_ball",
+      "match": {
+        "item": "minecraft:clay_ball"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 16,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "flint",
+      "match": {
+        "item": "minecraft:flint"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 8,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "stone_bricks",
+      "match": {
+        "item": "minecraft:stone_bricks"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 6,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "bricks",
+      "match": {
+        "item": "minecraft:bricks"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 6,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "polished_granite",
+      "match": {
+        "item": "minecraft:polished_granite"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 6,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "polished_andesite",
+      "match": {
+        "item": "minecraft:polished_andesite"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 6,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "polished_diorite",
+      "match": {
+        "item": "minecraft:polished_diorite"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 6,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "terracotta",
+      "match": {
+        "item": "minecraft:terracotta"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 6,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "quartz_block",
+      "match": {
+        "item": "minecraft:quartz_block"
+      },
+      "offer": {
+        "above": 8,
+        "basePrice": 8,
+        "priceJitter": 1,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 64
+      }
     }
   ]
 }

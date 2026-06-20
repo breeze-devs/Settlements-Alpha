@@ -57,6 +57,7 @@
   "ui.settlements.behavior.behavior.harvest_ripe_crops": "收割庄稼",
   "ui.settlements.behavior.behavior.eat_food": "吃饭",
   "ui.settlements.behavior.behavior.take_from_chest": "翻找箱子",
+  "ui.settlements.behavior.behavior.deposit_surplus": "存放物品",
   "ui.settlements.behavior.behavior.trade_accept": "接受交易",
   "ui.settlements.behavior.behavior.trade_initiate": "发起交易",
   "ui.settlements.behavior.behavior.walk_dog": "遛狗",

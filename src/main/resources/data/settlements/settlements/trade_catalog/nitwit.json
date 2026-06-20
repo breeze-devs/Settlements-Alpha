@@ -1,24 +1,31 @@
 {
   "profession": "minecraft:nitwit",
-  "offers": [],
-  "demands": [
+  "stock": [
     {
-      "id": "nitwit_food",
+      "id": "food",
       "match": {
         "tag": "c:foods"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 100
+      "restock": {
+        "below": 32,
+        "buyPricePerUnit": 1,
+        "priority": 100
+      }
     },
     {
-      "id": "nitwit_eggs",
+      "id": "egg",
       "match": {
         "item": "minecraft:egg"
       },
-      "desiredMinCount": 32,
-      "basePricePerUnit": 3,
-      "basePriority": 90
+      "offer": {
+        "above": 16,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 64
+      }
     }
   ]
 }

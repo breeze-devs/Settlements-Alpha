@@ -12,16 +12,16 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
+import dev.breezes.settlements.application.economy.supply.SupplyEvaluator;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
-import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.chest.ChestWaxService;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
@@ -30,47 +30,46 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 
 @CustomLog
-public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
+public class DepositSurplusBehavior extends VillagerStateMachineBehavior {
 
-    private static final int TAKE_AT_LEAST_COUNT = 8;
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0D;
     private static final int NAVIGATION_COMPLETION_DISTANCE = 1;
 
-    private enum TakeFromChestStage implements StageKey {
-        TAKE_FROM_CHEST,
+    private enum DepositSurplusStage implements StageKey {
+        DEPOSIT_SURPLUS,
         END
     }
 
-    private final ChestWithDemandedItemCondition chestCondition;
+    private final ChestWithSpaceForSurplusCondition chestCondition;
 
     @Nullable
-    private ChestWithDemandedItemCondition.Resolution resolution;
+    private ChestWithSpaceForSurplusCondition.Resolution resolution;
 
-    public TakeFromChestBehavior(@Nonnull TakeFromChestConfig config,
-                                 @Nonnull HungerConfig hungerConfig,
-                                 @Nonnull DemandEvaluator demandEvaluator) {
+    public DepositSurplusBehavior(@Nonnull DepositSurplusConfig config,
+                                  @Nonnull HungerConfig hungerConfig,
+                                  @Nonnull SupplyEvaluator supplyEvaluator) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
-        this.chestCondition = new ChestWithDemandedItemCondition(demandEvaluator);
+        this.chestCondition = new ChestWithSpaceForSurplusCondition(supplyEvaluator);
         this.preconditions.add(this.chestCondition);
-
         this.resolution = null;
 
-        this.initializeStateMachine(this.createControlStep(), TakeFromChestStage.END);
+        this.initializeStateMachine(this.createControlStep(), DepositSurplusStage.END);
     }
 
     private StagedStep<BaseVillager> createControlStep() {
         return StagedStep.<BaseVillager>builder()
-                .name("TakeFromChestBehavior")
-                .initialStage(TakeFromChestStage.TAKE_FROM_CHEST)
-                .stageStepMap(Map.of(TakeFromChestStage.TAKE_FROM_CHEST, this.createTakeStep()))
-                .nextStage(TakeFromChestStage.END)
+                .name("DepositSurplusBehavior")
+                .initialStage(DepositSurplusStage.DEPOSIT_SURPLUS)
+                .stageStepMap(Map.of(DepositSurplusStage.DEPOSIT_SURPLUS, this.createDepositStep()))
+                .nextStage(DepositSurplusStage.END)
                 .build();
     }
 
@@ -78,7 +77,7 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.chestCondition.getResolution().isEmpty()) {
-            this.requestStop("No nearby chests found");
+            this.requestStop("No nearby chests with space found");
             return;
         }
 
@@ -96,16 +95,17 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
         this.resolution = null;
     }
 
-    private BehaviorStep<BaseVillager> createTakeStep() {
+    private BehaviorStep<BaseVillager> createDepositStep() {
         TimeBasedStep<BaseVillager> interactStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.seconds(1).asTickable())
                 .onStart(ctx -> {
                     if (this.resolution == null) {
                         return StepResult.fail("No resolution available for interaction");
                     }
-                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
-                    Level level = ctx.getInitiator().getMinecraftEntity().level();
-                    SoundRegistry.TAKE_FROM_CHEST.playGlobally(Location.of(this.resolution.chestPos().pos(), level), SoundSource.BLOCKS);
+                    BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
+                    villager.triggerMotion(AnimationArchetype.INTERACT);
+                    villager.setHeldItem(this.resolution.supply().representative().copyWithCount(1));
+                    SoundRegistry.DEPOSIT_TO_CHEST.playGlobally(Location.of(this.resolution.chestPos().pos(), villager.level()), SoundSource.BLOCKS);
                     return StepResult.noOp();
                 })
                 .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), ctx -> {
@@ -115,39 +115,37 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
 
                     BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
                     Level level = villager.level();
+                    if (ChestWaxService.isWaxed(level, this.resolution.chestPos().pos())) {
+                        return StepResult.fail("Chest waxed during interaction");
+                    }
 
                     IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, this.resolution.chestPos().pos(), null);
                     if (handler == null) {
-                        // Chest removed between precondition pass and interact keyframe.
                         return StepResult.fail("Chest removed during interaction");
                     }
 
-                    int totalExtracted = 0;
-
-                    for (int slot = 0; slot < handler.getSlots(); slot++) {
-                        ItemStack stackInSlot = handler.getStackInSlot(slot);
-                        if (stackInSlot.isEmpty() || !ItemMatches.test(this.resolution.demand().match(), stackInSlot)) {
-                            continue;
-                        }
-
-                        int targetTakeCount = this.calculateTargetTakeCount(stackInSlot, this.resolution.demand().desiredCount());
-                        int needed = targetTakeCount - totalExtracted;
-                        ItemStack extracted = handler.extractItem(slot, needed, false);
-                        if (extracted.isEmpty()) {
-                            continue;
-                        }
-
-                        totalExtracted += extracted.getCount();
-                        villager.getSettlementsInventory().add(extracted);
-                        villager.setHeldItem(extracted.copyWithCount(1));
-
-                        if (totalExtracted >= targetTakeCount) {
-                            break;
-                        }
+                    int targetCount = Math.min(this.resolution.acceptedCount(), this.resolution.supply().representative().getMaxStackSize());
+                    ItemStack targetStack = this.resolution.supply().representative().copyWithCount(targetCount);
+                    int acceptedCount = ChestWithSpaceForSurplusCondition.simulateAcceptedCount(handler, targetStack);
+                    if (acceptedCount <= 0) {
+                        return StepResult.fail("Selected chest no longer has space for surplus");
                     }
 
-                    if (totalExtracted <= 0) {
-                        return StepResult.fail("Chest contents changed during interaction; no matching items found");
+                    ItemStack consumedStack = this.resolution.supply().representative().copyWithCount(acceptedCount);
+                    int consumed = villager.getSettlementsInventory().consume(consumedStack, acceptedCount);
+                    if (consumed <= 0) {
+                        return StepResult.fail("Surplus item no longer available for deposit");
+                    }
+
+                    ItemStack toInsert = this.resolution.supply().representative().copyWithCount(consumed);
+                    ItemStack remainder = ItemHandlerHelper.insertItemStacked(handler, toInsert, false);
+                    if (!remainder.isEmpty()) {
+                        villager.getSettlementsInventory().add(remainder);
+                    }
+
+                    int inserted = consumed - remainder.getCount();
+                    if (inserted <= 0) {
+                        return StepResult.fail("Chest insertion failed");
                     }
 
                     return StepResult.noOp();
@@ -159,11 +157,6 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
                 .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, NAVIGATION_COMPLETION_DISTANCE))
                 .actionStep(interactStep)
                 .build();
-    }
-
-    private int calculateTargetTakeCount(@Nonnull ItemStack stack, int desiredCount) {
-        int itemAwareMinimum = Math.min(TAKE_AT_LEAST_COUNT, stack.getMaxStackSize());
-        return Math.max(desiredCount, itemAwareMinimum);
     }
 
 }
