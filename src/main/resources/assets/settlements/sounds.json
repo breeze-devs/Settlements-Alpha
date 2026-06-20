@@ -1,0 +1,14 @@
+{
+  "cucco_call": {
+    "subtitle": "subtitles.settlements.cucco_call",
+    "sounds": [
+      "settlements:cucco-call"
+    ]
+  },
+  "cucco_fall": {
+    "subtitle": "subtitles.settlements.cucco_fall",
+    "sounds": [
+      "settlements:cucco-fall"
+    ]
+  }
+}

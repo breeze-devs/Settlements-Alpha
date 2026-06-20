@@ -36,6 +36,8 @@ public enum SoundRegistry {
     TAKE_FROM_CHEST(SoundEventPlayable.of(SoundEvents.CHEST_OPEN, 0.8f, 1.0f)),
     THROW_EGG(SoundEventPlayable.of(SoundEvents.EGG_THROW, 1.0f, 1.2f)),
     BLAST_MISFIRE(SoundEventPlayable.of(SoundEvents.GENERIC_EXPLODE.value(), 0.8f, 1.4f)),
+    CUCCO_CALL(SoundEventPlayable.ofLazy(SoundEventRegistry.CUCCO_CALL, 0.8f, 1.0f)),
+    CUCCO_FALL(SoundEventPlayable.ofLazy(SoundEventRegistry.CUCCO_FALL, 0.5f, 1.0f)),
     ;
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound

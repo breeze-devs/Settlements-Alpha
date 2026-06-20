@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.entities;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.SettlementsCat;
+import dev.breezes.settlements.infrastructure.minecraft.entities.cuccos.CuccoEntity;
 import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.SettlementsEgg;
 import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.VillagerFishingHook;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -40,6 +41,13 @@ public class EntityRegistry {
                     .passengerAttachments(0.5125F)
                     .clientTrackingRange(10)
                     .build("settlements_cat"));
+
+    public static final Supplier<EntityType<CuccoEntity>> CUCCO = REGISTRY.register("cucco",
+            () -> EntityType.Builder.of(CuccoEntity::new, MobCategory.CREATURE)
+                    .sized(0.4F, 0.7F)
+                    .eyeHeight(0.644F)
+                    .clientTrackingRange(10)
+                    .build("cucco"));
 
     public static final Supplier<EntityType<SettlementsEgg>> SETTLEMENTS_EGG = REGISTRY.register("settlements_egg",
             () -> EntityType.Builder.<SettlementsEgg>of(SettlementsEgg::new, MobCategory.MISC)

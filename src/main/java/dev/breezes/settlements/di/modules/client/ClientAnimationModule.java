@@ -89,7 +89,8 @@ public abstract class ClientAnimationModule {
                         NavigationType.STROLL, LocomotionAnimations.stroll(),
                         NavigationType.WALK, LocomotionAnimations.walk(),
                         NavigationType.RUN, LocomotionAnimations.jog(),
-                        NavigationType.SPRINT, LocomotionAnimations.run()))
+                        NavigationType.SPRINT, LocomotionAnimations.run(),
+                        NavigationType.PANIC, LocomotionAnimations.panicRun()))
                 .build();
     }
 

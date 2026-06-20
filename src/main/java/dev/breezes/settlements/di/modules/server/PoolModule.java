@@ -144,6 +144,7 @@ public final class PoolModule {
                 .profession(VillagerProfessionKey.NITWIT)
                 .entry(PoolEntry.of(BehaviorKey.RING_BELL))
                 .entry(PoolEntry.of(BehaviorKey.THROW_EGGS))
+                .entry(PoolEntry.of(BehaviorKey.CHASE_CHICKENS))
                 .build();
     }
 

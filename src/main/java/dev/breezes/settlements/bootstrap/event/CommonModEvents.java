@@ -6,6 +6,7 @@ import dev.breezes.settlements.di.DaggerSettlementsComponent;
 import dev.breezes.settlements.di.SettlementsComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.SettlementsCat;
+import dev.breezes.settlements.infrastructure.minecraft.entities.cuccos.CuccoEntity;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import lombok.CustomLog;
@@ -39,6 +40,7 @@ public class CommonModEvents {
         event.put(EntityRegistry.BASE_VILLAGER.get(), BaseVillager.createCustomAttributes());
         event.put(EntityRegistry.SETTLEMENTS_CAT.get(), SettlementsCat.createAttributes().build());
         event.put(EntityRegistry.SETTLEMENTS_WOLF.get(), SettlementsWolf.createAttributes().build());
+        event.put(EntityRegistry.CUCCO.get(), CuccoEntity.createAttributes().build());
     }
 
     @SubscribeEvent

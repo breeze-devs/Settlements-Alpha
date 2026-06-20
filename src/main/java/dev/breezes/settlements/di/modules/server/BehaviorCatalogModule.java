@@ -65,6 +65,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.logisti
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsBehavior;
@@ -1242,6 +1244,30 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("egg"))
                         .build())
                 .factory(() -> new ThrowEggsBehavior(config, hungerConfig))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry chaseChickens(ChaseChickensConfig config, HungerConfig hungerConfig) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.CHASE_CHICKENS)
+                        .displayName("Chase Chickens")
+                        .description("Chase a chicken around the village")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.CHASE_CHICKENS.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("feather"))
+                        .build())
+                .factory(() -> new ChaseChickensBehavior(config, hungerConfig))
                 .build();
     }
 

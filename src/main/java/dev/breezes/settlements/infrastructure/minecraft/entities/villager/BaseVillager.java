@@ -74,6 +74,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.AgeableMob;
@@ -122,6 +123,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static final float BREED_HUNGER_THRESHOLD = 0.7F;
     private static final int BREED_FOOD_REQUIREMENT = 32;
     private static final ItemMatch FOODS_MATCH = new ItemMatch.TagRef(Tags.Items.FOODS);
+    public static final float PANIC_DAMAGE_THRESHOLD = 0.1F;
 
     private static final ClockTicks RECONCILER_COOLDOWN_TICKS = ClockTicks.seconds(5);
     // Perception drains the WorldEventBus on a 1 Hz cadence instead of every tick. The bus is a
@@ -176,6 +178,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private VillagerProfession cachedProfession;
     @Nullable
     private VillagerProfessionKey cachedProfessionKey;
+    private float lastHurtAmount;
 
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
@@ -242,6 +245,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         DATA_LOCOMOTION_NAVIGATION_TYPE.define(builder);
         DATA_BOBBER_DEPLOYED.define(builder);
         DATA_SOOTY.define(builder);
+    }
+
+    @Override
+    public boolean hurt(@Nonnull DamageSource source, float amount) {
+        this.lastHurtAmount = amount;
+        return super.hurt(source, amount);
     }
 
     /**
@@ -967,7 +976,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 SensorType.NEAREST_PLAYERS,
                 SensorType.NEAREST_ITEMS,
                 SensorType.NEAREST_BED,
-                SensorType.HURT_BY,
+                SensorTypeRegistry.SETTLEMENTS_HURT_BY_SENSOR.get(),
                 SensorType.VILLAGER_HOSTILES,
                 SensorType.SECONDARY_POIS,
                 SensorType.GOLEM_DETECTED,

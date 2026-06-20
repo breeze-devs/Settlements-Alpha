@@ -13,6 +13,7 @@ import dev.breezes.settlements.infrastructure.rendering.particles.StunnedStarPar
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.entity.CatRenderer;
+import net.minecraft.client.renderer.entity.ChickenRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.renderer.entity.WolfRenderer;
@@ -47,6 +48,7 @@ public class ClientModEvents {
         EntityRenderers.register(EntityRegistry.BASE_VILLAGER.get(), SettlementsVillagerRenderer::new);
         EntityRenderers.register(EntityRegistry.SETTLEMENTS_CAT.get(), CatRenderer::new);
         EntityRenderers.register(EntityRegistry.SETTLEMENTS_WOLF.get(), WolfRenderer::new);
+        EntityRenderers.register(EntityRegistry.CUCCO.get(), ChickenRenderer::new);
         EntityRenderers.register(EntityRegistry.VILLAGER_FISHING_HOOK.get(), VillagerFishingHookRenderer::new);
         EntityRenderers.register(EntityRegistry.SETTLEMENTS_EGG.get(), ThrownItemRenderer::new);
     }

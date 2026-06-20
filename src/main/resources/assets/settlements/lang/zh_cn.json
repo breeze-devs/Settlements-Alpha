@@ -66,6 +66,8 @@
   "ui.settlements.behavior.behavior.feed_wolf": "喂狗",
   "ui.settlements.behavior.behavior.ring_bell": "敲钟",
   "ui.settlements.behavior.behavior.throw_eggs": "扔鸡蛋",
+  "ui.settlements.behavior.behavior.investigate": "寻找线索",
+  "ui.settlements.behavior.behavior.chase_chickens": "捉鸡",
   "ui.settlements.behavior.behavior.collect_demanded_item": "捡起所需物品",
   "ui.settlements.behavior.behavior.survey_landscape": "探查地形",
   "ui.settlements.behavior.behavior.courtship_initiate": "发起求偶",
@@ -132,6 +134,7 @@
 
   "entity.settlements.settlements_wolf": "狼",
   "entity.settlements.settlements_cat": "猫",
+  "entity.settlements.cucco": "鸡",
 
   "entity.settlements.base_villager.armorer": "盔甲匠",
   "entity.settlements.base_villager.butcher": "屠夫",
@@ -286,5 +289,8 @@
 
   "dialogue.settlements.generic.rest_day.cured.1": "能站在太阳底下，我就知足了",
   "dialogue.settlements.generic.rest_day.cured.2": "以前只会到处游荡，现在总算能歇会儿",
-  "dialogue.settlements.generic.rest_day.cured.3": "能安安稳稳歇一天，真好"
+  "dialogue.settlements.generic.rest_day.cured.3": "能安安稳稳歇一天，真好",
+
+  "subtitles.settlements.cucco_call": "鸡不祥地啼叫",
+  "subtitles.settlements.cucco_fall": "鸡不祥地坠落"
 }

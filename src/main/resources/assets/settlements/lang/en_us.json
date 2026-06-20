@@ -66,6 +66,8 @@
   "ui.settlements.behavior.behavior.feed_wolf": "Feed Dog",
   "ui.settlements.behavior.behavior.ring_bell": "Ring Bell",
   "ui.settlements.behavior.behavior.throw_eggs": "Throw Eggs",
+  "ui.settlements.behavior.behavior.investigate": "Investigate",
+  "ui.settlements.behavior.behavior.chase_chickens": "Chase Chickens",
   "ui.settlements.behavior.behavior.collect_demanded_item": "Collect Items",
   "ui.settlements.behavior.behavior.survey_landscape": "Survey Landscape",
   "ui.settlements.behavior.behavior.courtship_initiate": "Initiate Courtship",
@@ -132,6 +134,7 @@
 
   "entity.settlements.settlements_wolf": "Wolf",
   "entity.settlements.settlements_cat": "Cat",
+  "entity.settlements.cucco": "Chicken",
 
   "entity.settlements.base_villager.armorer": "Armorer",
   "entity.settlements.base_villager.butcher": "Butcher",
@@ -286,5 +289,9 @@
 
   "dialogue.settlements.generic.rest_day.cured.1": "Just happy to be standing in the sun",
   "dialogue.settlements.generic.rest_day.cured.2": "I used to wander endlessly, now I can just rest",
-  "dialogue.settlements.generic.rest_day.cured.3": "A restful day is a beautiful thing"
+  "dialogue.settlements.generic.rest_day.cured.3": "A restful day is a beautiful thing",
+
+  "subtitles.settlements.cucco_call": "A chicken crows ominously",
+  "subtitles.settlements.cucco_fall": "A chicken falls ominously"
+
 }

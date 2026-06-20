@@ -6,6 +6,7 @@ import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nonnull;
@@ -37,6 +38,10 @@ public class ParticleRegistry {
 
     public static void breedItemConsume(@Nonnull Location location, @Nonnull ItemStack item) {
         itemBreak(location, item, 20, 0.3, 0.3, 0.3, 0.0D);
+    }
+
+    public static void featherPoof(@Nonnull Location location) {
+        itemBreak(location, new ItemStack(Items.FEATHER), 18, 0.35, 0.35, 0.35, 0.02D);
     }
 
     public static void cutBlock(@Nonnull Location location, @Nonnull BlockState state) {

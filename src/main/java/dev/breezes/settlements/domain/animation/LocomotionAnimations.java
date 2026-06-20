@@ -86,6 +86,50 @@ public final class LocomotionAnimations {
                         p(0, 0, 0.5, 0), p(3, 0, 0, 0), p(6, 0, 0.5, 0), p(9, 0, 0, 0), p(12, 0, 0.5, 0))));
     }
 
+    public static KeyframeAnimation panicRun() {
+        // Arms are raised overhead (arm_straight_*), not crossed, so this clip cannot share the
+        // gait() helper which hardcodes BOTH_CROSSED and exactly 7 crossed-arm tracks.
+        return panicGait("panic_run", 10,
+                rotations(AnimationTargets.ARM_STRAIGHT_LEFT_ROTATION, keys(
+                        r(0, 170F, 0F, 10F), r(3, 160F, 0F, 15F), r(5, 180F, 0F, 20F), r(8, 160F, 0F, 15F), r(10, 170F, 0F, 10F))),
+                rotations(AnimationTargets.ARM_STRAIGHT_RIGHT_ROTATION, keys(
+                        r(0, 180F, 0F, -10F), r(3, 160F, 0F, -15F), r(5, 170F, 0F, -20F), r(8, 160F, 0F, -15F), r(10, 180F, 0F, -10F))),
+                rotations(AnimationTargets.LEG_LEFT_ROTATION_OVERRIDE, keys(
+                        r(0, -60F, 0F, 0F), r(5, 60F, 0F, 0F), r(10, -60F, 0F, 0F))),
+                rotations(AnimationTargets.LEG_RIGHT_ROTATION_OVERRIDE, keys(
+                        r(0, 60F, 0F, 0F), r(5, -60F, 0F, 0F), r(10, 60F, 0F, 0F))),
+                rotations(AnimationTargets.NOSE_ROTATION, keys(
+                        r(0, 2F, 0F, 0F), r(1, -15F, 2F, 4F), r(4, 0F, -2F, -4F), r(6, 0F, 2F, 4F), r(9, -15F, -2F, -4F), r(10, 2F, 0F, 0F))),
+                rotations(AnimationTargets.BODY_ROTATION, keys(
+                        r(0, -2F, 0F, -1F), r(3, -3F, 0F, 0F), r(5, -2F, 0F, 0F), r(8, -3F, 0F, 0F), r(10, -2F, 0F, -1F))),
+                translations(AnimationTargets.BODY_TRANSLATION, keys(
+                        // posVec(0,-1,0) → new Vec3(0, 1, 0) (Y negated per import rules)
+                        // posVec(0, 0,0) → Vec3.ZERO
+                        p(0, 0, 1, 0), p(3, 0, 0, 0), p(5, 0, 1, 0), p(8, 0, 0, 0), p(10, 0, 1, 0))),
+                rotations(AnimationTargets.MONOBROW_ROTATION, keys(
+                        r(0, 0F, 0F, 0F), r(3, 0F, 0F, 2.5F), r(5, 0F, 0F, 0F), r(8, 0F, 0F, -2.5F), r(10, 0F, 0F, 0F))),
+                translations(AnimationTargets.MONOBROW_TRANSLATION, keys(
+                        // posVec(0,0.25,0) → new Vec3(0, -0.25, 0) (Y negated per import rules)
+                        p(0, 0, -0.25, 0), p(5, 0, 0, 0), p(10, 0, -0.25, 0))));
+    }
+
+    @SafeVarargs
+    private static KeyframeAnimation panicGait(@Nonnull String name, int durationTicks, AnimationTrack<?>... tracks) {
+        // Mirrors gait() settings but uses BOTH_STRAIGHT because the clip animates arm_straight_*
+        // bones (raised overhead). Using BOTH_CROSSED here would render the gesture on hidden geometry.
+        TrackAnimationBuilder builder = KeyframeAnimation.fromTracks()
+                .id(ResourceLocationUtil.mod("animation/locomotion/" + name))
+                .durationTicks(durationTicks)
+                .loopMode(LoopMode.LOOP)
+                .blendInTicks(3)
+                .blendOutTicks(3)
+                .arms(ArmConfiguration.BOTH_STRAIGHT);
+        for (AnimationTrack<?> track : tracks) {
+            builder = builder.track(track);
+        }
+        return builder.build();
+    }
+
     @SafeVarargs
     private static KeyframeAnimation gait(@Nonnull String name, int durationTicks, AnimationTrack<?>... tracks) {
         return KeyframeAnimation.fromTracks()

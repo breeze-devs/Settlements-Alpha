@@ -11,6 +11,7 @@ public enum NavigationType {
     WALK(0.5F),
     RUN(0.7F),
     SPRINT(0.9F),
+    PANIC(0.9F),
     ;
 
     private final float baseModifier;

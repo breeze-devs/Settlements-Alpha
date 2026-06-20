@@ -31,6 +31,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.leather
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
@@ -266,6 +267,12 @@ public final class ConfigModule {
     @Singleton
     static ThrowEggsConfig throwEggsConfig() {
         return ConfigFactory.create(ThrowEggsConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static ChaseChickensConfig chaseChickensConfig() {
+        return ConfigFactory.create(ChaseChickensConfig.class);
     }
 
     @Provides

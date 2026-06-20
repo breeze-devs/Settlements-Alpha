@@ -9,6 +9,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry
 import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
 import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sensors.SensorTypeRegistry;
+import dev.breezes.settlements.bootstrap.registry.sounds.SoundEventRegistry;
 import dev.breezes.settlements.bootstrap.registry.structures.StructureRegistry;
 import dev.breezes.settlements.bootstrap.registry.tabs.CreativeTabRegistry;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigAnnotationProcessor;
@@ -38,6 +39,7 @@ public final class SettlementsMod {
         AttachmentRegistry.register(modEventBus);
         MemoryModuleTypeRegistry.register(modEventBus);
         SensorTypeRegistry.register(modEventBus);
+        SoundEventRegistry.register(modEventBus);
         StructureRegistry.register(modEventBus);
         ActivityRegistry.register(modEventBus);
         ScheduleRegistry.register(modEventBus);
