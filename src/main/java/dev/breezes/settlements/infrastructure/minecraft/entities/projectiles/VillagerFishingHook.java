@@ -49,6 +49,8 @@ public class VillagerFishingHook extends Projectile {
     private static final double DEFAULT_ENTITY_SCALE = 1.0;
     public static final double MIN_CATCH_ENTITY_SCALE = 0.20;
     public static final double MAX_CATCH_ENTITY_SCALE = 2.00;
+    private static final double SMALL_CATCH_SCALE_CEILING = 0.80;
+    private static final double MEDIUM_CATCH_SCALE_CEILING = 1.30;
 
     private enum HookState {
         FLYING,
@@ -75,6 +77,9 @@ public class VillagerFishingHook extends Projectile {
     @Getter
     @Nullable
     private FishCatchEntry selectedCatchEntry;
+    @Getter
+    @Nullable
+    private String selectedCatchSize;
 
     public VillagerFishingHook(EntityType<? extends VillagerFishingHook> entityType, Level level) {
         super(entityType, level);
@@ -91,6 +96,7 @@ public class VillagerFishingHook extends Projectile {
         this.missedWater = false;
         this.fishedEntity = null;
         this.selectedCatchEntry = null;
+        this.selectedCatchSize = null;
     }
 
     /**
@@ -117,6 +123,7 @@ public class VillagerFishingHook extends Projectile {
         this.missedWater = false;
         this.fishedEntity = null;
         this.selectedCatchEntry = null;
+        this.selectedCatchSize = null;
 
         this.noCulling = true;
 
@@ -288,6 +295,7 @@ public class VillagerFishingHook extends Projectile {
         if (catchEntry.isEmpty()) {
             log.warn("No fish catch entries available while reeling in villager fishing hook");
             this.selectedCatchEntry = null;
+            this.selectedCatchSize = null;
             return Optional.empty();
         }
 
@@ -296,6 +304,7 @@ public class VillagerFishingHook extends Projectile {
         if (entityId == null) {
             log.warn("Invalid fish catch entity id '{}'", entry.getEntityId());
             this.selectedCatchEntry = null;
+            this.selectedCatchSize = null;
             return Optional.empty();
         }
 
@@ -305,6 +314,7 @@ public class VillagerFishingHook extends Projectile {
         if (entity.isEmpty()) {
             log.warn("Unable to create fish catch entity '{}'", entry.getEntityId());
             this.selectedCatchEntry = null;
+            this.selectedCatchSize = null;
             return Optional.empty();
         }
 
@@ -324,8 +334,19 @@ public class VillagerFishingHook extends Projectile {
         }
 
         double targetScale = RandomUtil.randomDouble(MIN_CATCH_ENTITY_SCALE, MAX_CATCH_ENTITY_SCALE);
+        this.selectedCatchSize = describeCatchSize(targetScale);
         scale.addPermanentModifier(new AttributeModifier(ResourceLocationUtil.mod("fish_scale"),
                 toAddMultipliedTotalScaleModifier(targetScale), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+    }
+
+    private static String describeCatchSize(double scale) {
+        if (scale < SMALL_CATCH_SCALE_CEILING) {
+            return "small";
+        }
+        if (scale < MEDIUM_CATCH_SCALE_CEILING) {
+            return "medium";
+        }
+        return "large";
     }
 
     private double toAddMultipliedTotalScaleModifier(double targetScale) {

@@ -170,7 +170,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
 
                         BehaviorOutcome tameOutcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_TAMED, null);
                         tameOutcome.recordDeedDetail("a cat");
-                        ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, tameOutcome);
+                        ctx.declarePrimaryDeed(tameOutcome);
 
                         log.behaviorStatus("Successfully tamed cat {}", settlementsCat.getUUID());
                         return StepResult.complete();

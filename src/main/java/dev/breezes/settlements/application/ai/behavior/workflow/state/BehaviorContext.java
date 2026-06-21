@@ -2,6 +2,8 @@ package dev.breezes.settlements.application.ai.behavior.workflow.state;
 
 import dev.breezes.settlements.application.ai.behavior.teardown.TeardownScope;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorDeedLedger;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
@@ -46,6 +48,30 @@ public class BehaviorContext<T extends ISettlementsBrainEntity> {
 
     public void clearState(@Nonnull BehaviorStateType type) {
         this.states.remove(type);
+    }
+
+    public BehaviorOutcome declarePrimaryDeed(@Nonnull BehaviorOutcome primary) {
+        return this.ledger().declarePrimary(primary);
+    }
+
+    public BehaviorOutcome addSecondaryDeed(@Nonnull BehaviorOutcome secondary) {
+        return this.ledger().addSecondary(secondary);
+    }
+
+    public Optional<BehaviorOutcome> primaryDeed() {
+        return this.deedLedger().flatMap(BehaviorDeedLedger::primary);
+    }
+
+    public Optional<BehaviorDeedLedger> deedLedger() {
+        return this.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorDeedLedger.class);
+    }
+
+    private BehaviorDeedLedger ledger() {
+        return this.deedLedger().orElseGet(() -> {
+            BehaviorDeedLedger newLedger = new BehaviorDeedLedger();
+            this.setState(BehaviorStateType.BEHAVIOR_OUTCOME, newLedger);
+            return newLedger;
+        });
     }
 
     public ServerLevel getLevel() {

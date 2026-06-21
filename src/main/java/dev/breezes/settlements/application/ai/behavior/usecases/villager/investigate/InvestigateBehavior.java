@@ -229,7 +229,7 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
 
                         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.TIP_REFUTED, null);
                         outcome.recordSocialOutcome(null, null, EventOutcome.SUCCESS, null, null);
-                        ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                        ctx.declarePrimaryDeed(outcome);
                         log.behaviorStatus("InvestigateBehavior: soft-refuted tip {} after {} nav timeouts for villager {}",
                                 entry.getOriginObservationId(), entry.getInvestigationAttempts(), villager.getUUID());
                     } else {
@@ -275,7 +275,7 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
                     WorldEventType deedType = confirmed ? WorldEventType.TIP_CONFIRMED : WorldEventType.TIP_REFUTED;
                     BehaviorOutcome outcome = BehaviorOutcome.forDeed(deedType, null);
                     outcome.recordSocialOutcome(null, null, EventOutcome.SUCCESS, null, null);
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    ctx.declarePrimaryDeed(outcome);
 
                     log.behaviorStatus("Investigate '{}' for villager {}: origin={} source={}",
                             resolution, villager.getUUID(), entry.getOriginObservationId(), entry.getSource());
@@ -289,7 +289,7 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.blank());
+        context.declarePrimaryDeed(BehaviorOutcome.blank());
         // Place the tip position as the navigation target so StayCloseStep has something to navigate toward.
         if (this.tipEntry != null) {
             Vec3 tipPos = extractTipPosition(this.tipEntry);

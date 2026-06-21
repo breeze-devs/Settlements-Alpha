@@ -43,7 +43,7 @@ class WorldEventBusTest {
         UUID actor = UUID.randomUUID();
         WorldEvent e1 = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
         WorldEvent e2 = bus.emit(buildBuilder(actor, WorldEventType.SHEEP_SHEARED), 101L);
-        WorldEvent e3 = bus.emit(buildBuilder(actor, WorldEventType.CROP_HARVESTED), 102L);
+        WorldEvent e3 = bus.emit(buildBuilder(actor, WorldEventType.RESOURCE_HARVESTED), 102L);
         List<WorldEvent> visited = new ArrayList<>();
 
         // Act — cursor set past e1, should return e2 and e3
@@ -102,7 +102,7 @@ class WorldEventBusTest {
         UUID actor = UUID.randomUUID();
         WorldEvent e1 = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
         WorldEvent e2 = bus.emit(buildBuilder(actor, WorldEventType.SHEEP_SHEARED), 101L);
-        WorldEvent e3 = bus.emit(buildBuilder(actor, WorldEventType.CROP_HARVESTED), 102L);
+        WorldEvent e3 = bus.emit(buildBuilder(actor, WorldEventType.RESOURCE_HARVESTED), 102L);
         List<WorldEvent> visited = new ArrayList<>();
 
         // Act

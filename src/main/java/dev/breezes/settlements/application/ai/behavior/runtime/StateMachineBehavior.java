@@ -6,7 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorCo
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.look.LookQueries;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorDeedLedger;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
@@ -32,7 +32,7 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
     @Nullable
     private BehaviorContext<T> context;
     @Nullable
-    private BehaviorOutcome lastOutcome;
+    private BehaviorDeedLedger lastDeeds;
     private BehaviorLifecycleResult lastLifecycleResult;
 
     private final ITickable lookControlCooldown;
@@ -61,7 +61,7 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
         this.requireInitialized();
 
         this.context = new BehaviorContext<>(entity);
-        this.lastOutcome = null;
+        this.lastDeeds = null;
         this.lastLifecycleResult = BehaviorLifecycleResult.clean();
         if (entity instanceof ProvidesTeardownLedger p) {
             this.context.getTeardownScope().bindLedger(p.getTeardownLedger());
@@ -97,7 +97,7 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
             this.onBehaviorStop(world, entity);
         } finally {
             if (this.context != null) {
-                this.lastOutcome = this.context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                this.lastDeeds = this.context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorDeedLedger.class)
                         .orElse(null);
                 this.context.getTeardownScope().teardownAll(this.context.getLevel());
             }
@@ -138,8 +138,8 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
     }
 
     @Override
-    public Optional<BehaviorOutcome> getLastOutcome() {
-        return Optional.ofNullable(this.lastOutcome);
+    public Optional<BehaviorDeedLedger> getLastDeeds() {
+        return Optional.ofNullable(this.lastDeeds);
     }
 
     @Nonnull

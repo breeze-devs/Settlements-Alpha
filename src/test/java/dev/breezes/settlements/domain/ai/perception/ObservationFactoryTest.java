@@ -53,7 +53,7 @@ class ObservationFactoryTest {
     @Test
     void fromEvent_mapsCropHarvestedToResourceObservationType() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED);
 
         // Act
         Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
@@ -87,6 +87,18 @@ class ObservationFactoryTest {
     }
 
     @Test
+    void fromEvent_mapsFurnaceMisfiredToIncidentObservationType() {
+        // Arrange
+        WorldEvent event = worldEvent(WorldEventType.FURNACE_MISFIRED);
+
+        // Act
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Assert
+        assertEquals(ObservationType.INCIDENT, observation.type());
+    }
+
+    @Test
     void fromEvent_mapsBehaviorStartedToTaskCompletionObservationType() {
         // Arrange
         WorldEvent event = worldEvent(WorldEventType.BEHAVIOR_STARTED);
@@ -105,7 +117,7 @@ class ObservationFactoryTest {
     @Test
     void fromEvent_usesProvidedCurrentTickAsTimestamp() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED);
 
         // Act
         Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
@@ -154,7 +166,7 @@ class ObservationFactoryTest {
     @Test
     void metadataFor_containsEventType() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED);
         Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
 
         // Act
@@ -163,7 +175,7 @@ class ObservationFactoryTest {
         // Assert
         assertTrue(metadata.containsKey("event_type"),
                 "metadata should carry event_type key");
-        assertEquals(WorldEventType.CROP_HARVESTED.name(), metadata.get("event_type"));
+        assertEquals(WorldEventType.RESOURCE_HARVESTED.name(), metadata.get("event_type"));
     }
 
     @Test
@@ -173,7 +185,7 @@ class ObservationFactoryTest {
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.CROP_HARVESTED)
+                .type(WorldEventType.RESOURCE_HARVESTED)
                 .actorId(actorId)
                 .posX(0).posY(64).posZ(0)
                 .chunkX(0).chunkZ(0)
@@ -214,7 +226,7 @@ class ObservationFactoryTest {
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.CROP_HARVESTED)
+                .type(WorldEventType.RESOURCE_HARVESTED)
                 .actorId(UUID.randomUUID())
                 .posX(12.5).posY(64.0).posZ(-8.25)
                 .chunkX(0).chunkZ(0)
@@ -233,7 +245,7 @@ class ObservationFactoryTest {
     @Test
     void fromEvent_sameWorldEventProducesStableObservationId() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED);
 
         // Act
         Observation firstObservation = ObservationFactory.fromEvent(event, CURRENT_TICK);
@@ -247,8 +259,8 @@ class ObservationFactoryTest {
     void fromEvent_differentSequencesProduceDifferentObservationIds() {
         // Arrange
         UUID actorId = UUID.randomUUID();
-        WorldEvent firstEvent = worldEvent(WorldEventType.CROP_HARVESTED, actorId, 1L, 100L);
-        WorldEvent secondEvent = worldEvent(WorldEventType.CROP_HARVESTED, actorId, 2L, 100L);
+        WorldEvent firstEvent = worldEvent(WorldEventType.RESOURCE_HARVESTED, actorId, 1L, 100L);
+        WorldEvent secondEvent = worldEvent(WorldEventType.RESOURCE_HARVESTED, actorId, 2L, 100L);
 
         // Act
         Observation firstObservation = ObservationFactory.fromEvent(firstEvent, CURRENT_TICK);
@@ -262,8 +274,8 @@ class ObservationFactoryTest {
     void fromEvent_sameActorAndSequenceAtDifferentGameTicksProduceDifferentObservationIds() {
         // Arrange
         UUID actorId = UUID.randomUUID();
-        WorldEvent beforeReloadEvent = worldEvent(WorldEventType.CROP_HARVESTED, actorId, 1L, 100L);
-        WorldEvent afterReloadEvent = worldEvent(WorldEventType.CROP_HARVESTED, actorId, 1L, 200L);
+        WorldEvent beforeReloadEvent = worldEvent(WorldEventType.RESOURCE_HARVESTED, actorId, 1L, 100L);
+        WorldEvent afterReloadEvent = worldEvent(WorldEventType.RESOURCE_HARVESTED, actorId, 1L, 200L);
 
         // Act
         Observation beforeReloadObservation = ObservationFactory.fromEvent(beforeReloadEvent, CURRENT_TICK);
@@ -276,7 +288,7 @@ class ObservationFactoryTest {
     @Test
     void fromEvent_relatedEntityIsNullWhenEventHasNoTarget() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED);
 
         // Act
         Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
@@ -357,7 +369,7 @@ class ObservationFactoryTest {
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.CROP_HARVESTED)
+                .type(WorldEventType.RESOURCE_HARVESTED)
                 .actorId(UUID.randomUUID())
                 .posX(0).posY(64).posZ(0)
                 .chunkX(0).chunkZ(0)
@@ -463,7 +475,7 @@ class ObservationFactoryTest {
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.CROP_HARVESTED)
+                .type(WorldEventType.RESOURCE_HARVESTED)
                 .actorId(UUID.randomUUID())
                 .posX(0).posY(64).posZ(0)
                 .chunkX(0).chunkZ(0)
@@ -481,7 +493,7 @@ class ObservationFactoryTest {
     @Test
     void metadataFor_omitsDetailKeyWhenAbsent() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED);
         Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
 
         // Act

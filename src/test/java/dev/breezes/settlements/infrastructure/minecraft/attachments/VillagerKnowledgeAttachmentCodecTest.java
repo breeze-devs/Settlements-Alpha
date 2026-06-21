@@ -85,7 +85,7 @@ class VillagerKnowledgeAttachmentCodecTest {
         // Arrange
         JsonElement payload = encode(VillagerKnowledgeAttachmentState.of(List.of(entry(ObservationType.RESOURCE, KnowledgeResolution.CONFIRMED))));
         JsonObject metadata = firstEntry(payload).getAsJsonObject("metadata");
-        metadata.addProperty("event_type", "CROP_HARVESTED");
+        metadata.addProperty("event_type", "RESOURCE_HARVESTED");
         metadata.addProperty("unbounded_payload", "should not persist");
 
         // Act
@@ -93,7 +93,7 @@ class VillagerKnowledgeAttachmentCodecTest {
 
         // Assert
         Map<String, String> decodedMetadata = decoded.entries().getFirst().metadata();
-        assertEquals(Map.of("event_type", "CROP_HARVESTED"), decodedMetadata);
+        assertEquals(Map.of("event_type", "RESOURCE_HARVESTED"), decodedMetadata);
     }
 
     @Test

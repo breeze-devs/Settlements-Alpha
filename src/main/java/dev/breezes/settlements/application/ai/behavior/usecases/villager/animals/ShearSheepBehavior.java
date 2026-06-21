@@ -191,7 +191,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                         woolItems.add(woolItem);
                     }
                     context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(woolItems));
-                    context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                    context.primaryDeed()
                             .ifPresent(outcome -> outcome.recordYield(woolItems.size()));
                     this.shouldRewardExperience = true;
                     return StepResult.noOp();
@@ -246,7 +246,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
 
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.SHEEP_SHEARED, "wool"));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.SHEEP_SHEARED, "wool"));
         Expertise expertise = context.getInitiator().getMinecraftEntity().getExpertise();
         int limit = config.expertiseShearLimit().getOrDefault(expertise.getConfigName(), DEFAULT_SHEAR_LIMIT);
         this.shearCount.set(limit);

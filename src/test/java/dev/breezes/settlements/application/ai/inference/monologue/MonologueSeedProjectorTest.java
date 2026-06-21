@@ -136,7 +136,7 @@ class MonologueSeedProjectorTest {
 
         // Assert — actor initiated, target received; must render in that order
         assertEquals(1, seeds.size());
-        assertEquals(actorName + " courted " + targetName, seeds.get(0));
+        assertEquals(actorName + " courted " + targetName + " successfully and birthed a child", seeds.get(0));
     }
 
     @Test
@@ -153,7 +153,7 @@ class MonologueSeedProjectorTest {
 
         // Assert — direction is reversed; clause must reflect the actual actor
         assertEquals(1, seeds.size());
-        assertEquals(targetName + " courted " + actorName, seeds.get(0));
+        assertEquals(targetName + " courted " + actorName + " successfully and birthed a child", seeds.get(0));
     }
 
     // -------------------------------------------------------------------------
@@ -181,7 +181,7 @@ class MonologueSeedProjectorTest {
     @Test
     void project_hearsay_withNullTarget_stillRenders() {
         // Arrange — hearsay with no target
-        KnowledgeEntry entry = hearsayEntry(SOURCE_ID, ACTOR_ID, null, WorldEventType.CROP_HARVESTED, 2.0f);
+        KnowledgeEntry entry = hearsayEntry(SOURCE_ID, ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f);
         this.store.admit(entry);
 
         String sourceName = this.nameResolver.resolve(SOURCE_ID);
@@ -292,9 +292,9 @@ class MonologueSeedProjectorTest {
 
     @Test
     void project_withDetail_overridesGenericObjectInClause() {
-        // Arrange — CROP_HARVESTED entry with a detail value
+        // Arrange
         KnowledgeEntry entry = directEntryWithDetail(
-                ACTOR_ID, null, WorldEventType.CROP_HARVESTED, "3 melons", 2.0f);
+                ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, "3 melons", 2.0f);
         this.store.admit(entry);
 
         String actorName = this.nameResolver.resolve(ACTOR_ID);
@@ -309,8 +309,8 @@ class MonologueSeedProjectorTest {
 
     @Test
     void project_withoutDetail_usesGenericObject() {
-        // Arrange — CROP_HARVESTED entry without detail
-        KnowledgeEntry entry = directEntry(ACTOR_ID, null, WorldEventType.CROP_HARVESTED, 2.0f);
+        // Arrange
+        KnowledgeEntry entry = directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f);
         this.store.admit(entry);
 
         String actorName = this.nameResolver.resolve(ACTOR_ID);
@@ -331,8 +331,8 @@ class MonologueSeedProjectorTest {
     void project_dedupsOnRenderedString_keepsHighestWeight() {
         // Arrange — two entries that will render to the same string; highest weight wins.
         // Use a custom-capacity store so both entries survive admission dedup by origin id.
-        KnowledgeEntry lowWeight = directEntry(ACTOR_ID, TARGET_ID, WorldEventType.CROP_HARVESTED, 1.0f);
-        KnowledgeEntry highWeight = directEntry(ACTOR_ID, TARGET_ID, WorldEventType.CROP_HARVESTED, 5.0f);
+        KnowledgeEntry lowWeight = directEntry(ACTOR_ID, TARGET_ID, WorldEventType.RESOURCE_HARVESTED, 1.0f);
+        KnowledgeEntry highWeight = directEntry(ACTOR_ID, TARGET_ID, WorldEventType.RESOURCE_HARVESTED, 5.0f);
 
         VillagerKnowledgeStore storeWithBoth = new VillagerKnowledgeStore(10);
         storeWithBoth.admit(lowWeight);
@@ -349,7 +349,7 @@ class MonologueSeedProjectorTest {
     void project_dedupsAcrossEntries_distinctSeedsPreserved() {
         // Arrange — two entries with different event types (render differently)
         this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.TRADE_COMPLETED, 2.0f));
-        this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.CROP_HARVESTED, 1.0f));
+        this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 1.0f));
 
         // Act
         List<String> seeds = this.projector.project(OBSERVER_ID, this.store);
@@ -365,7 +365,7 @@ class MonologueSeedProjectorTest {
     @Test
     void project_ordersHighestWeightFirst() {
         // Arrange — three distinct entries with different weights; only seed-worthy types used
-        this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.CROP_HARVESTED, 0.5f));
+        this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 0.5f));
         this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.SHEEP_SHEARED, 5.0f));
         this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.TRADE_COMPLETED, 2.0f));
 
@@ -383,7 +383,7 @@ class MonologueSeedProjectorTest {
         // Arrange — more entries than MAX_SEEDS, each with a distinct actor so they render distinctly
         for (int i = 0; i < MonologueSeedProjector.MAX_SEEDS + 30; i++) {
             UUID actor = UUID.fromString(String.format("00000000-0000-0000-0000-%012d", i + 1));
-            this.store.admit(directEntry(actor, null, WorldEventType.CROP_HARVESTED, 1.0f));
+            this.store.admit(directEntry(actor, null, WorldEventType.RESOURCE_HARVESTED, 1.0f));
         }
 
         // Act
@@ -503,7 +503,7 @@ class MonologueSeedProjectorTest {
 
         // Assert — both must render the completed-act form, not the attempt form
         assertEquals(1, seedsSuccess.size());
-        assertEquals(actorName + " courted " + targetName, seedsSuccess.get(0));
+        assertEquals(actorName + " courted " + targetName + " successfully and birthed a child", seedsSuccess.get(0));
         assertEquals(seedsSuccess.get(0), seedsNoOutcome.get(0));
     }
 

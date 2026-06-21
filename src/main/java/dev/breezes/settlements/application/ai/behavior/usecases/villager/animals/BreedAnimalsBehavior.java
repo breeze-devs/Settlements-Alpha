@@ -286,7 +286,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         // (which triggers breeding) overwrites with the same value — idempotent and correct.
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_BRED, null);
         outcome.recordDeedDetail(resolveSpeciesNoun(this.species));
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+        context.declarePrimaryDeed(outcome);
 
         return StepResult.noOp();
     }

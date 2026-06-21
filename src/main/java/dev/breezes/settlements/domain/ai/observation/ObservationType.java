@@ -22,6 +22,11 @@ public enum ObservationType {
     SOCIAL,
 
     /**
+     * A notable mishap or secondary incident arising from an otherwise completed deed.
+     */
+    INCIDENT,
+
+    /**
      * A behavior completed successfully.
      */
     TASK_COMPLETION,

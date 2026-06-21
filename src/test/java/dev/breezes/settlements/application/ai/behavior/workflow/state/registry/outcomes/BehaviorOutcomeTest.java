@@ -28,18 +28,18 @@ class BehaviorOutcomeTest {
     @Test
     void forDeed_recordsDeclaredDeedWithoutMarkingSuccess() {
         // Arrange, Act
-        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "pumpkins");
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.RESOURCE_HARVESTED, "pumpkins");
 
         // Assert
         assertFalse(outcome.isSuccess());
-        assertEquals(WorldEventType.CROP_HARVESTED, outcome.getDeedType());
+        assertEquals(WorldEventType.RESOURCE_HARVESTED, outcome.getDeedType());
         assertEquals("pumpkins", outcome.getUnitNoun());
     }
 
     @Test
     void recordYield_accumulatesMagnitudeAndDerivesDetail() {
         // Arrange
-        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "pumpkins");
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.RESOURCE_HARVESTED, "pumpkins");
 
         // Act
         outcome.recordYield(2);
@@ -128,7 +128,7 @@ class BehaviorOutcomeTest {
     @Test
     void reset_clearsRunResultButKeepsDeclaredDeed() {
         // Arrange
-        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "pumpkins");
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.RESOURCE_HARVESTED, "pumpkins");
         outcome.recordYield(3);
 
         // Act
@@ -137,7 +137,7 @@ class BehaviorOutcomeTest {
         // Assert
         assertFalse(outcome.isSuccess());
         assertEquals(0, outcome.getMagnitude());
-        assertEquals(WorldEventType.CROP_HARVESTED, outcome.getDeedType());
+        assertEquals(WorldEventType.RESOURCE_HARVESTED, outcome.getDeedType());
         assertEquals("pumpkins", outcome.getUnitNoun());
         assertNull(outcome.getEventOutcome());
         assertEquals("0 pumpkins", outcome.resolveDetail());

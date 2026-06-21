@@ -123,13 +123,12 @@ public final class CourtshipAcceptBehavior extends VillagerStateMachineBehavior 
                 this.sessionRegistry.closeSession(pendingSession.getSessionId(), CourtshipCloseReason.REJECTED_CHARISMA);
 
                 // The receiver is the only party that knows the charisma roll failed, so the
-                // rejection is published from here. The receiver is the actor; the presenter is
-                // the spurned target.
+                // rejection is published from here.
                 UUID presenterId = invite.presenterId();
                 UUID sessionId = pendingSession.getSessionId();
                 BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COURTSHIP_REJECTED, null);
                 outcome.recordSocialOutcome(presenterId, sessionId, EventOutcome.FAILURE, null, "their charm fell short");
-                context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                context.declarePrimaryDeed(outcome);
                 return;
             }
 

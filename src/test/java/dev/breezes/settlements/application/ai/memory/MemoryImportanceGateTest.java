@@ -107,7 +107,7 @@ class MemoryImportanceGateTest {
     // --- Self-deed salience bump tests ---
 
     /**
-     * A RESOURCE deed at base 1.8 (e.g. CROP_HARVESTED) must promote when the actor is the
+     * A RESOURCE deed at base 1.8 must promote when the actor is the
      * observing villager (isSelfDeed=true), even under the one-peer novelty tier (novelty=1.0)
      * that would otherwise leave it just below the threshold.
      */
@@ -183,7 +183,7 @@ class MemoryImportanceGateTest {
                 .id(UUID.randomUUID())
                 .timestampTick(1L)
                 .type(type)
-                .eventType(WorldEventType.CROP_HARVESTED)
+                .eventType(WorldEventType.RESOURCE_HARVESTED)
                 .content(content)
                 .baseImportance(importance)
                 .build();

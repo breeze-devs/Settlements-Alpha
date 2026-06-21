@@ -171,7 +171,7 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
 
         BehaviorOutcome feedOutcome = BehaviorOutcome.forDeed(WorldEventType.WOLF_FED, null);
         feedOutcome.markSucceeded();
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, feedOutcome);
+        context.declarePrimaryDeed(feedOutcome);
 
         return StepResult.noOp();
     }

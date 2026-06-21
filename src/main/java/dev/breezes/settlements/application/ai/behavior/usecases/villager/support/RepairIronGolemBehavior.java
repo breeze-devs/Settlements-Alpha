@@ -120,10 +120,10 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
                     this.targetToRepair.heal(HEAL_AMOUNT);
                     this.shouldRewardExperience = true;
 
-                    if (ctx.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class).isEmpty()) {
+                    if (ctx.primaryDeed().isEmpty()) {
                         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.GOLEM_REPAIRED, null);
                         outcome.markSucceeded();
-                        ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                        ctx.declarePrimaryDeed(outcome);
                     }
 
                     Location targetLocation = Location.fromEntity(this.targetToRepair, false);

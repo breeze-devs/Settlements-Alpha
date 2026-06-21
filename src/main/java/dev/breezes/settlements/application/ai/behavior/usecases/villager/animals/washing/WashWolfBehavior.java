@@ -170,7 +170,7 @@ public class WashWolfBehavior extends VillagerStateMachineBehavior {
 
         BehaviorOutcome washOutcome = BehaviorOutcome.forDeed(WorldEventType.WOLF_WASHED, null);
         washOutcome.markSucceeded();
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, washOutcome);
+        context.declarePrimaryDeed(washOutcome);
 
         return StepResult.complete();
     }

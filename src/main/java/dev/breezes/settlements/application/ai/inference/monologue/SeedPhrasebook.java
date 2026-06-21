@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
  * <p>
  * <b>Detail seam.</b>  Behaviors can inject a richer object description by placing a
  * string under the metadata key {@value #METADATA_KEY_DETAIL} on the knowledge entry.
- * Event types that support detail (e.g. {@code CROP_HARVESTED}, {@code TRADE_COMPLETED})
+ * Event types that support detail (e.g. {@code RESOURCE_HARVESTED}, {@code TRADE_COMPLETED})
  * render {@code "<actor> <verb> <detail>"} when the key is present, and fall back to the
  * generic object when it is absent.
  * <p>
@@ -113,26 +113,10 @@ public final class SeedPhrasebook {
         }
 
         return switch (eventType) {
-            case TRADE_COMPLETED -> {
-                // "traded [<items>] with <partner>": detail carries the items (e.g.
-                // "4 bread for 1 emerald"), targetName the partner. The "with <partner>" clause is
-                // dropped when the partner is unknown but items are present, so a detailed trade
-                // still reads cleanly without a "with someone" filler.
-                String base = actorName + " traded";
-                if (detail != null) {
-                    base = base + " " + detail;
-                }
-                if (targetName != null) {
-                    yield base + " with " + targetName;
-                }
-                if (detail != null) {
-                    yield base;
-                }
-                yield base + " with someone";
-            }
+            case TRADE_COMPLETED -> phraseTradeCompleted(actorName, targetName, detail);
             case COURTSHIP_COMPLETED -> {
                 String object = targetName != null ? targetName : "someone";
-                yield actorName + " courted " + object;
+                yield actorName + " courted " + object + " successfully and birthed a child";
             }
             case SHEEP_SHEARED -> {
                 // detail might be e.g. "3 wool"
@@ -144,10 +128,14 @@ public final class SeedPhrasebook {
                 String object = detail != null ? detail : "a sheep";
                 yield actorName + " dyed " + object;
             }
-            case CROP_HARVESTED -> {
+            case RESOURCE_HARVESTED -> {
                 // detail might be e.g. "3 melons"
                 String object = detail != null ? detail : "crops";
                 yield actorName + " harvested " + object;
+            }
+            case RESOURCE_EXCAVATED -> {
+                String object = detail != null ? detail : "substrate resources";
+                yield actorName + " excavated " + object;
             }
             case TIP_CONFIRMED -> actorName + " confirmed a rumour";
             case TIP_REFUTED -> actorName + " disproved a rumour";
@@ -175,10 +163,7 @@ public final class SeedPhrasebook {
                 String object = detail != null ? detail : "ore";
                 yield actorName + " smelted " + object;
             }
-            case RESOURCE_EXCAVATED -> {
-                String object = detail != null ? detail : "substrate resources";
-                yield actorName + " excavated " + object;
-            }
+            case FURNACE_MISFIRED -> actorName + " set off a small blast furnace explosion";
             case LIVESTOCK_BUTCHERED -> {
                 String object = detail != null ? detail : "an animal";
                 yield actorName + " butchered " + object;
@@ -215,6 +200,7 @@ public final class SeedPhrasebook {
                 yield actorName + " egged " + target;
             }
             case CHICKENS_CHASED -> actorName + " chased a chicken around the village";
+            case CHICKENS_REVENGED -> actorName + " got swarmed by a flock of angry chickens";
             case LANDSCAPE_SURVEYED -> actorName + " surveyed the surrounding terrain";
             case ITEMS_TAKEN -> {
                 String object = detail != null ? detail : "some items";
@@ -258,6 +244,7 @@ public final class SeedPhrasebook {
     public static String phraseFallback(String actorName, ObservationType type) {
         return switch (type) {
             case SOCIAL -> actorName + " interacted with someone";
+            case INCIDENT -> actorName + " got caught up in a mishap";
             case RESOURCE -> actorName + " gathered resources";
             case TASK_COMPLETION -> actorName + " finished a task";
             case TASK_FAILURE -> actorName + " failed at something";
@@ -297,7 +284,7 @@ public final class SeedPhrasebook {
             // Resource events have no meaningful failure phrasing — render as success.
             case SHEEP_SHEARED -> actorName + " sheared a sheep";
             case SHEEP_DYED -> actorName + " dyed a sheep";
-            case CROP_HARVESTED -> actorName + " harvested crops";
+            case RESOURCE_HARVESTED -> actorName + " harvested crops";
             // For any other event type, produce a generic attempt clause.
             default -> actorName + " tried to do something but " + but;
         };
@@ -305,6 +292,37 @@ public final class SeedPhrasebook {
 
     private static String failureReason(@Nullable String reason) {
         return reason != null ? reason : "it fell through";
+    }
+
+    private static String phraseTradeCompleted(String actorName,
+                                               @Nullable String targetName,
+                                               @Nullable String detail) {
+        if (detail == null) {
+            String partner = targetName != null ? targetName : "someone";
+            return actorName + " traded with " + partner;
+        }
+
+        int priceSeparatorIndex = detail.lastIndexOf(" for ");
+        if (priceSeparatorIndex < 0) {
+            return phraseLegacyTradeDetail(actorName, targetName, detail);
+        }
+
+        String itemPhrase = detail.substring(0, priceSeparatorIndex);
+        String pricePhrase = detail.substring(priceSeparatorIndex + " for ".length());
+        if (targetName != null) {
+            return actorName + " bought " + itemPhrase + " from " + targetName + " for " + pricePhrase;
+        }
+        return actorName + " bought " + itemPhrase + " for " + pricePhrase;
+    }
+
+    private static String phraseLegacyTradeDetail(String actorName,
+                                                  @Nullable String targetName,
+                                                  String detail) {
+        String base = actorName + " traded " + detail;
+        if (targetName != null) {
+            return base + " with " + targetName;
+        }
+        return base;
     }
 
     private static String readableTask(@Nullable String eventMetadata) {

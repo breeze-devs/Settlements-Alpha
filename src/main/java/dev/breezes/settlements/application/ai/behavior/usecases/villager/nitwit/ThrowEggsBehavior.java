@@ -286,7 +286,7 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
         SoundRegistry.THROW_EGG.playGlobally(handLocation, SoundSource.NEUTRAL);
         this.spawnAngryVillagerParticleOnVictim(world);
 
-        if (context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class).isEmpty()) {
+        if (context.primaryDeed().isEmpty()) {
             BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.TARGET_EGGED, null);
             // Use the victim's UUID only when it is a villager — the name resolver maps villager UUIDs
             if (this.victim instanceof BaseVillager || this.victim instanceof Villager) {
@@ -294,7 +294,7 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
             } else {
                 outcome.markSucceeded();
             }
-            context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+            context.declarePrimaryDeed(outcome);
         }
 
         return StepResult.noOp();

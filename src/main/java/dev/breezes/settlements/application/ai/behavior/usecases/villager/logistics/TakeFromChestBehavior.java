@@ -157,7 +157,7 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
                     BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEMS_TAKEN, "items");
                     outcome.recordYield(totalExtracted);
                     outcome.recordDeedDetail(extractedItemDescription);
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    ctx.declarePrimaryDeed(outcome);
 
                     return StepResult.noOp();
                 })

@@ -108,7 +108,7 @@ class ObservationBufferTest {
                 .id(UUID.randomUUID())
                 .timestampTick(timestamp)
                 .type(ObservationType.ENVIRONMENT)
-                .eventType(WorldEventType.CROP_HARVESTED)
+                .eventType(WorldEventType.RESOURCE_HARVESTED)
                 .content("observation " + timestamp)
                 .baseImportance(1.0F)
                 .build();

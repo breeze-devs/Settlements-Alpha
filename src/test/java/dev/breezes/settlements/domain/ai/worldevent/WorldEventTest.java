@@ -136,7 +136,7 @@ class WorldEventTest {
         return WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.CROP_HARVESTED)
+                .type(WorldEventType.RESOURCE_HARVESTED)
                 .actorId(ACTOR_ID)
                 .posX(0).posY(64).posZ(0)
                 .chunkX(0).chunkZ(0);

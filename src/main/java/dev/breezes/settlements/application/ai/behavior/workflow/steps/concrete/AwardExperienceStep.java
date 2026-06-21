@@ -1,7 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete;
 
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
@@ -47,7 +46,7 @@ public class AwardExperienceStep extends AbstractStep<BaseVillager> {
             return StepResult.transition(this.nextStage);
         }
 
-        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+        context.primaryDeed()
                 .filter(BehaviorOutcome::isSuccess)
                 .ifPresent(state -> {
                     double multiplier = IntelligenceExperienceResolver.resolveMultiplier(

@@ -210,7 +210,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
                         BehaviorOutcome tameOutcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_TAMED, null);
                         tameOutcome.recordDeedDetail("a dog");
-                        ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, tameOutcome);
+                        ctx.declarePrimaryDeed(tameOutcome);
 
                         // Stop the behavior after success
                         return StepResult.complete();

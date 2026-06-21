@@ -180,7 +180,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "honey bottles"));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.RESOURCE_HARVESTED, "honey bottles"));
         context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
 
         if (!this.canHarvest(entity)) {
@@ -240,7 +240,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         context.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
                 .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(level.dimension(), pos)));
         int finalCollectedCount = collectedCount;
-        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+        context.primaryDeed()
                 .ifPresent(outcome -> outcome.recordYield(finalCollectedCount));
         return StepResult.noOp();
     }

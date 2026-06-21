@@ -91,6 +91,8 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
     private FishCatchEntry caughtFishEntry;
     @Nullable
     private ItemStack caughtItem;
+    @Nullable
+    private String caughtFishSize;
     private int castRetryCount;
 
     public FishingBehavior(@Nonnull FishingConfig config,
@@ -160,6 +162,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
         this.fishedEntity = null;
         this.caughtFishEntry = null;
         this.caughtItem = null;
+        this.caughtFishSize = null;
         this.castRetryCount = 0;
     }
 
@@ -330,11 +333,13 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                         this.fishedEntity = null;
                         this.caughtFishEntry = null;
                         this.caughtItem = null;
+                        this.caughtFishSize = null;
                         this.showEmptyCatchSadness(villager);
                     } else {
                         this.fishedEntity = this.activeHook.reelIn().orElse(null);
                         this.caughtFishEntry = this.activeHook.getSelectedCatchEntry();
                         this.caughtItem = this.fishToItem(this.caughtFishEntry).orElse(null);
+                        this.caughtFishSize = this.activeHook.getSelectedCatchSize();
                     }
                     this.activeHook = null;
                     context.getInitiator().getMinecraftEntity().setBobberDeployed(false);
@@ -446,13 +451,22 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
 
             BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.FISH_CAUGHT, null);
             outcome.markSucceeded();
-            outcome.recordDeedDetail(this.caughtItem.getItem().toString());
-            context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+            outcome.recordDeedDetail(this.describeCaughtFish());
+            context.declarePrimaryDeed(outcome);
         }
         this.caughtItem = null;
         this.fishedEntity = null;
         this.caughtFishEntry = null;
+        this.caughtFishSize = null;
         return StepResult.complete();
+    }
+
+    private String describeCaughtFish() {
+        String itemId = this.caughtItem == null ? "fish" : this.caughtItem.getItem().toString();
+        if (this.caughtFishSize == null || this.caughtFishSize.isBlank()) {
+            return itemId;
+        }
+        return this.caughtFishSize + " " + itemId;
     }
 
     /**

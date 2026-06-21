@@ -27,7 +27,7 @@ public final class DefaultClaimPredicates {
     /**
      * Returns the best-fit default predicate for the given observation type.
      * Falls back to {@link #alwaysConfirm()} for types that cannot produce a
-     * meaningful world check (SOCIAL, GOSSIP_RECEIVED, ENVIRONMENT) rather than
+     * meaningful world check (SOCIAL, INCIDENT, GOSSIP_RECEIVED, ENVIRONMENT) rather than
      * returning null — a confirmed result is less harmful than a false refutation.
      */
     public static ClaimPredicate forObservationType(ObservationType type) {
@@ -35,7 +35,7 @@ public final class DefaultClaimPredicates {
             case RESOURCE -> resourcePresent();
             case THREAT -> hostilesPresent();
             // Always confirm events that cannot be mechanically verified
-            case SOCIAL, GOSSIP_RECEIVED, TASK_COMPLETION, TASK_FAILURE, ENVIRONMENT -> alwaysConfirm();
+            case SOCIAL, INCIDENT, GOSSIP_RECEIVED, TASK_COMPLETION, TASK_FAILURE, ENVIRONMENT -> alwaysConfirm();
         };
     }
 

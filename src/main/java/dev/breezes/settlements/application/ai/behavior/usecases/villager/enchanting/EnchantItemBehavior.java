@@ -200,7 +200,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEM_ENCHANTED, null);
         outcome.markSucceeded();
         outcome.recordDeedDetail(enchantedItem.getItem().toString());
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+        context.declarePrimaryDeed(outcome);
 
         world.playSound(null, this.enchantingTablePos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
         this.rewardExperience(villager);

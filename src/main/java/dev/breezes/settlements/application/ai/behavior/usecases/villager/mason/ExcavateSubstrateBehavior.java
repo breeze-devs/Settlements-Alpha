@@ -231,10 +231,9 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
         // Loose ground is deliberately unconsumed, so the target must remain eligible for the session loop.
         context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
 
-        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+        context.primaryDeed()
                 .ifPresent(outcome -> {
                     outcome.recordYield(totalItemCount(drops));
-                    // TODO: there's an issue with broadcasting when excavating multiple items, we'll get to it later
                     outcome.recordDeedDetail(drops.getFirst().getItem().toString());
                 });
 
@@ -245,8 +244,7 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME,
-                BehaviorOutcome.forDeed(WorldEventType.RESOURCE_EXCAVATED, "substrate"));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.RESOURCE_EXCAVATED, "substrate"));
         this.selectedSource = this.selectSource(villager).orElse(null);
         if (this.selectedSource == null) {
             this.requestStop("No excavation site available at behavior start");

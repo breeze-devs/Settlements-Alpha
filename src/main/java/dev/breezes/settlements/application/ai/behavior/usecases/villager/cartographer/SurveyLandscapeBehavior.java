@@ -182,10 +182,10 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                     context.getInitiator().clearHeldItem();
                     this.shouldRewardExperience = true;
 
-                    if (context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class).isEmpty()) {
+                    if (context.primaryDeed().isEmpty()) {
                         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LANDSCAPE_SURVEYED, null);
                         outcome.markSucceeded();
-                        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                        context.declarePrimaryDeed(outcome);
                     }
 
                     if (this.remainingPoints.isEmpty()) {

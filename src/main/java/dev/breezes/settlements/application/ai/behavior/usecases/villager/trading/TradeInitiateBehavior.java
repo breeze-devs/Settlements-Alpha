@@ -127,7 +127,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.TRADE_COMPLETED, null));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.TRADE_COMPLETED, null));
         this.activeDemand = null;
         this.activeSessionId = null;
         this.tradeExecuted = false;
@@ -356,7 +356,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.DEAL);
-        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+        context.primaryDeed()
                 .ifPresent(outcome -> outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
                         EventOutcome.SUCCESS, buildTradeDetail(session), null));
         return StepResult.complete();
@@ -374,7 +374,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.WALK_AWAY);
-        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+        context.primaryDeed()
                 .ifPresent(outcome -> outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
                         EventOutcome.FAILURE, null, "negotiations fell through"));
         return StepResult.complete();

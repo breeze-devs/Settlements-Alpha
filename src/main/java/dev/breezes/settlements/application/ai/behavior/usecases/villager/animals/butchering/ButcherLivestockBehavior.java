@@ -132,7 +132,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                     this.shouldRewardExperience = true;
 
                     // Record each successfully killed entity toward the deed total
-                    context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                    context.primaryDeed()
                             .ifPresent(outcome -> outcome.recordYield(1));
 
                     return StepResult.noOp();
@@ -201,8 +201,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
         this.target = selectedTarget.get();
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME,
-                BehaviorOutcome.forDeed(WorldEventType.LIVESTOCK_BUTCHERED, resolveSpeciesNoun(this.selectedAnimalType)));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.LIVESTOCK_BUTCHERED, resolveSpeciesNoun(this.selectedAnimalType)));
         log.behaviorStatus("Villager is '{}' level, maximum butcher count is {}, targeting {}",
                 expertise.toString(), limit, this.selectedAnimalType);
     }

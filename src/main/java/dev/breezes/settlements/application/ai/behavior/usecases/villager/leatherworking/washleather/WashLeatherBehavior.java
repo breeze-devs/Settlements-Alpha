@@ -301,7 +301,7 @@ public class WashLeatherBehavior extends VillagerStateMachineBehavior {
 
                     BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LEATHER_WASHED, null);
                     outcome.markSucceeded();
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    ctx.declarePrimaryDeed(outcome);
 
                     return StepResult.complete();
                 })

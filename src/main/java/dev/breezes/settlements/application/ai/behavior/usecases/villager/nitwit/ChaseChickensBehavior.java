@@ -162,10 +162,10 @@ public class ChaseChickensBehavior extends VillagerStateMachineBehavior {
             targetLocation.playSound(SoundEvents.CHICKEN_EGG, 1.0F, 1.0F, SoundSource.NEUTRAL);
         }
 
-        if (context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class).isEmpty()) {
+        if (context.primaryDeed().isEmpty()) {
             BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.CHICKENS_CHASED, null);
             outcome.markSucceeded();
-            context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+            context.declarePrimaryDeed(outcome);
         }
 
         return StepResult.noOp();
@@ -211,6 +211,7 @@ public class ChaseChickensBehavior extends VillagerStateMachineBehavior {
 
                     // Stop navigation so the nitwit stands still and reads the storm rather than fleeing
                     villager.getNavigationManager().stop();
+                    ctx.addSecondaryDeed(BehaviorOutcome.forDeed(WorldEventType.CHICKENS_REVENGED, null)).markSucceeded();
                     return StepResult.noOp();
                 })
                 .addPeriodicStep(REVENGE_FALL_SOUND_INTERVAL, ctx -> {

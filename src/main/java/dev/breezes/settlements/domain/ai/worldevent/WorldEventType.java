@@ -35,7 +35,7 @@ public enum WorldEventType {
 
     SHEEP_SHEARED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     SHEEP_DYED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
-    CROP_HARVESTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
+    RESOURCE_HARVESTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
 
     /**
      * A trade negotiation was completed (deal or walk-away).
@@ -98,6 +98,7 @@ public enum WorldEventType {
     RESOURCE_EXCAVATED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     MEAT_SMOKED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     ORE_SMELTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
+    FURNACE_MISFIRED(WorldEventNamespace.WORLD, ObservationType.INCIDENT, 2.0F, true),
     LIVESTOCK_BUTCHERED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     ITEM_ENCHANTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     LEATHER_DYED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
@@ -112,6 +113,7 @@ public enum WorldEventType {
     BELL_RUNG(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 1.5F, true),
     TARGET_EGGED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 2.0F, true),
     CHICKENS_CHASED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 1.5F, true),
+    CHICKENS_REVENGED(WorldEventNamespace.WORLD, ObservationType.INCIDENT, 1.8F, true),
     LANDSCAPE_SURVEYED(WorldEventNamespace.WORLD, ObservationType.ENVIRONMENT, 1.2F, true),
     ITEMS_TAKEN(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.0F, false),
     ITEMS_STORED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.0F, false),

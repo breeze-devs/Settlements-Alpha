@@ -114,7 +114,7 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
                     BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEM_COLLECTED, null);
                     outcome.markSucceeded();
                     outcome.recordDeedDetail(this.resolution.item().getItem().toString());
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    ctx.declarePrimaryDeed(outcome);
                     return StepResult.noOp();
                 })
                 .build();

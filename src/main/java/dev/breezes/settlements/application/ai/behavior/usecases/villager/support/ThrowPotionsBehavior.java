@@ -122,7 +122,7 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
                     } else {
                         outcome.markSucceeded();
                     }
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    ctx.declarePrimaryDeed(outcome);
 
                     return StepResult.complete();
                 })

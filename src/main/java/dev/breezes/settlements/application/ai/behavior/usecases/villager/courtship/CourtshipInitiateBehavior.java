@@ -95,11 +95,8 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        // Stay silent unless a successful birth declares the COURTSHIP_COMPLETED deed. Every abort
-        // (no bed, partner gone, willingness lost, spawn failed, timeout, external cancel) publishes
-        // nothing: the timeout case writes a private self-memory directly, and the rest are only
-        // observable as the pair breaking apart, not as a finished courtship.
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.silent());
+        // Stay silent unless a successful birth declares the COURTSHIP_COMPLETED deed
+        context.declarePrimaryDeed(BehaviorOutcome.silent());
         this.activeSessionId = null;
     }
 
@@ -370,7 +367,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
 
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COURTSHIP_COMPLETED, null);
         outcome.recordSocialOutcome(session.getReceiverId(), session.getSessionId(), EventOutcome.SUCCESS, null, null);
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+        context.declarePrimaryDeed(outcome);
 
         return StepResult.complete();
     }

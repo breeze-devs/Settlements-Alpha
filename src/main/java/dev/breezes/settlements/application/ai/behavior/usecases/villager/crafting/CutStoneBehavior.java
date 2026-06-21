@@ -241,11 +241,7 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
                 })
                 .onEnd(ctx -> {
                     this.rewardExperience(ctx.getInitiator().getMinecraftEntity());
-
-                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.STONE_CUT, null);
-                    outcome.markSucceeded();
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
-
+                    ctx.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.STONE_CUT, null)).markSucceeded();
                     return StepResult.complete();
                 })
                 .build();

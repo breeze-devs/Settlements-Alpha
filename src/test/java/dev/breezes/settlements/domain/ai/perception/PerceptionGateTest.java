@@ -44,7 +44,7 @@ class PerceptionGateTest {
     @Test
     void admits_admitsWorldEventInSameChunk() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z);
 
         // Act & Assert
         assertTrue(PerceptionGate.admits(event, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z));
@@ -54,7 +54,7 @@ class PerceptionGateTest {
     void admits_admitsWorldEventAtExactMaxRadius() {
         // Arrange — Manhattan distance = MAX_PERCEPTION_CHUNK_RADIUS
         int eventChunkX = VILLAGER_CHUNK_X + PerceptionGate.MAX_PERCEPTION_CHUNK_RADIUS;
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED, eventChunkX, VILLAGER_CHUNK_Z);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED, eventChunkX, VILLAGER_CHUNK_Z);
 
         // Act & Assert
         assertTrue(PerceptionGate.admits(event, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z));
@@ -64,7 +64,7 @@ class PerceptionGateTest {
     void admits_rejectsWorldEventOneBeyondMaxRadius() {
         // Arrange — Manhattan distance = MAX_PERCEPTION_CHUNK_RADIUS + 1
         int eventChunkX = VILLAGER_CHUNK_X + PerceptionGate.MAX_PERCEPTION_CHUNK_RADIUS + 1;
-        WorldEvent event = worldEvent(WorldEventType.CROP_HARVESTED, eventChunkX, VILLAGER_CHUNK_Z);
+        WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED, eventChunkX, VILLAGER_CHUNK_Z);
 
         // Act & Assert
         assertFalse(PerceptionGate.admits(event, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z));

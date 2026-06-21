@@ -145,7 +145,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
                     }
 
                     if (this.dyeSheep(context.getInitiator().getMinecraftEntity(), sheepOptional.get())) {
-                        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                        context.primaryDeed()
                                 .ifPresent(outcome -> outcome.recordYield(1));
                         this.shouldRewardExperience = true;
                     }
@@ -185,11 +185,6 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         this.dyedSheepIds.clear();
         this.selectedDyeColor = this.chooseBehaviorDyeColor(villager).orElse(null);
         this.shouldRewardExperience = false;
-
-        // Headline the deed with the run's color (wololo falls back to blue) so monologue/gossip can say "dyed N sheep blue".
-        DyeColor headlineColor = this.selectedDyeColor != null ? this.selectedDyeColor : DyeColor.BLUE;
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME,
-                BehaviorOutcome.forDeed(WorldEventType.SHEEP_DYED, "sheep", describeColor(headlineColor)));
         log.behaviorStatus("Villager is '{}' level, maximum dye count is {}", expertise.toString(), limit);
 
         List<Targetable> targets = this.findEligibleSheep(villager).stream()
@@ -200,6 +195,10 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(targets));
+
+        // Headline the deed with the run's color (wololo falls back to blue) so monologue/gossip can say "dyed N sheep blue".
+        DyeColor headlineColor = this.selectedDyeColor != null ? this.selectedDyeColor : DyeColor.BLUE;
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.SHEEP_DYED, "sheep", describeColor(headlineColor)));
     }
 
     @Override

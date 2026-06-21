@@ -193,7 +193,7 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
                     ctx.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
                             .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(world.dimension(), pos)));
                     ctx.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
-                    ctx.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                    ctx.primaryDeed()
                             .ifPresent(outcome -> outcome.recordYield(totalItemCount(drops)));
                     return StepResult.noOp();
                 })
@@ -208,7 +208,7 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "pumpkins"));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.RESOURCE_HARVESTED, "pumpkins"));
         context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
     }
 

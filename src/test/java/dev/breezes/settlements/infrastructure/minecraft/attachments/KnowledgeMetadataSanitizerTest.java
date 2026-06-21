@@ -16,7 +16,7 @@ class KnowledgeMetadataSanitizerTest {
     void sanitize_keepsKnownMetadataKeys() {
         // Arrange
         Map<String, String> metadata = Map.of(
-                "event_type", "CROP_HARVESTED",
+                "event_type", "RESOURCE_HARVESTED",
                 "event_meta", "settlements:farmer/harvest",
                 "actor_id", "00000000-0000-0000-0000-000000000001",
                 "registry_id", "minecraft:wheat",

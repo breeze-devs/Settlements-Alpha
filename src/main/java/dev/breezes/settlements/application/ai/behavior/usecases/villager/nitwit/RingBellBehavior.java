@@ -96,7 +96,7 @@ public class RingBellBehavior extends VillagerStateMachineBehavior {
 
                     BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.BELL_RUNG, null);
                     outcome.markSucceeded();
-                    context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    context.declarePrimaryDeed(outcome);
                     return StepResult.complete();
                 })
                 .build();

@@ -153,7 +153,7 @@ public class DepositSurplusBehavior extends VillagerStateMachineBehavior {
                     BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEMS_STORED, "items");
                     outcome.recordYield(inserted);
                     outcome.recordDeedDetail(toInsert.getItem().toString());
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    ctx.declarePrimaryDeed(outcome);
 
                     return StepResult.noOp();
                 })

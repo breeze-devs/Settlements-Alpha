@@ -212,7 +212,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
         context.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
                 .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(world.dimension(), pos)));
         context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
-        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+        context.primaryDeed()
                 .ifPresent(outcome -> outcome.recordYield(totalItemCount(drops)));
         return StepResult.noOp();
     }
@@ -227,7 +227,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "ore"));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.RESOURCE_HARVESTED, "ore"));
         context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
     }
 

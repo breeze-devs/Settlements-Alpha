@@ -48,8 +48,8 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
 
     @Test
     void nearbyVillagerAdmitsEvent_distantVillagerDoesNot() {
-        // Arrange — emit a CROP_HARVESTED event at chunk (5, 5)
-        WorldEvent event = emitEvent(WorldEventType.CROP_HARVESTED, 5, 5);
+        // Arrange
+        WorldEvent event = emitEvent(WorldEventType.RESOURCE_HARVESTED, 5, 5);
 
         // Villager A is in chunk (5, 5) — right next to the event
         int nearbyChunkX = 5, nearbyChunkZ = 5;
@@ -123,7 +123,7 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
         SocialCueRuntimeState state = new SocialCueRuntimeState();
         assertEquals(0L, state.getLastSeenSeq(), "cursor starts at 0");
 
-        emitEvent(WorldEventType.CROP_HARVESTED, 10, 10);
+        emitEvent(WorldEventType.RESOURCE_HARVESTED, 10, 10);
         emitEvent(WorldEventType.SHEEP_SHEARED, 10, 10);
         List<WorldEvent> delta = visitDelta(state.getLastSeenSeq());
 

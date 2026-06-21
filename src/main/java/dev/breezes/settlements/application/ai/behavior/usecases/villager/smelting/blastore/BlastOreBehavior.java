@@ -224,9 +224,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     // The ingot is always banked regardless of misfire — the gag is purely cosmetic
                     villager.getSettlementsInventory().add(this.currentRecipe.createOutputStack());
 
-                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ORE_SMELTED, null);
-                    outcome.markSucceeded();
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    ctx.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.ORE_SMELTED, null)).markSucceeded();
 
                     // Resolve furnace top location here before entering the misfire branch so
                     // neither branch has to handle a potential null dereference separately
@@ -234,6 +232,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
 
                     if (RandomUtil.chance(this.explosionChance)) {
                         this.misfired = true;
+                        ctx.addSecondaryDeed(BehaviorOutcome.forDeed(WorldEventType.FURNACE_MISFIRED, null)).markSucceeded();
 
                         // Smoke puff at the furnace
                         furnaceTop.displayParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, 100, 3, 1.5, 3, 0.1);
@@ -276,8 +275,6 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     }
 
                     ctx.getInitiator().getMinecraftEntity().clearHeldItem();
-                    ctx.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
-                            .ifPresent(outcome -> outcome.recordDeedDetail("ore but the furnace had a small explosion"));
                     return StepResult.noOp();
                 })
                 .addPeriodicStep(DAZE_STAR_EMIT_INTERVAL, ctx -> {

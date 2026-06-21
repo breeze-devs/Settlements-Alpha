@@ -147,6 +147,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
         this.target = targetCandidate.get();
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
+
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.COW_MILKED, "cows"));
     }
 
     @Override
@@ -194,9 +196,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         this.milkCountRemaining--;
         this.shouldRewardExperience = true;
 
-        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COW_MILKED, "cows");
-        outcome.recordYield(1);
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+        context.primaryDeed()
+                .ifPresent(outcome -> outcome.recordYield(1));
 
         return StepResult.noOp();
     }

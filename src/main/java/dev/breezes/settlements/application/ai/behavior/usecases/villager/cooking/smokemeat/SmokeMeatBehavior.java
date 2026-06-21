@@ -209,7 +209,7 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
                     BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.MEAT_SMOKED, null);
                     outcome.recordDeedDetail(outputStack.getItem().toString());
                     outcome.markSucceeded();
-                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    ctx.declarePrimaryDeed(outcome);
 
                     ctx.getInitiator().setHeldItem(outputStack);
                     villager.triggerMotion(AnimationArchetype.INTERACT);

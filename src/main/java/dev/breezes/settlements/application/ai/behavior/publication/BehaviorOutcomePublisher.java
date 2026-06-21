@@ -2,6 +2,7 @@ package dev.breezes.settlements.application.ai.behavior.publication;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorLifecycleResult;
 import dev.breezes.settlements.application.ai.behavior.runtime.ProducesBehaviorOutcome;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorDeedLedger;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
@@ -35,24 +36,38 @@ public final class BehaviorOutcomePublisher {
         }
 
         BehaviorLifecycleResult lifecycleResult = outcomeProducer.getLastLifecycleResult();
-        BehaviorOutcome outcome = outcomeProducer.getLastOutcome().orElse(null);
-        if (outcome == null) {
+        BehaviorDeedLedger ledger = outcomeProducer.getLastDeeds().orElse(null);
+        if (ledger == null) {
+            this.publishWithoutOutcome(villager, key, lifecycleResult);
+            return;
+        }
+
+        BehaviorOutcome primary = ledger.primary().orElse(null);
+        if (primary == null) {
             this.publishWithoutOutcome(villager, key, lifecycleResult);
             return;
         }
 
         // A silent outcome owns its own memory (or deliberately leaves none); publish nothing.
-        if (outcome.isSilent()) {
+        if (primary.isSilent()) {
             return;
         }
 
-        if (!lifecycleResult.isClean() && !outcome.hasExplicitEventOutcome()) {
+        if (!lifecycleResult.isClean() && !primary.hasExplicitEventOutcome()) {
             this.worldEventEmitter.emitBehaviorFailed(villager, key, lifecycleResult.getReason());
             return;
         }
 
-        if (outcome.hasDeclaredDeed()) {
+        boolean emittedAny = false;
+        for (BehaviorOutcome outcome : ledger.entriesView()) {
+            if (outcome.isSilent() || !outcome.hasDeclaredDeed()) {
+                continue;
+            }
             this.publishDeed(villager, key, outcome);
+            emittedAny = true;
+        }
+
+        if (emittedAny) {
             return;
         }
 

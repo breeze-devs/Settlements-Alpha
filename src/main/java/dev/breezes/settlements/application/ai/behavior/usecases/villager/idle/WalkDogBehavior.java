@@ -154,7 +154,7 @@ public class WalkDogBehavior extends VillagerStateMachineBehavior {
 
             BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.DOG_WALKED, null);
             outcome.markSucceeded();
-            context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+            context.declarePrimaryDeed(outcome);
 
             return StepResult.transition(WalkDogStage.END);
         };

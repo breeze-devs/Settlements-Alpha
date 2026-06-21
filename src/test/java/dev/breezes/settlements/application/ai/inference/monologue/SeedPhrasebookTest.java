@@ -51,12 +51,30 @@ class SeedPhrasebookTest {
     }
 
     @Test
+    void phraseClause_furnaceMisfired() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.FURNACE_MISFIRED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " set off a small blast furnace explosion", clause);
+    }
+
+    @Test
+    void phraseClause_chickensRevenged() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.CHICKENS_REVENGED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " got swarmed by a flock of angry chickens", clause);
+    }
+
+    @Test
     void phraseClause_courtshipCompleted_withTarget_noDetail() {
         // Arrange + Act
         String clause = SeedPhrasebook.phraseClause(WorldEventType.COURTSHIP_COMPLETED, ACTOR, TARGET, null);
 
         // Assert
-        assertEquals(ACTOR + " courted " + TARGET, clause);
+        assertEquals(ACTOR + " courted " + TARGET + " successfully and birthed a child", clause);
     }
 
     // -------------------------------------------------------------------------
@@ -93,7 +111,7 @@ class SeedPhrasebookTest {
     @Test
     void phraseClause_cropHarvested_noTargetNoDetail() {
         // Arrange + Act
-        String clause = SeedPhrasebook.phraseClause(WorldEventType.CROP_HARVESTED, ACTOR, null, null);
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.RESOURCE_HARVESTED, ACTOR, null, null);
 
         // Assert
         assertEquals(ACTOR + " harvested crops", clause);
@@ -124,7 +142,7 @@ class SeedPhrasebookTest {
     @Test
     void phraseClause_cropHarvested_withDetail_overridesGenericObject() {
         // Arrange + Act
-        String clause = SeedPhrasebook.phraseClause(WorldEventType.CROP_HARVESTED, ACTOR, null, "3 melons");
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.RESOURCE_HARVESTED, ACTOR, null, "3 melons");
 
         // Assert — "crops" replaced by the supplied detail
         assertEquals(ACTOR + " harvested 3 melons", clause);
@@ -135,8 +153,8 @@ class SeedPhrasebookTest {
         // Arrange + Act
         String clause = SeedPhrasebook.phraseClause(WorldEventType.TRADE_COMPLETED, ACTOR, TARGET, "4 bread for 1 emerald");
 
-        // Assert — items and partner both render: "traded <items> with <partner>"
-        assertEquals(ACTOR + " traded 4 bread for 1 emerald with " + TARGET, clause);
+        // Assert — the actor is the buyer and the target is the seller.
+        assertEquals(ACTOR + " bought 4 bread from " + TARGET + " for 1 emerald", clause);
     }
 
     @Test
@@ -145,7 +163,16 @@ class SeedPhrasebookTest {
         String clause = SeedPhrasebook.phraseClause(WorldEventType.TRADE_COMPLETED, ACTOR, null, "4 bread for 1 emerald");
 
         // Assert
-        assertEquals(ACTOR + " traded 4 bread for 1 emerald", clause);
+        assertEquals(ACTOR + " bought 4 bread for 1 emerald", clause);
+    }
+
+    @Test
+    void phraseClause_tradeCompleted_withUnstructuredDetail_keepsLegacyTradeWording() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.TRADE_COMPLETED, ACTOR, TARGET, "some goods");
+
+        // Assert — unknown detail formats stay grammatical instead of guessing buyer/seller slots.
+        assertEquals(ACTOR + " traded some goods with " + TARGET, clause);
     }
 
     @Test
@@ -228,7 +255,7 @@ class SeedPhrasebookTest {
     @Test
     void phraseClause_cropHarvested_withZeroDetail_remainsBenignDeedSignal() {
         // Arrange + Act
-        String clause = SeedPhrasebook.phraseClause(WorldEventType.CROP_HARVESTED, ACTOR, null, "0 pumpkins");
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.RESOURCE_HARVESTED, ACTOR, null, "0 pumpkins");
 
         // Assert
         assertEquals(ACTOR + " harvested 0 pumpkins", clause);
@@ -321,7 +348,7 @@ class SeedPhrasebookTest {
     void phraseClause_cropHarvested_failure_rendersSuccessForm() {
         // Arrange — resource events have no failure variant; FAILURE falls through to success form
         String clause = SeedPhrasebook.phraseClause(
-                WorldEventType.CROP_HARVESTED, ACTOR, null, null,
+                WorldEventType.RESOURCE_HARVESTED, ACTOR, null, null,
                 EventOutcome.FAILURE, "some reason");
 
         // Assert — success form, no crash
@@ -360,7 +387,7 @@ class SeedPhrasebookTest {
         String clause = SeedPhrasebook.phraseClause(WorldEventType.BELL_RUNG, ACTOR, null, null);
 
         // Assert
-        assertEquals(ACTOR + " rang the bell", clause);
+        assertEquals(ACTOR + " rang the village bell", clause);
     }
 
     @Test
@@ -450,7 +477,7 @@ class SeedPhrasebookTest {
         String clause = SeedPhrasebook.phraseClause(WorldEventType.LANDSCAPE_SURVEYED, ACTOR, null, null);
 
         // Assert
-        assertEquals(ACTOR + " surveyed the area", clause);
+        assertEquals(ACTOR + " surveyed the surrounding terrain", clause);
     }
 
     @Test
@@ -459,7 +486,7 @@ class SeedPhrasebookTest {
         String clause = SeedPhrasebook.phraseClause(WorldEventType.CHICKENS_CHASED, ACTOR, null, null);
 
         // Assert
-        assertEquals(ACTOR + " chased chickens", clause);
+        assertEquals(ACTOR + " chased a chicken around the village", clause);
     }
 
     @Test

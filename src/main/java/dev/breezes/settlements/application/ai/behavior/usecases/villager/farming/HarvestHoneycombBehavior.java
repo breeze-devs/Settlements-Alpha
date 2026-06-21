@@ -181,7 +181,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "honeycomb"));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.RESOURCE_HARVESTED, "honeycomb"));
         context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
 
         if (!this.canHarvest(villager)) {
@@ -233,7 +233,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
         context.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
                 .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(level.dimension(), pos)));
         int finalHarvestedCount = harvestedCount;
-        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+        context.primaryDeed()
                 .ifPresent(outcome -> outcome.recordYield(finalHarvestedCount));
         return StepResult.noOp();
     }
