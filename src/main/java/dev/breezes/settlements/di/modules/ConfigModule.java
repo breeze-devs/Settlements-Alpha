@@ -46,6 +46,7 @@ import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConf
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerConfig;
+import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementConfig;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 
@@ -328,6 +329,12 @@ public final class ConfigModule {
     @Singleton
     static VillageAnimalSpawnerConfig villageAnimalSpawnerConfig() {
         return ConfigFactory.create(VillageAnimalSpawnerConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static WorldgenVillagerReplacementConfig worldgenVillagerReplacementConfig() {
+        return ConfigFactory.create(WorldgenVillagerReplacementConfig.class);
     }
 
 }

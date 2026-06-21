@@ -29,6 +29,7 @@ import dev.breezes.settlements.bootstrap.event.TradeSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerZombificationServerEvents;
+import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldEventBusReaperServerEvents;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
@@ -158,6 +159,8 @@ public interface ServerComponent {
     VillagerZombificationServerEvents villagerZombificationServerEvents();
 
     VillageAnimalSpawnerServerEvents villageAnimalSpawnerServerEvents();
+
+    WorldgenVillagerReplacementServerEvents worldgenVillagerReplacementServerEvents();
 
     Set<VillagerSensorFactory> villagerSensorFactories();
 

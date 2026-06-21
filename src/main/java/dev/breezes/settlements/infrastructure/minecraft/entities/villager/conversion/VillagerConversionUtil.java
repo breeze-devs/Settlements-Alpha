@@ -82,6 +82,8 @@ public final class VillagerConversionUtil {
         newVillager.setPos(oldVillager.position());
         newVillager.setYRot(oldVillager.getYRot());
         newVillager.setXRot(oldVillager.getXRot());
+        newVillager.setYBodyRot(oldVillager.yBodyRot);
+        newVillager.setYHeadRot(oldVillager.getYHeadRot());
     }
 
     private static void applyVanillaState(@Nonnull Villager villager,

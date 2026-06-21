@@ -113,6 +113,17 @@ public final class AttachmentRegistry {
                     .build());
 
     /**
+     * Serialized boolean stamped on vanilla villagers selected during village world generation.
+     * The decision can happen in a WorldGenRegion long before the villager joins a live ServerLevel,
+     * so the marker must survive save/unload cycles until the deferred replacement can run safely.
+     */
+    public static final Supplier<AttachmentType<Boolean>> VILLAGER_PENDING_SETTLEMENTS_REPLACEMENT = REGISTRY.register(
+            "villager_pending_settlements_replacement",
+            () -> AttachmentType.builder(() -> false)
+                    .serialize(Codec.BOOL)
+                    .build());
+
+    /**
      * Serialized boolean stamped on a chest BlockEntity to opt it out of villager logistics.
      * When true, villagers will not discover or target this chest — persists across restarts so
      * players can permanently reserve personal storage inside a village.

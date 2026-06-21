@@ -22,6 +22,7 @@ import dev.breezes.settlements.infrastructure.minecraft.mixins.LevelMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.WolfMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaBasicNavigationManager;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,6 +34,8 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -58,7 +61,10 @@ import java.util.Set;
 public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     private static final String DIRTY_NBT_KEY = "Dirty";
+    private static final double BASE_MAX_HEALTH = 20;
     private static final ClockTicks UNTAMED_LIFETIME = ClockTicks.minutes(10);
+    private static final ClockTicks DIRTY_ROLL_INTERVAL = ClockTicks.minutes(1);
+    private static final double DIRTY_CHANCE = 0.05D;
     private static final int POOF_PARTICLE_COUNT = 12;
     private static final double POOF_PARTICLE_OFFSET = 0.25D;
     private static final double POOF_PARTICLE_SPEED = 0.02D;
@@ -67,6 +73,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
     private final INavigationManager<SettlementsWolf> navigationManager;
     private final List<IBehavior<SettlementsWolf>> wolfBehaviors;
     private final ITickable untamedLifetime;
+    private final ITickable dirtyRollTimer;
 
     private final Set<Class<?>> followOwnerLocks;
 
@@ -81,6 +88,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
         this.navigationManager = new VanillaBasicNavigationManager<>(this);
         this.wolfBehaviors = new ArrayList<>();
         this.untamedLifetime = UNTAMED_LIFETIME.asTickable();
+        this.dirtyRollTimer = DIRTY_ROLL_INTERVAL.asTickable();
         this.followOwnerLocks = new HashSet<>();
         this.dirty = false;
 
@@ -129,6 +137,8 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
             return;
         }
 
+        this.rollForDirtyState();
+
         for (IBehavior<SettlementsWolf> behavior : this.wolfBehaviors) {
             if (behavior.getStatus() == BehaviorStatus.RUNNING) {
                 behavior.tick(1, this.level(), this);
@@ -151,9 +161,16 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
                 .orElseThrow(() -> new SpawnFailedException("Failed to spawn SettlementsWolf at %s".formatted(location.toString())));
         location.teleportEntityHere(wolf);
         wolf.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(location.toBlockPos()), MobSpawnType.REINFORCEMENT, null);
+        wolf.setHealth(wolf.getMaxHealth());
         serverLevel.addFreshEntityWithPassengers(wolf);
 
         return wolf;
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return Wolf.createAttributes()
+                .add(Attributes.MAX_HEALTH, BASE_MAX_HEALTH)
+                .add(Attributes.ATTACK_DAMAGE, 6.0);
     }
 
     @Override
@@ -222,6 +239,16 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
                 POOF_PARTICLE_COUNT,
                 POOF_PARTICLE_OFFSET, POOF_PARTICLE_OFFSET, POOF_PARTICLE_OFFSET,
                 POOF_PARTICLE_SPEED);
+    }
+
+    private void rollForDirtyState() {
+        if (this.dirty || !this.dirtyRollTimer.tickCheckAndReset(1)) {
+            return;
+        }
+
+        if (RandomUtil.chance(DIRTY_CHANCE)) {
+            this.dirty = true;
+        }
     }
 
     private void initGoals() {
