@@ -1,0 +1,91 @@
+{
+  "block": "minecraft:red_sand",
+  "selection_weight": 1.0,
+  "expertise_pools": {
+    "novice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:red_sand",
+          "weight": 100.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "apprentice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:red_sand",
+          "weight": 100.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "journeyman": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:red_sand",
+          "weight": 95.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:gold_nugget",
+          "weight": 5.0,
+          "min_count": 1,
+          "max_count": 3
+        }
+      ]
+    },
+    "expert": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:red_sand",
+          "weight": 90.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:gold_nugget",
+          "weight": 7.0,
+          "min_count": 1,
+          "max_count": 3
+        },
+        {
+          "item": "minecraft:raw_gold",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "master": {
+      "rolls": 2,
+      "items": [
+        {
+          "item": "minecraft:red_sand",
+          "weight": 85.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:gold_nugget",
+          "weight": 10.0,
+          "min_count": 1,
+          "max_count": 3
+        },
+        {
+          "item": "minecraft:raw_gold",
+          "weight": 5.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    }
+  }
+}

@@ -92,16 +92,10 @@ public enum WorldEventType {
      */
     PLAN_EXHAUSTED(WorldEventNamespace.SYSTEM, ObservationType.ENVIRONMENT, 0.1F, false),
 
-    // -------------------------------------------------------------------------
-    // New behavior deed types (23)
-    // Importance and terminal-deed values from the behavior-signal-emission spec.
-    // terminalDeed=false for logistics shuffles (take/store/collect) — low-signal
-    // chest movement should not flood self-memory or gossip.
-    // -------------------------------------------------------------------------
-
     COW_MILKED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     FISH_CAUGHT(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     STONE_CUT(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
+    RESOURCE_EXCAVATED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     MEAT_SMOKED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     ORE_SMELTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     LIVESTOCK_BUTCHERED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),

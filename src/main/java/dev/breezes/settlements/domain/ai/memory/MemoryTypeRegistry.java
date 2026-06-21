@@ -79,6 +79,16 @@ public final class MemoryTypeRegistry {
             .moduleTypeSupplier(MemoryModuleTypeRegistry.ORE_SITES)
             .build();
 
+    public static final MemoryType<List<GlobalPos>> GRAVEL_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("gravel_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.GRAVEL_SITES)
+            .build();
+
+    public static final MemoryType<List<GlobalPos>> SAND_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("sand_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.SAND_SITES)
+            .build();
+
     public static final MemoryType<List<UUID>> WILLING_COURTSHIP_PARTNERS = MemoryType.<List<UUID>>builder()
             .identifier("willing_courtship_partners")
             .moduleTypeSupplier(MemoryModuleTypeRegistry.WILLING_COURTSHIP_PARTNERS)

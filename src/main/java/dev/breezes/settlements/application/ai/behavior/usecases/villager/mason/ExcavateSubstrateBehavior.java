@@ -1,10 +1,9 @@
-package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.mason;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.blocks.VisitedBlockSitesState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.items.ItemState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
@@ -23,12 +22,15 @@ import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolve
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
+import dev.breezes.settlements.domain.ai.conditions.AnyOfCondition;
+import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryType;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.ChopAnimations;
+import dev.breezes.settlements.domain.animation.DigAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.AabbBlockScan;
@@ -37,106 +39,123 @@ import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
 import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.Tags;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class HarvestOreBehavior extends VillagerStateMachineBehavior {
+public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
     private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
-    private static final ResourceLocation IRON_PICKAXE_ID = ResourceLocation.withDefaultNamespace("iron_pickaxe");
+    private static final ResourceLocation GRAVEL_BLOCK_ID = ResourceLocation.withDefaultNamespace("gravel");
+    private static final ResourceLocation SAND_BLOCK_ID = ResourceLocation.withDefaultNamespace("sand");
+    private static final ResourceLocation IRON_SHOVEL_ID = ResourceLocation.withDefaultNamespace("iron_shovel");
+    private static final List<ExcavatableSubstrateSource> SOURCES = List.of(
+            new ExcavatableSubstrateSource("gravel", MemoryTypeRegistry.GRAVEL_SITES, BlockMatchers.LOOSE_GRAVEL, GRAVEL_BLOCK_ID),
+            new ExcavatableSubstrateSource("sand", MemoryTypeRegistry.SAND_SITES, BlockMatchers.LOOSE_SAND, SAND_BLOCK_ID)
+    );
 
     private enum Stage implements StageKey {
-        PICK_TARGET, APPROACH, HARVEST, SETTLE, PICKUP, LOOP, AWARD, END
+        PICK_TARGET, APPROACH, DIG, SETTLE, PICKUP, LOOP, AWARD, END
     }
 
-    private final BlockMatcher oreMatcher;
     private final BlockScanBox confirmBox;
     private final int maxConfirms;
-    private final HarvestOreConfig config;
+    private final ExcavateSubstrateConfig config;
+    private final ExcavateSubstrateYieldDataManager yieldData;
     private final BlockMemoryTargetResolver targetResolver;
 
-    public HarvestOreBehavior(@Nonnull HarvestOreConfig config,
-                              @Nonnull HungerConfig hungerConfig,
-                              @Nonnull DemandSignalService demandSignalService,
-                              @Nonnull BlockMemoryTargetResolver targetResolver) {
+    private ExcavatableSubstrateSource selectedSource;
+
+    public ExcavateSubstrateBehavior(@Nonnull ExcavateSubstrateConfig config,
+                                     @Nonnull HungerConfig hungerConfig,
+                                     @Nonnull ExcavateSubstrateYieldDataManager yieldData,
+                                     @Nonnull DemandSignalService demandSignalService,
+                                     @Nonnull BlockMemoryTargetResolver targetResolver) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
                 config.experienceReward());
         this.config = config;
+        this.yieldData = yieldData;
         this.targetResolver = targetResolver;
-        this.oreMatcher = BlockMatchers.HARVESTABLE_ORE;
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
-        this.preconditions.add(KnownBlockSitesPrecondition.builder()
-                .memoryType(MemoryTypeRegistry.ORE_SITES)
-                .matcher(this.oreMatcher)
-                .confirmBox(this.confirmBox)
-                .maxSitesToConfirm(this.maxConfirms)
-                .description("Known ore sites")
+
+        this.preconditions.add(AnyOfCondition.<BaseVillager>builder()
+                .conditions(SOURCES.stream().map(this::knownSitesPrecondition).toList())
+                .description("Known substrate excavation sites")
                 .build());
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_PICKAXE_ID), 1, 50,
+        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_SHOVEL_ID), 1, 50,
                 this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), Stage.END);
+    }
+
+    private IEntityCondition<BaseVillager> knownSitesPrecondition(@Nonnull ExcavatableSubstrateSource source) {
+        return KnownBlockSitesPrecondition.builder()
+                .memoryType(source.memoryType())
+                .matcher(source.matcher())
+                .confirmBox(this.confirmBox)
+                .maxSitesToConfirm(this.maxConfirms)
+                .description("Known " + source.name() + " sites")
+                .build();
     }
 
     private StagedStep<BaseVillager> createControlStep() {
         Map<StageKey, BehaviorStep<BaseVillager>> stageMap = new HashMap<>();
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
-                .closeEnoughDistance(2.5)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 2))
+                .closeEnoughDistance(1.2)
+                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
                 .actionStep(OneShotStep.<BaseVillager>builder()
-                        .name("ArrivedAtOre")
-                        .action(ctx -> StepResult.transition(Stage.HARVEST))
+                        .name("ArrivedAtExcavationSite")
+                        .action(ctx -> StepResult.transition(Stage.DIG))
                         .build())
                 .timeoutTicks(APPROACH_TIMEOUT_TICKS)
                 .timeoutTransition(Stage.PICK_TARGET)
                 .build());
-        stageMap.put(Stage.HARVEST, this.createHarvestStep());
+        stageMap.put(Stage.DIG, this.createDigStep());
         stageMap.put(Stage.SETTLE, WaitStep.<BaseVillager>builder()
                 .waitTime(SETTLE_DURATION.asTickable())
                 .nextStage(Stage.PICKUP)
                 .build());
         stageMap.put(Stage.PICKUP, PickupItemsStep.builder()
-                .name("PickupOreDrops")
+                .name("PickUpDrops")
                 .nextStage(Stage.LOOP)
                 .build());
         stageMap.put(Stage.LOOP, LoopBackStep.<BaseVillager>builder()
-                .name("OreLoopBack")
+                .name("LoopBack")
                 .loopBackTo(Stage.PICK_TARGET)
                 .completionTransition(Stage.AWARD)
                 .maxIterationsResolver(ctx -> this.config.expertiseHarvestLimit()
                         .getOrDefault(ctx.getInitiator().getExpertise().getConfigName(), 1))
                 .build());
         stageMap.put(Stage.AWARD, AwardExperienceStep.builder()
-                .name("AwardOreXp")
+                .name("AwardExperience")
                 .experienceAmount(this.config.experienceReward())
                 .nextStage(Stage.END)
                 .build());
 
         return StagedStep.<BaseVillager>builder()
-                .name("HarvestOreBehavior")
+                .name("ExcavateSubstrateBehavior")
                 .initialStage(Stage.PICK_TARGET)
                 .stageStepMap(stageMap)
                 .nextStage(Stage.END)
@@ -145,12 +164,16 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createPickTargetStep() {
         return OneShotStep.<BaseVillager>builder()
-                .name("PickOreTarget")
+                .name("PickExcavationTarget")
                 .action(ctx -> {
-                    boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.ORE_SITES,
-                            this.oreMatcher, this.confirmBox, this.maxConfirms);
+                    if (this.selectedSource == null) {
+                        return StepResult.transition(Stage.AWARD);
+                    }
+
+                    boolean resolved = this.targetResolver.resolveBlockTarget(ctx, this.selectedSource.memoryType(),
+                            this.selectedSource.matcher(), this.confirmBox, this.maxConfirms);
                     if (!resolved) {
-                        log.behaviorStatus("No additional ore targets found, ending behavior");
+                        log.behaviorStatus("Selected excavation site no longer has live sites, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 
@@ -159,16 +182,16 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
                 .build();
     }
 
-    private BehaviorStep<BaseVillager> createHarvestStep() {
+    private BehaviorStep<BaseVillager> createDigStep() {
         return TimeBasedStep.<BaseVillager>builder()
-                .name("HarvestOre")
-                .withTickable(ClockTicks.of(ChopAnimations.CHOP_DURATION_TICKS).asTickable())
+                .name("ExcavateStep")
+                .withTickable(ClockTicks.of(DigAnimations.DIG_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
-                    ctx.getInitiator().setHeldItem(Items.IRON_PICKAXE.getDefaultInstance());
-                    ctx.getInitiator().triggerMotion(AnimationArchetype.SWING_HEAVY);
+                    ctx.getInitiator().setHeldItem(Items.IRON_SHOVEL.getDefaultInstance());
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.DIG);
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(ChopAnimations.CHOP_IMPACT_TICKS), this::replaceOre)
+                .addKeyFrame(ClockTicks.of(DigAnimations.DIG_IMPACT_TICKS), this::spawnDrops)
                 .onEnd(ctx -> {
                     ctx.getInitiator().clearHeldItem();
                     return StepResult.transition(Stage.SETTLE);
@@ -176,59 +199,58 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
                 .build();
     }
 
-    private StepResult replaceOre(@Nonnull BehaviorContext<BaseVillager> context) {
+    private StepResult spawnDrops(@Nonnull BehaviorContext<BaseVillager> context) {
         Optional<BlockPos> target = TargetQueries.firstBlockPos(context);
-        if (target.isEmpty()) {
+        if (target.isEmpty() || this.selectedSource == null) {
             return StepResult.noOp();
         }
 
         BaseVillager villager = context.getInitiator();
-        Level world = villager.level();
+        Level level = villager.level();
         BlockPos pos = target.get();
-        BlockState oreState = world.getBlockState(pos);
+        BlockState state = level.getBlockState(pos);
 
-        if (!(world instanceof ServerLevel server)) {
+        if (AabbBlockScan.findFirst(pos, BlockScanBox.self(), this.selectedSource.matcher(), level).isEmpty()) {
             return StepResult.noOp();
         }
 
-        // Ore can be mined by another actor while this villager is approaching the remembered site.
-        if (AabbBlockScan.findFirst(pos, BlockScanBox.self(), this.oreMatcher, world).isEmpty()) {
+        Location effectLocation = Location.of(pos, level).center(true).add(0, 0.5, 0, true);
+        ParticleRegistry.harvestBlock(effectLocation, state);
+        effectLocation.playSound(state.getSoundType(level, pos, villager).getBreakSound(), 0.8F, 1.0F, SoundSource.BLOCKS);
+
+        String harvestedBlockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+        String expertiseName = villager.getExpertise().getConfigName();
+        List<ItemStack> drops = this.yieldData.rollDrops(expertiseName, harvestedBlockId);
+        if (drops.isEmpty()) {
             return StepResult.noOp();
         }
 
-        Location effectLocation = Location.of(pos, world).center(true).add(0, 0.5, 0, true);
-        ParticleRegistry.harvestBlock(effectLocation, oreState);
-        effectLocation.playSound(oreState.getSoundType(world, pos, villager).getBreakSound(), 0.8F, 1.0F, SoundSource.BLOCKS);
-
-        // Reserve item drops
-        List<ItemStack> drops = Block.getDrops(oreState, server, pos, null, villager, ItemStack.EMPTY);
-        List<ItemEntity> spawned = Location.of(pos, world).center(true).dropItems(drops, true);
+        List<ItemEntity> spawned = effectLocation.dropItems(drops, true);
         spawned.forEach(itemEntity -> itemEntity.setPickUpDelay(ClockTicks.seconds(5).getTicksAsInt()));
 
-        // Replace block
-        BlockState replacement = this.createReplacementState(oreState);
-        world.setBlockAndUpdate(pos, replacement);
-
-        context.getState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.class)
-                .ifPresent(visitedSites -> visitedSites.addSite(GlobalPos.of(world.dimension(), pos)));
+        // Loose ground is deliberately unconsumed, so the target must remain eligible for the session loop.
         context.setState(BehaviorStateType.ITEMS_TO_PICK_UP, ItemState.of(spawned));
-        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
-                .ifPresent(outcome -> outcome.recordYield(totalItemCount(drops)));
-        return StepResult.noOp();
-    }
 
-    private BlockState createReplacementState(@Nonnull BlockState oreState) {
-        return oreState.is(Tags.Blocks.ORES_IN_GROUND_STONE)
-                ? Blocks.COBBLESTONE.defaultBlockState()
-                : Blocks.COBBLED_DEEPSLATE.defaultBlockState();
+        context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                .ifPresent(outcome -> {
+                    outcome.recordYield(totalItemCount(drops));
+                    // TODO: there's an issue with broadcasting when excavating multiple items, we'll get to it later
+                    outcome.recordDeedDetail(drops.getFirst().getItem().toString());
+                });
+
+        return StepResult.noOp();
     }
 
     @Override
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.CROP_HARVESTED, "ore"));
-        context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME,
+                BehaviorOutcome.forDeed(WorldEventType.RESOURCE_EXCAVATED, "substrate"));
+        this.selectedSource = this.selectSource(villager).orElse(null);
+        if (this.selectedSource == null) {
+            this.requestStop("No excavation site available at behavior start");
+        }
     }
 
     @Override
@@ -236,10 +258,32 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
+        this.selectedSource = null;
+    }
+
+    private Optional<ExcavatableSubstrateSource> selectSource(@Nonnull BaseVillager villager) {
+        Map<ExcavatableSubstrateSource, Double> weightsBySource = new LinkedHashMap<>();
+        for (ExcavatableSubstrateSource source : SOURCES) {
+            Optional<List<GlobalPos>> memory = villager.getSettlementsBrain().getMemory(source.memoryType());
+            if (memory.isPresent() && !memory.get().isEmpty()) {
+                weightsBySource.put(source, this.yieldData.selectionWeight(source.selectionBlockId().toString()));
+            }
+        }
+
+        if (weightsBySource.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(RandomUtil.weightedChoice(weightsBySource));
     }
 
     private static int totalItemCount(@Nonnull List<ItemStack> drops) {
         return drops.stream().mapToInt(ItemStack::getCount).sum();
+    }
+
+    private record ExcavatableSubstrateSource(@Nonnull String name,
+                                              @Nonnull MemoryType<List<GlobalPos>> memoryType,
+                                              @Nonnull BlockMatcher matcher,
+                                              @Nonnull ResourceLocation selectionBlockId) {
     }
 
 }

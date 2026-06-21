@@ -69,6 +69,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.logisti
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.DepositSurplusConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellBehavior;
@@ -115,6 +117,7 @@ import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
 import dev.breezes.settlements.shared.util.ReputationUtil;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
@@ -1117,6 +1120,7 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry harvestOre(HarvestOreConfig config,
                                            HungerConfig hungerConfig,
+                                           DemandSignalService demandSignalService,
                                            BlockMemoryTargetResolver targetResolver) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
@@ -1136,7 +1140,37 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.HARVEST_ORE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("iron_ore"))
                         .build())
-                .factory(() -> new HarvestOreBehavior(config, hungerConfig, targetResolver))
+                .factory(() -> new HarvestOreBehavior(config, hungerConfig, demandSignalService, targetResolver))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry excavateSubstrate(ExcavateSubstrateConfig config,
+                                                  HungerConfig hungerConfig,
+                                                  ExcavateSubstrateYieldDataManager yieldData,
+                                                  DemandSignalService demandSignalService,
+                                                  BlockMemoryTargetResolver targetResolver) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.EXCAVATE_SUBSTRATE)
+                        .displayName("Excavate Substrate")
+                        .description("Dig surface gravel and sand for materials")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.HEAVY)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.EXCAVATE_SUBSTRATE.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("iron_shovel"))
+                        .build())
+                .factory(() -> new ExcavateSubstrateBehavior(config, hungerConfig, yieldData, demandSignalService,
+                        targetResolver))
                 .build();
     }
 

@@ -68,4 +68,14 @@ public final class BlockMatchers {
                     .anyMatch(direction -> level.getBlockState(pos.relative(direction)).isAir())
     );
 
+    public static final BlockMatcher LOOSE_GRAVEL = new BlockMatcher(
+            state -> state.is(Blocks.GRAVEL),
+            (pos, level) -> level.getBlockState(pos.above()).isAir()
+    );
+
+    public static final BlockMatcher LOOSE_SAND = new BlockMatcher(
+            state -> state.is(Blocks.SAND) || state.is(Blocks.RED_SAND),
+            (pos, level) -> level.getBlockState(pos.above()).isAir()
+    );
+
 }

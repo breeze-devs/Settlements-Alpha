@@ -32,6 +32,7 @@
   "ui.settlements.behavior.debug.no_villager_in_range": "No villager found in range",
   "ui.settlements.behavior.behavior.harvest_sugarcane": "Harvest Sugarcane",
   "ui.settlements.behavior.behavior.harvest_ore": "Harvest Ore",
+  "ui.settlements.behavior.behavior.excavate_substrate": "Excavate Substrate",
   "ui.settlements.behavior.behavior.shear_sheep": "Shear Sheep",
   "ui.settlements.behavior.behavior.dye_sheep": "Dye Sheep",
   "ui.settlements.behavior.behavior.milk_cow": "Milk Cow",

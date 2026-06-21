@@ -1,0 +1,61 @@
+{
+  "block": "default",
+  "selection_weight": 1.0,
+  "expertise_pools": {
+    "novice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:gravel",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "apprentice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:gravel",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "journeyman": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:gravel",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "expert": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:gravel",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 2
+        }
+      ]
+    },
+    "master": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:gravel",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 2
+        }
+      ]
+    }
+  }
+}

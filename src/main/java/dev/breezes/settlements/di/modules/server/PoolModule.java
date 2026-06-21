@@ -134,6 +134,7 @@ public final class PoolModule {
                 .profession(VillagerProfessionKey.MASON)
                 .entry(PoolEntry.of(BehaviorKey.CUT_STONE))
                 .entry(PoolEntry.of(BehaviorKey.HARVEST_ORE))
+                .entry(PoolEntry.of(BehaviorKey.EXCAVATE_SUBSTRATE))
                 .build();
     }
 

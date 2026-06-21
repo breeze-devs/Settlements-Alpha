@@ -82,6 +82,7 @@ public record BehaviorKey(String id) {
     // ---- Crafting ----
     public static final BehaviorKey CUT_STONE = new BehaviorKey("cut_stone");
     public static final BehaviorKey HARVEST_ORE = new BehaviorKey("harvest_ore");
+    public static final BehaviorKey EXCAVATE_SUBSTRATE = new BehaviorKey("excavate_substrate");
 
     // ---- Enchanting ----
     public static final BehaviorKey ENCHANT_ITEM = new BehaviorKey("enchant_item");

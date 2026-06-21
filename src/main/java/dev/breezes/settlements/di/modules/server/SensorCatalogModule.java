@@ -18,6 +18,8 @@ import java.util.Set;
 @Module
 public abstract class SensorCatalogModule {
 
+    private static final int COMMON_LOOSE_GROUND_MAX_SITES = 6;
+
     @Multibinds
     abstract Set<VillagerSensorFactory> villagerSensorFactories();
 
@@ -87,6 +89,18 @@ public abstract class SensorCatalogModule {
     @IntoSet
     static BlockResource ore() {
         return new BlockResource(BlockMatchers.HARVESTABLE_ORE, MemoryTypeRegistry.ORE_SITES);
+    }
+
+    @Provides
+    @IntoSet
+    static BlockResource gravel() {
+        return new BlockResource(BlockMatchers.LOOSE_GRAVEL, MemoryTypeRegistry.GRAVEL_SITES, COMMON_LOOSE_GROUND_MAX_SITES);
+    }
+
+    @Provides
+    @IntoSet
+    static BlockResource sand() {
+        return new BlockResource(BlockMatchers.LOOSE_SAND, MemoryTypeRegistry.SAND_SITES, COMMON_LOOSE_GROUND_MAX_SITES);
     }
 
 }

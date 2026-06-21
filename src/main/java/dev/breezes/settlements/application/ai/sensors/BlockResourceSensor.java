@@ -36,7 +36,7 @@ public final class BlockResourceSensor extends AbstractSensor<BaseVillager> {
 
         List<MemoryWrite<?>> writes = new ArrayList<>(this.resources.size());
         for (int i = 0; i < this.resources.size(); i++) {
-            writes.add(this.resources.get(i).toMemoryWrite(hitsByResource.get(i), world));
+            writes.add(this.resources.get(i).toMemoryWrite(hitsByResource.get(i), entity.blockPosition(), world));
         }
 
         return writes;

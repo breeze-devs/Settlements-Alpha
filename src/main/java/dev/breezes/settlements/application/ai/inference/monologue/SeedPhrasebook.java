@@ -175,6 +175,10 @@ public final class SeedPhrasebook {
                 String object = detail != null ? detail : "ore";
                 yield actorName + " smelted " + object;
             }
+            case RESOURCE_EXCAVATED -> {
+                String object = detail != null ? detail : "substrate resources";
+                yield actorName + " excavated " + object;
+            }
             case LIVESTOCK_BUTCHERED -> {
                 String object = detail != null ? detail : "an animal";
                 yield actorName + " butchered " + object;

@@ -33,6 +33,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.leather
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.DepositSurplusConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsConfig;
@@ -258,6 +259,12 @@ public final class ConfigModule {
     @Singleton
     static HarvestOreConfig harvestOreConfig() {
         return ConfigFactory.create(HarvestOreConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static ExcavateSubstrateConfig excavateSubstrateConfig() {
+        return ConfigFactory.create(ExcavateSubstrateConfig.class);
     }
 
     @Provides

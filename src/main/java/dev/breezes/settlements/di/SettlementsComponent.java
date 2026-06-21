@@ -16,6 +16,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.Collec
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
@@ -55,6 +56,8 @@ public interface SettlementsComponent {
     CollectHoneyYieldDataManager collectHoneyYieldDataManager();
 
     HarvestHoneycombYieldDataManager harvestHoneycombYieldDataManager();
+
+    ExcavateSubstrateYieldDataManager excavateSubstrateDataManager();
 
     TradeCatalogDataManager tradeCatalogDataManager();
 

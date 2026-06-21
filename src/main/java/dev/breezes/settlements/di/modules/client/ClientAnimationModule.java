@@ -14,6 +14,7 @@ import dev.breezes.settlements.domain.animation.ChopAnimations;
 import dev.breezes.settlements.domain.animation.DefaultAnimationResolver;
 import dev.breezes.settlements.domain.animation.DefaultIdleLifeAnimatorFactory;
 import dev.breezes.settlements.domain.animation.DefaultLocomotionAnimator;
+import dev.breezes.settlements.domain.animation.DigAnimations;
 import dev.breezes.settlements.domain.animation.EatingAnimations;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
 import dev.breezes.settlements.domain.animation.HarvestCropAnimations;
@@ -68,7 +69,8 @@ public abstract class ClientAnimationModule {
                         Map.entry(AnimationKey.of(AnimationArchetype.HARVEST, ItemCategory.GENERIC), HarvestCropAnimations.harvestCrop()),
                         Map.entry(AnimationKey.of(AnimationArchetype.THROW, ItemCategory.GENERIC), ThrowEggAnimations.throwEgg()),
                         Map.entry(AnimationKey.of(AnimationArchetype.SLEEP, ItemCategory.GENERIC), SleepingAnimations.sleeping()),
-                        Map.entry(AnimationKey.of(AnimationArchetype.REPAIR_IRON_GOLEM, ItemCategory.GENERIC), RepairIronGolemAnimations.repairIronGolem())))
+                        Map.entry(AnimationKey.of(AnimationArchetype.REPAIR_IRON_GOLEM, ItemCategory.GENERIC), RepairIronGolemAnimations.repairIronGolem()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.DIG, ItemCategory.SHOVEL), DigAnimations.dig())))
                 .build();
     }
 

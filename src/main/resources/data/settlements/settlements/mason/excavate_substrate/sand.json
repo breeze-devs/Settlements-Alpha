@@ -1,0 +1,97 @@
+{
+  "block": "minecraft:sand",
+  "selection_weight": 1.0,
+  "expertise_pools": {
+    "novice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:sand",
+          "weight": 100.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "apprentice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:sand",
+          "weight": 100.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "journeyman": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:sand",
+          "weight": 90.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:clay_ball",
+          "weight": 10.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "expert": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:sand",
+          "weight": 80.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:clay_ball",
+          "weight": 15.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:quartz",
+          "weight": 5.0,
+          "min_count": 1,
+          "max_count": 3
+        }
+      ]
+    },
+    "master": {
+      "rolls": 2,
+      "items": [
+        {
+          "item": "minecraft:sand",
+          "weight": 75.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:clay_ball",
+          "weight": 20.0,
+          "min_count": 1,
+          "max_count": 3
+        },
+        {
+          "item": "minecraft:quartz",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 3
+        },
+        {
+          "item": "minecraft:nautilus_shell",
+          "weight": 1.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    }
+  }
+}

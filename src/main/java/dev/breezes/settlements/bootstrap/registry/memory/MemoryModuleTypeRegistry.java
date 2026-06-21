@@ -75,6 +75,14 @@ public final class MemoryModuleTypeRegistry {
             "ore_sites",
             () -> new MemoryModuleType<>(Optional.empty()));
 
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> GRAVEL_SITES = REGISTRY.register(
+            "gravel_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> SAND_SITES = REGISTRY.register(
+            "sand_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
     public static final Supplier<MemoryModuleType<List<UUID>>> WILLING_COURTSHIP_PARTNERS = REGISTRY.register(
             "willing_courtship_partners",
             () -> new MemoryModuleType<>(Optional.empty()));

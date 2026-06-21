@@ -24,6 +24,17 @@
       }
     },
     {
+      "id": "needs_shovel",
+      "match": {
+        "item": "minecraft:iron_shovel"
+      },
+      "restock": {
+        "below": 1,
+        "buyPricePerUnit": 8,
+        "priority": 60
+      }
+    },
+    {
       "id": "raw_iron",
       "match": {
         "item": "minecraft:raw_iron"
