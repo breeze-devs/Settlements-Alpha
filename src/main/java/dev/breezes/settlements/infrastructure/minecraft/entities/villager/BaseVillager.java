@@ -174,6 +174,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private VillagerTeardownLedger teardownLedger;
     private final ITickable reconcilerCooldown;
     private final ITickable perceptionCooldown;
+    private long sootyExpiresAtGameTime;
     @Nullable
     private VillagerProfession cachedProfession;
     @Nullable
@@ -217,6 +218,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.teardownLedger = new VillagerTeardownLedger(List.of());
         this.reconcilerCooldown = RECONCILER_COOLDOWN_TICKS.asTickable();
         this.perceptionCooldown = PERCEPTION_COOLDOWN_TICKS.asTickable();
+        this.sootyExpiresAtGameTime = 0L;
     }
 
     @Nullable
@@ -311,8 +313,16 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         return DATA_BOBBER_DEPLOYED.get(this.entityData);
     }
 
-    public void setSooty(boolean sooty) {
-        DATA_SOOTY.set(this.entityData, sooty);
+    public void setSooty(@Nonnull ClockTicks duration) {
+        int ticks = Math.max(0, duration.getTicksAsInt());
+        if (ticks <= 0) {
+            this.sootyExpiresAtGameTime = 0L;
+            DATA_SOOTY.set(this.entityData, false);
+            return;
+        }
+
+        this.sootyExpiresAtGameTime = this.level().getGameTime() + ticks;
+        DATA_SOOTY.set(this.entityData, true);
     }
 
     public boolean isSooty() {
@@ -484,8 +494,22 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         if (!this.level().isClientSide()) {
             this.tickHunger();
+            this.tickSooty();
             this.bubbleService().tick(this, this.level().getGameTime());
         }
+    }
+
+    private void tickSooty() {
+        if (!DATA_SOOTY.get(this.entityData)) {
+            return;
+        }
+
+        if (this.sootyExpiresAtGameTime > this.level().getGameTime()) {
+            return;
+        }
+
+        this.sootyExpiresAtGameTime = 0L;
+        DATA_SOOTY.set(this.entityData, false);
     }
 
     @Override

@@ -51,8 +51,9 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks ITEM_INTERACTION_DURATION = ClockTicks.seconds(1);
     private static final ClockTicks BLASTING_DURATION = ClockTicks.seconds(8);
+    private static final ClockTicks SOOT_DURATION = ClockTicks.seconds(20);
 
-    private static final int DAZE_STAR_EMIT_INTERVAL = 10;
+    private static final int DAZE_STAR_EMIT_INTERVAL = 15;
 
     private static final List<BlastOreRecipe> RECIPES = List.of(
             BlastOreRecipe.builder()
@@ -159,7 +160,6 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
 
-        villager.setSooty(false);
         this.misfired = false;
 
         // Lit reset is handled by teardownAll() via the tracked obligation; clear the handle
@@ -238,7 +238,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                         face.displayParticles(ParticleTypes.ANGRY_VILLAGER, 3, 0.1, 0.1, 0.1, 0.4);
 
                         SoundRegistry.BLAST_MISFIRE.playGlobally(face, SoundSource.BLOCKS);
-                        villager.setSooty(true);
+                        villager.setSooty(SOOT_DURATION);
 
                         // Skip the normal hand-off; the ingot is already in inventory
                         ctx.getInitiator().clearHeldItem();
@@ -278,10 +278,6 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     Location starOrigin = Location.fromEntity(villager, true).add(0, 0.5, 0, false);
                     starOrigin.displayParticles(ParticleTypeRegistry.STUNNED_STAR.get(), 2, 0.0, 0.03, 0.0, 0.0);
                     return StepResult.noOp();
-                })
-                .onEnd(ctx -> {
-                    ctx.getInitiator().getMinecraftEntity().setSooty(false);
-                    return StepResult.complete();
                 })
                 .build();
 

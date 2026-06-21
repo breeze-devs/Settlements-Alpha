@@ -57,10 +57,15 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         // Compute the chronotype once and reuse within this generation call.
         Chronotype chronotype = Chronotype.of(context.chronotypeSeed());
 
-        int workStartLinear = Math.max(GameTicks.minutes(30).getTicksAsInt(), toLinear(schedule.workStartTick(), epoch));
+        // Sleep shifts with the same chronotype offset as wake so early birds sleep early and night
+        // owls sleep late — the two are correlated, which is the "early bird / night owl" personality.
+        int sleepTick = clampTick(schedule.defaultSleepTick() + chronotype.wakeSleepOffsetTicks());
+        int bedtimeLinear = toLinear(sleepTick, epoch);
+
+        int workStartLinear = resolveWorkStartLinear(schedule, epoch, bedtimeLinear);
         int workEndLinear = toLinear(this.computeWorkEndTick(schedule, context.genetics(), context.dayType()), epoch);
         int lunchLinear = toLinear(LUNCH_TICK, epoch);
-        DayPlanSchedule daySchedule = this.buildActivitySchedule(context, schedule, epoch, workStartLinear, workEndLinear, chronotype);
+        DayPlanSchedule daySchedule = this.buildActivitySchedule(context, epoch, sleepTick, bedtimeLinear, workStartLinear, workEndLinear);
 
         slots.add(PlanSlot.builder()
                 .startTick(clampTick(epoch))
@@ -115,15 +120,11 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
     }
 
     private DayPlanSchedule buildActivitySchedule(PlanGenerationContext context,
-                                                  ScheduleProfile schedule,
                                                   int wakeTick,
+                                                  int sleepTick,
+                                                  int bedtimeLinear,
                                                   int workStartLinear,
-                                                  int workEndLinear,
-                                                  Chronotype chronotype) {
-        // Sleep shifts with the same chronotype offset as wake so early birds sleep early and night
-        // owls sleep late — the two are correlated, which is the "early bird / night owl" personality.
-        int sleepTick = clampTick(schedule.defaultSleepTick() + chronotype.wakeSleepOffsetTicks());
-        int bedtimeLinear = toLinear(sleepTick, wakeTick);
+                                                  int workEndLinear) {
         DayPlanSchedule.DayPlanScheduleBuilder builder = DayPlanSchedule.builder()
                 .wakeTick(wakeTick)
                 .bedtimeTick(sleepTick);
@@ -302,6 +303,26 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         }
         workEndTick += (int) ((genetics.getGeneValue(GeneType.WILL) - 0.5) * GameTicks.minutes(90).getTicksAsInt());
         return clampTick(Math.clamp(workEndTick, TimeOfDay.AT_10_00.getTick(), TimeOfDay.AT_17_00.getTick()));
+    }
+
+    /**
+     * Linear offset from wake to the profession's authored work-start.
+     * <p>
+     * On a rest day the +1h sleep-in — compounded by a positive chronotype offset — can push the
+     * villager's wake past its own work-start time. {@link #toLinear} would then wrap that
+     * already-elapsed anchor to nearly a full day, flinging any work-relative slot (notably the
+     * morning Investigate scout) across the day boundary and tripping {@code DayPlan}'s slot-window
+     * validation. When work-start no longer leads wake — its forward offset lands at or past bedtime,
+     * i.e. outside today's waking window — there is no real pre-work block, so the pre-work gap
+     * collapses to the morning floor.
+     */
+    private static int resolveWorkStartLinear(ScheduleProfile schedule, int epoch, int bedtimeLinear) {
+        int morningFloorLinear = GameTicks.minutes(30).getTicksAsInt();
+        int workStartLinear = toLinear(schedule.workStartTick(), epoch);
+        if (workStartLinear >= bedtimeLinear) {
+            return morningFloorLinear;
+        }
+        return Math.max(morningFloorLinear, workStartLinear);
     }
 
     /**

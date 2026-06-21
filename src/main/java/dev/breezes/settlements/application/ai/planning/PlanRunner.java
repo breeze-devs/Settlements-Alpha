@@ -612,11 +612,19 @@ public class PlanRunner {
         if (future != null && future.isCompletedExceptionally() && runtime.getPendingNextPlan() == null) {
             // Failed workers cannot touch villager state; fallback generation runs here on the server thread.
             long wakeAtAbsoluteTick = runtime.getPendingFutureWakeAtAbsoluteTick();
-            DayPlan fallback = this.planGenerator.generate(this.createGenerationContext(villager, wakeAtAbsoluteTick));
-            runtime.setPendingNextPlan(fallback);
-            runtime.clearPendingFuture();
-            log.behaviorWarn("Async plan generation failed for villager {}; sync fallback installed",
-                    villager.getUUID());
+            try {
+                DayPlan fallback = this.planGenerator.generate(this.createGenerationContext(villager, wakeAtAbsoluteTick));
+                runtime.setPendingNextPlan(fallback);
+                log.behaviorWarn("Async plan generation failed for villager {}; sync fallback installed",
+                        villager.getUUID());
+            } catch (Exception exception) {
+                // Swallowing degrades the villager to "no next plan yet" instead of crashing the server
+                log.behaviorError("Sync fallback plan generation failed for villager {}; leaving without a next plan",
+                        villager.getUUID(), exception);
+            } finally {
+                // Clear the failed future either way so this branch does not re-run every tick.
+                runtime.clearPendingFuture();
+            }
         }
     }
 

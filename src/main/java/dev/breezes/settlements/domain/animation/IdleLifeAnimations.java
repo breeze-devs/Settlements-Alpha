@@ -148,16 +148,8 @@ public final class IdleLifeAnimations {
     }
 
     /**
-     * Occasional fidget overlay: the villager glances to one side, furrows the brow, and
-     * bobs twice as if turning a thought over. Played ONCE and discarded rather than looped —
-     * the Blockbench .looping() flag is a preview artifact, not a runtime directive.
-     * <p>
-     * Head rotation IS kept here (HEAD_ROTATION_OVERRIDE) because this gesture is intentionally
-     * a brief, full "look-away-and-think" interruption that should suppress vanilla look-tracking
-     * for its 4-second duration. The clip ends and look-tracking resumes immediately after.
-     * <p>
-     * Arms are driven at BOTH_CROSSED throughout; the small arms_crossed position nudge at
-     * ticks 56–70 represents a subtle shuffle as the villager shifts weight while pondering.
+     * The villager furrows its brow, casts its eyes down and to one side, blinks,
+     * and shifts its weight in a small double-bob as if turning a thought over.
      */
     public static KeyframeAnimation ponder() {
         return KeyframeAnimation.fromTracks()

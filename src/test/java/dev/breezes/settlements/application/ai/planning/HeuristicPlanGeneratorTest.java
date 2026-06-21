@@ -212,6 +212,32 @@ class HeuristicPlanGeneratorTest {
         assertEquals(wakeAtAbsoluteTick, plan.getWakeAtAbsoluteTick());
     }
 
+    @Test
+    void generate_restDaySleepInWithPendingTipKeepsAllSlotsWithinDayBoundary() {
+        // Reproduces the rest-day crash: a +1h sleep-in plus a positive chronotype offset pushes wake
+        // PAST the profession's work-start (epoch 2354 vs work-start tick 2000). That previously wrapped
+        // workStartLinear to ~a full day, flinging the injected Investigate scout slot across the day
+        // boundary, which DayPlan rejected with "slot window must not cross the plan day boundary".
+        long wakeAtAbsoluteTick = 482_354L; // 482354 % 24000 = 2354
+        PlanGenerationContext context = PlanGenerationContext.builder()
+                .profession(VillagerProfessionKey.MASON)
+                .genetics(genetics(0.5, 0.5, 0.5, 0.5))
+                .scheduleProfile(ScheduleProfile.defaultFor(VillagerProfessionKey.MASON))
+                .restDayPolicy(RestDayPolicy.defaultFor(VillagerProfessionKey.MASON))
+                .dayType(PlanDayType.REST_DAY)
+                .availableBehaviors(descriptorsFor(VillagerProfessionKey.MASON, allDescriptors()))
+                .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
+                .pendingInvestigateTipCount(1)
+                .build();
+
+        // Act — must not throw
+        DayPlan plan = this.generator.generate(context);
+
+        // Assert
+        assertTrue(keys(plan).contains(BehaviorKey.INVESTIGATE), "A pending tip should still inject a scout slot.");
+        assertAllSlotWindowsWithinDay(plan);
+    }
+
     private static PlanGenerationContext context(VillagerProfessionKey profession, PlanDayType dayType,
                                                  GeneticsProfile genetics,
                                                  List<BehaviorPlanningMetadata> descriptors) {
@@ -287,6 +313,15 @@ class HeuristicPlanGeneratorTest {
 
     private static void assertHasMealsOnly(DayPlan plan) {
         assertTrue(keys(plan).contains(BehaviorKey.EAT_FOOD));
+    }
+
+    private static void assertAllSlotWindowsWithinDay(DayPlan plan) {
+        int dayStartTick = plan.getDayStartTick();
+        for (PlanSlot slot : plan.getSlots()) {
+            int linearStart = Math.floorMod(slot.getStartTick() - dayStartTick, TimeOfDay.TICKS_PER_DAY);
+            assertTrue(linearStart + slot.getEstimatedDurationTicks() < TimeOfDay.TICKS_PER_DAY,
+                    "Slot " + slot.getBehaviorKey() + " window crosses the plan day boundary");
+        }
     }
 
     private static void assertNoObsoleteIdleSlots(DayPlan plan) {

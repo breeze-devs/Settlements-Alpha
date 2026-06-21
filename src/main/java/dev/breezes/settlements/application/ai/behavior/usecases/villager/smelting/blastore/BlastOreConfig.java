@@ -62,7 +62,7 @@ public record BlastOreConfig(
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "daze_duration_seconds",
-                description = "How long the villager stays dazed and sooty after a misfire (in seconds)",
+                description = "How long the villager stays dazed after a misfire (in seconds)",
                 defaultValue = 5,
                 min = 1)
         int dazeDurationSeconds

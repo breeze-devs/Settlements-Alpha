@@ -52,7 +52,6 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
     public boolean tickPreconditions(int delta, @Nonnull Level world, @Nonnull T entity) {
         // Only check preconditions & tick cooldowns if the behavior is not running
         if (this.status != BehaviorStatus.STOPPED) {
-            log.behaviorTrace("Behavior is not stopped, skipping precondition check");
             return false;
         }
 
@@ -61,10 +60,8 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         // - but we still need to tick the precondition check cooldown
         boolean preconditionCheckCooldownComplete = this.preconditionCheckCooldown.tickAndCheck(delta);
         if (!this.behaviorCoolDown.tickAndCheck(delta)) {
-            log.behaviorTrace("Behavior is cooling down with {} remaining", this.behaviorCoolDown.getRemainingCooldownsAsPrettyString());
             return false;
         } else if (!preconditionCheckCooldownComplete) {
-            log.behaviorTrace("Precondition check is cooling down, with {} remaining", this.preconditionCheckCooldown.getRemainingCooldownsAsPrettyString());
             return false;
         }
 
@@ -88,9 +85,6 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             }
         }
 
-        if (allPassed) {
-            log.behaviorTrace("All preconditions are met");
-        }
         return allPassed;
     }
 
@@ -125,7 +119,6 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             return;
         }
 
-        log.behaviorTrace("Ticking behavior with delta {}", delta);
         try {
             this.tickBehavior(delta, world, entity);
         } catch (StopBehaviorException e) {
@@ -149,7 +142,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
                 return false;
             }
         }
-        log.behaviorTrace("All continue conditions are met");
+
         return true;
     }
 

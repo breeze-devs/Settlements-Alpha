@@ -20,6 +20,7 @@ public enum ItemCategory {
     SWORD,
     MACE,
     PICKAXE,
+    HAMMER,
     SHOVEL,
     HOE,
     FISHING_ROD,
@@ -76,6 +77,9 @@ public enum ItemCategory {
         }
         if (stack.is(ItemRegistry.VILLAGER_FISHING_ROD.get())) {
             return FISHING_ROD;
+        }
+        if (stack.is(ItemRegistry.HAMMER.get())) {
+            return HAMMER;
         }
 
         return GENERIC;

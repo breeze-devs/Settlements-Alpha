@@ -1,6 +1,7 @@
 package dev.breezes.settlements.domain.animation;
 
 import dev.breezes.settlements.domain.presentation.ArmConfiguration;
+import dev.breezes.settlements.domain.time.ClockTicks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -12,8 +13,8 @@ public final class DefaultIdleLifeAnimator implements IdleLifeAnimator {
 
     private static final int MIN_BLINK_DELAY_TICKS = 50;
     private static final int BLINK_DELAY_RANGE_TICKS = 90;
-    private static final int MIN_FIDGET_DELAY_TICKS = 120;
-    private static final int FIDGET_DELAY_RANGE_TICKS = 180;
+    private static final int MIN_FIDGET_DELAY_TICKS = ClockTicks.seconds(30).getTicksAsInt();
+    private static final int FIDGET_DELAY_RANGE_TICKS = ClockTicks.seconds(45).getTicksAsInt();
 
     private final IdleLifeAnimationLibrary library;
     private final Random random;
@@ -92,6 +93,13 @@ public final class DefaultIdleLifeAnimator implements IdleLifeAnimator {
 
     private void advanceFidget(@Nonnull IdleLifeAnimationContext context) {
         if (context.actionActive()) {
+            // An action layer composites above idle-life but rarely authors the body/eye targets a
+            // fidget drives, so a fidget left running while the villager works would keep tugging
+            // those bones against the action. Drop it the instant an action takes over, and hold the
+            // next-fidget timer out past the action so finished work is never immediately followed
+            // by a fidget.
+            this.cancelActiveFidget();
+            this.nextFidgetGameTime = Math.max(this.nextFidgetGameTime, context.gameTime() + MIN_FIDGET_DELAY_TICKS);
             return;
         }
         if (this.activeFidget != null || context.gameTime() < this.nextFidgetGameTime) {
@@ -108,6 +116,11 @@ public final class DefaultIdleLifeAnimator implements IdleLifeAnimator {
         this.activeFidget = fidgets.get(fidgetIndex);
         this.lastFidgetIndex = fidgetIndex;
         this.fidgetStartGameTime = context.gameTime();
+    }
+
+    private void cancelActiveFidget() {
+        this.activeFidget = null;
+        this.fidgetStartGameTime = Long.MIN_VALUE;
     }
 
     private int nextFidgetIndex(int size) {
