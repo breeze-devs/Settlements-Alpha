@@ -18,6 +18,7 @@ public enum AnimationArchetype {
     FISHING_WAIT,
     THROW,
     SLEEP,
+    REPAIR_IRON_GOLEM,
     ;
 
     private static final AnimationArchetype[] VALUES = values();

@@ -7,6 +7,10 @@ import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
+import dev.breezes.settlements.infrastructure.config.annotations.maps.MapConfig;
+import dev.breezes.settlements.infrastructure.config.annotations.maps.MapEntry;
+
+import java.util.Map;
 
 @BehaviorConfig(name = "repair_iron_golem", type = ConfigurationType.BEHAVIOR)
 public record RepairIronGolemConfig(
@@ -41,6 +45,20 @@ public record RepairIronGolemConfig(
                 defaultValue = 60,
                 min = 1)
         int behaviorCooldownMax,
+
+        @MapConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = "expertise_repair_limit",
+                description = "Map of villager expertise level to the maximum number of iron golem repair attempts in one session.",
+                deserializer = "StringToInteger",
+                defaultValue = {
+                        @MapEntry(key = "novice", value = "1"),
+                        @MapEntry(key = "apprentice", value = "2"),
+                        @MapEntry(key = "journeyman", value = "2"),
+                        @MapEntry(key = "expert", value = "3"),
+                        @MapEntry(key = "master", value = "5")
+                })
+        Map<String, Integer> expertiseRepairLimit,
 
         @DoubleConfig(
                 type = ConfigurationType.BEHAVIOR,

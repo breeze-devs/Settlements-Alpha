@@ -14,6 +14,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
@@ -21,13 +22,13 @@ import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
-import dev.breezes.settlements.domain.animation.InteractAnimations;
+import dev.breezes.settlements.domain.animation.RepairIronGolemAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
+import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
@@ -46,6 +47,8 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation IRON_INGOT_ID = ResourceLocation.withDefaultNamespace("iron_ingot");
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
+    private static final float HEAL_AMOUNT = 25.0f;
+    private static final int DEFAULT_REPAIR_ATTEMPTS = 1;
 
     private enum RepairStage implements StageKey {
         REPAIR_GOLEM,
@@ -94,13 +97,14 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createRepairStep() {
         TimeBasedStep<BaseVillager> repairTick = TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.seconds(2).asTickable())
+                .withTickable(ClockTicks.of(RepairIronGolemAnimations.REPAIR_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
-                    ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
-                    ctx.getInitiator().setHeldItem(new ItemStack(Items.IRON_INGOT));
+                    ctx.getInitiator().triggerMotion(AnimationArchetype.REPAIR_IRON_GOLEM);
+                    ctx.getInitiator().setHeldItem(ItemRegistry.HAMMER.get().getDefaultInstance());
+                    ctx.getInitiator().setOffhandItem(new ItemStack(Items.IRON_INGOT));
                     return StepResult.noOp();
                 })
-                .addKeyFrame(ClockTicks.of(InteractAnimations.INTERACT_DURATION_TICKS), ctx -> {
+                .addKeyFrame(ClockTicks.of(RepairIronGolemAnimations.REPAIR_PEAK_TICK), ctx -> {
                     if (this.targetToRepair == null || !this.targetToRepair.isAlive()) {
                         return StepResult.complete();
                     }
@@ -111,14 +115,12 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    double healAmount = RandomUtil.randomDouble(3, 8);
-                    this.targetToRepair.heal((float) healAmount);
+                    this.targetToRepair.heal(HEAL_AMOUNT);
                     this.shouldRewardExperience = true;
 
                     Location targetLocation = Location.fromEntity(this.targetToRepair, false);
                     SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(targetLocation, SoundSource.NEUTRAL);
                     ParticleRegistry.repairIronGolem(targetLocation);
-                    log.behaviorTrace("Repaired iron golem for {} HP, {} attempts remaining", healAmount, this.remainingRepairAttempts - 1);
 
                     if (--this.remainingRepairAttempts <= 0) {
                         return StepResult.complete();
@@ -145,11 +147,12 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         }
 
         this.targetToRepair = targetCandidate.get();
+        Expertise expertise = villager.getMinecraftEntity().getExpertise();
+        int maxAttempts = this.config.expertiseRepairLimit().getOrDefault(expertise.getConfigName(), DEFAULT_REPAIR_ATTEMPTS);
         int ingotsAvailable = villager.getSettlementsInventory().count(Items.IRON_INGOT);
-        int rolledAttempts = RandomUtil.randomInt(1, 3, true);
         this.remainingRepairAttempts = GeneralConfig.bypassInventoryRequirements
-                ? rolledAttempts
-                : Math.min(rolledAttempts, ingotsAvailable);
+                ? maxAttempts
+                : Math.min(maxAttempts, ingotsAvailable);
         if (this.remainingRepairAttempts <= 0) {
             this.requestStop("No iron ingots available at behavior start");
             return;
@@ -176,6 +179,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
+        villager.clearOffhandItem();
         villager.setMotion(AnimationArchetype.IDLE);
         this.targetToRepair = null;
         this.remainingRepairAttempts = 0;
