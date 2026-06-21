@@ -351,6 +351,136 @@ class SeedPhrasebookTest {
     }
 
     // -------------------------------------------------------------------------
+    // New deed types — representative coverage per spec
+    // -------------------------------------------------------------------------
+
+    @Test
+    void phraseClause_bellRung_noTarget() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.BELL_RUNG, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " rang the bell", clause);
+    }
+
+    @Test
+    void phraseClause_targetEgged_withTarget() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.TARGET_EGGED, ACTOR, TARGET, null);
+
+        // Assert
+        assertEquals(ACTOR + " egged " + TARGET, clause);
+    }
+
+    @Test
+    void phraseClause_targetEgged_noTarget_fallsBackToSomeone() {
+        // Arrange + Act — player/animal victim → no target UUID set → "someone"
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.TARGET_EGGED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " egged someone", clause);
+    }
+
+    @Test
+    void phraseClause_animalTamed_withDetail() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.ANIMAL_TAMED, ACTOR, null, "a cat");
+
+        // Assert
+        assertEquals(ACTOR + " tamed a cat", clause);
+    }
+
+    @Test
+    void phraseClause_animalTamed_noDetail_usesGenericFallback() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.ANIMAL_TAMED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " tamed an animal", clause);
+    }
+
+    @Test
+    void phraseClause_cowMilked_withDetail() {
+        // Arrange + Act — detail carries "3 cows" from counted yield
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.COW_MILKED, ACTOR, null, "3 cows");
+
+        // Assert
+        assertEquals(ACTOR + " milked 3 cows", clause);
+    }
+
+    @Test
+    void phraseClause_cowMilked_noDetail_usesGenericFallback() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.COW_MILKED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " milked a cow", clause);
+    }
+
+    @Test
+    void phraseClause_potionThrown_withTarget() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.POTION_THROWN, ACTOR, TARGET, null);
+
+        // Assert
+        assertEquals(ACTOR + " threw a potion at " + TARGET, clause);
+    }
+
+    @Test
+    void phraseClause_golemRepaired() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.GOLEM_REPAIRED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " repaired the iron golem", clause);
+    }
+
+    @Test
+    void phraseClause_leatherDyed_withColorDetail() {
+        // Arrange + Act — detail is the color string
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.LEATHER_DYED, ACTOR, null, "red");
+
+        // Assert
+        assertEquals(ACTOR + " dyed leather red", clause);
+    }
+
+    @Test
+    void phraseClause_landscapeSurveyed() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.LANDSCAPE_SURVEYED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " surveyed the area", clause);
+    }
+
+    @Test
+    void phraseClause_chickensChased() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.CHICKENS_CHASED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " chased chickens", clause);
+    }
+
+    @Test
+    void phraseClause_itemsTaken_withDetail() {
+        // Arrange + Act — logistics type; covered defensively even though not seed-worthy
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.ITEMS_TAKEN, ACTOR, null, "5 items");
+
+        // Assert
+        assertEquals(ACTOR + " took 5 items from a chest", clause);
+    }
+
+    @Test
+    void phraseClause_itemsStored_noDetail() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.ITEMS_STORED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " stored some items", clause);
+    }
+
+    // -------------------------------------------------------------------------
     // ObservationType fallback
     // -------------------------------------------------------------------------
 

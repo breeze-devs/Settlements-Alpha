@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -241,14 +242,19 @@ class MonologueSeedProjectorTest {
 
     @Test
     void project_completionEvents_allProduceSeeds() {
-        // Arrange — every type in the allowlist should produce exactly one seed
-        for (WorldEventType type : MonologueSeedProjector.SEED_WORTHY_TYPES) {
+        // Arrange — every type marked isSeedWorthy() should produce at least one seed;
+        // this replaces the former hardcoded SEED_WORTHY_TYPES allowlist check.
+        List<WorldEventType> seedWorthyTypes = Arrays.stream(WorldEventType.values())
+                .filter(WorldEventType::isSeedWorthy)
+                .toList();
+
+        for (WorldEventType type : seedWorthyTypes) {
             VillagerKnowledgeStore localStore = new VillagerKnowledgeStore();
             localStore.admit(directEntry(ACTOR_ID, TARGET_ID, type, 1.0f));
 
             // Act + Assert
             List<String> seeds = this.projector.project(OBSERVER_ID, localStore);
-            assertFalse(seeds.isEmpty(), "Expected a seed for completion type: " + type);
+            assertFalse(seeds.isEmpty(), "Expected a seed for seed-worthy type: " + type);
         }
     }
 

@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -16,6 +17,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.CartographerAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -179,6 +181,12 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
                     this.shouldRewardExperience = true;
+
+                    if (context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class).isEmpty()) {
+                        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LANDSCAPE_SURVEYED, null);
+                        outcome.markSucceeded();
+                        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    }
 
                     if (this.remainingPoints.isEmpty()) {
                         // All points surveyed

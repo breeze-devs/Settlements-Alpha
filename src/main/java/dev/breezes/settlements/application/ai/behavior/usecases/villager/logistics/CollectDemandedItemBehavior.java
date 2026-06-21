@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -15,6 +16,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.PickUpAnimations;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -109,6 +111,10 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
                         return StepResult.fail("Target item was taken before pickup could complete");
                     }
                     ctx.getInitiator().pickUp(this.resolution.item());
+                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEM_COLLECTED, null);
+                    outcome.markSucceeded();
+                    outcome.recordDeedDetail(this.resolution.item().getItem().toString());
+                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
                     return StepResult.noOp();
                 })
                 .build();

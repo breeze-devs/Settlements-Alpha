@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -79,6 +80,49 @@ class BehaviorOutcomeTest {
         assertEquals(registryId, outcome.getRegistryId());
         assertEquals(EventOutcome.SUCCESS, outcome.getEventOutcome());
         assertEquals("4 bread for 1 emerald", outcome.resolveDetail());
+    }
+
+    @Test
+    void recordTargetedDeed_setsPartnerIdAndMarksSuccess() {
+        // Arrange
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.TARGET_EGGED, null);
+        UUID victimId = UUID.randomUUID();
+
+        // Act
+        outcome.recordTargetedDeed(victimId);
+
+        // Assert
+        assertTrue(outcome.isSuccess());
+        assertEquals(EventOutcome.SUCCESS, outcome.getEventOutcome());
+        assertEquals(victimId, outcome.getPartnerId());
+        assertNotNull(outcome.getPartnerId());
+    }
+
+    @Test
+    void recordTargetedDeed_doesNotSetDetail() {
+        // Arrange — targeted deed has no unit noun, so detail should remain unresolvable
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.POTION_THROWN, null);
+        UUID victimId = UUID.randomUUID();
+
+        // Act
+        outcome.recordTargetedDeed(victimId);
+
+        // Assert — no unit noun set, so resolveDetail returns null (target flows via partnerId)
+        assertNull(outcome.resolveDetail());
+    }
+
+    @Test
+    void recordDeedDetail_setsExplicitDetailAndMarksSuccess() {
+        // Arrange — a non-counted deed whose phrasing is a plain noun (e.g. "tamed a cat")
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_TAMED, null);
+
+        // Act
+        outcome.recordDeedDetail("a cat");
+
+        // Assert
+        assertTrue(outcome.isSuccess());
+        assertEquals(EventOutcome.SUCCESS, outcome.getEventOutcome());
+        assertEquals("a cat", outcome.resolveDetail());
     }
 
     @Test

@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifac
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -19,6 +20,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
@@ -32,6 +34,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
@@ -200,9 +203,15 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
                         this.litHandle = null;
                     }
                     BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
-                    villager.getSettlementsInventory().add(this.currentRecipe.createOutputStack());
+                    ItemStack outputStack = this.currentRecipe.createOutputStack();
+                    villager.getSettlementsInventory().add(outputStack);
 
-                    ctx.getInitiator().setHeldItem(this.currentRecipe.createOutputStack());
+                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.MEAT_SMOKED, null);
+                    outcome.recordDeedDetail(outputStack.getItem().toString());
+                    outcome.markSucceeded();
+                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+
+                    ctx.getInitiator().setHeldItem(outputStack);
                     villager.triggerMotion(AnimationArchetype.INTERACT);
                     SoundRegistry.ITEM_POP_OUT.playGlobally(this.smoker.getLocation(true).add(0, 0.5, 0, false), SoundSource.BLOCKS);
                     return StepResult.noOp();

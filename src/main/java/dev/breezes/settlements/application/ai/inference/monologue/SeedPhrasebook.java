@@ -155,6 +155,75 @@ public final class SeedPhrasebook {
             case COURTSHIP_INVITE_SENT -> actorName + " sent a courtship invite";
             case BEHAVIOR_STARTED -> actorName + " started a task";
             case BEHAVIOR_COMPLETED -> actorName + " finished " + readableTask(eventMetadata);
+            case COW_MILKED -> {
+                String object = detail != null ? detail : "a cow";
+                yield actorName + " milked " + object;
+            }
+            case FISH_CAUGHT -> {
+                String object = detail != null ? detail : "a fish";
+                yield actorName + " caught " + object;
+            }
+            case STONE_CUT -> {
+                String object = detail != null ? detail : "stone";
+                yield actorName + " cut " + object;
+            }
+            case MEAT_SMOKED -> {
+                String object = detail != null ? detail : "meat";
+                yield actorName + " smoked " + object;
+            }
+            case ORE_SMELTED -> {
+                String object = detail != null ? detail : "ore";
+                yield actorName + " smelted " + object;
+            }
+            case LIVESTOCK_BUTCHERED -> {
+                String object = detail != null ? detail : "an animal";
+                yield actorName + " butchered " + object;
+            }
+            case ITEM_ENCHANTED -> {
+                String object = detail != null ? detail : "an object";
+                yield actorName + " enchanted " + object;
+            }
+            case LEATHER_DYED -> {
+                // detail carries color e.g. "red"
+                String object = detail != null ? "leather " + detail : "leather";
+                yield actorName + " dyed " + object;
+            }
+            case LEATHER_WASHED -> actorName + " washed leather";
+            case ANIMAL_BRED -> {
+                String object = detail != null ? detail : "animals";
+                yield actorName + " bred " + object;
+            }
+            case ANIMAL_TAMED -> {
+                String object = detail != null ? detail : "an animal";
+                yield actorName + " tamed " + object;
+            }
+            case WOLF_WASHED -> actorName + " washed their dog";
+            case WOLF_FED -> actorName + " fed their dog";
+            case DOG_WALKED -> actorName + " walked their dog";
+            case GOLEM_REPAIRED -> actorName + " repaired the iron golem";
+            case POTION_THROWN -> {
+                String target = targetName != null ? targetName : "someone";
+                yield actorName + " threw a potion at " + target;
+            }
+            case BELL_RUNG -> actorName + " rang the village bell";
+            case TARGET_EGGED -> {
+                String target = targetName != null ? targetName : "someone";
+                yield actorName + " egged " + target;
+            }
+            case CHICKENS_CHASED -> actorName + " chased a chicken around the village";
+            case LANDSCAPE_SURVEYED -> actorName + " surveyed the surrounding terrain";
+            case ITEMS_TAKEN -> {
+                String object = detail != null ? detail : "some items";
+                yield actorName + " took " + object + " from a chest";
+            }
+            case ITEMS_STORED -> {
+                String object = detail != null ? detail : "some items";
+                yield actorName + " stored " + object;
+            }
+            case ITEM_COLLECTED -> {
+                String object = detail != null ? detail : "an item";
+                yield actorName + " collected " + object;
+            }
             // System-namespace events should never reach seeds; defensive fallback.
             default -> actorName + " did something";
         };

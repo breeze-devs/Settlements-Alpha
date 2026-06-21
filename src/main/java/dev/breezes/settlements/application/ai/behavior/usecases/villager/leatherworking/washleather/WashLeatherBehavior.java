@@ -7,6 +7,7 @@ import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifac
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -19,6 +20,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
@@ -296,6 +298,11 @@ public class WashLeatherBehavior extends VillagerStateMachineBehavior {
 
                     ctx.getInitiator().clearHeldItem();
                     this.rewardExperience(ctx.getInitiator().getMinecraftEntity());
+
+                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LEATHER_WASHED, null);
+                    outcome.markSucceeded();
+                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+
                     return StepResult.complete();
                 })
                 .build();

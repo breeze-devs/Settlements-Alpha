@@ -15,7 +15,6 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -27,7 +26,7 @@ import java.util.UUID;
  * bundle, so it can write first-person prose without the projector encoding perspective.
  * <p>
  * <b>Allowlist.</b>  Terminal behavior outcomes become seeds; mid-run attempts and start noise
- * are filtered before rendering. See {@link #SEED_WORTHY_TYPES}.
+ * are filtered before rendering via {@link WorldEventType#isSeedWorthy()}.
  * <p>
  * <b>Hearsay.</b>  A hearsay entry is prefixed with the source's resolved name, e.g.
  * {@code "Aldric says <actor> courted <target>"}.
@@ -45,23 +44,6 @@ public final class MonologueSeedProjector {
      */
     public static final int MAX_SEEDS = 50;
 
-    /**
-     * The only {@link WorldEventType} values that become seeds.
-     * Invites and generic lifecycle start/complete/fail events are excluded as mid-run or
-     * low-signal noise; only salient terminal outcomes (deeds, social acts, tip resolutions) are
-     * worth muttering about.
-     */
-    static final Set<WorldEventType> SEED_WORTHY_TYPES = Set.of(
-            WorldEventType.TRADE_COMPLETED,
-            WorldEventType.COURTSHIP_COMPLETED,
-            WorldEventType.COURTSHIP_REJECTED,
-            WorldEventType.CROP_HARVESTED,
-            WorldEventType.SHEEP_SHEARED,
-            WorldEventType.SHEEP_DYED,
-            WorldEventType.TIP_CONFIRMED,
-            WorldEventType.TIP_REFUTED
-    );
-
     // Keys are defined in ObservationMetadataKeys (domain layer) so both the writer
     // (ObservationFactory) and reader (this class) share the same constants without
     // a circular dependency.
@@ -72,7 +54,8 @@ public final class MonologueSeedProjector {
 
     /**
      * Projects the villager's knowledge store into a list of seed strings.
-     * Entries whose event type is not in the completions allowlist are silently skipped.
+     * Entries whose event type is not seed-worthy per {@link WorldEventType#isSeedWorthy()} are
+     * silently skipped.
      *
      * @param observerId UUID of the villager whose store is being projected (unused for
      *                   rendering now that seeds are flat third-person, but retained so
@@ -86,13 +69,13 @@ public final class MonologueSeedProjector {
 
         for (KnowledgeEntry entry : store.entriesView()) {
             // Skip entries that are lifecycle noise or explicit invites.
-            WorldEventType eventType = resolveEventType(entry);
-            if (eventType != null && !SEED_WORTHY_TYPES.contains(eventType)) {
-                continue;
-            }
             // When eventType is null we fall through to the ObservationType fallback in
             // renderSeed, so unknown future types still produce a coarse seed rather than
             // disappearing silently.
+            WorldEventType eventType = resolveEventType(entry);
+            if (eventType != null && !eventType.isSeedWorthy()) {
+                continue;
+            }
 
             String seed = renderSeed(entry);
             float existing = bestWeightBySeed.getOrDefault(seed, Float.NEGATIVE_INFINITY);

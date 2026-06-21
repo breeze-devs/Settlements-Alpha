@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -17,6 +18,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -149,6 +151,11 @@ public class WalkDogBehavior extends VillagerStateMachineBehavior {
         return context -> {
             context.getLevel().getChunkSource().broadcast(this.cachedWolf, new ClientboundSetEntityLinkPacket(this.cachedWolf, null));
             this.cachedWolf.unlockFollowOwner(WalkDogBehavior.class);
+
+            BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.DOG_WALKED, null);
+            outcome.markSucceeded();
+            context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+
             return StepResult.transition(WalkDogStage.END);
         };
     }

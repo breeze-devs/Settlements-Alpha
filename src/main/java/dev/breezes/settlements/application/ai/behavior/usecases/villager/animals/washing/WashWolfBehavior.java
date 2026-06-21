@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -14,6 +15,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -165,6 +167,11 @@ public class WashWolfBehavior extends VillagerStateMachineBehavior {
         wolfLocation.displayParticles(ParticleTypes.CLOUD, 10, 0.4D, 0.5D, 0.4D, 0.02D);
         wolfLocation.playSound(SoundEvents.FIRE_EXTINGUISH, 0.45F, 1.4F, SoundSource.NEUTRAL);
         this.targetWolf.setDirty(false);
+
+        BehaviorOutcome washOutcome = BehaviorOutcome.forDeed(WorldEventType.WOLF_WASHED, null);
+        washOutcome.markSucceeded();
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, washOutcome);
+
         return StepResult.complete();
     }
 

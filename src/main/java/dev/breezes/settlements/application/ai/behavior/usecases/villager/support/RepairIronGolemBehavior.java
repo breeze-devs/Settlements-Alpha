@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -21,6 +22,7 @@ import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsConditi
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.RepairIronGolemAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -117,6 +119,12 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
                     this.targetToRepair.heal(HEAL_AMOUNT);
                     this.shouldRewardExperience = true;
+
+                    if (ctx.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class).isEmpty()) {
+                        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.GOLEM_REPAIRED, null);
+                        outcome.markSucceeded();
+                        ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+                    }
 
                     Location targetLocation = Location.fromEntity(this.targetToRepair, false);
                     SoundRegistry.REPAIR_IRON_GOLEM.playGlobally(targetLocation, SoundSource.NEUTRAL);

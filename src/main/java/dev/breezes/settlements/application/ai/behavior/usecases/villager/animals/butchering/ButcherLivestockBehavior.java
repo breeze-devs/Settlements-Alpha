@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -14,20 +15,25 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
-import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
+import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.ChopAnimations;
 import dev.breezes.settlements.domain.animation.PickUpAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -35,6 +41,7 @@ import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,13 +62,14 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
     public static final String RESERVED_FOR_VILLAGER_KEY = "settlements_reserved_for_villager";
 
     private final ButcherLivestockConfig config;
-    private final NearbyButcherableLivestockExistsCondition<BaseVillager> nearbyButcherableLivestockExistsCondition;
+    private final Map<EntityType<?>, Integer> minimumKeepByType;
+    private final boolean requireVillageOwnedTag;
     private int butcherCountRemaining;
 
     @Nullable
     private EntityType<?> selectedAnimalType;
     @Nullable
-    private Animal target;
+    private LivingEntity target;
     private boolean shouldRewardExperience;
 
     public ButcherLivestockBehavior(@Nonnull ButcherLivestockConfig config,
@@ -71,15 +79,17 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                 config.experienceReward());
 
         this.config = config;
-        Map<EntityType<?>, Integer> minimumKeepByType = parseConfiguredMinimumKeep(config.minimumKeepCount());
+        this.minimumKeepByType = parseConfiguredMinimumKeep(config.minimumKeepCount());
+        this.requireVillageOwnedTag = config.requireVillageOwnedTag();
 
-        this.nearbyButcherableLivestockExistsCondition = NearbyButcherableLivestockExistsCondition.builder()
-                .rangeHorizontal(config.scanRangeHorizontal())
-                .rangeVertical(config.scanRangeVertical())
-                .minimumKeepByType(minimumKeepByType)
-                .requireVillageOwnedTag(config.requireVillageOwnedTag())
-                .build();
-        this.preconditions.add(this.nearbyButcherableLivestockExistsCondition);
+        // Loose precondition: at least one entity of a configured type exists and is an adult.
+        // The strict minimum-keep population check happens inside onBehaviorStart.
+        this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, LivingEntity>builder()
+                .entityType(LivingEntity.class)
+                .filter((villager, entity) -> this.minimumKeepByType.containsKey(entity.getType())
+                        && isAdultOrNonAgeable(entity)
+                        && (!this.requireVillageOwnedTag || entity.getTags().contains(EntityTag.VILLAGE_OWNED_ANIMAL.getTag())))
+                .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_AXE_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.butcherCountRemaining = 0;
@@ -121,6 +131,10 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                     this.butcherCountRemaining--;
                     this.shouldRewardExperience = true;
 
+                    // Record each successfully killed entity toward the deed total
+                    context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                            .ifPresent(outcome -> outcome.recordYield(1));
+
                     return StepResult.noOp();
                 })
                 .onEnd(context -> {
@@ -157,8 +171,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    Optional<Animal> nextTarget = this.nearbyButcherableLivestockExistsCondition
-                            .findTargetForType(villager, this.selectedAnimalType);
+                    Optional<LivingEntity> nextTarget = this.findNextTargetForType(villager, this.selectedAnimalType);
                     if (nextTarget.isEmpty()) {
                         return StepResult.complete();
                     }
@@ -179,16 +192,19 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         this.butcherCountRemaining = limit;
         this.shouldRewardExperience = false;
 
-        Optional<EntityType<?>> selectedType = this.nearbyButcherableLivestockExistsCondition.getSelectedType();
-        Optional<Animal> selectedTarget = this.nearbyButcherableLivestockExistsCondition.getTarget();
-        if (selectedType.isEmpty() || selectedTarget.isEmpty()) {
+        // findButcherableTarget also sets this.selectedAnimalType as a side effect
+        Optional<LivingEntity> selectedTarget = this.findButcherableTarget(entity);
+        if (selectedTarget.isEmpty()) {
             this.requestStop("No butcherable livestock found");
             return;
         }
 
-        this.selectedAnimalType = selectedType.get();
         this.target = selectedTarget.get();
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME,
+                BehaviorOutcome.forDeed(WorldEventType.LIVESTOCK_BUTCHERED, resolveSpeciesNoun(this.selectedAnimalType)));
+        log.behaviorStatus("Villager is '{}' level, maximum butcher count is {}, targeting {}",
+                expertise.toString(), limit, this.selectedAnimalType);
     }
 
     @Override
@@ -215,7 +231,70 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         this.shouldRewardExperience = false;
     }
 
-    private void performButcher(@Nonnull Animal target,
+    /**
+     * Scans perceived entities for the first type whose adult population exceeds the configured minimum keep.
+     * Sets {@link #selectedAnimalType} as a side effect when a valid target is found.
+     */
+    private Optional<LivingEntity> findButcherableTarget(@Nonnull BaseVillager villager) {
+        List<LivingEntity> candidates = this.getPerceivedEntities(villager)
+                .ofType(LivingEntity.class, entity -> this.isButcherCandidate(entity))
+                .toList();
+
+        Map<EntityType<?>, Integer> adultCountByType = new HashMap<>();
+        Map<EntityType<?>, LivingEntity> firstByType = new HashMap<>();
+        for (LivingEntity entity : candidates) {
+            EntityType<?> type = entity.getType();
+            adultCountByType.merge(type, 1, Integer::sum);
+            firstByType.putIfAbsent(type, entity);
+        }
+
+        for (Map.Entry<EntityType<?>, Integer> entry : adultCountByType.entrySet()) {
+            EntityType<?> type = entry.getKey();
+            int count = entry.getValue();
+            int minKeep = this.minimumKeepByType.getOrDefault(type, Integer.MAX_VALUE);
+            if (count > minKeep) {
+                this.selectedAnimalType = type;
+                return Optional.of(firstByType.get(type));
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Finds the next butcherable entity of the given type, used for chaining kills within one session.
+     */
+    private Optional<LivingEntity> findNextTargetForType(@Nonnull BaseVillager villager, @Nonnull EntityType<?> desiredType) {
+        List<LivingEntity> candidates = this.getPerceivedEntities(villager)
+                .ofType(LivingEntity.class, entity -> entity.getType() == desiredType && this.isButcherCandidate(entity))
+                .toList();
+
+        int minKeep = this.minimumKeepByType.getOrDefault(desiredType, Integer.MAX_VALUE);
+        if (candidates.size() <= minKeep) {
+            return Optional.empty();
+        }
+
+        return candidates.stream()
+                .min(Comparator.comparingDouble(villager::distanceToSqr));
+    }
+
+    private boolean isButcherCandidate(@Nonnull LivingEntity entity) {
+        if (!entity.isAlive()) {
+            return false;
+        }
+        if (!this.minimumKeepByType.containsKey(entity.getType())) {
+            return false;
+        }
+        if (!isAdultOrNonAgeable(entity)) {
+            return false;
+        }
+        if (this.requireVillageOwnedTag && !entity.getTags().contains(EntityTag.VILLAGE_OWNED_ANIMAL.getTag())) {
+            return false;
+        }
+        return true;
+    }
+
+    private void performButcher(@Nonnull LivingEntity target,
                                 @Nonnull BaseVillager villager) {
         target.getPersistentData().putUUID(RESERVED_FOR_VILLAGER_KEY, villager.getUUID());
 
@@ -233,6 +312,41 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                 && villager.getUUID().equals(itemEntity.getPersistentData().getUUID(RESERVED_FOR_VILLAGER_KEY));
 
         return villager.level().getEntitiesOfClass(ItemEntity.class, area, isReservedForVillager);
+    }
+
+    private PerceivedEntities getPerceivedEntities(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty());
+    }
+
+    /**
+     * Entities extending AgeableMob are only butcherable as adults; all others (e.g. modded mobs
+     * that do not model an age lifecycle) are eligible unconditionally.
+     */
+    private static boolean isAdultOrNonAgeable(@Nonnull LivingEntity entity) {
+        if (entity instanceof AgeableMob mob) {
+            return !mob.isBaby();
+        }
+        return true;
+    }
+
+    private static String resolveSpeciesNoun(@Nullable EntityType<?> type) {
+        if (type == null) {
+            return "animals";
+        }
+        if (type == EntityType.COW) {
+            return "cows";
+        } else if (type == EntityType.PIG) {
+            return "pigs";
+        } else if (type == EntityType.SHEEP) {
+            return "sheep";
+        } else if (type == EntityType.CHICKEN) {
+            return "chickens";
+        } else if (type == EntityType.RABBIT) {
+            return "rabbits";
+        }
+        return type.getDescriptionId();
     }
 
     private static Map<EntityType<?>, Integer> parseConfiguredMinimumKeep(@Nonnull Map<String, Integer> rawMap) {

@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -19,6 +20,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.enchanting.SpecializationProfile;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.genetics.GeneType;
@@ -194,6 +196,11 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
 
         log.behaviorStatus("Enchanted item from {} to {}", this.targetRepresentative, enchantedItem);
         inventory.add(enchantedItem);
+
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEM_ENCHANTED, null);
+        outcome.markSucceeded();
+        outcome.recordDeedDetail(enchantedItem.getItem().toString());
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
 
         world.playSound(null, this.enchantingTablePos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
         this.rewardExperience(villager);

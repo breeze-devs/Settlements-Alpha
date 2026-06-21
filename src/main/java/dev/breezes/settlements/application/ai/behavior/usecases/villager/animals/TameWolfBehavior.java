@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
@@ -19,6 +20,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -205,6 +207,10 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
                         this.rememberOwnedWolf(ctx.getInitiator().getMinecraftEntity(), settlementsWolf);
                         this.shouldRewardExperience = true;
+
+                        BehaviorOutcome tameOutcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_TAMED, null);
+                        tameOutcome.recordDeedDetail("a dog");
+                        ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, tameOutcome);
 
                         // Stop the behavior after success
                         return StepResult.complete();

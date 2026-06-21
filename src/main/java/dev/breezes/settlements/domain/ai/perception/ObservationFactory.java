@@ -4,7 +4,6 @@ import dev.breezes.settlements.domain.ai.observation.Observation;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -40,8 +39,8 @@ public final class ObservationFactory {
      * @param currentTick the game tick at the moment of observation (usually the villager's step tick)
      */
     public static Observation fromEvent(@Nonnull WorldEvent event, long currentTick) {
-        ObservationType type = mapToObservationType(event.getType());
-        float baseImportance = baseImportanceFor(event.getType());
+        ObservationType type = event.getType().getObservationType();
+        float baseImportance = event.getType().getBaseImportance();
         String content = buildContent(event);
         UUID observationId = observationIdFor(event);
 
@@ -106,45 +105,6 @@ public final class ObservationFactory {
         long gameTick = event.getGameTick();
 
         return new UUID(actorMost ^ Long.rotateLeft(gameTick, 32), actorLeast ^ gameTick ^ sequence);
-    }
-
-    private static ObservationType mapToObservationType(@Nonnull WorldEventType eventType) {
-        return switch (eventType) {
-            case BEHAVIOR_STARTED, BEHAVIOR_COMPLETED -> ObservationType.TASK_COMPLETION;
-            case BEHAVIOR_FAILED -> ObservationType.TASK_FAILURE;
-            case SHEEP_SHEARED, SHEEP_DYED, CROP_HARVESTED -> ObservationType.RESOURCE;
-            case TRADE_COMPLETED, COURTSHIP_COMPLETED, COURTSHIP_REJECTED,
-                 TRADE_INVITE_SENT, COURTSHIP_INVITE_SENT -> ObservationType.SOCIAL;
-            // Confirmed/refuted tips are resource-relevant observations — the investigator
-            // reports on a world-state condition, not a social act.
-            case TIP_CONFIRMED, TIP_REFUTED -> ObservationType.RESOURCE;
-            // Defensive mapping for system events
-            case DAY_PLAN_INVALIDATED, PLAN_EXHAUSTED -> ObservationType.ENVIRONMENT;
-        };
-    }
-
-    /**
-     * Base importance scores
-     * <p>
-     * Social and resource events start above or at the promotion threshold so
-     * most observing villagers will retain them. Routine lifecycle signals start
-     * below threshold so only genuinely curious villagers notice them.
-     */
-    private static float baseImportanceFor(WorldEventType eventType) {
-        return switch (eventType) {
-            // Social acts are meaningful regardless of profession
-            case TRADE_COMPLETED, COURTSHIP_COMPLETED, COURTSHIP_REJECTED -> 2.5F;
-            case TRADE_INVITE_SENT, COURTSHIP_INVITE_SENT -> 2.0F;
-            // Resource events are relevant mostly to profession-matched villagers
-            case SHEEP_SHEARED, SHEEP_DYED, CROP_HARVESTED -> 1.8F;
-            // Investigation results are useful to nearby villagers with similar resource goals
-            case TIP_CONFIRMED -> 2.0F;
-            case TIP_REFUTED -> 1.5F;
-            // Lifecycle events are low-signal background noise
-            case BEHAVIOR_STARTED, BEHAVIOR_COMPLETED, BEHAVIOR_FAILED -> 0.8F;
-            // Defensively low for any system signal that slips through
-            case DAY_PLAN_INVALIDATED, PLAN_EXHAUSTED -> 0.1F;
-        };
     }
 
     private static String buildContent(WorldEvent event) {

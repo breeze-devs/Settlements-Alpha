@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifac
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -20,6 +21,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.BlockFlag;
@@ -222,6 +224,10 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     // The ingot is always banked regardless of misfire — the gag is purely cosmetic
                     villager.getSettlementsInventory().add(this.currentRecipe.createOutputStack());
 
+                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ORE_SMELTED, null);
+                    outcome.markSucceeded();
+                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+
                     // Resolve furnace top location here before entering the misfire branch so
                     // neither branch has to handle a potential null dereference separately
                     Location furnaceTop = this.blastFurnace.getLocation(true).add(0, 0.5, 0, false);
@@ -270,6 +276,8 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
                     }
 
                     ctx.getInitiator().getMinecraftEntity().clearHeldItem();
+                    ctx.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class)
+                            .ifPresent(outcome -> outcome.recordDeedDetail("ore but the furnace had a small explosion"));
                     return StepResult.noOp();
                 })
                 .addPeriodicStep(DAZE_STAR_EMIT_INTERVAL, ctx -> {

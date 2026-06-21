@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -20,6 +21,7 @@ import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsConditi
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
@@ -283,6 +285,18 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
 
         SoundRegistry.THROW_EGG.playGlobally(handLocation, SoundSource.NEUTRAL);
         this.spawnAngryVillagerParticleOnVictim(world);
+
+        if (context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class).isEmpty()) {
+            BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.TARGET_EGGED, null);
+            // Use the victim's UUID only when it is a villager — the name resolver maps villager UUIDs
+            if (this.victim instanceof BaseVillager || this.victim instanceof Villager) {
+                outcome.recordTargetedDeed(this.victim.getUUID());
+            } else {
+                outcome.markSucceeded();
+            }
+            context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+        }
+
         return StepResult.noOp();
     }
 

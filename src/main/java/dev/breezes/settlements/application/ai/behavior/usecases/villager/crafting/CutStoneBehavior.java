@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifac
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -20,6 +21,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -239,6 +241,11 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
                 })
                 .onEnd(ctx -> {
                     this.rewardExperience(ctx.getInitiator().getMinecraftEntity());
+
+                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.STONE_CUT, null);
+                    outcome.markSucceeded();
+                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+
                     return StepResult.complete();
                 })
                 .build();

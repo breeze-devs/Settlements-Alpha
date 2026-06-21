@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -19,6 +20,7 @@ import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsConditi
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -191,6 +193,10 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         inventory.add(milkBucketStack);
         this.milkCountRemaining--;
         this.shouldRewardExperience = true;
+
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COW_MILKED, "cows");
+        outcome.recordYield(1);
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
 
         return StepResult.noOp();
     }

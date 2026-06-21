@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -16,6 +17,7 @@ import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
@@ -123,6 +125,7 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
                     }
 
                     int totalExtracted = 0;
+                    String extractedItemDescription = "an item";
 
                     for (int slot = 0; slot < handler.getSlots(); slot++) {
                         ItemStack stackInSlot = handler.getStackInSlot(slot);
@@ -140,6 +143,7 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
                         totalExtracted += extracted.getCount();
                         villager.getSettlementsInventory().add(extracted);
                         villager.setHeldItem(extracted.copyWithCount(1));
+                        extractedItemDescription = extracted.getItem().toString();
 
                         if (totalExtracted >= targetTakeCount) {
                             break;
@@ -149,6 +153,11 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
                     if (totalExtracted <= 0) {
                         return StepResult.fail("Chest contents changed during interaction; no matching items found");
                     }
+
+                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEMS_TAKEN, "items");
+                    outcome.recordYield(totalExtracted);
+                    outcome.recordDeedDetail(extractedItemDescription);
+                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
 
                     return StepResult.noOp();
                 })

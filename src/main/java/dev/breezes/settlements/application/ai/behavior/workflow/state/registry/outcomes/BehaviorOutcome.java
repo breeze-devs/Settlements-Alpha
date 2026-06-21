@@ -102,6 +102,31 @@ public final class BehaviorOutcome implements BehaviorState {
                 .build();
     }
 
+    /**
+     * Records a deed directed at a specific entity (e.g. egged a villager), marking success.
+     * <p>
+     * Only call this when the victim is a known villager — the target UUID feeds
+     * {@link WorldEvent#getTargetId()}, which {@link dev.breezes.settlements.application.ai.naming.VillagerNameResolver}
+     * will resolve to a name. For non-villager victims, leave the target unset so the phrasebook
+     * renders "egged someone" instead of fabricating a name for a player or animal.
+     */
+    public void recordTargetedDeed(@Nonnull UUID targetId) {
+        this.partnerId = targetId;
+        this.markSucceeded();
+    }
+
+    /**
+     * Records a deed whose phrasing is a free-form noun rather than a counted yield
+     * (e.g. "a cat", "cows", a dye color), marking success.
+     * <p>
+     * Sets the explicit {@code detail} override that {@link #resolveDetail()} returns verbatim,
+     * bypassing the "&lt;magnitude&gt; &lt;noun&gt;" count formatting that {@link #recordYield(int)} uses.
+     */
+    public void recordDeedDetail(@Nonnull String detail) {
+        this.detail = detail;
+        this.markSucceeded();
+    }
+
     public void recordYield(int units) {
         if (units <= 0) {
             return;

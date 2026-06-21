@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.ai.behavior.teardown.DropLeashObligat
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -19,6 +20,7 @@ import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.tags.EntityTag;
@@ -29,6 +31,7 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import lombok.CustomLog;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -278,11 +281,35 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
         log.behaviorStatus("Fed {} animal", label);
         this.shouldRewardExperience = true;
+
+        // Record the species noun each time an animal is successfully fed; the second feed
+        // (which triggers breeding) overwrites with the same value — idempotent and correct.
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_BRED, null);
+        outcome.recordDeedDetail(resolveSpeciesNoun(this.species));
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
+
         return StepResult.noOp();
     }
 
     private Optional<ItemStack> findFirstMatchingFood(@Nonnull BaseVillager villager) {
         return villager.getSettlementsInventory().findFirst(stack -> stack.is(this.species.getFoodTag()));
+    }
+
+    /**
+     * Maps the species entity type to a human-readable plural noun for the phrasebook clause
+     * "bred <species>", falling back to the registry path as a safe default.
+     */
+    private static String resolveSpeciesNoun(@Nonnull BreedSpecies species) {
+        if (species.getType() == EntityType.COW) {
+            return "cows";
+        } else if (species.getType() == EntityType.PIG) {
+            return "pigs";
+        } else if (species.getType() == EntityType.SHEEP) {
+            return "sheep";
+        } else if (species.getType() == EntityType.CHICKEN) {
+            return "chickens";
+        }
+        return species.getType().getDescriptionId();
     }
 
     private void claimNearbyBabyAnimals(@Nonnull BaseVillager villager) {

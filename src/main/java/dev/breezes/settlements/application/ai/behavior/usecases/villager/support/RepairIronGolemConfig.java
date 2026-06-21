@@ -64,7 +64,7 @@ public record RepairIronGolemConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "repair_hp_percentage",
                 description = "Health percentage threshold to consider the iron golem as damaged",
-                defaultValue = 0.75,
+                defaultValue = 0.90,
                 min = 0.0,
                 max = 1.0)
         double repairHpPercentage,

@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -17,6 +18,7 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -166,6 +168,11 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
         wolfLoc.playSound(SoundEvents.GENERIC_EAT, 0.8f, 1.0f, SoundSource.NEUTRAL);
 
         this.consumeMeat(context.getInitiator());
+
+        BehaviorOutcome feedOutcome = BehaviorOutcome.forDeed(WorldEventType.WOLF_FED, null);
+        feedOutcome.markSucceeded();
+        context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, feedOutcome);
+
         return StepResult.noOp();
     }
 

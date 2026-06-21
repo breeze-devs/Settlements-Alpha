@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -18,6 +19,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -158,6 +160,12 @@ public class ChaseChickensBehavior extends VillagerStateMachineBehavior {
         if (this.normalStrikesLanded == NORMAL_STRIKES) {
             this.targetChicken.spawnAtLocation(Items.EGG);
             targetLocation.playSound(SoundEvents.CHICKEN_EGG, 1.0F, 1.0F, SoundSource.NEUTRAL);
+        }
+
+        if (context.getState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.class).isEmpty()) {
+            BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.CHICKENS_CHASED, null);
+            outcome.markSucceeded();
+            context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
         }
 
         return StepResult.noOp();

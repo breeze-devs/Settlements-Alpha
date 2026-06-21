@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
@@ -18,6 +19,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -165,6 +167,10 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                         settlementsCat.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
                         settlementsCat.setCollarColor(DyeColor.LIME);
                         this.shouldRewardExperience = true;
+
+                        BehaviorOutcome tameOutcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_TAMED, null);
+                        tameOutcome.recordDeedDetail("a cat");
+                        ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, tameOutcome);
 
                         log.behaviorStatus("Successfully tamed cat {}", settlementsCat.getUUID());
                         return StepResult.complete();

@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMach
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -15,6 +16,7 @@ import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyFriendlyNeedsPotionCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.world.location.Vector;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
@@ -25,6 +27,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -111,6 +114,15 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
                     }
                     villager.clearHeldItem();
                     this.rewardExperience(villager);
+
+                    BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.POTION_THROWN, null);
+                    // Only record target UUID when the recipient is a villager; players get "someone" rendering
+                    if (this.targetToThrow instanceof BaseVillager || this.targetToThrow instanceof Villager) {
+                        outcome.recordTargetedDeed(this.targetToThrow.getUUID());
+                    } else {
+                        outcome.markSucceeded();
+                    }
+                    ctx.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
 
                     return StepResult.complete();
                 })

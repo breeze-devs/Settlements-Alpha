@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedSte
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.look.LookState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
@@ -19,6 +20,7 @@ import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyWaterExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -441,6 +443,11 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     Location.fromEntity(context.getInitiator().getMinecraftEntity(), false),
                     SoundSource.NEUTRAL);
             log.behaviorStatus("Collected fish: {}", this.caughtItem);
+
+            BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.FISH_CAUGHT, null);
+            outcome.markSucceeded();
+            outcome.recordDeedDetail(this.caughtItem.getItem().toString());
+            context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, outcome);
         }
         this.caughtItem = null;
         this.fishedEntity = null;
