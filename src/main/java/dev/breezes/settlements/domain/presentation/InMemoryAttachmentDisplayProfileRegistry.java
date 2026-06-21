@@ -50,7 +50,7 @@ public final class InMemoryAttachmentDisplayProfileRegistry implements Attachmen
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
                 .build());
         profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.HAMMER), AttachmentDisplayProfile.builder()
-                .translation(new Vec3(0.0, -0.15, -0.1))
+                .translation(new Vec3(0.0, -0.05, -0.15))
                 .rotation(new Vector3f(new Vector3f((float) Math.toRadians(-50), 0.0F, 0.0F)))
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
                 .build());

@@ -23,6 +23,10 @@ public final class SoundEventRegistry {
             "cucco_fall",
             () -> SoundEvent.createVariableRangeEvent(ResourceLocationUtil.mod("cucco_fall")));
 
+    public static final Supplier<SoundEvent> WOLOLO = REGISTRY.register(
+            "wololo",
+            () -> SoundEvent.createVariableRangeEvent(ResourceLocationUtil.mod("wololo")));
+
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
     }

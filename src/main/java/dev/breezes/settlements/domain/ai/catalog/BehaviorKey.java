@@ -59,6 +59,7 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey BREED_PIGS = new BehaviorKey("breed_pigs");
     public static final BehaviorKey BREED_SHEEP = new BehaviorKey("breed_sheep");
     public static final BehaviorKey SHEAR_SHEEP = new BehaviorKey("shear_sheep");
+    public static final BehaviorKey DYE_SHEEP = new BehaviorKey("dye_sheep");
     public static final BehaviorKey TAME_CAT = new BehaviorKey("tame_cat");
     public static final BehaviorKey TAME_WOLF = new BehaviorKey("tame_wolf");
     public static final BehaviorKey WASH_WOLF = new BehaviorKey("wash_wolf");

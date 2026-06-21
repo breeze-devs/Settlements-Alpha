@@ -52,6 +52,18 @@ class BehaviorOutcomeTest {
     }
 
     @Test
+    void forDeedWithQualifier_appendsQualifierAfterCountedNoun() {
+        // Arrange
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.SHEEP_DYED, "sheep", "blue");
+
+        // Act
+        outcome.recordYield(3);
+
+        // Assert
+        assertEquals("3 sheep blue", outcome.resolveDetail());
+    }
+
+    @Test
     void recordSocialOutcome_capturesPartnerRegistryOutcomeAndDetail() {
         // Arrange
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.TRADE_COMPLETED, null);

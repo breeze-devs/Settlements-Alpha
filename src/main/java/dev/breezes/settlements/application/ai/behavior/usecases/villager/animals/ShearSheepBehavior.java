@@ -65,6 +65,8 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     private static final String BUBBLE_OWNER_KEY = "behavior:shear_sheep";
     private static final ClockTicks BUBBLE_TTL = ClockTicks.seconds(30);
     private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
+    // Fallback when a villager's expertise level is missing from the configured limit map.
+    private static final int DEFAULT_SHEAR_LIMIT = 1;
 
     private static final Map<DyeColor, ItemLike> WOOL_COLOR_MAP = Map.ofEntries(
             Map.entry(DyeColor.WHITE, Items.WHITE_WOOL),
@@ -246,7 +248,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
         context.setState(BehaviorStateType.BEHAVIOR_OUTCOME, BehaviorOutcome.forDeed(WorldEventType.SHEEP_SHEARED, "wool"));
         Expertise expertise = context.getInitiator().getMinecraftEntity().getExpertise();
-        int limit = config.expertiseShearLimit().get(expertise.getConfigName());
+        int limit = config.expertiseShearLimit().getOrDefault(expertise.getConfigName(), DEFAULT_SHEAR_LIMIT);
         this.shearCount.set(limit);
         this.shouldRewardExperience = false;
         log.behaviorStatus("Villager is '{}' level, maximum shear count is {}", expertise.toString(), limit);

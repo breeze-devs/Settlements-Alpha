@@ -139,6 +139,11 @@ public final class SeedPhrasebook {
                 String object = detail != null ? detail : "a sheep";
                 yield actorName + " sheared " + object;
             }
+            case SHEEP_DYED -> {
+                // detail might be e.g. "3 sheep"
+                String object = detail != null ? detail : "a sheep";
+                yield actorName + " dyed " + object;
+            }
             case CROP_HARVESTED -> {
                 // detail might be e.g. "3 melons"
                 String object = detail != null ? detail : "crops";
@@ -218,6 +223,7 @@ public final class SeedPhrasebook {
             }
             // Resource events have no meaningful failure phrasing — render as success.
             case SHEEP_SHEARED -> actorName + " sheared a sheep";
+            case SHEEP_DYED -> actorName + " dyed a sheep";
             case CROP_HARVESTED -> actorName + " harvested crops";
             // For any other event type, produce a generic attempt clause.
             default -> actorName + " tried to do something but " + but;

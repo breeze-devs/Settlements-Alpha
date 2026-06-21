@@ -46,7 +46,7 @@ public record VillageAnimalSpawnerConfig(
                 type = ConfigurationType.FEATURE,
                 identifier = "farm_animal_spawn_chance",
                 description = "Chance per spawn cycle to also spawn one configured farm animal near the village",
-                defaultValue = 0.12,
+                defaultValue = 0.06,
                 min = 0.0,
                 max = 1.0)
         double farmAnimalSpawnChance,
@@ -57,11 +57,11 @@ public record VillageAnimalSpawnerConfig(
                 description = "Farm animals eligible to spawn in villages, mapped to their per-species cap within 48 blocks",
                 deserializer = "StringToInteger",
                 defaultValue = {
-                        @MapEntry(key = "minecraft:sheep", value = "3"),
+                        @MapEntry(key = "minecraft:sheep", value = "2"),
                         @MapEntry(key = "minecraft:cow", value = "2"),
                         @MapEntry(key = "minecraft:chicken", value = "2"),
                         @MapEntry(key = "minecraft:pig", value = "2"),
-                        @MapEntry(key = "minecraft:rabbit", value = "4")
+                        @MapEntry(key = "minecraft:rabbit", value = "2")
                 })
         Map<String, Integer> farmAnimalCaps
 ) {

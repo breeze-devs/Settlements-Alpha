@@ -3,6 +3,7 @@ package dev.breezes.settlements.di.modules;
 import dagger.Module;
 import dagger.Provides;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.DyeSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
@@ -77,6 +78,12 @@ public final class ConfigModule {
     @Singleton
     static ShearSheepConfig shearSheepConfig() {
         return ConfigFactory.create(ShearSheepConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static DyeSheepConfig dyeSheepConfig() {
+        return ConfigFactory.create(DyeSheepConfig.class);
     }
 
     @Provides

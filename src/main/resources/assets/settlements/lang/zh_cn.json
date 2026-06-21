@@ -33,6 +33,7 @@
   "ui.settlements.behavior.behavior.harvest_sugarcane": "收甘蔗",
   "ui.settlements.behavior.behavior.harvest_ore": "采矿石",
   "ui.settlements.behavior.behavior.shear_sheep": "剪羊毛",
+  "ui.settlements.behavior.behavior.dye_sheep": "染羊毛",
   "ui.settlements.behavior.behavior.milk_cow": "挤牛奶",
   "ui.settlements.behavior.behavior.repair_iron_golem": "修铁傀儡",
   "ui.settlements.behavior.behavior.throw_potions": "扔药水",

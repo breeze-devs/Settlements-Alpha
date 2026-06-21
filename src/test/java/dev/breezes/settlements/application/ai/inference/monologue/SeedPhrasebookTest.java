@@ -82,6 +82,15 @@ class SeedPhrasebookTest {
     }
 
     @Test
+    void phraseClause_sheepDyed_noTargetNoDetail() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.SHEEP_DYED, ACTOR, null, null);
+
+        // Assert
+        assertEquals(ACTOR + " dyed a sheep", clause);
+    }
+
+    @Test
     void phraseClause_cropHarvested_noTargetNoDetail() {
         // Arrange + Act
         String clause = SeedPhrasebook.phraseClause(WorldEventType.CROP_HARVESTED, ACTOR, null, null);
@@ -146,6 +155,15 @@ class SeedPhrasebookTest {
 
         // Assert
         assertEquals(ACTOR + " sheared 3 wool", clause);
+    }
+
+    @Test
+    void phraseClause_sheepDyed_withDetail_overridesGenericObject() {
+        // Arrange + Act
+        String clause = SeedPhrasebook.phraseClause(WorldEventType.SHEEP_DYED, ACTOR, null, "3 sheep");
+
+        // Assert
+        assertEquals(ACTOR + " dyed 3 sheep", clause);
     }
 
     // -------------------------------------------------------------------------
@@ -319,6 +337,17 @@ class SeedPhrasebookTest {
 
         // Assert
         assertEquals(ACTOR + " sheared a sheep", clause);
+    }
+
+    @Test
+    void phraseClause_sheepDyed_failure_rendersSuccessForm() {
+        // Arrange
+        String clause = SeedPhrasebook.phraseClause(
+                WorldEventType.SHEEP_DYED, ACTOR, null, null,
+                EventOutcome.FAILURE, "some reason");
+
+        // Assert
+        assertEquals(ACTOR + " dyed a sheep", clause);
     }
 
     // -------------------------------------------------------------------------

@@ -26,45 +26,39 @@ public enum WorldEventType {
      */
     BEHAVIOR_FAILED(WorldEventNamespace.WORLD),
 
-    /**
-     * A notable resource mutation: sheep was sheared.
-     */
     SHEEP_SHEARED(WorldEventNamespace.WORLD),
-
-    /**
-     * A notable resource mutation: crop was harvested.
-     */
+    SHEEP_DYED(WorldEventNamespace.WORLD),
     CROP_HARVESTED(WorldEventNamespace.WORLD),
 
     /**
-     * A social act: a trade negotiation was completed (deal or walk-away).
+     * A trade negotiation was completed (deal or walk-away).
      * Carries the session registry id in the {@link WorldEvent#getRegistryId()} field.
      * First-accept-wins resolution goes through {@code TradeSessionRegistry}, not the bus.
      */
     TRADE_COMPLETED(WorldEventNamespace.WORLD),
 
     /**
-     * A social act: a courtship event was completed.
+     * A courtship event was completed.
      * Carries the session registry id in the {@link WorldEvent#getRegistryId()} field.
      * First-accept-wins resolution goes through {@code CourtshipSessionRegistry}, not the bus.
      */
     COURTSHIP_COMPLETED(WorldEventNamespace.WORLD),
 
     /**
-     * A social act: a courtship advance was turned down. The actor is the receiver who declined;
+     * A courtship advance was turned down. The actor is the receiver who declined;
      * the target is the spurned presenter. Only the receiver knows why it was rejected, so this is
      * emitted from the accept-side behavior. Carries the session registry id.
      */
     COURTSHIP_REJECTED(WorldEventNamespace.WORLD),
 
     /**
-     * A social act: this villager sent a trade invite to a target.
+     * This villager sent a trade invite to a target.
      * Carries the session registry id so the receiver can correlate with the registry.
      */
     TRADE_INVITE_SENT(WorldEventNamespace.WORLD),
 
     /**
-     * A social act: this villager sent a courtship invite to a target.
+     * This villager sent a courtship invite to a target.
      * Carries the session registry id so the receiver can correlate with the registry.
      */
     COURTSHIP_INVITE_SENT(WorldEventNamespace.WORLD),
@@ -83,13 +77,11 @@ public enum WorldEventType {
 
     /**
      * The villager's current day plan was invalidated and will be regenerated.
-     * Infrastructure signal — never passed to the perception gate.
      */
     DAY_PLAN_INVALIDATED(WorldEventNamespace.SYSTEM),
 
     /**
      * The villager's day plan was fully exhausted.
-     * Infrastructure signal — never passed to the perception gate.
      */
     PLAN_EXHAUSTED(WorldEventNamespace.SYSTEM),
     ;
@@ -108,7 +100,7 @@ public enum WorldEventType {
      */
     public boolean isSelfRememberableTerminalEvent() {
         return switch (this) {
-            case SHEEP_SHEARED, CROP_HARVESTED,
+            case SHEEP_SHEARED, SHEEP_DYED, CROP_HARVESTED,
                  TRADE_COMPLETED, COURTSHIP_COMPLETED, COURTSHIP_REJECTED,
                  TIP_CONFIRMED, TIP_REFUTED -> true;
             case BEHAVIOR_STARTED, BEHAVIOR_COMPLETED, BEHAVIOR_FAILED,

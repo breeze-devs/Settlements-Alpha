@@ -57,6 +57,7 @@ public final class MonologueSeedProjector {
             WorldEventType.COURTSHIP_REJECTED,
             WorldEventType.CROP_HARVESTED,
             WorldEventType.SHEEP_SHEARED,
+            WorldEventType.SHEEP_DYED,
             WorldEventType.TIP_CONFIRMED,
             WorldEventType.TIP_REFUTED
     );

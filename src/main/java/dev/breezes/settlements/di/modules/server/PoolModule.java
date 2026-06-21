@@ -164,6 +164,7 @@ public final class PoolModule {
                 .profession(VillagerProfessionKey.SHEPHERD)
                 .entry(PoolEntry.of(BehaviorKey.BREED_SHEEP))
                 .entry(PoolEntry.of(BehaviorKey.SHEAR_SHEEP))
+                .entry(PoolEntry.of(BehaviorKey.DYE_SHEEP))
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))
                 .entry(PoolEntry.of(BehaviorKey.WALK_DOG))
                 .entry(PoolEntry.of(BehaviorKey.WASH_WOLF))

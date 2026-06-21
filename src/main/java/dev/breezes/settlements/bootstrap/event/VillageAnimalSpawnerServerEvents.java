@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -157,6 +158,7 @@ public final class VillageAnimalSpawnerServerEvents {
 
         animal.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0.0f, 0.0f);
         animal.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null);
+        animal.addTag(EntityTag.VILLAGE_OWNED_ANIMAL.getTag());
         level.addFreshEntityWithPassengers(animal);
         log.debug("Spawned farm animal {} near village at {}", animalType.toShortString(), pos);
     }

@@ -27,6 +27,8 @@ public final class BehaviorOutcome implements BehaviorState {
     private WorldEventType deedType;
     @Nullable
     private String unitNoun;
+    @Nullable
+    private String unitQualifier;
     private boolean success;
     private int magnitude;
     @Nullable
@@ -44,6 +46,7 @@ public final class BehaviorOutcome implements BehaviorState {
     @Builder(access = AccessLevel.PRIVATE)
     private BehaviorOutcome(@Nullable WorldEventType deedType,
                             @Nullable String unitNoun,
+                            @Nullable String unitQualifier,
                             boolean success,
                             int magnitude,
                             @Nullable UUID partnerId,
@@ -53,6 +56,7 @@ public final class BehaviorOutcome implements BehaviorState {
                             @Nullable String failureReason) {
         this.deedType = deedType;
         this.unitNoun = unitNoun;
+        this.unitQualifier = unitQualifier;
         this.success = success;
         this.magnitude = magnitude;
         this.partnerId = partnerId;
@@ -81,9 +85,20 @@ public final class BehaviorOutcome implements BehaviorState {
     }
 
     public static BehaviorOutcome forDeed(@Nonnull WorldEventType deedType, @Nullable String unitNoun) {
+        return forDeed(deedType, unitNoun, null);
+    }
+
+    /**
+     * Variant carrying a trailing qualifier so the rendered detail reads "&lt;magnitude&gt; &lt;unitNoun&gt; &lt;qualifier&gt;"
+     * (e.g. "3 sheep blue") for deeds whose result has a salient modifier beyond the counted noun.
+     */
+    public static BehaviorOutcome forDeed(@Nonnull WorldEventType deedType,
+                                          @Nullable String unitNoun,
+                                          @Nullable String unitQualifier) {
         return BehaviorOutcome.builder()
                 .deedType(deedType)
                 .unitNoun(unitNoun)
+                .unitQualifier(unitQualifier)
                 .build();
     }
 
@@ -134,7 +149,8 @@ public final class BehaviorOutcome implements BehaviorState {
             return this.detail;
         }
         if (this.unitNoun != null) {
-            return "%d %s".formatted(this.magnitude, this.unitNoun);
+            String counted = "%d %s".formatted(this.magnitude, this.unitNoun);
+            return this.unitQualifier != null ? counted + " " + this.unitQualifier : counted;
         }
         return null;
     }

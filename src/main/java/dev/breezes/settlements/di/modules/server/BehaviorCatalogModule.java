@@ -6,6 +6,8 @@ import dagger.multibindings.IntoSet;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedSpecies;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.DyeSheepBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.DyeSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatBehavior;
@@ -950,6 +952,31 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("shears"))
                         .build())
                 .factory(() -> new ShearSheepBehavior(config, hungerConfig, demandSignalService))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry dyeSheep(DyeSheepConfig config, HungerConfig hungerConfig,
+                                         DemandSignalService demandSignalService) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.DYE_SHEEP)
+                        .displayName("Dye Sheep")
+                        .description("Colors nearby sheep using carried dyes")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.DYE_SHEEP.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("red_dye"))
+                        .build())
+                .factory(() -> new DyeSheepBehavior(config, hungerConfig, demandSignalService))
                 .build();
     }
 

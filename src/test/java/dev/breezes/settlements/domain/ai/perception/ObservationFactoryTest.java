@@ -1,7 +1,7 @@
 package dev.breezes.settlements.domain.ai.perception;
 
-import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.inference.monologue.SeedPhrasebook;
+import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.domain.ai.observation.Observation;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,6 +66,18 @@ class ObservationFactoryTest {
     void fromEvent_mapsSheepShearedToResourceObservationType() {
         // Arrange
         WorldEvent event = worldEvent(WorldEventType.SHEEP_SHEARED);
+
+        // Act
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Assert
+        assertEquals(ObservationType.RESOURCE, observation.type());
+    }
+
+    @Test
+    void fromEvent_mapsSheepDyedToResourceObservationType() {
+        // Arrange
+        WorldEvent event = worldEvent(WorldEventType.SHEEP_DYED);
 
         // Act
         Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);

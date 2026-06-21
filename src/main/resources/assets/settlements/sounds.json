@@ -10,5 +10,11 @@
     "sounds": [
       "settlements:cucco-fall"
     ]
+  },
+  "wololo": {
+    "subtitle": "subtitles.settlements.wololo",
+    "sounds": [
+      "settlements:wololo"
+    ]
   }
 }

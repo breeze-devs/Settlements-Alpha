@@ -112,7 +112,7 @@ public final class ObservationFactory {
         return switch (eventType) {
             case BEHAVIOR_STARTED, BEHAVIOR_COMPLETED -> ObservationType.TASK_COMPLETION;
             case BEHAVIOR_FAILED -> ObservationType.TASK_FAILURE;
-            case SHEEP_SHEARED, CROP_HARVESTED -> ObservationType.RESOURCE;
+            case SHEEP_SHEARED, SHEEP_DYED, CROP_HARVESTED -> ObservationType.RESOURCE;
             case TRADE_COMPLETED, COURTSHIP_COMPLETED, COURTSHIP_REJECTED,
                  TRADE_INVITE_SENT, COURTSHIP_INVITE_SENT -> ObservationType.SOCIAL;
             // Confirmed/refuted tips are resource-relevant observations — the investigator
@@ -136,7 +136,7 @@ public final class ObservationFactory {
             case TRADE_COMPLETED, COURTSHIP_COMPLETED, COURTSHIP_REJECTED -> 2.5F;
             case TRADE_INVITE_SENT, COURTSHIP_INVITE_SENT -> 2.0F;
             // Resource events are relevant mostly to profession-matched villagers
-            case SHEEP_SHEARED, CROP_HARVESTED -> 1.8F;
+            case SHEEP_SHEARED, SHEEP_DYED, CROP_HARVESTED -> 1.8F;
             // Investigation results are useful to nearby villagers with similar resource goals
             case TIP_CONFIRMED -> 2.0F;
             case TIP_REFUTED -> 1.5F;
