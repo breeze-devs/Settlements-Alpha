@@ -1,12 +1,10 @@
 package dev.breezes.settlements.domain.animation;
 
 import dev.breezes.settlements.domain.presentation.ArmConfiguration;
-import lombok.CustomLog;
 import lombok.Getter;
 
 import javax.annotation.Nonnull;
 
-@CustomLog
 public final class VillagerAnimator {
 
     private final AnimationResolver animationResolver;
@@ -65,7 +63,6 @@ public final class VillagerAnimator {
             return;
         }
 
-        AnimationArchetype previousArchetype = this.lastSeenArchetype;
         boolean generationChanged = newGeneration != this.lastSeenGeneration;
         KeyframeAnimation resolvedAnimation = this.animationResolver.resolve(newArchetype, context);
         if (newArchetype == AnimationArchetype.IDLE) {
@@ -78,13 +75,6 @@ public final class VillagerAnimator {
         this.lastSeenArchetype = newArchetype;
         this.lastSeenGeneration = newGeneration;
         this.lastResolvedContext = context;
-
-        log.debug("VillagerAnimator: motion change {} -> {} (gen={}, context: {}), resolved '{}' [blend in: {} ticks, loop: {}]",
-                previousArchetype, newArchetype, newGeneration,
-                context.mainHandCategory(),
-                resolvedAnimation.getId(),
-                resolvedAnimation.getBlendInTicks(),
-                resolvedAnimation.getLoopMode());
     }
 
     /**
@@ -105,9 +95,6 @@ public final class VillagerAnimator {
 
         KeyframeAnimation reresolved = this.animationResolver.resolve(this.lastSeenArchetype, context);
         this.layerStack.setSustainedAction(reresolved, gameTime);
-
-        log.debug("VillagerAnimator: context update for archetype {} (main hand: {}), resolved '{}'",
-                this.lastSeenArchetype, context.mainHandCategory(), reresolved.getId());
     }
 
     /**

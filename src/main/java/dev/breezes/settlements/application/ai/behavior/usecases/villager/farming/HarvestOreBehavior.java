@@ -22,6 +22,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.W
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.bootstrap.registry.blocks.BlockRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -37,6 +38,8 @@ import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
 import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.OreRegenConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
@@ -176,6 +179,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
                 .addKeyFrame(ClockTicks.of(ChopAnimations.CHOP_IMPACT_TICKS), this::replaceOre)
                 .onEnd(ctx -> {
                     ctx.getInitiator().clearHeldItem();
+                    ctx.getInitiator().setMotion(AnimationArchetype.IDLE);
                     return StepResult.transition(Stage.SETTLE);
                 })
                 .build();
@@ -223,9 +227,14 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
     }
 
     private BlockState createReplacementState(@Nonnull BlockState oreState) {
-        return oreState.is(Tags.Blocks.ORES_IN_GROUND_STONE)
-                ? Blocks.COBBLESTONE.defaultBlockState()
-                : Blocks.COBBLED_DEEPSLATE.defaultBlockState();
+        boolean isStone = oreState.is(Tags.Blocks.ORES_IN_GROUND_STONE);
+
+        // When the feature is disabled, the block should not regenerate
+        if (!ConfigFactory.create(OreRegenConfig.class).enabled()) {
+            return isStone ? Blocks.COBBLESTONE.defaultBlockState() : Blocks.COBBLED_DEEPSLATE.defaultBlockState();
+        }
+
+        return isStone ? BlockRegistry.DORMANT_ORE.get().defaultBlockState() : BlockRegistry.DORMANT_DEEPSLATE_ORE.get().defaultBlockState();
     }
 
     @Override

@@ -21,6 +21,8 @@ public final class CreativeTabRegistry {
             .displayItems(((parameters, output) -> {
                 output.accept(ItemRegistry.BASE_VILLAGER_SPAWN_EGG.get());
                 output.accept(ItemRegistry.VILLAGER_TOTEM.get());
+                output.accept(ItemRegistry.DORMANT_ORE.get());
+                output.accept(ItemRegistry.DORMANT_DEEPSLATE_ORE.get());
             }))
             .build());
 

@@ -3,7 +3,6 @@ package dev.breezes.settlements.application.ai.perception;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueRuntimeState;
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.ai.knowledge.AdmitResult;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.observation.Observation;
@@ -17,7 +16,6 @@ import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.CustomLog;
 import net.minecraft.core.SectionPos;
 
 import javax.inject.Inject;
@@ -43,7 +41,6 @@ import java.util.Map;
  * via villager-to-villager gossip, never by direct bus admission.
  */
 @ServerScope
-@CustomLog
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class PerceptionPipeline {
 
@@ -106,11 +103,7 @@ public final class PerceptionPipeline {
                 KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(observation.id(), observation.content(),
                         observation.type(), observation.timestampTick(), observation.timestampTick(),
                         observation.relatedEntity(), metadata, score);
-                AdmitResult admitted = knowledgeStore.admit(entry);
-                if (admitted == AdmitResult.NEW_ENTRY) {
-                    log.debug("PerceptionPipeline: promoted observation '{}' (score={}) for villager {}",
-                            observation.content(), score, villager.getUUID());
-                }
+                knowledgeStore.admit(entry);
             }
         }
     }

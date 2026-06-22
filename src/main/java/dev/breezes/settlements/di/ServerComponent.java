@@ -29,8 +29,8 @@ import dev.breezes.settlements.bootstrap.event.TradeSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerZombificationServerEvents;
-import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldEventBusReaperServerEvents;
+import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementServerEvents;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
 import dev.breezes.settlements.di.modules.server.CredibilityModule;
@@ -55,6 +55,7 @@ import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketReceiver;
 import dev.breezes.settlements.shared.util.ReputationUtil;
@@ -171,6 +172,9 @@ public interface ServerComponent {
 
     // Exposed for SettlementsWolf (non-injectable Minecraft entity, server-only)
     WolfWalkConfig wolfWalkConfig();
+
+    // Exposed for DormantOreBlock (non-injectable Minecraft block, server-only)
+    OreRegenDataManager oreRegenDataManager();
 
     @Subcomponent.Factory
     interface Factory {

@@ -56,6 +56,10 @@ public class ParticleRegistry {
         blockCrack(location, state, 24, 0.35, 0.35, 0.35, 0.0D);
     }
 
+    public static void oreRecharge(@Nonnull Location location, @Nonnull BlockState rechargedOre) {
+        blockCrack(location, rechargedOre, 15, 0.4, 0.4, 0.4, 0.05D);
+    }
+
     public static <T extends ParticleOptions> void displayCircle(@Nonnull T particleType,
                                                                  @Nonnull Location center,
                                                                  double radius,

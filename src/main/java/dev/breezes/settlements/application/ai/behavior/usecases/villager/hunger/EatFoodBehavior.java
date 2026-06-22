@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.domain.ai.conditions.AnyOfCondition;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.EatingAnimations;
@@ -28,6 +29,7 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -53,8 +55,13 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
     public EatFoodBehavior(@Nonnull HungerConfig hungerConfig) {
         super(log, ClockTicks.seconds(10).asTickable(), ClockTicks.seconds(20).asTickable(), hungerConfig);
 
-        this.preconditions.add(ICondition.named("HungerBelowEatThreshold",
-                villager -> villager.getHunger() < hungerConfig.eatPriorityThreshold()));
+        this.preconditions.add(AnyOfCondition.<BaseVillager>builder()
+                .conditions(List.of(
+                        villager -> villager.getHunger() < hungerConfig.eatPriorityThreshold(),
+                        villager -> villager.getHealth() < villager.getMaxHealth()
+                ))
+                .description("IsHungryOrHurt")
+                .build());
         this.preconditions.add(ICondition.named("HasFood",
                 villager -> villager.getSettlementsInventory().anyMatch(stack -> stack.has(DataComponents.FOOD))));
         this.preconditions.add(ICondition.named("NotSleeping", villager -> !villager.isSleeping()));

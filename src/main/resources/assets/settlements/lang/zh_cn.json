@@ -12,7 +12,8 @@
   "item.settlements.villager_totem.tooltip.items_lost": "转换时，村民的模组专属特性、记忆及背包将被全部抹除",
   "item.settlements.villager_totem.already_target_type": "这个村民已经是这种类型了",
 
-  "block.settlements.placeholder": "Placeholder",
+  "block.settlements.dormant_ore": "待生长的矿石",
+  "block.settlements.dormant_deepslate_ore": "待生长的深板岩矿石",
 
   "creative_tab.settlements": "万家烟火",
 

@@ -13,7 +13,6 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.EquipmentLoo
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
-import lombok.CustomLog;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
@@ -23,7 +22,6 @@ import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
 
-@CustomLog
 public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager, SettlementsVillagerModel<BaseVillager>> {
 
     private static final float SHADOW_RADIUS = 0.5F;
@@ -97,8 +95,6 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
 
         if (animator.getLastSeenArchetype() != currentMotion || animator.getLastSeenGeneration() != currentGeneration) {
             AnimationSelectionContext ctx = selectionContext(villager);
-            log.debug("Renderer: entity {} motion {} -> {} (gen={}, main hand: {})",
-                    villager.getId(), animator.getLastSeenArchetype(), currentMotion, currentGeneration, ctx.mainHandCategory());
             animator.onMotionChanged(currentMotion, currentGeneration, ctx, gameTime);
         } else {
             // Re-evaluate context every frame so item category changes caused by the 1-frame

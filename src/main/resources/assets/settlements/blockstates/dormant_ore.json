@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "settlements:block/dormant_ore"
+    }
+  }
+}

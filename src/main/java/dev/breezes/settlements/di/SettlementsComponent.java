@@ -17,6 +17,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.Harves
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
@@ -60,6 +61,8 @@ public interface SettlementsComponent {
     ExcavateSubstrateYieldDataManager excavateSubstrateDataManager();
 
     TradeCatalogDataManager tradeCatalogDataManager();
+
+    OreRegenDataManager oreRegenDataManager();
 
     GenerationDataValidationReloadListener generationDataValidationReloadListener();
 

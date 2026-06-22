@@ -1,7 +1,5 @@
 package dev.breezes.settlements.domain.ai.knowledge;
 
-import lombok.CustomLog;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,7 +23,6 @@ import java.util.UUID;
  * entry (by admission tick) is evicted to make room — knowledge decays naturally.
  * This class carries no Minecraft state and is fully unit-testable without mocks.
  */
-@CustomLog
 public final class VillagerKnowledgeStore {
 
     /**
@@ -63,12 +60,7 @@ public final class VillagerKnowledgeStore {
         this.entriesByOriginId = new LinkedHashMap<>(maxEntries, 0.75f, false) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<UUID, KnowledgeEntry> eldest) {
-                boolean shouldRemove = this.size() > VillagerKnowledgeStore.this.maxEntries;
-                if (shouldRemove) {
-                    log.debug("KnowledgeStore: evicted oldest entry {} to stay within capacity {}",
-                            eldest.getKey(), VillagerKnowledgeStore.this.maxEntries);
-                }
-                return shouldRemove;
+                return this.size() > VillagerKnowledgeStore.this.maxEntries;
             }
         };
     }
@@ -83,8 +75,6 @@ public final class VillagerKnowledgeStore {
     public AdmitResult admit(KnowledgeEntry entry) {
         // Limit hop cap — only entries within the propagation limit are stored.
         if (entry.getHop() > KnowledgeEntry.MAX_HOP_COUNT) {
-            log.debug("KnowledgeStore: rejected entry '{}' — hop {} exceeds cap {}",
-                    entry.getOriginObservationId(), entry.getHop(), KnowledgeEntry.MAX_HOP_COUNT);
             return AdmitResult.REJECTED_HOP_CAP;
         }
 
@@ -96,15 +86,12 @@ public final class VillagerKnowledgeStore {
             if (!Objects.equals(existing.getSource(), entry.getSource())) {
                 // Independent corroboration: different witness, same fact.
                 existing.corroborate(CORROBORATION_BUMP);
-                log.debug("KnowledgeStore: corroborated origin-id {} (count={}, newWeight={})",
-                        entry.getOriginObservationId(), existing.getCorroborationCount(), existing.getWeight());
                 return AdmitResult.CORROBORATED_EXISTING;
             }
             return AdmitResult.IGNORED_DUPLICATE;
         }
 
         this.entriesByOriginId.put(entry.getOriginObservationId(), entry);
-        log.debug("KnowledgeStore: admitted entry '{}' hop={} hearsay={}", entry.getOriginObservationId(), entry.getHop(), entry.isHearsay());
 
         return AdmitResult.NEW_ENTRY;
     }
