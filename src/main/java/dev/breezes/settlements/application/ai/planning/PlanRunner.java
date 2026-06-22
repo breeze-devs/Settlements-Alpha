@@ -77,6 +77,14 @@ public class PlanRunner {
      */
     private static final int MAX_OVERRIDE_DURATION_TICKS = ClockTicks.seconds(60).getTicksAsInt();
 
+    /**
+     * Default safety-net ceiling on how long a single plan-slot behavior may run. Matches the
+     * override ceiling by design — both are one-minute backstops. Behaviors that legitimately
+     * run longer (e.g. fishing, enchanting) should declare a higher
+     * {@link BehaviorPlanningMetadata#getMaxRunDuration()} to avoid premature abort.
+     */
+    private static final int DEFAULT_MAX_BEHAVIOR_RUN_TICKS = ClockTicks.minutes(1).getTicksAsInt();
+
     private static final Comparator<OverridePolicy> OVERRIDE_POLICY_PRECEDENCE = Comparator
             .comparingInt(OverridePolicy::priority)
             .reversed()
@@ -332,7 +340,22 @@ public class PlanRunner {
             return;
         }
 
+        runtime.incrementCurrentBehaviorElapsedTicks(delta);
+
+        // Resolve the per-behavior ceiling from the descriptor when available; fall back to the
+        // module-wide default so even behaviors without explicit metadata are always bounded.
+        BehaviorPlanningMetadata descriptor = runtime.getCurrentDescriptor();
+        int maxRunTicks = descriptor != null
+                ? descriptor.getMaxRunDuration().getTicksAsInt()
+                : DEFAULT_MAX_BEHAVIOR_RUN_TICKS;
+
+        if (runtime.getCurrentBehaviorElapsedTicks() > maxRunTicks) {
+            this.abortStuckPlanBehavior(level, villager, runtime, slot, plan, behavior);
+            return;
+        }
+
         behavior.tick(delta, level, villager);
+
         if (behavior.getStatus() == BehaviorStatus.STOPPED) {
             slot.markStatus(PlanSlotStatus.COMPLETED);
             this.behaviorOutcomePublisher.publishCompleted(villager, slot.getBehaviorKey(), behavior);
@@ -340,6 +363,31 @@ public class PlanRunner {
             this.clearPlanActiveMemory(villager);
             plan.advanceSlot();
         }
+    }
+
+    /**
+     * Force-stops a plan-slot behavior that has exceeded its {@link BehaviorPlanningMetadata#getMaxRunDuration()}
+     * ceiling (or {@link #DEFAULT_MAX_BEHAVIOR_RUN_TICKS} when no descriptor is present). Unlike the
+     * override abort, this does NOT re-queue the slot — re-queuing would restart the same wedged
+     * behavior and produce a one-minute stall loop. Instead the slot is marked SKIPPED and the cursor
+     * advances, so the villager's remaining day continues.
+     */
+    private void abortStuckPlanBehavior(@Nonnull ServerLevel level,
+                                        @Nonnull BaseVillager villager,
+                                        @Nonnull PlanRuntimeState runtime,
+                                        @Nonnull PlanSlot slot,
+                                        @Nonnull DayPlan plan,
+                                        @Nonnull IBehavior<BaseVillager> behavior) {
+        log.behaviorWarn("Plan behavior '{}' exceeded max run duration ({} ticks) for villager {}; force-stopping wedged behavior",
+                slot.getBehaviorKey(), runtime.getCurrentBehaviorElapsedTicks(), villager.getUUID());
+        if (behavior.getStatus() != BehaviorStatus.STOPPED) {
+            behavior.stop(level, villager);
+        }
+        slot.markStatus(PlanSlotStatus.SKIPPED);
+        runtime.clearCurrentBehavior();
+        this.clearPlanActiveMemory(villager);
+        plan.advanceSlot();
+        this.behaviorOutcomePublisher.publishFailed(villager, slot.getBehaviorKey(), "behavior ceiling exceeded");
     }
 
     /**

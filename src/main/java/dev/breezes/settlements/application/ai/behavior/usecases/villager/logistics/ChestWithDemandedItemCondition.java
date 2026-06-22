@@ -6,6 +6,7 @@ import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
+import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.chest.ChestWaxService;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.core.GlobalPos;
@@ -16,18 +17,24 @@ import net.neoforged.neoforge.items.IItemHandler;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVillager> {
 
     private final DemandEvaluator demandEvaluator;
+    private final int completionRange;
 
     @Nullable
     private Resolution resolution;
 
-    public ChestWithDemandedItemCondition(@Nonnull DemandEvaluator demandEvaluator) {
+    public ChestWithDemandedItemCondition(@Nonnull DemandEvaluator demandEvaluator, int completionRange) {
+        if (completionRange < 1) {
+            throw new IllegalArgumentException("Completion range must be at least 1");
+        }
         this.demandEvaluator = demandEvaluator;
+        this.completionRange = completionRange;
     }
 
     @Override
@@ -45,7 +52,11 @@ public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVill
 
         List<GlobalPos> chests = villager.getBrain()
                 .getMemory(MemoryTypeRegistry.VILLAGE_CHESTS.getModuleType())
-                .orElse(List.of());
+                .orElse(List.of())
+                .stream()
+                .filter(chest -> chest.dimension().equals(villager.level().dimension()))
+                .sorted(Comparator.comparingDouble(chest -> chest.pos().distSqr(villager.blockPosition())))
+                .toList();
         if (chests.isEmpty()) {
             return false;
         }
@@ -55,7 +66,11 @@ public class ChestWithDemandedItemCondition implements IEntityCondition<BaseVill
         // Demands-outer / chests-inner preserves demand priority while allowing any valid chest to satisfy it
         for (ActiveDemand demand : demands) {
             for (GlobalPos chestPos : chests) {
-                if (!chestPos.dimension().equals(level.dimension()) || ChestWaxService.isWaxed(level, chestPos.pos())) {
+                if (ChestWaxService.isWaxed(level, chestPos.pos())) {
+                    continue;
+                }
+
+                if (!villager.getNavigationManager().canReach(Location.of(chestPos.pos(), level), this.completionRange)) {
                     continue;
                 }
 

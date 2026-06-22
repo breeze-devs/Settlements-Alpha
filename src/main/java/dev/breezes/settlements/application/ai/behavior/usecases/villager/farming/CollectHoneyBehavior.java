@@ -96,6 +96,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.fullHiveMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(1)
                 .description("Known full hive sites")
                 .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(GLASS_BOTTLE_ID), 1, 50, this.getClass().getSimpleName()));
@@ -108,7 +109,11 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         stageMap.put(CollectStage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(CollectStage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        .unreachableTransition(CollectStage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtHoneyHive")
                         .action(context -> StepResult.transition(CollectStage.COLLECT_HONEY))
@@ -148,7 +153,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
                     }
 
                     boolean resolved = this.targetResolver.resolveBlockTarget(context, MemoryTypeRegistry.FULL_HIVE_SITES,
-                            this.fullHiveMatcher, this.confirmBox, this.maxConfirms);
+                            this.fullHiveMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
                         log.behaviorStatus("No additional full hive targets found, ending honey collection");
                         return StepResult.transition(CollectStage.AWARD);

@@ -127,7 +127,12 @@ public class ChaseChickensBehavior extends VillagerStateMachineBehavior {
                                                         @Nonnull BehaviorStep<BaseVillager> impactStep) {
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CHASE_REACH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.RUN, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.RUN)
+                        .completionDistance(1)
+                        // If the cucco has wandered somewhere unreachable, advance to the next stage rather than waiting
+                        .unreachableTransition(nextStage)
+                        .build())
                 .actionStep(TimeBasedStep.<BaseVillager>builder()
                         .name(name)
                         .withTickable(ClockTicks.of(STRIKE_DURATION_TICKS).asTickable())

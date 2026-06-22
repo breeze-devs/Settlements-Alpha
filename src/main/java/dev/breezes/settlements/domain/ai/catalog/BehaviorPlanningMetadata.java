@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.ai.catalog;
 
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.GameTicks;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,6 +43,21 @@ public class BehaviorPlanningMetadata {
     private final Set<String> producedObservationHints;
 
     private final GameTicks estimatedDuration;
+
+    /**
+     * Per-behavior ceiling on real elapsed run time. When the plan runner's behavior-wide
+     * safety net reaches this duration the behavior is force-stopped and the slot skipped,
+     * so the villager's remaining day can continue. Expressed in {@link ClockTicks} (real
+     * elapsed time) rather than {@link GameTicks} (in-game time) because the ceiling is
+     * anchored to wall-clock feel, not to how fast the Minecraft day advances.
+     * <p>
+     * Long-running behaviors (e.g. smelting, enchanting, fishing) should override this
+     * with a generous value; the default of one minute is appropriate for navigation and
+     * interaction behaviors.
+     */
+    @Builder.Default
+    private final ClockTicks maxRunDuration = ClockTicks.minutes(1);
+
     private final String preconditionSummary;
     private final boolean interruptible;
 

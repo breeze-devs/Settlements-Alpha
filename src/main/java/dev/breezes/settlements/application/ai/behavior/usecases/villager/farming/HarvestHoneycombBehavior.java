@@ -96,6 +96,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.fullHiveMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(1)
                 .description("Known full hive sites")
                 .build());
         this.preconditions.add(demandSignalService.requireItem(
@@ -109,7 +110,11 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
         stageMap.put(HarvestStage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(HarvestStage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.0)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        .unreachableTransition(HarvestStage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtHoneycombHive")
                         .action(context -> StepResult.transition(HarvestStage.HARVEST_HONEYCOMB))
@@ -149,7 +154,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
                     }
 
                     boolean resolved = this.targetResolver.resolveBlockTarget(context, MemoryTypeRegistry.FULL_HIVE_SITES,
-                            this.fullHiveMatcher, this.confirmBox, this.maxConfirms);
+                            this.fullHiveMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
                         log.behaviorStatus("No additional full hive targets found, ending honeycomb harvest");
                         return StepResult.transition(HarvestStage.AWARD);

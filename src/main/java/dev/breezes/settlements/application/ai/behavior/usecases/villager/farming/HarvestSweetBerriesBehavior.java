@@ -94,6 +94,7 @@ public class HarvestSweetBerriesBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.ripeSweetBerryBushMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(1)
                 .description("Known ripe sweet berry bush sites")
                 .build());
 
@@ -105,7 +106,11 @@ public class HarvestSweetBerriesBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.5)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        .unreachableTransition(Stage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtSweetBerryBush")
                         .action(ctx -> StepResult.transition(Stage.HARVEST))
@@ -147,7 +152,7 @@ public class HarvestSweetBerriesBehavior extends VillagerStateMachineBehavior {
                 .name("PickSweetBerryBushTarget")
                 .action(ctx -> {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.RIPE_SWEET_BERRY_BUSH_SITES,
-                            this.ripeSweetBerryBushMatcher, this.confirmBox, this.maxConfirms);
+                            this.ripeSweetBerryBushMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
                         log.behaviorStatus("No additional sweet berry bush targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);

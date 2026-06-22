@@ -7,6 +7,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 
 import javax.annotation.Nonnull;
 
+@Deprecated(forRemoval = true)
 public class NearbyItemExistsCondition<T extends BaseVillager> extends NearbyEntityExistsCondition<T, ItemEntity> {
 
     @Builder

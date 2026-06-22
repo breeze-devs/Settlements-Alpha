@@ -87,6 +87,7 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.sugarCaneMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(2)
                 .description("Known harvestable sugar cane sites")
                 .build());
 
@@ -98,7 +99,11 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.5)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 2))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(2)
+                        .unreachableTransition(Stage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtSugarCane")
                         .action(ctx -> StepResult.transition(Stage.HARVEST))
@@ -140,7 +145,7 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
                 .name("PickSugarCaneTarget")
                 .action(ctx -> {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.HARVESTABLE_SUGARCANE_SITES,
-                            this.sugarCaneMatcher, this.confirmBox, this.maxConfirms);
+                            this.sugarCaneMatcher, this.confirmBox, this.maxConfirms, 2);
                     if (!resolved) {
                         log.behaviorStatus("No additional sugar cane targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);

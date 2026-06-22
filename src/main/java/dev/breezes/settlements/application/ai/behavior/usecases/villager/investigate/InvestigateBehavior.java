@@ -180,7 +180,12 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
     private BehaviorStep<BaseVillager> createNavigateStep() {
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(ARRIVAL_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, (int) ARRIVAL_DISTANCE))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance((int) ARRIVAL_DISTANCE)
+                        // If the tip location is unreachable, route immediately to the retry handler
+                        .unreachableTransition(Stage.HANDLE_TIMEOUT)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("InvestigateArrived")
                         .action(ctx -> StepResult.transition(Stage.SCAN_AND_EVALUATE))

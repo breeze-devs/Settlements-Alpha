@@ -20,6 +20,7 @@ public final class KnownBlockSitesPrecondition implements IEntityCondition<BaseV
     private final BlockMatcher matcher;
     private final BlockScanBox confirmBox;
     private final int maxSitesToConfirm;
+    private final int completionRange;
     private final String description;
 
     @Builder
@@ -27,11 +28,16 @@ public final class KnownBlockSitesPrecondition implements IEntityCondition<BaseV
                                        @Nonnull BlockMatcher matcher,
                                        @Nonnull BlockScanBox confirmBox,
                                        int maxSitesToConfirm,
+                                       int completionRange,
                                        @Nonnull String description) {
+        if (completionRange < 1) {
+            throw new IllegalArgumentException("Completion range must be at least 1");
+        }
         this.memoryType = memoryType;
         this.matcher = matcher;
         this.confirmBox = confirmBox;
         this.maxSitesToConfirm = maxSitesToConfirm;
+        this.completionRange = completionRange;
         this.description = description;
     }
 
@@ -48,7 +54,8 @@ public final class KnownBlockSitesPrecondition implements IEntityCondition<BaseV
 
         Level level = villager.level();
         return BlockMemorySiteConfirmer.confirmNearest(memory.get(), villager.blockPosition(), level,
-                this.matcher, this.confirmBox, this.maxSitesToConfirm).isPresent();
+                this.matcher, this.confirmBox, this.maxSitesToConfirm,
+                villager.getNavigationManager()::canReach, this.completionRange).isPresent();
     }
 
     @Override

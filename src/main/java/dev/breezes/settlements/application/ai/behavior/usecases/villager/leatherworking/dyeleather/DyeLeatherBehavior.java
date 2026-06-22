@@ -98,7 +98,7 @@ public class DyeLeatherBehavior extends VillagerStateMachineBehavior {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(),
                 hungerConfig, config.experienceReward());
 
-        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.CAULDRON));
+        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.CAULDRON), 1);
         this.preconditions.add(this.jobSiteBlockExistsCondition);
 
         this.cauldron = null;

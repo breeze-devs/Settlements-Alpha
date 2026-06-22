@@ -106,6 +106,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
         this.nearbyWaterExistsCondition = NearbyWaterExistsCondition.<BaseVillager>builder()
                 .rangeHorizontal(config.scanRangeHorizontal())
                 .rangeVertical(config.scanRangeVertical())
+                .completionRange(NAVIGATION_COMPLETION_DISTANCE)
                 .build();
         this.preconditions.add(this.nearbyWaterExistsCondition);
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(FISHING_ROD_ID), 1, 50, this.getClass().getSimpleName()));

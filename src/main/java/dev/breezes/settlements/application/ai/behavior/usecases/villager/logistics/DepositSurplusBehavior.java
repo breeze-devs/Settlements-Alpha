@@ -59,7 +59,7 @@ public class DepositSurplusBehavior extends VillagerStateMachineBehavior {
                                   @Nonnull SupplyEvaluator supplyEvaluator) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
-        this.chestCondition = new ChestWithSpaceForSurplusCondition(supplyEvaluator);
+        this.chestCondition = new ChestWithSpaceForSurplusCondition(supplyEvaluator, NAVIGATION_COMPLETION_DISTANCE);
         this.preconditions.add(this.chestCondition);
         this.resolution = null;
 

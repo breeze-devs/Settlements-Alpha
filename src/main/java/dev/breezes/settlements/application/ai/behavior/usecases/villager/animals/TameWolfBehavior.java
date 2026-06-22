@@ -18,8 +18,10 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
@@ -42,11 +44,9 @@ import net.minecraft.world.entity.animal.WolfVariant;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,10 +69,6 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
     private final TameWolfConfig config;
 
-    // Cached from the most recent precondition scan; reset each precondition check.
-    // Using a field here (not Optional) because the list is internal scan state, not a return value.
-    private List<Wolf> nearbyUntamedWolves;
-
     private int attemptsRemaining;
     private boolean shouldRewardExperience;
 
@@ -84,23 +80,12 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
         this.attemptsRemaining = 0;
         this.shouldRewardExperience = false;
-        this.nearbyUntamedWolves = List.of();
 
-        // NearbyEntityExistsCondition uses exact EntityType equality, which misses SettlementsWolf.
-        // We do a class-based scan instead so both vanilla wolves and SettlementsWolf instances
-        // (which extend Wolf) are found regardless of their registered EntityType.
-        this.preconditions.add(ICondition.named("NearbyUntamedWolfExists", villager -> {
-            AABB scanBox = villager.getBoundingBox().inflate(
-                    config.scanRangeHorizontal(),
-                    config.scanRangeVertical(),
-                    config.scanRangeHorizontal());
-            this.nearbyUntamedWolves = villager.level()
-                    .getEntitiesOfClass(Wolf.class, scanBox, wolf -> wolf != null && !wolf.isTame())
-                    .stream()
-                    .sorted(Comparator.comparingDouble(villager::distanceToSqr))
-                    .toList();
-            return !this.nearbyUntamedWolves.isEmpty();
-        }));
+        this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, Wolf>builder()
+                .entityType(Wolf.class)
+                .filter((villager, wolf) -> !wolf.isTame())
+                .completionRange(2)
+                .build());
 
         // Precondition: has at least one bone
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BONE_ID), 1, 50, this.getClass().getSimpleName()));
@@ -265,26 +250,9 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        // Re-run the class-based scan here to populate nearbyUntamedWolves for target selection.
-        // The precondition already ran but we need a fresh result tied to this exact start moment.
-        AABB scanBox = villager.getBoundingBox().inflate(
-                this.config.scanRangeHorizontal(),
-                this.config.scanRangeVertical(),
-                this.config.scanRangeHorizontal());
-        this.nearbyUntamedWolves = villager.level()
-                .getEntitiesOfClass(Wolf.class, scanBox, wolf -> wolf != null && !wolf.isTame())
-                .stream()
-                .sorted(Comparator.comparingDouble(villager::distanceToSqr))
-                .toList();
-
-        if (this.nearbyUntamedWolves.isEmpty()) {
-            this.requestStop("No untamed wolves found within range");
-            return;
-        }
-
-        Optional<Wolf> chosenWolf = this.nearbyUntamedWolves.stream().findFirst();
+        Optional<Wolf> chosenWolf = this.findClosestReachableUntamedWolf(villager);
         if (chosenWolf.isEmpty()) {
-            this.requestStop("Chosen wolf to tame is null");
+            this.requestStop("No reachable untamed wolves found");
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenWolf.get()))));
@@ -318,6 +286,14 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                                 && target.getType() == TargetableType.ENTITY
                                 && target.getAsEntity() instanceof Wolf)
                 .map(target -> (Wolf) target.getAsEntity());
+    }
+
+    private Optional<Wolf> findClosestReachableUntamedWolf(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty())
+                .closest(Wolf.class, wolf -> !wolf.isTame()
+                        && villager.getNavigationManager().canReach(Location.fromEntity(wolf, false), 2), villager);
     }
 
     private static boolean ownerMatches(@Nonnull BaseVillager villager, @Nonnull Wolf wolf) {

@@ -118,7 +118,12 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                 .onEnd(context -> StepResult.transition(SurveyStage.SURVEY))
                 .build();
 
-        NavigateToTargetStep<BaseVillager> navigateStep = new NavigateToTargetStep<>(NavigationType.WALK, NAVIGATION_COMPLETION_DISTANCE);
+        // Reachability gating is off so the cartographer always attempts the sampled survey point
+        NavigateToTargetStep<BaseVillager> navigateStep = NavigateToTargetStep.<BaseVillager>builder()
+                .navigationType(NavigationType.WALK)
+                .completionDistance(NAVIGATION_COMPLETION_DISTANCE)
+                .reachabilityGated(false)
+                .build();
 
         ICondition<BehaviorContext<BaseVillager>> closeEnoughHorizontally = ICondition.named(
                 "closeEnoughHorizontally",

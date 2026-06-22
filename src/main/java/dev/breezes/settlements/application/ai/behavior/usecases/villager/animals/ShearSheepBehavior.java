@@ -111,6 +111,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
         this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, Sheep>builder()
                 .entityType(Sheep.class)
                 .filter((villager, sheep) -> isShearable(sheep))
+                .completionRange(1)
                 .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, this.getClass().getSimpleName()));
 
@@ -283,7 +284,8 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
     private List<Sheep> findShearableSheep(@Nonnull BaseVillager villager) {
         return this.getPerceivedEntities(villager)
-                .ofType(Sheep.class, ShearSheepBehavior::isShearable)
+                .ofType(Sheep.class, sheep -> isShearable(sheep)
+                        && villager.getNavigationManager().canReach(Location.fromEntity(sheep, false), 1))
                 .toList();
     }
 

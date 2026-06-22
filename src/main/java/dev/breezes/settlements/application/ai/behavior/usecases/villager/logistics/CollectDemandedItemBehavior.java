@@ -49,7 +49,7 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
                                        @Nonnull DemandEvaluator demandEvaluator) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
-        this.itemCondition = new DemandedGroundItemCondition(demandEvaluator);
+        this.itemCondition = new DemandedGroundItemCondition(demandEvaluator, NAVIGATION_COMPLETION_DISTANCE);
         this.preconditions.add(this.itemCondition);
 
         this.resolution = null;

@@ -1,8 +1,10 @@
 package dev.breezes.settlements.application.ai.planning;
 
+import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.DayPlanSchedule;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -12,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 class PlanRuntimeStateTest {
 
@@ -109,6 +112,58 @@ class PlanRuntimeStateTest {
     }
 
     @Test
+    void incrementCurrentBehaviorElapsedTicks_accumulatesDelta() {
+        // Arrange
+        PlanRuntimeState runtime = new PlanRuntimeState();
+
+        // Act
+        runtime.incrementCurrentBehaviorElapsedTicks(10);
+        runtime.incrementCurrentBehaviorElapsedTicks(5);
+
+        // Assert
+        assertEquals(15, runtime.getCurrentBehaviorElapsedTicks());
+    }
+
+    @Test
+    void assignPlanBehavior_resetsElapsedCounter() {
+        // Arrange
+        PlanRuntimeState runtime = new PlanRuntimeState();
+        runtime.incrementCurrentBehaviorElapsedTicks(500);
+
+        // Act
+        runtime.assignPlanBehavior(stubBehavior(), null);
+
+        // Assert — a fresh assignment always starts from zero regardless of prior accumulation
+        assertEquals(0, runtime.getCurrentBehaviorElapsedTicks());
+    }
+
+    @Test
+    void clearCurrentBehavior_resetsElapsedCounter() {
+        // Arrange
+        PlanRuntimeState runtime = new PlanRuntimeState();
+        runtime.incrementCurrentBehaviorElapsedTicks(200);
+
+        // Act
+        runtime.clearCurrentBehavior();
+
+        // Assert
+        assertEquals(0, runtime.getCurrentBehaviorElapsedTicks());
+    }
+
+    @Test
+    void reset_resetsElapsedCounter() {
+        // Arrange
+        PlanRuntimeState runtime = new PlanRuntimeState();
+        runtime.incrementCurrentBehaviorElapsedTicks(300);
+
+        // Act
+        runtime.reset(5_000L);
+
+        // Assert
+        assertEquals(0, runtime.getCurrentBehaviorElapsedTicks());
+    }
+
+    @Test
     void clearCurrentBehavior_doesNotClearPendingPlanOrExhaustion() {
         // Arrange
         PlanRuntimeState runtime = new PlanRuntimeState();
@@ -122,6 +177,11 @@ class PlanRuntimeStateTest {
         // Assert
         assertSame(pendingPlan, runtime.getPendingNextPlan());
         assertTrue(runtime.isPlanExhausted());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static IBehavior<BaseVillager> stubBehavior() {
+        return mock(IBehavior.class);
     }
 
     private static DayPlan plan(long wakeAtAbsoluteTick) {

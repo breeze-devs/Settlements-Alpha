@@ -30,7 +30,8 @@ public final class BlockMemoryTargetResolver {
                                       @Nonnull MemoryType<List<GlobalPos>> memoryType,
                                       @Nonnull BlockMatcher matcher,
                                       @Nonnull BlockScanBox confirmBox,
-                                      int maxSitesToConfirm) {
+                                      int maxSitesToConfirm,
+                                      int completionRange) {
         BaseVillager villager = context.getInitiator();
         Level level = villager.level();
         Optional<List<GlobalPos>> memory = villager.getSettlementsBrain().getMemory(memoryType);
@@ -46,7 +47,8 @@ public final class BlockMemoryTargetResolver {
                 .filter(site -> !visitedSites.contains(site))
                 .toList();
 
-        Optional<GlobalPos> liveSite = BlockMemorySiteConfirmer.confirmNearest(candidates, villager.blockPosition(), level, matcher, confirmBox, maxSitesToConfirm);
+        Optional<GlobalPos> liveSite = BlockMemorySiteConfirmer.confirmNearest(candidates, villager.blockPosition(), level,
+                matcher, confirmBox, maxSitesToConfirm, villager.getNavigationManager()::canReach, completionRange);
         if (liveSite.isEmpty()) {
             context.clearState(BehaviorStateType.TARGET);
             return false;

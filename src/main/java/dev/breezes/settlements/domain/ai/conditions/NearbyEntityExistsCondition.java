@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+@Deprecated(forRemoval = true)
 public class NearbyEntityExistsCondition<T extends Entity, E extends Entity> implements IEntityCondition<T> {
 
     private final double rangeHorizontal;

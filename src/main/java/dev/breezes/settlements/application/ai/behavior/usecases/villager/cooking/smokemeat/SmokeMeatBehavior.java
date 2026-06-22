@@ -84,7 +84,7 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
                 config.experienceReward());
 
         // Create behavior preconditions
-        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.SMOKER));
+        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.SMOKER), 1);
         this.smokeRecipeAvailableCondition = new SmokeRecipeAvailableCondition(RECIPES);
         this.preconditions.add(this.jobSiteBlockExistsCondition);
         this.preconditions.add(this.smokeRecipeAvailableCondition);

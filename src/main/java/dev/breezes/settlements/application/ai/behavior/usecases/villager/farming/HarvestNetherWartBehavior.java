@@ -89,6 +89,7 @@ public class HarvestNetherWartBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.netherWartMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(1)
                 .description("Known nether wart farm sites")
                 .build());
 
@@ -100,7 +101,11 @@ public class HarvestNetherWartBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.5)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        .unreachableTransition(Stage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtNetherWart")
                         .action(ctx -> StepResult.transition(Stage.HARVEST))
@@ -142,7 +147,7 @@ public class HarvestNetherWartBehavior extends VillagerStateMachineBehavior {
                 .name("PickNetherWartTarget")
                 .action(ctx -> {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.NETHER_WART_FARM_SITES,
-                            this.netherWartMatcher, this.confirmBox, this.maxConfirms);
+                            this.netherWartMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
                         log.behaviorStatus("No additional nether wart targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);

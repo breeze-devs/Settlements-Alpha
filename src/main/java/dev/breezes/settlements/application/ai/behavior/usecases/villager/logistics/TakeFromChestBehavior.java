@@ -59,7 +59,7 @@ public class TakeFromChestBehavior extends VillagerStateMachineBehavior {
                                  @Nonnull DemandEvaluator demandEvaluator) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
 
-        this.chestCondition = new ChestWithDemandedItemCondition(demandEvaluator);
+        this.chestCondition = new ChestWithDemandedItemCondition(demandEvaluator, NAVIGATION_COMPLETION_DISTANCE);
         this.preconditions.add(this.chestCondition);
 
         this.resolution = null;

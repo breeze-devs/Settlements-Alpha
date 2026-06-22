@@ -92,6 +92,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.oreMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(2)
                 .description("Known ore sites")
                 .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_PICKAXE_ID), 1, 50,
@@ -105,7 +106,11 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(2.5)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 2))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(2)
+                        .unreachableTransition(Stage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtOre")
                         .action(ctx -> StepResult.transition(Stage.HARVEST))
@@ -148,7 +153,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
                 .name("PickOreTarget")
                 .action(ctx -> {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.ORE_SITES,
-                            this.oreMatcher, this.confirmBox, this.maxConfirms);
+                            this.oreMatcher, this.confirmBox, this.maxConfirms, 2);
                     if (!resolved) {
                         log.behaviorStatus("No additional ore targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);

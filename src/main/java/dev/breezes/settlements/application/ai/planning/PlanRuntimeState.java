@@ -44,6 +44,15 @@ public class PlanRuntimeState {
      */
     private int overrideElapsedTicks;
 
+    /**
+     * Real elapsed ticks the current plan-slot behavior has been running. Parallel to
+     * {@link #overrideElapsedTicks} but for the plan-slot path. PlanRunner uses this as
+     * a safety-net ceiling to break a wedged plan behavior that would otherwise freeze the
+     * villager's entire remaining day. Reset to zero whenever a behavior is assigned, cleared,
+     * or the runtime is reset.
+     */
+    private int currentBehaviorElapsedTicks;
+
     @Setter
     @Nullable
     private DayPlan pendingNextPlan;
@@ -75,6 +84,7 @@ public class PlanRuntimeState {
         this.overrideBehavior = null;
         this.overrideBehaviorKey = null;
         this.overrideElapsedTicks = 0;
+        this.currentBehaviorElapsedTicks = 0;
         this.clearPendingGeneration();
         this.pendingNextPlan = null;
         this.planExhausted = false;
@@ -89,12 +99,16 @@ public class PlanRuntimeState {
     public void clearCurrentBehavior() {
         this.currentBehavior = null;
         this.currentDescriptor = null;
+        this.currentBehaviorElapsedTicks = 0;
     }
 
     public void assignPlanBehavior(@Nonnull IBehavior<BaseVillager> behavior,
                                    @Nullable BehaviorPlanningMetadata descriptor) {
         this.currentBehavior = behavior;
         this.currentDescriptor = descriptor;
+        // A freshly assigned behavior must always start its elapsed counter from zero,
+        // regardless of whether clearCurrentBehavior was called before this assignment.
+        this.currentBehaviorElapsedTicks = 0;
     }
 
     public boolean isOverrideActive() {
@@ -115,6 +129,10 @@ public class PlanRuntimeState {
 
     public void incrementOverrideElapsedTicks(int delta) {
         this.overrideElapsedTicks += delta;
+    }
+
+    public void incrementCurrentBehaviorElapsedTicks(int delta) {
+        this.currentBehaviorElapsedTicks += delta;
     }
 
     public void markPlanExhausted() {

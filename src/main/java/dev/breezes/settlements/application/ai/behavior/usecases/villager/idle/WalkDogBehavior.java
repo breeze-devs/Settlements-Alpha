@@ -119,7 +119,12 @@ public class WalkDogBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createApproachStep() {
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(LEASH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        // Reachability gating is off so the villager always attempts to approach the wolf
+                        .reachabilityGated(false)
+                        .build())
                 .actionStep(ctx -> StepResult.transition(WalkDogStage.LEASH_WOLF))
                 .build();
     }

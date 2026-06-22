@@ -74,6 +74,17 @@ public final class BehaviorOutcomePublisher {
         this.publishWithoutOutcome(villager, key, lifecycleResult);
     }
 
+    /**
+     * Publishes a terminal failure for a behavior that was force-stopped externally rather than
+     * failing through its own lifecycle (e.g. the plan runner's run-duration ceiling). The caller
+     * supplies the reason because the behavior itself holds no record of why it was stopped.
+     */
+    public void publishFailed(@Nonnull BaseVillager villager,
+                              @Nonnull BehaviorKey key,
+                              @Nullable String reason) {
+        this.worldEventEmitter.emitBehaviorFailed(villager, key, reason);
+    }
+
     private void publishWithoutOutcome(@Nonnull BaseVillager villager,
                                        @Nonnull BehaviorKey key,
                                        @Nonnull BehaviorLifecycleResult lifecycleResult) {

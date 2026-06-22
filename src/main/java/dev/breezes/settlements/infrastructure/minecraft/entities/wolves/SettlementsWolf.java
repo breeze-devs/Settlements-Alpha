@@ -62,7 +62,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     private static final String DIRTY_NBT_KEY = "Dirty";
     private static final double BASE_MAX_HEALTH = 20;
-    private static final ClockTicks UNTAMED_LIFETIME = ClockTicks.minutes(10);
+    private static final ClockTicks UNTAMED_LIFETIME = ClockTicks.minutes(30);
     private static final ClockTicks DIRTY_ROLL_INTERVAL = ClockTicks.minutes(1);
     private static final double DIRTY_CHANCE = 0.05D;
     private static final int POOF_PARTICLE_COUNT = 12;

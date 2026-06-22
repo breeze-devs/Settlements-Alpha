@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.economy.demand.ActiveDemand;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
+import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.phys.AABB;
@@ -21,12 +22,17 @@ public class DemandedGroundItemCondition implements IEntityCondition<BaseVillage
     private static final double SCAN_RANGE_VERTICAL = 4.0D;
 
     private final DemandEvaluator demandEvaluator;
+    private final int completionRange;
 
     @Nullable
     private Resolution resolution;
 
-    public DemandedGroundItemCondition(@Nonnull DemandEvaluator demandEvaluator) {
+    public DemandedGroundItemCondition(@Nonnull DemandEvaluator demandEvaluator, int completionRange) {
+        if (completionRange < 1) {
+            throw new IllegalArgumentException("Completion range must be at least 1");
+        }
         this.demandEvaluator = demandEvaluator;
+        this.completionRange = completionRange;
     }
 
     @Override
@@ -61,7 +67,8 @@ public class DemandedGroundItemCondition implements IEntityCondition<BaseVillage
         // wheat the villager does not care about as much.
         for (ActiveDemand demand : demands) {
             for (ItemEntity item : sortedItems) {
-                if (ItemMatches.test(demand.match(), item.getItem())) {
+                if (ItemMatches.test(demand.match(), item.getItem())
+                        && villager.getNavigationManager().canReach(Location.fromEntity(item, false), this.completionRange)) {
                     this.resolution = new Resolution(item, demand);
                     return true;
                 }

@@ -92,6 +92,7 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.ripeMelonMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(1)
                 .description("Known ripe melon sites")
                 .build());
 
@@ -103,7 +104,11 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.5)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        .unreachableTransition(Stage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtMelon")
                         .action(ctx -> StepResult.transition(Stage.CHOP))
@@ -145,7 +150,7 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
                 .name("PickMelonTarget")
                 .action(context -> {
                     boolean resolved = this.targetResolver.resolveBlockTarget(context, MemoryTypeRegistry.RIPE_MELON_SITES,
-                            this.ripeMelonMatcher, this.confirmBox, this.maxConfirms);
+                            this.ripeMelonMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
                         log.behaviorStatus("No additional targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);

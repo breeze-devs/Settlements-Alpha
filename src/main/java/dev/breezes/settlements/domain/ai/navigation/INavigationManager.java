@@ -19,7 +19,8 @@ public interface INavigationManager<T> {
     /**
      * Navigate to the target position with the given navigation intent and completion range.
      * <p>
-     * Note that if the target is not reachable, the navigation will be cancelled.
+     * The manager always attempts the move; reachability decisions belong to the step (e.g.
+     * {@code NavigateToTargetStep}) so it can react appropriately rather than silently doing nothing.
      */
     void navigateTo(@Nonnull Location target, @Nonnull NavigationType type, int completionRange);
 

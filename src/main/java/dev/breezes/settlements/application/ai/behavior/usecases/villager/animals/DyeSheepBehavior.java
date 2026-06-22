@@ -103,6 +103,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, Sheep>builder()
                 .entityType(Sheep.class)
                 .filter(this::isEligibleSheep)
+                .completionRange(1)
                 .build());
         // Gate on carrying dye and signal demand so chest/trade procurement keeps shepherds stocked.
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.TagRef(Tags.Items.DYES), 1, 50,
@@ -268,7 +269,8 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
 
     private List<Sheep> findEligibleSheep(@Nonnull BaseVillager villager) {
         return this.getPerceivedEntities(villager)
-                .ofType(Sheep.class, sheep -> this.isEligibleSheep(villager, sheep))
+                .ofType(Sheep.class, sheep -> this.isEligibleSheep(villager, sheep)
+                        && villager.getNavigationManager().canReach(Location.fromEntity(sheep, false), 1))
                 .toList();
     }
 

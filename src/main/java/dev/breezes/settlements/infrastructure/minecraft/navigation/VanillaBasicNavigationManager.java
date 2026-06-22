@@ -4,7 +4,9 @@ import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.world.location.Location;
 import lombok.AllArgsConstructor;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.level.pathfinder.Path;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -32,9 +34,6 @@ public class VanillaBasicNavigationManager<T extends PathfinderMob> implements I
 
     @Override
     public void navigateTo(@Nonnull Location target, @Nonnull NavigationType type, int completionRange) {
-        if (!this.canReach(target, completionRange)) {
-            return;
-        }
         this.entity.getNavigation().moveTo(target.getX(), target.getY(), target.getZ(), this.speedFor(type));
     }
 
@@ -50,8 +49,9 @@ public class VanillaBasicNavigationManager<T extends PathfinderMob> implements I
 
     @Override
     public boolean canReach(@Nonnull Location target, double distance) {
-        // TODO: implement this
-        return true;
+        // Use vanilla's own pathfinder to produce a trial path
+        Path path = this.entity.getNavigation().createPath(target.toBlockPos(), Mth.floor(distance));
+        return path != null && path.canReach();
     }
 
 }

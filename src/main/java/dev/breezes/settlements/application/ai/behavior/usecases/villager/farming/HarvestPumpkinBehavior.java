@@ -89,6 +89,7 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.ripePumpkinMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(1)
                 .description("Known ripe pumpkin sites")
                 .build());
 
@@ -100,7 +101,11 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.5)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        .unreachableTransition(Stage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtPumpkin")
                         .action(ctx -> StepResult.transition(Stage.CHOP))
@@ -142,7 +147,7 @@ public class HarvestPumpkinBehavior extends VillagerStateMachineBehavior {
                 .name("PickPumpkinTarget")
                 .action(ctx -> {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.RIPE_PUMPKIN_SITES,
-                            this.ripePumpkinMatcher, this.confirmBox, this.maxConfirms);
+                            this.ripePumpkinMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
                         log.behaviorStatus("No additional pumpkin targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);

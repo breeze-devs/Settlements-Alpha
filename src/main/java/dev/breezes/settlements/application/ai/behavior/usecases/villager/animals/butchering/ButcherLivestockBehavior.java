@@ -27,6 +27,7 @@ import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -89,6 +90,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                 .filter((villager, entity) -> this.minimumKeepByType.containsKey(entity.getType())
                         && isAdultOrNonAgeable(entity)
                         && (!this.requireVillageOwnedTag || entity.getTags().contains(EntityTag.VILLAGE_OWNED_ANIMAL.getTag())))
+                .completionRange(1)
                 .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_AXE_ID), 1, 50, this.getClass().getSimpleName()));
 
@@ -236,24 +238,30 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
      */
     private Optional<LivingEntity> findButcherableTarget(@Nonnull BaseVillager villager) {
         List<LivingEntity> candidates = this.getPerceivedEntities(villager)
-                .ofType(LivingEntity.class, entity -> this.isButcherCandidate(entity))
+                .ofType(LivingEntity.class, this::isButcherCandidate)
                 .toList();
 
         Map<EntityType<?>, Integer> adultCountByType = new HashMap<>();
-        Map<EntityType<?>, LivingEntity> firstByType = new HashMap<>();
         for (LivingEntity entity : candidates) {
             EntityType<?> type = entity.getType();
             adultCountByType.merge(type, 1, Integer::sum);
-            firstByType.putIfAbsent(type, entity);
         }
 
-        for (Map.Entry<EntityType<?>, Integer> entry : adultCountByType.entrySet()) {
-            EntityType<?> type = entry.getKey();
-            int count = entry.getValue();
-            int minKeep = this.minimumKeepByType.getOrDefault(type, Integer.MAX_VALUE);
-            if (count > minKeep) {
+        List<EntityType<?>> eligibleTypesByPopulation = adultCountByType.entrySet().stream()
+                .filter(entry -> entry.getValue() > this.minimumKeepByType.getOrDefault(entry.getKey(), Integer.MAX_VALUE))
+                .sorted(Map.Entry.<EntityType<?>, Integer>comparingByValue(Comparator.reverseOrder())
+                        .thenComparing(entry -> BuiltInRegistries.ENTITY_TYPE.getKey(entry.getKey()).toString()))
+                .map(Map.Entry::getKey)
+                .toList();
+
+        for (EntityType<?> type : eligibleTypesByPopulation) {
+            Optional<LivingEntity> reachableTarget = candidates.stream()
+                    .filter(entity -> entity.getType() == type)
+                    .filter(entity -> this.canReachButcherTarget(villager, entity))
+                    .min(Comparator.comparingDouble(villager::distanceToSqr));
+            if (reachableTarget.isPresent()) {
                 this.selectedAnimalType = type;
-                return Optional.of(firstByType.get(type));
+                return reachableTarget;
             }
         }
 
@@ -265,7 +273,8 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
      */
     private Optional<LivingEntity> findNextTargetForType(@Nonnull BaseVillager villager, @Nonnull EntityType<?> desiredType) {
         List<LivingEntity> candidates = this.getPerceivedEntities(villager)
-                .ofType(LivingEntity.class, entity -> entity.getType() == desiredType && this.isButcherCandidate(entity))
+                .ofType(LivingEntity.class, entity -> entity.getType() == desiredType
+                        && this.isButcherCandidate(entity))
                 .toList();
 
         int minKeep = this.minimumKeepByType.getOrDefault(desiredType, Integer.MAX_VALUE);
@@ -274,7 +283,12 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         }
 
         return candidates.stream()
+                .filter(entity -> this.canReachButcherTarget(villager, entity))
                 .min(Comparator.comparingDouble(villager::distanceToSqr));
+    }
+
+    private boolean canReachButcherTarget(@Nonnull BaseVillager villager, @Nonnull LivingEntity entity) {
+        return villager.getNavigationManager().canReach(Location.fromEntity(entity, false), 1);
     }
 
     private boolean isButcherCandidate(@Nonnull LivingEntity entity) {

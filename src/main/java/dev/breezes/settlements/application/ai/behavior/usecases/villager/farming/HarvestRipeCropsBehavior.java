@@ -89,6 +89,7 @@ public class HarvestRipeCropsBehavior extends VillagerStateMachineBehavior {
                 .matcher(this.ripeCropMatcher)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(1)
                 .description("Known ripe crop sites")
                 .build());
 
@@ -100,7 +101,11 @@ public class HarvestRipeCropsBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.5)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        .unreachableTransition(Stage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtCrop")
                         .action(ctx -> StepResult.transition(Stage.HARVEST))
@@ -142,7 +147,7 @@ public class HarvestRipeCropsBehavior extends VillagerStateMachineBehavior {
                 .name("PickRipeCropTarget")
                 .action(ctx -> {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.RIPE_CROP_SITES,
-                            this.ripeCropMatcher, this.confirmBox, this.maxConfirms);
+                            this.ripeCropMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
                         log.behaviorStatus("No additional ripe crop targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);

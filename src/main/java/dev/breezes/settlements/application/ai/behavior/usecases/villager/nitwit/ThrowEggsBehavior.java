@@ -177,7 +177,13 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
     private BehaviorStep<BaseVillager> createRelocateMoveStep() {
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.RUN, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.RUN)
+                        .completionDistance(1)
+                        // The relocation point may land in an unreachable spot
+                        // Skip straight to BURST so the nitwit throws from wherever it is
+                        .unreachableTransition(Stage.BURST)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("EggRelocateArrived")
                         .action(ctx -> StepResult.transition(Stage.BURST))

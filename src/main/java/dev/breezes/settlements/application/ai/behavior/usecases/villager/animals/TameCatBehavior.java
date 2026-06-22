@@ -17,8 +17,10 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.S
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
-import dev.breezes.settlements.domain.ai.conditions.NearbyEntityExistsCondition;
+import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
+import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
@@ -63,8 +65,6 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
 
     private final TameCatConfig config;
 
-    private final NearbyEntityExistsCondition<BaseVillager, Cat> nearbyUntamedCatExistsCondition;
-
     private int attemptsRemaining;
     private boolean shouldRewardExperience;
 
@@ -79,13 +79,11 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
         this.attemptsRemaining = 0;
         this.shouldRewardExperience = false;
 
-        this.nearbyUntamedCatExistsCondition = new NearbyEntityExistsCondition<>(
-                config.scanRangeHorizontal(),
-                config.scanRangeVertical(),
-                EntityType.CAT,
-                cat -> cat != null && !cat.isTame(),
-                1);
-        this.preconditions.add(this.nearbyUntamedCatExistsCondition);
+        this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, Cat>builder()
+                .entityType(Cat.class)
+                .filter((villager, cat) -> !cat.isTame())
+                .completionRange(2)
+                .build());
 
         // Precondition: has at least one cod
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(COD_ID), 1, 50, this.getClass().getSimpleName()));
@@ -218,14 +216,9 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        if (!this.nearbyUntamedCatExistsCondition.test(villager)) {
-            this.requestStop("No untamed cats found within range");
-            return;
-        }
-
-        Optional<Cat> chosenCat = this.nearbyUntamedCatExistsCondition.getTargets().stream().findFirst();
+        Optional<Cat> chosenCat = this.findClosestReachableUntamedCat(villager);
         if (chosenCat.isEmpty()) {
-            this.requestStop("Chosen cat to tame is null");
+            this.requestStop("No reachable untamed cats found");
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenCat.get()))));
@@ -253,6 +246,14 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
 
     private Optional<Cat> getTargetCat(@Nonnull BehaviorContext<BaseVillager> context) {
         return TargetQueries.firstEntity(context, EntityType.CAT, Cat.class);
+    }
+
+    private Optional<Cat> findClosestReachableUntamedCat(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty())
+                .closest(Cat.class, cat -> !cat.isTame()
+                        && villager.getNavigationManager().canReach(Location.fromEntity(cat, false), 2), villager);
     }
 
     private static boolean ownerMatches(@Nonnull BaseVillager villager, @Nonnull Cat cat) {

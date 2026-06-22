@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.ai.conditions;
 
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -13,16 +14,17 @@ import java.util.Optional;
 public class JobSiteBlockExistsCondition<T extends Villager> implements IEntityCondition<T> {
 
     private final ICondition<PhysicalBlock> blockCondition;
+    private final int completionRange;
 
     @Nullable
     private PhysicalBlock jobSiteBlock;
 
-    public JobSiteBlockExistsCondition() {
-        this(null);
-    }
-
-    public JobSiteBlockExistsCondition(@Nullable ICondition<PhysicalBlock> blockCondition) {
+    public JobSiteBlockExistsCondition(@Nullable ICondition<PhysicalBlock> blockCondition, int completionRange) {
+        if (completionRange < 1) {
+            throw new IllegalArgumentException("Completion range must be at least 1");
+        }
         this.blockCondition = Objects.requireNonNullElseGet(blockCondition, () -> (block) -> true);
+        this.completionRange = completionRange;
     }
 
     @Override
@@ -42,6 +44,11 @@ public class JobSiteBlockExistsCondition<T extends Villager> implements IEntityC
         Optional<PhysicalBlock> blockOptional = location.getBlock()
                 .filter(blockCondition);
         if (blockOptional.isEmpty()) {
+            return false;
+        }
+
+        if (villager instanceof ISettlementsBrainEntity brainEntity
+                && !brainEntity.getNavigationManager().canReach(location, this.completionRange)) {
             return false;
         }
 

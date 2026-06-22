@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.economy.supply.ActiveSupply;
 import dev.breezes.settlements.application.economy.supply.SupplyEvaluator;
 import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.chest.ChestWaxService;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.core.GlobalPos;
@@ -15,18 +16,24 @@ import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 public class ChestWithSpaceForSurplusCondition implements IEntityCondition<BaseVillager> {
 
     private final SupplyEvaluator supplyEvaluator;
+    private final int completionRange;
 
     @Nullable
     private Resolution resolution;
 
-    public ChestWithSpaceForSurplusCondition(@Nonnull SupplyEvaluator supplyEvaluator) {
+    public ChestWithSpaceForSurplusCondition(@Nonnull SupplyEvaluator supplyEvaluator, int completionRange) {
+        if (completionRange < 1) {
+            throw new IllegalArgumentException("Completion range must be at least 1");
+        }
         this.supplyEvaluator = supplyEvaluator;
+        this.completionRange = completionRange;
     }
 
     @Override
@@ -43,7 +50,11 @@ public class ChestWithSpaceForSurplusCondition implements IEntityCondition<BaseV
 
         List<GlobalPos> chests = villager.getBrain()
                 .getMemory(MemoryTypeRegistry.VILLAGE_CHESTS.getModuleType())
-                .orElse(List.of());
+                .orElse(List.of())
+                .stream()
+                .filter(chest -> chest.dimension().equals(villager.level().dimension()))
+                .sorted(Comparator.comparingDouble(chest -> chest.pos().distSqr(villager.blockPosition())))
+                .toList();
         if (chests.isEmpty()) {
             return false;
         }
@@ -59,7 +70,11 @@ public class ChestWithSpaceForSurplusCondition implements IEntityCondition<BaseV
 
             ItemStack candidate = supply.representative().copyWithCount(targetCount);
             for (GlobalPos chestPos : chests) {
-                if (!chestPos.dimension().equals(level.dimension()) || ChestWaxService.isWaxed(level, chestPos.pos())) {
+                if (ChestWaxService.isWaxed(level, chestPos.pos())) {
+                    continue;
+                }
+
+                if (!villager.getNavigationManager().canReach(Location.of(chestPos.pos(), level), this.completionRange)) {
                     continue;
                 }
 

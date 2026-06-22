@@ -18,7 +18,9 @@ import java.util.UUID;
  *     timeout safety net.</li>
  *     <li>Enforcing an optional safety-net timeout: when {@code timeoutTicks > 0} and the elapsed-tick
  *     count exceeds it, the step short-circuits by returning either a transition to
- *     {@code timeoutTransition} (if set) or {@link StepResult#complete()} (silent give-up).
+ *     {@code timeoutTransition} (if set) or {@link StepResult#fail(String)} (clean failure that lets
+ *     the plan runner advance the day). A bare timeout with no transition wired must fail rather than
+ *     silently "complete" — a step that ran out of time did not succeed.
  *     Any non-positive {@code timeoutTicks} disables the check.</li>
  *     <li>Splitting reset semantics into per-entry ({@link #onEnter()}) and per-run ({@link #reset()})
  *     so that primitives like {@code LoopBackStep} can hold state that survives stage re-entries within
@@ -66,9 +68,11 @@ public abstract class AbstractStep<T extends ISettlementsBrainEntity> implements
     public final StepResult tick(@Nonnull BehaviorContext<T> context) {
         this.elapsedTicks++;
         if (this.timeoutTicks > 0 && this.elapsedTicks > this.timeoutTicks) {
+            // When a transition target is wired, redirect (allows in-behavior reselection or recovery).
+            // Otherwise fail cleanly so the behavior stops and the plan runner can advance the day.
             return this.timeoutTransition != null
                     ? StepResult.transition(this.timeoutTransition)
-                    : StepResult.complete();
+                    : StepResult.fail("timed out");
         }
         return this.doTick(context);
     }

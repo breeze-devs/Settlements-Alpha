@@ -91,7 +91,7 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
                 config.experienceReward());
 
         // Create behavior preconditions
-        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER));
+        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER), 1);
         this.preconditions.add(this.jobSiteBlockExistsCondition);
 
         // Initialize variables

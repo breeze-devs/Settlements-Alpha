@@ -115,6 +115,7 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
                 .matcher(source.matcher())
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
+                .completionRange(1)
                 .description("Known " + source.name() + " sites")
                 .build();
     }
@@ -124,7 +125,11 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
         stageMap.put(Stage.PICK_TARGET, this.createPickTargetStep());
         stageMap.put(Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(1.2)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
+                .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
+                        .navigationType(NavigationType.WALK)
+                        .completionDistance(1)
+                        .unreachableTransition(Stage.PICK_TARGET)
+                        .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtExcavationSite")
                         .action(ctx -> StepResult.transition(Stage.DIG))
@@ -171,7 +176,7 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
                     }
 
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, this.selectedSource.memoryType(),
-                            this.selectedSource.matcher(), this.confirmBox, this.maxConfirms);
+                            this.selectedSource.matcher(), this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
                         log.behaviorStatus("Selected excavation site no longer has live sites, ending behavior");
                         return StepResult.transition(Stage.AWARD);

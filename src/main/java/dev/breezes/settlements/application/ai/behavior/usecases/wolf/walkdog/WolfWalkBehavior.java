@@ -117,7 +117,12 @@ public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
     private BehaviorStep<SettlementsWolf> createWalkToTargetStep() {
         return StayCloseStep.<SettlementsWolf>builder()
                 .closeEnoughDistance(TARGET_CLOSE_ENOUGH_DISTANCE)
-                .navigateStep(new NavigateToTargetStep<>(NavigationType.RUN, NAVIGATION_COMPLETION_DISTANCE))
+                .navigateStep(NavigateToTargetStep.<SettlementsWolf>builder()
+                        .navigationType(NavigationType.RUN)
+                        .completionDistance(NAVIGATION_COMPLETION_DISTANCE)
+                        // Wander: attempt to move there and let timeout catch the unreachable places
+                        .reachabilityGated(false)
+                        .build())
                 .actionStep(ctx -> StepResult.transition(WolfWalkStage.SNIFF))
                 .build();
     }

@@ -70,6 +70,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, Cow>builder()
                 .entityType(Cow.class)
                 .filter((villager, cow) -> isMilkable(cow))
+                .completionRange(1)
                 .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BUCKET_ID), 1, 50, this.getClass().getSimpleName()));
 
@@ -204,7 +205,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
     private Optional<Cow> findClosestMilkableCow(@Nonnull BaseVillager villager) {
         return this.getPerceivedEntities(villager)
-                .closest(Cow.class, MilkCowBehavior::isMilkable, villager);
+                .closest(Cow.class, cow -> isMilkable(cow)
+                        && villager.getNavigationManager().canReach(Location.fromEntity(cow, false), 1), villager);
     }
 
     private PerceivedEntities getPerceivedEntities(@Nonnull BaseVillager villager) {

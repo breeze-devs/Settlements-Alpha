@@ -100,9 +100,8 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         this.dazeDuration = ClockTicks.seconds(config.dazeDurationSeconds());
 
         // Create behavior preconditions
-        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));
+        this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE), 1);
         this.blastRecipeAvailableCondition = new BlastRecipeAvailableCondition(RECIPES);
-        // TODO: we perhaps should check whether the furnace is currently in use?
         this.preconditions.add(this.jobSiteBlockExistsCondition);
         this.preconditions.add(this.blastRecipeAvailableCondition);
 

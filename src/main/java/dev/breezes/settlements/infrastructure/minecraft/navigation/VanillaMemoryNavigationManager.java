@@ -7,9 +7,11 @@ import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AllArgsConstructor;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.behavior.PositionTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.level.pathfinder.Path;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -40,9 +42,6 @@ public class VanillaMemoryNavigationManager<T extends BaseVillager> implements I
 
     @Override
     public void navigateTo(@Nonnull Location target, @Nonnull NavigationType type, int completionRange) {
-        if (!this.canReach(target, completionRange)) {
-            return;
-        }
         this.villager.setLocomotionNavigationType(type);
         villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
                 new WalkTarget(target.toBlockPos(), this.speedFor(type), completionRange));
@@ -61,8 +60,9 @@ public class VanillaMemoryNavigationManager<T extends BaseVillager> implements I
 
     @Override
     public boolean canReach(@Nonnull Location target, double distance) {
-        // TODO: implement this
-        return true;
+        // Use vanilla's own pathfinder to produce a trial path
+        Path path = this.villager.getNavigation().createPath(target.toBlockPos(), Mth.floor(distance));
+        return path != null && path.canReach();
     }
 
 }

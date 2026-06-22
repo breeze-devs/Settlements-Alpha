@@ -76,6 +76,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, IronGolem>builder()
                 .entityType(IronGolem.class)
                 .filter((villager, golem) -> this.isSufficientlyDamaged(golem))
+                .completionRange(1)
                 .build());
         this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_INGOT_ID), 1, 50, this.getClass().getSimpleName()));
 
@@ -196,7 +197,8 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
     private Optional<IronGolem> findClosestDamagedIronGolem(@Nonnull BaseVillager villager) {
         return this.getPerceivedEntities(villager)
-                .closest(IronGolem.class, this::isSufficientlyDamaged, villager);
+                .closest(IronGolem.class, golem -> this.isSufficientlyDamaged(golem)
+                        && villager.getNavigationManager().canReach(Location.fromEntity(golem, false), 1), villager);
     }
 
     private PerceivedEntities getPerceivedEntities(@Nonnull BaseVillager villager) {

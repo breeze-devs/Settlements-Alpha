@@ -1,5 +1,7 @@
 package dev.breezes.settlements.domain.ai.conditions;
 
+import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
+import dev.breezes.settlements.domain.world.location.Location;
 import lombok.Builder;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
@@ -24,6 +26,7 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
 
     private final int rangeHorizontal;
     private final int rangeVertical;
+    private final int completionRange;
 
     @Nullable
     private BlockPos waterTarget;
@@ -31,9 +34,13 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
     private BlockPos shorePosition;
 
     @Builder
-    public NearbyWaterExistsCondition(int rangeHorizontal, int rangeVertical) {
+    public NearbyWaterExistsCondition(int rangeHorizontal, int rangeVertical, int completionRange) {
+        if (completionRange < 1) {
+            throw new IllegalArgumentException("Completion range must be at least 1");
+        }
         this.rangeHorizontal = rangeHorizontal;
         this.rangeVertical = rangeVertical;
+        this.completionRange = completionRange;
 
         this.waterTarget = null;
         this.shorePosition = null;
@@ -115,6 +122,11 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
         }
 
         if (!findShorePosition(entity, level, waterMutable, shoreMutable)) {
+            return false;
+        }
+
+        if (entity instanceof ISettlementsBrainEntity brainEntity
+                && !brainEntity.getNavigationManager().canReach(Location.of(shoreMutable, level), this.completionRange)) {
             return false;
         }
 

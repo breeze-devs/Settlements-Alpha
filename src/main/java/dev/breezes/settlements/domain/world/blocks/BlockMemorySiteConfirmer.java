@@ -1,5 +1,7 @@
 package dev.breezes.settlements.domain.world.blocks;
 
+import dev.breezes.settlements.domain.ai.navigation.ReachabilityChecker;
+import dev.breezes.settlements.domain.world.location.Location;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
@@ -21,18 +23,27 @@ public final class BlockMemorySiteConfirmer {
                                                      @Nonnull Level level,
                                                      @Nonnull BlockMatcher matcher,
                                                      @Nonnull BlockScanBox confirmBox,
-                                                     int maxSitesToConfirm) {
+                                                     int maxSitesToConfirm,
+                                                     @Nonnull ReachabilityChecker reachabilityChecker,
+                                                     int completionRange) {
         if (maxSitesToConfirm < 1) {
             throw new IllegalArgumentException("Max sites to confirm must be at least 1");
+        }
+        if (completionRange < 1) {
+            throw new IllegalArgumentException("Completion range must be at least 1");
         }
 
         return rememberedSites.stream()
                 .filter(site -> site.dimension().equals(level.dimension()))
                 .sorted(Comparator.comparingDouble(site -> site.pos().distSqr(center)))
-                .limit(maxSitesToConfirm)
                 .map(site -> AabbBlockScan.findFirst(site.pos(), confirmBox, matcher, level)
                         .map(pos -> GlobalPos.of(level.dimension(), pos)))
                 .flatMap(Optional::stream)
+                // Cap the budget on live (still-matching) sites rather than nearest remembered entries, so a
+                // reachable site is not abandoned just because nearer entries are stale or unreachable (e.g.
+                // buried or fenced off). Reachability is the expensive check, so it is the one worth bounding.
+                .limit(maxSitesToConfirm)
+                .filter(site -> reachabilityChecker.canReach(Location.of(site.pos(), level), completionRange))
                 .findFirst();
     }
 
