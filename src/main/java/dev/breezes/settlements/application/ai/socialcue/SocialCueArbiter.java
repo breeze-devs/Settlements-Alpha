@@ -182,7 +182,6 @@ public final class SocialCueArbiter {
             runtimeState.recordTargetGreeted(uuidFromKey(resolvedContextKey), gameTime,
                     entry.getPerTargetCooldown().getTicks());
 
-            log.debug("Admitted SocialCue '{}' for villager {}", cue.getKey(), villager.getUUID());
             return;
         }
     }

@@ -1,0 +1,5 @@
+{
+  "seed_item": "minecraft:wheat_seeds",
+  "display_item": "minecraft:wheat",
+  "crop_block": "minecraft:wheat"
+}

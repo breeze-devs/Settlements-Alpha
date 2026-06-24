@@ -5,7 +5,6 @@ import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
-import lombok.CustomLog;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.inject.Inject;
@@ -18,7 +17,6 @@ import java.util.UUID;
 
 @ServerSide
 @ServerScope
-@CustomLog
 public final class VillagerBubbleService {
 
     private static final ClockTicks DEFAULT_BEHAVIOR_TTL_CAP = ClockTicks.seconds(30);
@@ -204,10 +202,6 @@ public final class VillagerBubbleService {
         List<BubbleEntrySnapshot> snapshots = this.getOrderedEntries(villager).stream()
                 .map(BubbleEntrySnapshot::fromEntry)
                 .toList();
-
-        log.info("Publishing bubble snapshot: villager={} entryCount={} sources={}",
-                villager.getUUID(), snapshots.size(),
-                snapshots.stream().map(BubbleEntrySnapshot::sourceType).toList());
 
         PacketDistributor.sendToPlayersTrackingEntity(
                 villager.getMinecraftEntity(),

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 /**
  * Code-defined SCRIPTED catalog
@@ -151,7 +152,7 @@ public final class DialogueLineIndex {
     }
 
     private static List<String> numberedKeys(String prefix, int count) {
-        return java.util.stream.IntStream.rangeClosed(1, count)
+        return IntStream.rangeClosed(1, count)
                 .mapToObj(index -> prefix + "." + index)
                 .toList();
     }

@@ -17,6 +17,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtsh
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CultivatePlotConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestMelonConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestNetherWartConfig;
@@ -247,6 +248,12 @@ public final class ConfigModule {
     @Singleton
     static HarvestRipeCropsConfig harvestRipeCropsConfig() {
         return ConfigFactory.create(HarvestRipeCropsConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static CultivatePlotConfig cultivatePlotConfig() {
+        return ConfigFactory.create(CultivatePlotConfig.class);
     }
 
     @Provides

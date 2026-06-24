@@ -2,6 +2,7 @@ package dev.breezes.settlements;
 
 import dev.breezes.settlements.bootstrap.registry.activities.ActivityRegistry;
 import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry;
+import dev.breezes.settlements.bootstrap.registry.blockentities.BlockEntityTypeRegistry;
 import dev.breezes.settlements.bootstrap.registry.blocks.BlockRegistry;
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
@@ -33,6 +34,7 @@ public final class SettlementsMod {
         // Link our registries to the mod event bus
         ItemRegistry.register(modEventBus);
         BlockRegistry.register(modEventBus);
+        BlockEntityTypeRegistry.register(modEventBus);
         CreativeTabRegistry.register(modEventBus);
         EntityRegistry.register(modEventBus);
         ParticleTypeRegistry.register(modEventBus);

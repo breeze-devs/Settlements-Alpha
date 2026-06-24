@@ -5,6 +5,7 @@ import dagger.Provides;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.SpecializationDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
@@ -73,6 +74,12 @@ public final class DataManagerModule {
     @Singleton
     static CollectHoneyYieldDataManager collectHoneyYieldDataManager() {
         return new CollectHoneyYieldDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static CultivationCropDataManager cultivationCropDataManager() {
+        return new CultivationCropDataManager();
     }
 
     @Provides

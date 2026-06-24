@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.registry.sensors;
 
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.CultivationTotemSensor;
 import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.OwnedPetsSensor;
 import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.SettlementsHurtBySensor;
 import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.SettlementsVillagerBabiesSensor;
@@ -25,6 +26,10 @@ public final class SensorTypeRegistry {
     public static final Supplier<SensorType<VillageChestsSensor>> VILLAGE_CHESTS_SENSOR = REGISTRY.register(
             "village_chests_sensor",
             () -> new SensorType<>(VillageChestsSensor::new));
+
+    public static final Supplier<SensorType<CultivationTotemSensor>> CULTIVATION_TOTEM_SENSOR = REGISTRY.register(
+            "cultivation_totem_sensor",
+            () -> new SensorType<>(CultivationTotemSensor::new));
 
     public static final Supplier<SensorType<SettlementsVillagerBabiesSensor>> SETTLEMENTS_VILLAGER_BABIES_SENSOR = REGISTRY.register(
             "villager_babies_sensor",

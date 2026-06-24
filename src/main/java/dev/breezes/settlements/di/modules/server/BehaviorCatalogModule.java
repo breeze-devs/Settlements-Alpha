@@ -36,6 +36,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchant
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CultivatePlotBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CultivatePlotConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestHoneycombConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestMelonBehavior;
@@ -115,6 +117,7 @@ import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
@@ -732,6 +735,35 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("wheat"))
                         .build())
                 .factory(() -> new HarvestRipeCropsBehavior(config, hungerConfig, targetResolver))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry cultivatePlot(CultivatePlotConfig config,
+                                              HungerConfig hungerConfig,
+                                              BlockMemoryTargetResolver targetResolver,
+                                              DemandSignalService demandSignalService,
+                                              CultivationCropDataManager cropRegistry) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.CULTIVATE_PLOT)
+                        .displayName("Cultivate Plot")
+                        .description("Till soil and plant seeds in a Totem of Cultivation zone")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(60).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.CULTIVATE_PLOT.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("iron_hoe"))
+                        .build())
+                .factory(() -> new CultivatePlotBehavior(config, hungerConfig, targetResolver, demandSignalService,
+                        cropRegistry))
                 .build();
     }
 

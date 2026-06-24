@@ -91,6 +91,10 @@ public final class MemoryModuleTypeRegistry {
             "nearby_sensed_entities",
             () -> new MemoryModuleType<>(Optional.empty()));
 
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> CULTIVATION_TOTEM_SITES = REGISTRY.register(
+            "cultivation_totem_sites",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

@@ -19,7 +19,7 @@ public record VillageAnimalSpawnerConfig(
                 type = ConfigurationType.FEATURE,
                 identifier = "spawn_interval",
                 description = "Seconds between spawn attempts near a village",
-                defaultValue = 60,
+                defaultValue = 40,
                 min = 1,
                 max = 1200)
         int spawnIntervalSeconds,

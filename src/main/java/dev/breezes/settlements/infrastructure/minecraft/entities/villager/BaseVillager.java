@@ -992,7 +992,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.WILLING_COURTSHIP_PARTNERS.getModuleType(),
                 MemoryTypeRegistry.NEARBY_SENSED_ENTITIES.getModuleType(),
                 MemoryTypeRegistry.GRAVEL_SITES.getModuleType(),
-                MemoryTypeRegistry.SAND_SITES.getModuleType()
+                MemoryTypeRegistry.SAND_SITES.getModuleType(),
+                MemoryTypeRegistry.CULTIVATION_TOTEM_SITES.getModuleType()
         );
     }
 
@@ -1009,6 +1010,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 SensorTypeRegistry.SETTLEMENTS_VILLAGER_BABIES_SENSOR.get(),
                 SensorTypeRegistry.OWNED_PETS_SENSOR.get(),
                 SensorTypeRegistry.VILLAGE_CHESTS_SENSOR.get(),
+                SensorTypeRegistry.CULTIVATION_TOTEM_SENSOR.get(),
                 SensorTypeRegistry.WILLING_COURTSHIP_PARTNERS_SENSOR.get()
         );
     }

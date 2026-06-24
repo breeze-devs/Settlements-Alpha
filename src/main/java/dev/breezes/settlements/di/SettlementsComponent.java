@@ -13,6 +13,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDe
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.SpecializationDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
@@ -55,6 +56,8 @@ public interface SettlementsComponent {
     BuildingDefinitionDataManager buildingDefinitionDataManager();
 
     CollectHoneyYieldDataManager collectHoneyYieldDataManager();
+
+    CultivationCropDataManager cultivationCropDataManager();
 
     HarvestHoneycombYieldDataManager harvestHoneycombYieldDataManager();
 

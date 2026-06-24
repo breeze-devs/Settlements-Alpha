@@ -20,6 +20,7 @@ public enum AnimationArchetype {
     SLEEP,
     REPAIR_IRON_GOLEM,
     DIG,
+    TILL,
     ;
 
     private static final AnimationArchetype[] VALUES = values();

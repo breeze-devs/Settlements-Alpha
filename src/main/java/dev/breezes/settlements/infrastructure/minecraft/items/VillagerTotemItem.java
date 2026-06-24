@@ -40,6 +40,18 @@ public class VillagerTotemItem extends Item {
         super(properties);
     }
 
+    @Override
+    public boolean hasCraftingRemainingItem(@Nonnull ItemStack stack) {
+        return true;
+    }
+
+    @Nonnull
+    @Override
+    public ItemStack getCraftingRemainingItem(@Nonnull ItemStack stack) {
+        // Preserve the selected totem mode and any future stack data when crafting recipes use the totem as a catalyst.
+        return stack.copy();
+    }
+
     public static TotemMode getMode(ItemStack stack) {
         return TotemMode.fromSerializedId(stack.getOrDefault(DataComponentRegistry.VILLAGER_TOTEM_MODE.get(),
                 TotemMode.defaultMode().getSerializedId()));

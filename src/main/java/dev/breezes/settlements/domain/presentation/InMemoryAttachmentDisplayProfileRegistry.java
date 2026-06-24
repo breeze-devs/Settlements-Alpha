@@ -34,7 +34,7 @@ public final class InMemoryAttachmentDisplayProfileRegistry implements Attachmen
                 .rotation(new Vector3f())
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
                 .build();
-        for (ItemCategory category : new ItemCategory[]{ItemCategory.SWORD, ItemCategory.MACE, ItemCategory.HOE}) {
+        for (ItemCategory category : new ItemCategory[]{ItemCategory.SWORD, ItemCategory.MACE}) {
             profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, category), handTool);
         }
 
@@ -55,6 +55,11 @@ public final class InMemoryAttachmentDisplayProfileRegistry implements Attachmen
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
                 .build());
         profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.SHOVEL), AttachmentDisplayProfile.builder()
+                .translation(new Vec3(0.0, -0.05, -0.15))
+                .rotation(new Vector3f(new Vector3f((float) Math.toRadians(-50), 0.0F, 0.0F)))
+                .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                .build());
+        profiles.put(AttachmentDisplayProfileKey.of(EquipmentSlot.MAIN_HAND, ItemCategory.HOE), AttachmentDisplayProfile.builder()
                 .translation(new Vec3(0.0, -0.05, -0.15))
                 .rotation(new Vector3f(new Vector3f((float) Math.toRadians(-50), 0.0F, 0.0F)))
                 .displayContextOverride(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)

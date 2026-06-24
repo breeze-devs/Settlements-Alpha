@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.blocks;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.DormantOreBlock;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationBlock;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -40,6 +41,16 @@ public final class BlockRegistry {
                             .randomTicks()
                             .pushReaction(PushReaction.BLOCK),
                     DormantOreBlock.Host.DEEPSLATE
+            ));
+
+    public static final DeferredHolder<Block, TotemOfCultivationBlock> TOTEM_OF_CULTIVATION = REGISTRY.register("totem_of_cultivation",
+            () -> new TotemOfCultivationBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.PLANT)
+                            .noOcclusion()
+                            .instabreak()
+                            .sound(SoundType.WET_GRASS)
+                            .pushReaction(PushReaction.DESTROY)
             ));
 
     public static void register(IEventBus eventBus) {

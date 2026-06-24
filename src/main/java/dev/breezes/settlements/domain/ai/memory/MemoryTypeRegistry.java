@@ -89,6 +89,11 @@ public final class MemoryTypeRegistry {
             .moduleTypeSupplier(MemoryModuleTypeRegistry.SAND_SITES)
             .build();
 
+    public static final MemoryType<List<GlobalPos>> CULTIVATION_TOTEM_SITES = MemoryType.<List<GlobalPos>>builder()
+            .identifier("cultivation_totem_sites")
+            .moduleTypeSupplier(MemoryModuleTypeRegistry.CULTIVATION_TOTEM_SITES)
+            .build();
+
     public static final MemoryType<List<UUID>> WILLING_COURTSHIP_PARTNERS = MemoryType.<List<UUID>>builder()
             .identifier("willing_courtship_partners")
             .moduleTypeSupplier(MemoryModuleTypeRegistry.WILLING_COURTSHIP_PARTNERS)

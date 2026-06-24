@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " H ",
+    "HTH",
+    " H "
+  ],
+  "key": {
+    "H": {
+      "item": "minecraft:hay_block"
+    },
+    "T": {
+      "item": "settlements:villager_totem"
+    }
+  },
+  "result": {
+    "id": "settlements:totem_of_cultivation"
+  }
+}

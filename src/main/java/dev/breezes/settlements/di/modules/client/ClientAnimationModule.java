@@ -32,6 +32,7 @@ import dev.breezes.settlements.domain.animation.PickUpAnimations;
 import dev.breezes.settlements.domain.animation.RepairIronGolemAnimations;
 import dev.breezes.settlements.domain.animation.SleepingAnimations;
 import dev.breezes.settlements.domain.animation.ThrowEggAnimations;
+import dev.breezes.settlements.domain.animation.TillAnimations;
 import dev.breezes.settlements.domain.animation.WaveAnimations;
 import dev.breezes.settlements.domain.presentation.ItemCategory;
 
@@ -70,7 +71,8 @@ public abstract class ClientAnimationModule {
                         Map.entry(AnimationKey.of(AnimationArchetype.THROW, ItemCategory.GENERIC), ThrowEggAnimations.throwEgg()),
                         Map.entry(AnimationKey.of(AnimationArchetype.SLEEP, ItemCategory.GENERIC), SleepingAnimations.sleeping()),
                         Map.entry(AnimationKey.of(AnimationArchetype.REPAIR_IRON_GOLEM, ItemCategory.GENERIC), RepairIronGolemAnimations.repairIronGolem()),
-                        Map.entry(AnimationKey.of(AnimationArchetype.DIG, ItemCategory.SHOVEL), DigAnimations.dig())))
+                        Map.entry(AnimationKey.of(AnimationArchetype.DIG, ItemCategory.SHOVEL), DigAnimations.dig()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.TILL, ItemCategory.GENERIC), TillAnimations.till())))
                 .build();
     }
 

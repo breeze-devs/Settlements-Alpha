@@ -14,6 +14,7 @@
 
   "block.settlements.dormant_ore": "Dormant Ore",
   "block.settlements.dormant_deepslate_ore": "Dormant Deepslate Ore",
+  "block.settlements.totem_of_cultivation": "Totem of Cultivation",
 
   "creative_tab.settlements": "Settlements",
 
@@ -58,6 +59,7 @@
   "ui.settlements.behavior.behavior.harvest_melon": "Harvest Melon",
   "ui.settlements.behavior.behavior.harvest_sweet_berries": "Harvest Sweet Berries",
   "ui.settlements.behavior.behavior.harvest_ripe_crops": "Harvest Ripe Crops",
+  "ui.settlements.behavior.behavior.cultivate_plot": "Cultivate Plot",
   "ui.settlements.behavior.behavior.eat_food": "Eat Meal",
   "ui.settlements.behavior.behavior.take_from_chest": "Fetch from Chest",
   "ui.settlements.behavior.behavior.deposit_surplus": "Deposit to Chest",
@@ -300,6 +302,9 @@
   "subtitles.settlements.wololo": "A shepherd chants mysteriously",
 
   "action.settlements.chest.waxed": "Chest waxed, villagers will ignore it",
-  "action.settlements.chest.unwaxed": "Chest unwaxed, villagers may use it again"
+  "action.settlements.chest.unwaxed": "Chest unwaxed, villagers may use it again",
+  "action.settlements.totem_of_cultivation.resized": "Cultivation zone: %s × %s",
+  "action.settlements.totem_of_cultivation.filter_set": "Cultivation filter set: %s",
+  "action.settlements.totem_of_cultivation.filter_cleared": "Cultivation filter cleared"
 
 }

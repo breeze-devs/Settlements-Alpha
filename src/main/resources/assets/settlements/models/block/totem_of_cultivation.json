@@ -1,0 +1,7 @@
+{
+  "render_type": "minecraft:cutout",
+  "parent": "minecraft:block/lily_pad",
+  "textures": {
+    "texture": "settlements:block/totem_of_cultivation_lily_pad"
+  }
+}

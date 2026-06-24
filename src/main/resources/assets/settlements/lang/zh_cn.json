@@ -14,6 +14,7 @@
 
   "block.settlements.dormant_ore": "待生长的矿石",
   "block.settlements.dormant_deepslate_ore": "待生长的深板岩矿石",
+  "block.settlements.totem_of_cultivation": "耕作图腾",
 
   "creative_tab.settlements": "万家烟火",
 
@@ -58,6 +59,7 @@
   "ui.settlements.behavior.behavior.harvest_melon": "摘西瓜",
   "ui.settlements.behavior.behavior.harvest_sweet_berries": "采甜浆果",
   "ui.settlements.behavior.behavior.harvest_ripe_crops": "收割庄稼",
+  "ui.settlements.behavior.behavior.cultivate_plot": "开垦田地",
   "ui.settlements.behavior.behavior.eat_food": "吃饭",
   "ui.settlements.behavior.behavior.take_from_chest": "翻找箱子",
   "ui.settlements.behavior.behavior.deposit_surplus": "存放物品",
@@ -115,18 +117,18 @@
   "ui.settlements.gene.charisma.desc": "魅力：%s（%s）— 影响交易价格和社交互动",
 
   "key.settlements.open_villager_stats": "打开村民状态",
-  "key.settlements.open_day_plan": "打开每日计划",
+  "key.settlements.open_day_plan": "打开日程表",
 
-  "ui.settlements.dayplan.title": "每日计划",
-  "ui.settlements.dayplan.loading": "正在加载每日计划…",
+  "ui.settlements.dayplan.title": "日程表",
+  "ui.settlements.dayplan.loading": "正在加载日程表…",
   "ui.settlements.dayplan.day": "第 %s 天",
-  "ui.settlements.dayplan.day_type.work": "上工日",
+  "ui.settlements.dayplan.day_type.work": "工作日",
   "ui.settlements.dayplan.day_type.rest": "休息日",
   "ui.settlements.dayplan.time": "时间 %s",
   "ui.settlements.dayplan.close": "关闭",
-  "ui.settlements.dayplan.connection_stale": "连接已断开：无法获取每日计划",
-  "ui.settlements.dayplan.unavailable": "每日计划不可用",
-  "ui.settlements.dayplan.no_plan": "还没安排每日计划",
+  "ui.settlements.dayplan.connection_stale": "连接已断开：无法获取日程表",
+  "ui.settlements.dayplan.unavailable": "日程表不可用",
+  "ui.settlements.dayplan.no_plan": "还没安排日程表",
   "ui.settlements.dayplan.no_villager_in_range": "附近没找到村民",
   "ui.settlements.dayplan.no_description": "暂无详情",
   "ui.settlements.dayplan.status.completed": "已完成",
@@ -299,5 +301,8 @@
   "subtitles.settlements.cucco_fall": "鸡不祥地坠落",
 
   "action.settlements.chest.waxed": "箱子已涂蜡，村民不会使用它",
-  "action.settlements.chest.unwaxed": "箱子已除蜡，村民可以使用它"
+  "action.settlements.chest.unwaxed": "箱子已除蜡，村民可以使用它",
+  "action.settlements.totem_of_cultivation.resized": "耕作区域： %s×%s",
+  "action.settlements.totem_of_cultivation.filter_set": "作物筛选设置为：%s",
+  "action.settlements.totem_of_cultivation.filter_cleared": "作物筛选已清除"
 }

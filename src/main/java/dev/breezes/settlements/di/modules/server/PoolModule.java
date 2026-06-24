@@ -78,6 +78,7 @@ public final class PoolModule {
                 .entry(PoolEntry.of(BehaviorKey.HARVEST_MELON))
                 .entry(PoolEntry.of(BehaviorKey.HARVEST_SWEET_BERRIES))
                 .entry(PoolEntry.of(BehaviorKey.HARVEST_RIPE_CROPS))
+                .entry(PoolEntry.of(BehaviorKey.CULTIVATE_PLOT))
                 .entry(PoolEntry.of(BehaviorKey.MILK_COW))
                 .entry(PoolEntry.of(BehaviorKey.BREED_CHICKENS))
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))

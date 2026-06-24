@@ -51,6 +51,7 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey HARVEST_MELON = new BehaviorKey("harvest_melon");
     public static final BehaviorKey HARVEST_SWEET_BERRIES = new BehaviorKey("harvest_sweet_berries");
     public static final BehaviorKey HARVEST_RIPE_CROPS = new BehaviorKey("harvest_ripe_crops");
+    public static final BehaviorKey CULTIVATE_PLOT = new BehaviorKey("cultivate_plot");
 
     // ---- Animal handling ----
     public static final BehaviorKey MILK_COW = new BehaviorKey("milk_cow");

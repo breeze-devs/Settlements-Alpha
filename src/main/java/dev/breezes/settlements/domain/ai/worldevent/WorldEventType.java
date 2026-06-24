@@ -36,6 +36,7 @@ public enum WorldEventType {
     SHEEP_SHEARED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     SHEEP_DYED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
     RESOURCE_HARVESTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true),
+    FARMLAND_CULTIVATED(WorldEventNamespace.WORLD, ObservationType.ENVIRONMENT, 1.8F, true),
 
     /**
      * A trade negotiation was completed (deal or walk-away).

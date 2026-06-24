@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.inference;
 
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -163,7 +164,7 @@ class HttpInferenceTransportTest {
     private static final class CapturedRequest {
 
         private String path;
-        private com.sun.net.httpserver.Headers headers;
+        private Headers headers;
         private String body;
 
         void capture(HttpExchange exchange) throws IOException {

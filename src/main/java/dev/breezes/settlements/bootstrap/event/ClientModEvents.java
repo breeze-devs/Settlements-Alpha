@@ -1,14 +1,17 @@
 package dev.breezes.settlements.bootstrap.event;
 
+import dev.breezes.settlements.bootstrap.registry.blockentities.BlockEntityTypeRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.client.VillagerFishingHookRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.rendering.SettlementsVillagerRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
 import dev.breezes.settlements.infrastructure.rendering.particles.EggSplatParticle;
+import dev.breezes.settlements.infrastructure.rendering.particles.OrbParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.StunnedStarParticle;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -89,9 +92,15 @@ public class ClientModEvents {
     }
 
     @SubscribeEvent
+    public static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(BlockEntityTypeRegistry.TOTEM_OF_CULTIVATION.get(), TotemOfCultivationRenderer::new);
+    }
+
+    @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(ParticleTypeRegistry.EGG_SPLAT.get(), EggSplatParticle.Provider::new);
         event.registerSpriteSet(ParticleTypeRegistry.STUNNED_STAR.get(), StunnedStarParticle.Provider::new);
+        event.registerSpriteSet(ParticleTypeRegistry.ORB.get(), OrbParticle.Provider::new);
     }
 
 }

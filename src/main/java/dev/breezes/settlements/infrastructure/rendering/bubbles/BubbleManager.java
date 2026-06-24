@@ -67,10 +67,6 @@ public class BubbleManager {
     }
 
     public void applySnapshot(@Nonnull List<BubbleEntrySnapshot> entries, long currentGameTime) {
-        log.info("Bubble applySnapshot: incoming={} existing={} incomingSources={}",
-                entries.size(), this.bubblesById.size(),
-                entries.stream().map(BubbleEntrySnapshot::sourceType).toList());
-
         Map<UUID, BubbleEntrySnapshot> incomingById = new LinkedHashMap<>();
         for (BubbleEntrySnapshot entry : entries) {
             incomingById.put(entry.bubbleId(), entry);

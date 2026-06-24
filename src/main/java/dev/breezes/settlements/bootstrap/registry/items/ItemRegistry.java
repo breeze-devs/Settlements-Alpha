@@ -7,6 +7,7 @@ import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.PlaceOnWaterBlockItem;
 import net.minecraft.world.item.SpawnEggItem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
@@ -34,6 +35,9 @@ public final class ItemRegistry {
 
     public static final DeferredHolder<Item, BlockItem> DORMANT_DEEPSLATE_ORE = REGISTRY.register("dormant_deepslate_ore",
             () -> new BlockItem(BlockRegistry.DORMANT_DEEPSLATE_ORE.get(), new Item.Properties()));
+
+    public static final DeferredHolder<Item, PlaceOnWaterBlockItem> TOTEM_OF_CULTIVATION = REGISTRY.register("totem_of_cultivation",
+            () -> new PlaceOnWaterBlockItem(BlockRegistry.TOTEM_OF_CULTIVATION.get(), new Item.Properties().stacksTo(16)));
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

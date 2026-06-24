@@ -12,7 +12,7 @@ public record BlockResourceSensorConfig(
                 description = "Horizontal radius in blocks for shared block resource scans",
                 defaultValue = 32,
                 min = 1,
-                max = 128)
+                max = 1024)
         int scanRangeHorizontal,
 
         @IntegerConfig(
@@ -21,7 +21,7 @@ public record BlockResourceSensorConfig(
                 description = "Vertical radius in blocks for shared block resource scans",
                 defaultValue = 8,
                 min = 0,
-                max = 48)
+                max = 128)
         int scanRangeVertical,
 
         @IntegerConfig(

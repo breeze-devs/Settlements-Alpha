@@ -214,6 +214,10 @@ public final class SeedPhrasebook {
                 String object = detail != null ? detail : "an item";
                 yield actorName + " collected " + object;
             }
+            case FARMLAND_CULTIVATED -> {
+                String object = detail != null ? detail : "farmland";
+                yield actorName + " cultivated " + object;
+            }
             // System-namespace events should never reach seeds; defensive fallback.
             default -> actorName + " did something";
         };
