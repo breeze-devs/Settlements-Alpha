@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.trading;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -14,7 +15,6 @@ import dev.breezes.settlements.application.ai.trading.TradeSession;
 import dev.breezes.settlements.application.ai.trading.TradeSessionPhase;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -44,7 +44,7 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
     private PresentationSignature lastObservedSignature;
 
     public TradeAcceptBehavior(@Nonnull TradingConfig config,
-                               @Nonnull HungerConfig hungerConfig,
+                               @Nonnull BehaviorSupport support,
                                @Nonnull TradeSessionRegistry sessionRegistry,
                                @Nonnull TradeSessionPresenter tradeSessionPresenter) {
         super(log,
@@ -52,7 +52,7 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
                 RandomRangeTickable.of(
                         ClockTicks.seconds(config.acceptBehaviorCooldownSecondsMax()),
                         ClockTicks.seconds(config.acceptBehaviorCooldownSecondsMin())),
-                hungerConfig);
+                support);
         this.sessionRegistry = sessionRegistry;
         this.tradeSessionPresenter = tradeSessionPresenter;
 

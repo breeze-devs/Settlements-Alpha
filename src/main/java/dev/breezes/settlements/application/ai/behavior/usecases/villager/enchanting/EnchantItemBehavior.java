@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -14,7 +15,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
@@ -66,9 +66,9 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
     private ItemStack targetRepresentative;
 
     public EnchantItemBehavior(@Nonnull EnchantItemConfig config,
-                               @Nonnull HungerConfig hungerConfig,
+                               @Nonnull BehaviorSupport support,
                                @Nonnull EnchantmentEngine enchantmentEngine) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
         this.config = config;

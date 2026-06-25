@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -14,8 +15,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -69,9 +68,8 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public TameCatBehavior(TameCatConfig config,
-                           HungerConfig hungerConfig,
-                           DemandSignalService demandSignalService) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                           BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
         this.config = config;
@@ -86,7 +84,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                 .build());
 
         // Precondition: has at least one cod
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(COD_ID), 1, 50, this.getClass().getSimpleName()));
+        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(COD_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.preconditions.add(ICondition.named("OwnershipBelowLimit", villager -> {
             Expertise expertise = villager.getExpertise();

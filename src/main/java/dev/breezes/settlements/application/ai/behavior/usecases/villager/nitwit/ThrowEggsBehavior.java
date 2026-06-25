@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -15,7 +16,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.L
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -94,8 +94,8 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
     // Flips each throw so eggs leave the raised left and right fists in turn
     private int eggsThrown;
 
-    public ThrowEggsBehavior(ThrowEggsConfig config, HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+    public ThrowEggsBehavior(ThrowEggsConfig config, BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support);
 
         this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, LivingEntity>builder()
                 .entityType(LivingEntity.class)

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.teardown.DropLeashObligation;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
@@ -14,8 +15,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyBreedableAnimalPairExistsCondition;
@@ -69,10 +68,9 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public BreedAnimalsBehavior(BreedAnimalsConfig config,
-                                HungerConfig hungerConfig,
-                                BreedSpecies species,
-                                DemandSignalService demandSignalService) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                                BehaviorSupport support,
+                                BreedSpecies species) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
         this.species = species;
@@ -81,7 +79,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
                 config.scanRangeVertical(),
                 species.getType());
         this.preconditions.add(this.nearbyBreedableAnimalPairExistsCondition);
-        this.preconditions.add(demandSignalService.requireAny(
+        this.preconditions.add(support.getDemandSignalService().requireAny(
                 List.of(new ItemMatch.TagRef(species.getFoodTag())),
                 1, 50, this.getClass().getSimpleName()));
 

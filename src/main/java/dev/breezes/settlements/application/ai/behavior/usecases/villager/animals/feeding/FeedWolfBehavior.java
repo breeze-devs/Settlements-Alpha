@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.feeding;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.OwnedWolfExistsCondition;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
@@ -14,8 +15,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
@@ -66,16 +65,15 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
     private ItemStack selectedMeat;
 
     public FeedWolfBehavior(@Nonnull FeedWolfConfig config,
-                            @Nonnull HungerConfig hungerConfig,
-                            @Nonnull DemandSignalService demandSignalService) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+                            @Nonnull BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support);
         this.config = config;
 
         this.targetWolf = null;
         this.selectedMeat = null;
 
         this.ownedWolfCondition = new OwnedWolfExistsCondition(config.scanRangeHorizontal(), config.scanRangeVertical(), ignored -> true);
-        this.preconditions.add(demandSignalService.requireAny(
+        this.preconditions.add(support.getDemandSignalService().requireAny(
                 List.of(new ItemMatch.TagRef(Tags.Items.FOODS_RAW_MEAT),
                         new ItemMatch.TagRef(Tags.Items.FOODS_COOKED_MEAT)),
                 1, 50, this.getClass().getSimpleName()));

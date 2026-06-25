@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.teardown.ReleaseHomePoiObligation;
 import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifactHandle;
@@ -22,7 +23,6 @@ import dev.breezes.settlements.application.ai.courtship.CourtshipPhase;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSelfMemoryRecorder;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSession;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
@@ -68,23 +68,22 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     private UUID activeSessionId;
 
     public CourtshipInitiateBehavior(@Nonnull CourtshipInitiateConfig config,
-                                     @Nonnull HungerConfig hungerConfig,
+                                     @Nonnull BehaviorSupport support,
                                      @Nonnull CourtshipSessionRegistry sessionRegistry,
                                      @Nonnull BedReservationService bedReservationService,
                                      @Nonnull CourtshipPresenter courtshipPresenter,
                                      @Nonnull CourtshipChoreographyLibrary choreographyLibrary,
-                                     @Nonnull WorldEventEmitter worldEventEmitter,
                                      @Nonnull CourtshipSelfMemoryRecorder selfMemoryRecorder) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
-                hungerConfig);
+                support);
         this.config = config;
         this.sessionRegistry = sessionRegistry;
         this.bedReservationService = bedReservationService;
         this.courtshipPresenter = courtshipPresenter;
         this.choreographyLibrary = choreographyLibrary;
-        this.worldEventEmitter = worldEventEmitter;
+        this.worldEventEmitter = support.getWorldEventEmitter();
         this.selfMemoryRecorder = selfMemoryRecorder;
 
         this.preconditions.add(this.canInitiateCourtship());

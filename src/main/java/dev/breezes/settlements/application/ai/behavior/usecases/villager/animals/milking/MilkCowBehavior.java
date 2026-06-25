@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -13,8 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -60,9 +59,8 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public MilkCowBehavior(@Nonnull MilkCowConfig config,
-                           @Nonnull HungerConfig hungerConfig,
-                           @Nonnull DemandSignalService demandSignalService) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                           @Nonnull BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
         this.config = config;
@@ -72,7 +70,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
                 .filter((villager, cow) -> isMilkable(cow))
                 .completionRange(1)
                 .build());
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BUCKET_ID), 1, 50, this.getClass().getSimpleName()));
+        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(BUCKET_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.target = null;
         this.milkCountRemaining = 0;

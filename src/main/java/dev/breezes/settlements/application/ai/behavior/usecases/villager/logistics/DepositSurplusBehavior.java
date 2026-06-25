@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -13,8 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.supply.SupplyEvaluator;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
@@ -55,11 +54,10 @@ public class DepositSurplusBehavior extends VillagerStateMachineBehavior {
     private ChestWithSpaceForSurplusCondition.Resolution resolution;
 
     public DepositSurplusBehavior(@Nonnull DepositSurplusConfig config,
-                                  @Nonnull HungerConfig hungerConfig,
-                                  @Nonnull SupplyEvaluator supplyEvaluator) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+                                  @Nonnull BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support);
 
-        this.chestCondition = new ChestWithSpaceForSurplusCondition(supplyEvaluator, NAVIGATION_COMPLETION_DISTANCE);
+        this.chestCondition = new ChestWithSpaceForSurplusCondition(support.getSupplyEvaluator(), NAVIGATION_COMPLETION_DISTANCE);
         this.preconditions.add(this.chestCondition);
         this.resolution = null;
 

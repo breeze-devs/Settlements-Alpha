@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -17,8 +18,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -78,15 +77,13 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
     private final BlockMemoryTargetResolver targetResolver;
 
     public HarvestHoneycombBehavior(@Nonnull HarvestHoneycombConfig config,
-                                    @Nonnull HungerConfig hungerConfig,
-                                    @Nonnull HarvestHoneycombYieldDataManager yieldData,
-                                    @Nonnull DemandSignalService demandSignalService,
-                                    @Nonnull BlockMemoryTargetResolver targetResolver) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                                    @Nonnull BehaviorSupport support,
+                                    @Nonnull HarvestHoneycombYieldDataManager yieldData) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
         this.config = config;
         this.yieldData = yieldData;
-        this.targetResolver = targetResolver;
+        this.targetResolver = support.getBlockMemoryTargetResolver();
         this.fullHiveMatcher = BlockMatchers.FULL_HIVE;
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
@@ -99,7 +96,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
                 .completionRange(1)
                 .description("Known full hive sites")
                 .build());
-        this.preconditions.add(demandSignalService.requireItem(
+        this.preconditions.add(support.getDemandSignalService().requireItem(
                 new ItemMatch.ItemRef(SHEARS_ITEM_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), HarvestStage.END);

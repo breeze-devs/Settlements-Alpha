@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -14,8 +15,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyWaterExistsCondition;
@@ -96,9 +95,8 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
     private int castRetryCount;
 
     public FishingBehavior(@Nonnull FishingConfig config,
-                           @Nonnull HungerConfig hungerConfig,
-                           @Nonnull DemandSignalService demandSignalService) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                           @Nonnull BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
         this.config = config;
@@ -109,7 +107,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .completionRange(NAVIGATION_COMPLETION_DISTANCE)
                 .build();
         this.preconditions.add(this.nearbyWaterExistsCondition);
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(FISHING_ROD_ID), 1, 50, this.getClass().getSimpleName()));
+        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(FISHING_ROD_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), FishingStage.END);
     }

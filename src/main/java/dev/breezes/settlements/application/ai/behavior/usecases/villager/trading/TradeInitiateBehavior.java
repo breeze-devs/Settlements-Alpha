@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.trading;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -23,7 +24,6 @@ import dev.breezes.settlements.application.economy.catalog.TradePriceResolver;
 import dev.breezes.settlements.application.economy.demand.ActiveDemand;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
@@ -87,37 +87,34 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
     private boolean tradeExecuted;
 
     public TradeInitiateBehavior(@Nonnull TradingConfig config,
-                                 @Nonnull HungerConfig hungerConfig,
+                                 @Nonnull BehaviorSupport support,
                                  @Nonnull TradeSessionRegistry sessionRegistry,
                                  @Nonnull TradeCatalogRegistry tradeCatalogRegistry,
                                  @Nonnull TradePriceResolver tradePriceResolver,
-                                 @Nonnull DemandSignalService demandSignalService,
                                  @Nonnull VillagerWallet villagerWallet,
                                  @Nonnull TradeExecutor tradeExecutor,
                                  @Nonnull TradeSessionPresenter tradeSessionPresenter,
-                                 @Nonnull DemandEvaluator demandEvaluator,
                                  @Nonnull PartnerScanner partnerScanner,
-                                 @Nonnull NegotiationEngine negotiationEngine,
-                                 @Nonnull WorldEventEmitter worldEventEmitter) {
+                                 @Nonnull NegotiationEngine negotiationEngine) {
         super(log,
                 ClockTicks.seconds(config.initiatePreconditionCooldownSeconds()).asTickable(),
                 RandomRangeTickable.of(
                         ClockTicks.seconds(config.initiateBehaviorCooldownSecondsMax()),
                         ClockTicks.seconds(config.initiateBehaviorCooldownSecondsMin())),
-                hungerConfig);
+                support);
         this.config = config;
 
         this.sessionRegistry = sessionRegistry;
         this.tradeCatalogRegistry = tradeCatalogRegistry;
         this.tradePriceResolver = tradePriceResolver;
-        this.demandSignalService = demandSignalService;
+        this.demandSignalService = support.getDemandSignalService();
         this.villagerWallet = villagerWallet;
         this.tradeExecutor = tradeExecutor;
         this.tradeSessionPresenter = tradeSessionPresenter;
-        this.demandEvaluator = demandEvaluator;
+        this.demandEvaluator = support.getDemandEvaluator();
         this.partnerScanner = partnerScanner;
         this.negotiationEngine = negotiationEngine;
-        this.worldEventEmitter = worldEventEmitter;
+        this.worldEventEmitter = support.getWorldEventEmitter();
 
         this.preconditions.add(this.canInitiateTrade());
         this.initializeStateMachine(this.createControlStep(), Stage.CLOSED);

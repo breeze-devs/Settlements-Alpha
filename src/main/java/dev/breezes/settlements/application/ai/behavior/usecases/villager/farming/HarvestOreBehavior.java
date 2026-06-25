@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -20,8 +21,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.P
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.WaitStep;
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.blocks.BlockRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
@@ -80,13 +79,11 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
     private final BlockMemoryTargetResolver targetResolver;
 
     public HarvestOreBehavior(@Nonnull HarvestOreConfig config,
-                              @Nonnull HungerConfig hungerConfig,
-                              @Nonnull DemandSignalService demandSignalService,
-                              @Nonnull BlockMemoryTargetResolver targetResolver) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                              @Nonnull BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
         this.config = config;
-        this.targetResolver = targetResolver;
+        this.targetResolver = support.getBlockMemoryTargetResolver();
         this.oreMatcher = BlockMatchers.HARVESTABLE_ORE;
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
@@ -98,7 +95,7 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
                 .completionRange(2)
                 .description("Known ore sites")
                 .build());
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_PICKAXE_ID), 1, 50,
+        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(IRON_PICKAXE_ID), 1, 50,
                 this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), Stage.END);

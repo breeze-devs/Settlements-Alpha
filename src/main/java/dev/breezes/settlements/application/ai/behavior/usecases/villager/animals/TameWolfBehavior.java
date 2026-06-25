@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -15,8 +16,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -72,8 +71,8 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
     private int attemptsRemaining;
     private boolean shouldRewardExperience;
 
-    public TameWolfBehavior(TameWolfConfig config, HungerConfig hungerConfig, DemandSignalService demandSignalService) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+    public TameWolfBehavior(TameWolfConfig config, BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
         this.config = config;
@@ -88,7 +87,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                 .build());
 
         // Precondition: has at least one bone
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(BONE_ID), 1, 50, this.getClass().getSimpleName()));
+        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(BONE_ID), 1, 50, this.getClass().getSimpleName()));
 
         // Precondition: ownership below per-expertise limit
         // TODO: we should move this somewhere else

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.mason;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -19,8 +20,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.P
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.WaitStep;
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.AnyOfCondition;
 import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
@@ -87,15 +86,13 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
     private ExcavatableSubstrateSource selectedSource;
 
     public ExcavateSubstrateBehavior(@Nonnull ExcavateSubstrateConfig config,
-                                     @Nonnull HungerConfig hungerConfig,
-                                     @Nonnull ExcavateSubstrateYieldDataManager yieldData,
-                                     @Nonnull DemandSignalService demandSignalService,
-                                     @Nonnull BlockMemoryTargetResolver targetResolver) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                                     @Nonnull BehaviorSupport support,
+                                     @Nonnull ExcavateSubstrateYieldDataManager yieldData) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
         this.config = config;
         this.yieldData = yieldData;
-        this.targetResolver = targetResolver;
+        this.targetResolver = support.getBlockMemoryTargetResolver();
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
 
@@ -103,7 +100,7 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
                 .conditions(SOURCES.stream().map(this::knownSitesPrecondition).toList())
                 .description("Known substrate excavation sites")
                 .build());
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_SHOVEL_ID), 1, 50,
+        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(IRON_SHOVEL_ID), 1, 50,
                 this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), Stage.END);

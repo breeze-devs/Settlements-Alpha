@@ -1,11 +1,11 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.AnyOfCondition;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
@@ -52,12 +52,12 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
     @Nullable
     private Tickable chewSoundTimer;
 
-    public EatFoodBehavior(@Nonnull HungerConfig hungerConfig) {
-        super(log, ClockTicks.seconds(10).asTickable(), ClockTicks.seconds(20).asTickable(), hungerConfig);
+    public EatFoodBehavior(@Nonnull BehaviorSupport support) {
+        super(log, ClockTicks.seconds(10).asTickable(), ClockTicks.seconds(20).asTickable(), support);
 
         this.preconditions.add(AnyOfCondition.<BaseVillager>builder()
                 .conditions(List.of(
-                        villager -> villager.getHunger() < hungerConfig.eatPriorityThreshold(),
+                        villager -> villager.getHunger() < support.getHungerConfig().eatPriorityThreshold(),
                         villager -> villager.getHealth() < villager.getMaxHealth()
                 ))
                 .description("IsHungryOrHurt")

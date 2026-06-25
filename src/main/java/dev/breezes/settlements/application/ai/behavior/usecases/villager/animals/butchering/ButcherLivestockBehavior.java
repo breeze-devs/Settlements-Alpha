@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -13,8 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
@@ -74,9 +73,8 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public ButcherLivestockBehavior(@Nonnull ButcherLivestockConfig config,
-                                    @Nonnull HungerConfig hungerConfig,
-                                    @Nonnull DemandSignalService demandSignalService) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig,
+                                    @Nonnull BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
         this.config = config;
@@ -92,7 +90,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                         && (!this.requireVillageOwnedTag || entity.getTags().contains(EntityTag.VILLAGE_OWNED_ANIMAL.getTag())))
                 .completionRange(1)
                 .build());
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_AXE_ID), 1, 50, this.getClass().getSimpleName()));
+        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(IRON_AXE_ID), 1, 50, this.getClass().getSimpleName()));
 
         this.butcherCountRemaining = 0;
         this.selectedAnimalType = null;
@@ -247,7 +245,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
             adultCountByType.merge(type, 1, Integer::sum);
         }
 
-        List<EntityType<?>> eligibleTypesByPopulation = adultCountByType.entrySet().stream()
+        List<? extends EntityType<?>> eligibleTypesByPopulation = adultCountByType.entrySet().stream()
                 .filter(entry -> entry.getValue() > this.minimumKeepByType.getOrDefault(entry.getKey(), Integer.MAX_VALUE))
                 .sorted(Map.Entry.<EntityType<?>, Integer>comparingByValue(Comparator.reverseOrder())
                         .thenComparing(entry -> BuiltInRegistries.ENTITY_TYPE.getKey(entry.getKey()).toString()))

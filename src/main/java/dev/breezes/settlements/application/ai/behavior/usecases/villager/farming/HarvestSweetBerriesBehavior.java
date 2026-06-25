@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -20,7 +21,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.P
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.WaitStep;
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -77,15 +77,14 @@ public class HarvestSweetBerriesBehavior extends VillagerStateMachineBehavior {
     private final BlockMemoryTargetResolver targetResolver;
 
     public HarvestSweetBerriesBehavior(@Nonnull HarvestSweetBerriesConfig config,
-                                       @Nonnull HungerConfig hungerConfig,
-                                       @Nonnull BlockMemoryTargetResolver targetResolver) {
+                                       @Nonnull BehaviorSupport support) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
-                hungerConfig,
+                support,
                 config.experienceReward());
         this.config = config;
-        this.targetResolver = targetResolver;
+        this.targetResolver = support.getBlockMemoryTargetResolver();
         this.ripeSweetBerryBushMatcher = BlockMatchers.RIPE_SWEET_BERRY_BUSH;
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;

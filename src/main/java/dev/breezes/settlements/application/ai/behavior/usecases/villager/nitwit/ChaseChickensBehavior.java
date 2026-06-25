@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -15,7 +16,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.L
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
@@ -71,8 +71,8 @@ public class ChaseChickensBehavior extends VillagerStateMachineBehavior {
     private CuccoEntity targetChicken;
     private int normalStrikesLanded;
 
-    public ChaseChickensBehavior(@Nonnull ChaseChickensConfig config, @Nonnull HungerConfig hungerConfig) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+    public ChaseChickensBehavior(@Nonnull ChaseChickensConfig config, @Nonnull BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support);
         this.revengeSwarmChance = config.revengeSwarmChance();
         this.targetChicken = null;
         this.normalStrikesLanded = 0;

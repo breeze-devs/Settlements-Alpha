@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.farming;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -19,8 +20,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
-import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleRegistry;
 import dev.breezes.settlements.domain.ai.conditions.KnownBlockSitesPrecondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -95,16 +94,14 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
     private final Deque<CultivationCellResult> pendingCells = new ArrayDeque<>();
 
     public CultivatePlotBehavior(@Nonnull CultivatePlotConfig config,
-                                 @Nonnull HungerConfig hungerConfig,
-                                 @Nonnull BlockMemoryTargetResolver targetResolver,
-                                 @Nonnull DemandSignalService demandSignalService,
+                                 @Nonnull BehaviorSupport support,
                                  @Nonnull CultivationCropRegistry cropRegistry) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
-                hungerConfig);
+                support);
         this.config = config;
-        this.targetResolver = targetResolver;
+        this.targetResolver = support.getBlockMemoryTargetResolver();
         this.cropRegistry = cropRegistry;
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
@@ -121,14 +118,14 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                 .completionRange(1)
                 .description("Known cultivation totem sites needing work")
                 .build());
-        this.preconditions.add(demandSignalService.requireItem(new ItemMatch.ItemRef(IRON_HOE_ID), 1, 50,
+        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(IRON_HOE_ID), 1, 50,
                 this.getClass().getSimpleName()));
 
         // requireAny throws on an empty match list, which an empty/misconfigured crop datapack would
         // produce. Skip the seed gate in that case — the behavior bails gracefully once it finds no
         // crop to plant, rather than failing every villager's behavior construction.
         if (!allSeedMatches.isEmpty()) {
-            this.preconditions.add(demandSignalService.requireAny(allSeedMatches, 1, 50,
+            this.preconditions.add(support.getDemandSignalService().requireAny(allSeedMatches, 1, 50,
                     this.getClass().getSimpleName()));
         }
 

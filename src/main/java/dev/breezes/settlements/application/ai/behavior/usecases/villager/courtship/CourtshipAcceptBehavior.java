@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -19,7 +20,6 @@ import dev.breezes.settlements.application.ai.courtship.CourtshipInvite;
 import dev.breezes.settlements.application.ai.courtship.CourtshipPhase;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSession;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
@@ -60,14 +60,14 @@ public final class CourtshipAcceptBehavior extends VillagerStateMachineBehavior 
     private UUID activeSessionId;
     private int lastObservedBeat;
 
-    public CourtshipAcceptBehavior(@Nonnull HungerConfig hungerConfig,
+    public CourtshipAcceptBehavior(@Nonnull BehaviorSupport support,
                                    @Nonnull CourtshipSessionRegistry sessionRegistry,
                                    @Nonnull CourtshipPresenter courtshipPresenter,
                                    @Nonnull CourtshipChoreographyLibrary choreographyLibrary) {
         super(log,
                 ClockTicks.seconds(2).asTickable(),
                 RandomRangeTickable.of(ClockTicks.seconds(30), ClockTicks.seconds(15)),
-                hungerConfig);
+                support);
         this.sessionRegistry = sessionRegistry;
         this.courtshipPresenter = courtshipPresenter;
         this.choreographyLibrary = choreographyLibrary;

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -13,8 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
@@ -45,11 +44,10 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
     private DemandedGroundItemCondition.Resolution resolution;
 
     public CollectDemandedItemBehavior(@Nonnull CollectDemandedItemConfig config,
-                                       @Nonnull HungerConfig hungerConfig,
-                                       @Nonnull DemandEvaluator demandEvaluator) {
-        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), hungerConfig);
+                                       @Nonnull BehaviorSupport support) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support);
 
-        this.itemCondition = new DemandedGroundItemCondition(demandEvaluator, NAVIGATION_COMPLETION_DISTANCE);
+        this.itemCondition = new DemandedGroundItemCondition(support.getDemandEvaluator(), NAVIGATION_COMPLETION_DISTANCE);
         this.preconditions.add(this.itemCondition);
 
         this.resolution = null;

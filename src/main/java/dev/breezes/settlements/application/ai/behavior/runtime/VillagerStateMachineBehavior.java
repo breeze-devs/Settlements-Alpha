@@ -12,36 +12,37 @@ import javax.annotation.Nonnull;
 @Getter
 public abstract class VillagerStateMachineBehavior extends StateMachineBehavior<BaseVillager> {
 
-    private final HungerConfig hungerConfig;
+    private final BehaviorSupport support;
     private final int experienceReward;
 
     protected VillagerStateMachineBehavior(@Nonnull ILogger log,
                                            @Nonnull ITickable preconditionCheckCooldown,
                                            @Nonnull ITickable behaviorCoolDown,
-                                           @Nonnull HungerConfig hungerConfig) {
-        this(log, preconditionCheckCooldown, behaviorCoolDown, hungerConfig, 0);
+                                           @Nonnull BehaviorSupport support) {
+        this(log, preconditionCheckCooldown, behaviorCoolDown, support, 0);
     }
 
     protected VillagerStateMachineBehavior(@Nonnull ILogger log,
                                            @Nonnull ITickable preconditionCheckCooldown,
                                            @Nonnull ITickable behaviorCoolDown,
-                                           @Nonnull HungerConfig hungerConfig,
+                                           @Nonnull BehaviorSupport support,
                                            int experienceReward) {
         super(log, preconditionCheckCooldown, behaviorCoolDown);
-        this.hungerConfig = hungerConfig;
+        this.support = support;
         this.experienceReward = experienceReward;
     }
 
     @Override
     protected double getCooldownMultiplier(@Nonnull BaseVillager villager) {
         float hunger = villager.getHunger();
+        HungerConfig hungerConfig = this.support.getHungerConfig();
 
-        if (hunger >= this.hungerConfig.hungerBonusThreshold()) {
-            return this.hungerConfig.cooldownBonusMultiplier();
+        if (hunger >= hungerConfig.hungerBonusThreshold()) {
+            return hungerConfig.cooldownBonusMultiplier();
         }
-        if (hunger <= this.hungerConfig.cooldownScaleStartThreshold()) {
-            double t = 1.0 - (hunger / this.hungerConfig.cooldownScaleStartThreshold());
-            return 1.0 + (this.hungerConfig.maxCooldownMultiplier() - 1.0) * t;
+        if (hunger <= hungerConfig.cooldownScaleStartThreshold()) {
+            double t = 1.0 - (hunger / hungerConfig.cooldownScaleStartThreshold());
+            return 1.0 + (hungerConfig.maxCooldownMultiplier() - 1.0) * t;
         }
         return 1.0;
     }

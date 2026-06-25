@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -13,7 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
@@ -64,9 +64,9 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public SurveyLandscapeBehavior(@Nonnull SurveyLandscapeConfig config,
-                                   @Nonnull HungerConfig hungerConfig) {
+                                   @Nonnull BehaviorSupport support) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(),
-                hungerConfig, config.experienceReward());
+                support, config.experienceReward());
         this.config = config;
         this.shouldRewardExperience = false;
         this.initializeStateMachine(this.createControlStep(), SurveyStage.END);

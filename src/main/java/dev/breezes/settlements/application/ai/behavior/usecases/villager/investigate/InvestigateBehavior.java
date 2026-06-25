@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.investigate;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -14,7 +15,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.N
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.planning.InvestigateTipSelector;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.behavior.contracts.ConfirmableOverride;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.credibility.ClaimPredicate;
@@ -110,13 +110,13 @@ public final class InvestigateBehavior extends VillagerStateMachineBehavior impl
     private KnowledgeResolution lastResolution;
 
     public InvestigateBehavior(@Nonnull InvestigateConfig config,
-                               @Nonnull HungerConfig hungerConfig,
+                               @Nonnull BehaviorSupport support,
                                @Nonnull ReputationUtil reputationUtil,
                                @Nonnull ReputationQuery reputationQuery) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
-                hungerConfig,
+                support,
                 config.experienceReward());
         this.config = config;
         this.reputationUtil = reputationUtil;

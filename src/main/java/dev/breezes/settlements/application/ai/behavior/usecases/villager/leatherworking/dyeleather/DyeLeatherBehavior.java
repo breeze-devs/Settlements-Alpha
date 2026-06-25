@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather;
 
+import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.teardown.DiscardEntityObligation;
 import dev.breezes.settlements.application.ai.behavior.teardown.TemporaryArtifactHandle;
@@ -17,7 +18,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
@@ -94,9 +94,9 @@ public class DyeLeatherBehavior extends VillagerStateMachineBehavior {
     @Nullable
     private TemporaryArtifactHandle standHandle;
 
-    public DyeLeatherBehavior(DyeLeatherConfig config, HungerConfig hungerConfig) {
+    public DyeLeatherBehavior(DyeLeatherConfig config, BehaviorSupport support) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(),
-                hungerConfig, config.experienceReward());
+                support, config.experienceReward());
 
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.CAULDRON), 1);
         this.preconditions.add(this.jobSiteBlockExistsCondition);
