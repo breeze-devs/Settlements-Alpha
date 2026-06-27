@@ -11,10 +11,7 @@ class MemoryWriteTest {
     @Test
     void applyToSetsPresentValue() {
         // Arrange
-        MemoryType<String> type = MemoryType.<String>builder()
-                .identifier("test")
-                .moduleTypeSupplier(() -> null)
-                .build();
+        MemoryType<String> type = MemoryType.vanillaBacked("test", () -> null);
         IBrain brain = mock(IBrain.class);
 
         // Act
@@ -27,10 +24,7 @@ class MemoryWriteTest {
     @Test
     void applyToClearsMissingValue() {
         // Arrange
-        MemoryType<String> type = MemoryType.<String>builder()
-                .identifier("test")
-                .moduleTypeSupplier(() -> null)
-                .build();
+        MemoryType<String> type = MemoryType.vanillaBacked("test", () -> null);
         IBrain brain = mock(IBrain.class);
 
         // Act

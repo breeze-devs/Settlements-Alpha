@@ -34,6 +34,7 @@ public final class AabbBlockScan {
                                                         @Nonnull BlockScanBox box,
                                                         @Nonnull List<BlockMatcher> matchers,
                                                         @Nonnull Level level) {
+        BlockStateView view = new LevelBlockStateView(level);
         List<List<BlockPos>> matchesByMatcher = new ArrayList<>(matchers.size());
         for (int i = 0; i < matchers.size(); i++) {
             matchesByMatcher.add(new ArrayList<>());
@@ -42,7 +43,7 @@ public final class AabbBlockScan {
         for (BlockPos.MutableBlockPos pos : normalPositionsMutable(center, box)) {
             BlockState state = level.getBlockState(pos);
             for (int i = 0; i < matchers.size(); i++) {
-                if (matchers.get(i).matches(pos, state, level)) {
+                if (matchers.get(i).matches(pos, state, view)) {
                     matchesByMatcher.get(i).add(pos.immutable());
                 }
             }
@@ -63,9 +64,11 @@ public final class AabbBlockScan {
                                        @Nonnull BlockMatcher matcher,
                                        @Nonnull Level level,
                                        @Nonnull PositionOrder positionOrder) {
+        BlockStateView view = new LevelBlockStateView(level);
         List<BlockPos> matches = new ArrayList<>();
         for (BlockPos.MutableBlockPos pos : positionOrder.positions(center, box)) {
-            if (matcher.matches(pos, level)) {
+            BlockState state = level.getBlockState(pos);
+            if (matcher.matches(pos, state, view)) {
                 matches.add(pos.immutable());
             }
         }
@@ -74,7 +77,7 @@ public final class AabbBlockScan {
 
     public static Optional<BlockPos> findFirst(@Nonnull BlockPos center,
                                                @Nonnull BlockScanBox box,
-                                               @Nonnull BlockMatcher matcher,
+                                               @Nonnull LiveBlockSiteMatcher matcher,
                                                @Nonnull Level level) {
         for (BlockPos.MutableBlockPos pos : nearestFirstPositionsMutable(center, box)) {
             if (matcher.matches(pos, level)) {

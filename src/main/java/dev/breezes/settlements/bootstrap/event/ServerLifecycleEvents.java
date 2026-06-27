@@ -31,6 +31,7 @@ public final class ServerLifecycleEvents {
         NeoForge.EVENT_BUS.register(serverComponent.uiSyncServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.courtshipSessionReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.worldEventBusReaperServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.resourceIndexRefresherServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.tradeSessionReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.credibilityDecayServerEvents());
@@ -45,7 +46,7 @@ public final class ServerLifecycleEvents {
         log.info("De-registering events");
         ServerComponent serverComponent = SettlementsDagger.serverOrNull();
         if (serverComponent != null) {
-            shutdownPlanGenerationExecutor(serverComponent.planGenerationExecutor());
+            serverComponent.managedExecutors().forEach(ServerLifecycleEvents::shutdownExecutor);
             closeInferenceTransport(serverComponent.inferenceTransport());
 
             // Because they are @ServerScoped, Dagger returns the exact instances we registered earlier
@@ -55,6 +56,7 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.uiSyncServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.courtshipSessionReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.worldEventBusReaperServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.resourceIndexRefresherServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.tradeSessionReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.credibilityDecayServerEvents());
@@ -68,7 +70,7 @@ public final class ServerLifecycleEvents {
         SettlementsDagger.clearServer();
     }
 
-    private static void shutdownPlanGenerationExecutor(ExecutorService executor) {
+    private static void shutdownExecutor(ExecutorService executor) {
         executor.shutdown();
         try {
             if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {

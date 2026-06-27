@@ -6,9 +6,9 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.b
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
-import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
 import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
 import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
+import dev.breezes.settlements.domain.world.blocks.LiveBlockSiteMatcher;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -28,7 +28,7 @@ public final class BlockMemoryTargetResolver {
 
     public boolean resolveBlockTarget(@Nonnull BehaviorContext<BaseVillager> context,
                                       @Nonnull MemoryType<List<GlobalPos>> memoryType,
-                                      @Nonnull BlockMatcher matcher,
+                                      @Nonnull LiveBlockSiteMatcher matcher,
                                       @Nonnull BlockScanBox confirmBox,
                                       int maxSitesToConfirm,
                                       int completionRange) {

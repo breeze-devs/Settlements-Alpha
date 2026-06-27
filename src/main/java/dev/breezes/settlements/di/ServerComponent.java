@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.perception.PerceptionPipeline;
+import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueArbiter;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.economy.VillagerWallet;
@@ -24,6 +25,7 @@ import dev.breezes.settlements.bootstrap.event.GossipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.RehearsedDialogueSweepServerEvents;
+import dev.breezes.settlements.bootstrap.event.ResourceIndexRefresherServerEvents;
 import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
 import dev.breezes.settlements.bootstrap.event.TradeSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
@@ -38,6 +40,7 @@ import dev.breezes.settlements.di.modules.server.DialogueServiceModule;
 import dev.breezes.settlements.di.modules.server.GossipModule;
 import dev.breezes.settlements.di.modules.server.OverridePolicyModule;
 import dev.breezes.settlements.di.modules.server.PerceptionModule;
+import dev.breezes.settlements.di.modules.server.ConcurrencyModule;
 import dev.breezes.settlements.di.modules.server.PlanningModule;
 import dev.breezes.settlements.di.modules.server.PoolModule;
 import dev.breezes.settlements.di.modules.server.SensorCatalogModule;
@@ -70,6 +73,7 @@ import java.util.concurrent.ExecutorService;
         BehaviorCatalogModule.class,
         PoolModule.class,
         PlanningModule.class,
+        ConcurrencyModule.class,
         SettlementQueryModule.class,
         SensorCatalogModule.class,
         UiSyncModule.class,
@@ -115,7 +119,11 @@ public interface ServerComponent {
 
     WorldEventBusReaperServerEvents worldEventBusReaperServerEvents();
 
+    ResourceIndexRefresherServerEvents resourceIndexRefresherServerEvents();
+
     WorldEventBus worldEventBus();
+
+    WorldResourceIndex worldResourceIndex();
 
     WorldEventEmitter worldEventEmitter();
 
@@ -165,7 +173,7 @@ public interface ServerComponent {
 
     Set<VillagerSensorFactory> villagerSensorFactories();
 
-    ExecutorService planGenerationExecutor();
+    Set<ExecutorService> managedExecutors();
 
     // Exposed for VillagerFishingHook (non-injectable Minecraft entity, server-only)
     FishCatchDataManager fishCatchDataManager();

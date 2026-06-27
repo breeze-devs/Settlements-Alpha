@@ -2,7 +2,7 @@ package dev.breezes.settlements.domain.ai.sensors;
 
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
-import dev.breezes.settlements.domain.ai.memory.MemoryWrite;
+import dev.breezes.settlements.domain.ai.memory.IMemoryWrite;
 import dev.breezes.settlements.domain.time.ITickable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
@@ -27,7 +27,7 @@ public interface ISensor<T extends Entity & ISettlementsBrainEntity> {
     /**
      * Perform the sensing action and return the result
      */
-    List<MemoryWrite<?>> doSense(@Nonnull Level world, @Nonnull T entity);
+    List<IMemoryWrite> doSense(@Nonnull Level world, @Nonnull T entity);
 
     /**
      * Cooldown between each sense, can be set initially to delay the first sense

@@ -9,16 +9,16 @@ import dev.breezes.settlements.application.ai.sensors.BlockResourceSensor;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensor;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
+import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 
 import java.util.Set;
 
 @Module
 public abstract class SensorCatalogModule {
-
-    private static final int COMMON_LOOSE_GROUND_MAX_SITES = 6;
 
     @Multibinds
     abstract Set<VillagerSensorFactory> villagerSensorFactories();
@@ -33,8 +33,11 @@ public abstract class SensorCatalogModule {
     //  questions #3 sensor-sharing-granularity and #7 registration-mechanism).
     @Provides
     @IntoSet
-    static VillagerSensorFactory blockResourceSensor(BlockResourceSensorConfig config, Set<BlockResource> resources) {
-        return villager -> new BlockResourceSensor(config, resources);
+    static VillagerSensorFactory blockResourceSensor(BlockResourceSensorConfig config,
+                                                     Set<BlockResource> resources,
+                                                     WorldResourceIndex index,
+                                                     SettlementQueryService settlementQueryService) {
+        return villager -> new BlockResourceSensor(config, resources, index, settlementQueryService);
     }
 
     @Provides
@@ -94,13 +97,13 @@ public abstract class SensorCatalogModule {
     @Provides
     @IntoSet
     static BlockResource gravel() {
-        return new BlockResource(BlockMatchers.LOOSE_GRAVEL, MemoryTypeRegistry.GRAVEL_SITES, COMMON_LOOSE_GROUND_MAX_SITES);
+        return new BlockResource(BlockMatchers.LOOSE_GRAVEL, MemoryTypeRegistry.GRAVEL_SITES);
     }
 
     @Provides
     @IntoSet
     static BlockResource sand() {
-        return new BlockResource(BlockMatchers.LOOSE_SAND, MemoryTypeRegistry.SAND_SITES, COMMON_LOOSE_GROUND_MAX_SITES);
+        return new BlockResource(BlockMatchers.LOOSE_SAND, MemoryTypeRegistry.SAND_SITES);
     }
 
     // Cultivation totems are discovered by the dedicated CultivationTotemSensor (block-entity scan at a

@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.application.economy.demand.DemandSignalCodec;
 import dev.breezes.settlements.application.economy.demand.DemandSignalState;
+import dev.breezes.settlements.domain.ai.memory.SettlementsMemoryStore;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentCodec;
@@ -90,6 +91,14 @@ public final class AttachmentRegistry {
             "villager_credibility",
             () -> AttachmentType.builder(VillagerCredibilityAttachmentState::empty)
                     .serialize(VillagerCredibilityAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    /**
+     * Transient per-villager store for decaying Settlements memories
+     */
+    public static final Supplier<AttachmentType<SettlementsMemoryStore>> SETTLEMENTS_MEMORY_STORE = REGISTRY.register(
+            "settlements_memory_store",
+            () -> AttachmentType.builder(SettlementsMemoryStore::new)
                     .build());
 
     /**

@@ -35,12 +35,12 @@ import dev.breezes.settlements.domain.farming.CultivationCropRegistry;
 import dev.breezes.settlements.domain.farming.CultivationZoneCategorizer;
 import dev.breezes.settlements.domain.tags.SettlementsBlockTags;
 import dev.breezes.settlements.domain.time.ClockTicks;
-import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
 import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.CultivationTotemSiteMatchers;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationBlockEntity;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -112,7 +112,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
 
         this.preconditions.add(KnownBlockSitesPrecondition.builder()
                 .memoryType(MemoryTypeRegistry.CULTIVATION_TOTEM_SITES)
-                .matcher(BlockMatchers.CULTIVATION_TOTEM_NEEDS_WORK)
+                .matcher(CultivationTotemSiteMatchers.NEEDS_WORK)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
                 .completionRange(1)
@@ -347,7 +347,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
         // Resolve which totem to work on before the state machine starts
         boolean resolved = this.targetResolver.resolveBlockTarget(context,
                 MemoryTypeRegistry.CULTIVATION_TOTEM_SITES,
-                BlockMatchers.CULTIVATION_TOTEM_NEEDS_WORK,
+                CultivationTotemSiteMatchers.NEEDS_WORK,
                 this.confirmBox,
                 this.maxConfirms,
                 1);

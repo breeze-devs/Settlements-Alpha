@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.sensors;
 
+import dev.breezes.settlements.domain.ai.memory.IMemoryWrite;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.memory.MemoryWrite;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
@@ -25,7 +26,7 @@ public final class EntityPerceptionSensor extends AbstractSensor<BaseVillager> {
     }
 
     @Override
-    public List<MemoryWrite<?>> doSense(@Nonnull Level world, @Nonnull BaseVillager entity) {
+    public List<IMemoryWrite> doSense(@Nonnull Level world, @Nonnull BaseVillager entity) {
         AABB scanBox = entity.getBoundingBox().inflate(
                 this.config.scanRangeHorizontal(),
                 this.config.scanRangeVertical(),

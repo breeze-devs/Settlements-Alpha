@@ -43,46 +43,6 @@ public final class MemoryModuleTypeRegistry {
             "village_chests",
             () -> new MemoryModuleType<>(Optional.empty()));
 
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_PUMPKIN_SITES = REGISTRY.register(
-            "ripe_pumpkin_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_MELON_SITES = REGISTRY.register(
-            "ripe_melon_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_SWEET_BERRY_BUSH_SITES = REGISTRY.register(
-            "ripe_sweet_berry_bush_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> RIPE_CROP_SITES = REGISTRY.register(
-            "ripe_crop_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> NETHER_WART_FARM_SITES = REGISTRY.register(
-            "nether_wart_farm_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> HARVESTABLE_SUGARCANE_SITES = REGISTRY.register(
-            "harvestable_sugarcane_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> FULL_HIVE_SITES = REGISTRY.register(
-            "full_hive_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> ORE_SITES = REGISTRY.register(
-            "ore_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> GRAVEL_SITES = REGISTRY.register(
-            "gravel_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> SAND_SITES = REGISTRY.register(
-            "sand_sites",
-            () -> new MemoryModuleType<>(Optional.empty()));
-
     public static final Supplier<MemoryModuleType<List<UUID>>> WILLING_COURTSHIP_PARTNERS = REGISTRY.register(
             "willing_courtship_partners",
             () -> new MemoryModuleType<>(Optional.empty()));
@@ -94,7 +54,6 @@ public final class MemoryModuleTypeRegistry {
     public static final Supplier<MemoryModuleType<List<GlobalPos>>> CULTIVATION_TOTEM_SITES = REGISTRY.register(
             "cultivation_totem_sites",
             () -> new MemoryModuleType<>(Optional.empty()));
-
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

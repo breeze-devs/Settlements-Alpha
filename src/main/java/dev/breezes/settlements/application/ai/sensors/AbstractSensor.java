@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.sensors;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.conditions.IEntityCondition;
+import dev.breezes.settlements.domain.ai.memory.IMemoryWrite;
 import dev.breezes.settlements.domain.ai.sensors.ISensor;
 import dev.breezes.settlements.domain.time.ITickable;
 import lombok.Getter;
@@ -37,7 +38,10 @@ public abstract class AbstractSensor<T extends Entity & ISettlementsBrainEntity>
         }
 
         IBrain brain = entity.getSettlementsBrain();
-        this.doSense(world, entity).forEach(write -> write.applyTo(brain));
+        List<IMemoryWrite> writes = this.doSense(world, entity);
+        for (IMemoryWrite write : writes) {
+            write.applyTo(brain);
+        }
     }
 
 }

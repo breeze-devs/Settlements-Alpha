@@ -31,6 +31,15 @@ public record BlockResourceSensorConfig(
                 defaultValue = 30,
                 min = 5,
                 max = 900)
-        int scanIntervalSeconds
+        int scanIntervalSeconds,
+
+        @IntegerConfig(
+                type = ConfigurationType.SENSOR,
+                identifier = "scan_budget_sections_per_tick",
+                description = "Maximum block-resource sections scanned per level tick",
+                defaultValue = 8,
+                min = 1,
+                max = 128)
+        int scanBudgetSectionsPerTick
 ) {
 }

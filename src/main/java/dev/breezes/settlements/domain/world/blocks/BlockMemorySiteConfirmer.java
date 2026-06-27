@@ -21,7 +21,7 @@ public final class BlockMemorySiteConfirmer {
     public static Optional<GlobalPos> confirmNearest(@Nonnull List<GlobalPos> rememberedSites,
                                                      @Nonnull BlockPos center,
                                                      @Nonnull Level level,
-                                                     @Nonnull BlockMatcher matcher,
+                                                     @Nonnull LiveBlockSiteMatcher matcher,
                                                      @Nonnull BlockScanBox confirmBox,
                                                      int maxSitesToConfirm,
                                                      @Nonnull ReachabilityChecker reachabilityChecker,

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.planning;
 
+import dev.breezes.settlements.di.PlanGenerationExecutor;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.IAsyncPlanGenerator;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
@@ -20,6 +21,8 @@ import java.util.concurrent.ExecutorService;
 public class HeuristicAsyncPlanGenerator implements IAsyncPlanGenerator {
 
     private final IPlanGenerator planGenerator;
+
+    @PlanGenerationExecutor
     private final ExecutorService planGenerationExecutor;
 
     @Override

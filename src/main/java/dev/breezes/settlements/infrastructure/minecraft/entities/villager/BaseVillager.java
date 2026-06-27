@@ -975,24 +975,15 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryModuleType.LAST_WORKED_AT_POI,
                 MemoryModuleType.GOLEM_DETECTED_RECENTLY,
 
-                // Custom memory module types starts here
+                // Custom vanilla-compatible memory module types
+                // Settlements-specific memories don't need to be registered here
                 MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType(),
                 MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
                 MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType(),
                 MemoryTypeRegistry.OWNED_WOLVES.getModuleType(),
                 MemoryTypeRegistry.VILLAGE_CHESTS.getModuleType(),
-                MemoryTypeRegistry.RIPE_PUMPKIN_SITES.getModuleType(),
-                MemoryTypeRegistry.RIPE_MELON_SITES.getModuleType(),
-                MemoryTypeRegistry.RIPE_SWEET_BERRY_BUSH_SITES.getModuleType(),
-                MemoryTypeRegistry.RIPE_CROP_SITES.getModuleType(),
-                MemoryTypeRegistry.NETHER_WART_FARM_SITES.getModuleType(),
-                MemoryTypeRegistry.HARVESTABLE_SUGARCANE_SITES.getModuleType(),
-                MemoryTypeRegistry.FULL_HIVE_SITES.getModuleType(),
-                MemoryTypeRegistry.ORE_SITES.getModuleType(),
                 MemoryTypeRegistry.WILLING_COURTSHIP_PARTNERS.getModuleType(),
                 MemoryTypeRegistry.NEARBY_SENSED_ENTITIES.getModuleType(),
-                MemoryTypeRegistry.GRAVEL_SITES.getModuleType(),
-                MemoryTypeRegistry.SAND_SITES.getModuleType(),
                 MemoryTypeRegistry.CULTIVATION_TOTEM_SITES.getModuleType()
         );
     }

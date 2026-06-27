@@ -1,9 +1,9 @@
 package dev.breezes.settlements.domain.ai.conditions;
 
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
-import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
 import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
 import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
+import dev.breezes.settlements.domain.world.blocks.LiveBlockSiteMatcher;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.Builder;
 import net.minecraft.core.GlobalPos;
@@ -17,7 +17,7 @@ import java.util.Optional;
 public final class KnownBlockSitesPrecondition implements IEntityCondition<BaseVillager> {
 
     private final MemoryType<List<GlobalPos>> memoryType;
-    private final BlockMatcher matcher;
+    private final LiveBlockSiteMatcher matcher;
     private final BlockScanBox confirmBox;
     private final int maxSitesToConfirm;
     private final int completionRange;
@@ -25,7 +25,7 @@ public final class KnownBlockSitesPrecondition implements IEntityCondition<BaseV
 
     @Builder
     public KnownBlockSitesPrecondition(@Nonnull MemoryType<List<GlobalPos>> memoryType,
-                                       @Nonnull BlockMatcher matcher,
+                                       @Nonnull LiveBlockSiteMatcher matcher,
                                        @Nonnull BlockScanBox confirmBox,
                                        int maxSitesToConfirm,
                                        int completionRange,

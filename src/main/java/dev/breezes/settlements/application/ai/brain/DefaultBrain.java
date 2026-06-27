@@ -2,6 +2,7 @@ package dev.breezes.settlements.application.ai.brain;
 
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
+import dev.breezes.settlements.domain.ai.memory.ObservationReport;
 import dev.breezes.settlements.domain.ai.schedule.IScheduleProvider;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.Builder;
@@ -53,6 +54,13 @@ public class DefaultBrain implements IBrain {
     @Override
     public void clearMemory(@Nonnull MemoryType<?> type) {
 
+    }
+
+    @Override
+    public void updateObservation(@Nonnull MemoryType.DecayingSpatialMemoryType type,
+                                  @Nonnull ObservationReport report,
+                                  long nowTick) {
+        // DefaultBrain is a placeholder; observation updates are no-ops here.
     }
 
 }
