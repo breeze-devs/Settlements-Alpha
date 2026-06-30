@@ -11,6 +11,7 @@ import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
+import dev.breezes.settlements.domain.ai.catalog.WeightedBehavior;
 import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeResolution;
@@ -85,6 +86,11 @@ public class PlanRunner {
      */
     private static final int DEFAULT_MAX_BEHAVIOR_RUN_TICKS = ClockTicks.minutes(1).getTicksAsInt();
 
+    /**
+     * Spacing between successive attempts to start a rigid plan slot whose preconditions are not yet satisfied.
+     */
+    private static final int SLOT_START_RETRY_INTERVAL_TICKS = ClockTicks.seconds(0.5).getTicksAsInt();
+
     private static final Comparator<OverridePolicy> OVERRIDE_POLICY_PRECEDENCE = Comparator
             .comparingInt(OverridePolicy::priority)
             .reversed()
@@ -100,6 +106,7 @@ public class PlanRunner {
     private final BehaviorOutcomePublisher behaviorOutcomePublisher;
     private final WorldEventEmitter worldEventEmitter;
     private final ReputationQuery reputationQuery;
+    private final OpportunityForecaster opportunityForecaster;
 
     /**
      * TODO:CONFIRM -- would this also be useful for player injecting an override? e.g. test/debug command to tell
@@ -281,6 +288,12 @@ public class PlanRunner {
                               int delta,
                               int dayTick,
                               int planEpoch) {
+        // Throttle retries
+        if (runtime.getSlotStartRetryDelayTicks() > 0) {
+            runtime.decaySlotStartRetryDelay(delta);
+            return;
+        }
+
         if (!isSlotWindowOpen(slot, dayTick, planEpoch)) {
             this.clearPlanActiveMemory(villager);
             return;
@@ -313,7 +326,11 @@ public class PlanRunner {
                 slot.markStatus(PlanSlotStatus.SKIPPED);
                 this.clearPlanActiveMemory(villager);
                 plan.advanceSlot();
+                return;
             }
+
+            // Rigid slot keeps its window and retries later
+            runtime.armSlotStartRetryDelay(SLOT_START_RETRY_INTERVAL_TICKS - 1);
             return;
         }
 
@@ -589,16 +606,23 @@ public class PlanRunner {
             }
         }
 
+        // Resolve the pool before the context so the forecaster can evaluate it on this server thread.
+        // DecayingSpatialMemory reads (lazy expiry) are not safe off-thread; the async generator
+        // receives only the plain Set<BehaviorKey> verdict, never the villager or its brain.
+        List<WeightedBehavior> pool = this.behaviorPoolResolver.resolve(professionKey);
+        Set<BehaviorKey> lacking = this.opportunityForecaster.forecastLackingOpportunity(villager, pool);
+
         return PlanGenerationContext.builder()
                 .profession(professionKey)
                 .genetics(villager.getGenetics().copy())
                 .scheduleProfile(ScheduleProfile.defaultFor(professionKey))
                 .restDayPolicy(RestDayPolicy.defaultFor(professionKey))
                 .dayType(dayType)
-                .availableBehaviors(this.behaviorPoolResolver.resolve(professionKey))
+                .availableBehaviors(pool)
                 .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
                 .chronotypeSeed(chronotypeSeedFor(villager))
                 .pendingInvestigateTipCount(pendingTipCount)
+                .behaviorsLackingOpportunity(lacking)
                 .build();
     }
 

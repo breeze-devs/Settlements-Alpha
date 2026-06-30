@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -105,6 +106,27 @@ public final class MemoryTypeRegistry {
                 ORE_SITES,
                 GRAVEL_SITES,
                 SAND_SITES);
+    }
+
+    /**
+     * All spatial site memories whose payload is a {@code List<GlobalPos>} — the decaying
+     * block-resource sites plus the vanilla-backed {@link #CULTIVATION_TOTEM_SITES}. Computed
+     * once at class load since the membership is fixed; the per-villager sweep reads it hot.
+     */
+    private static final List<MemoryType<List<GlobalPos>>> SPATIAL_SITE_TYPES = buildSpatialSiteTypes();
+
+    /**
+     * All spatial site memories whose payload is a {@code List<GlobalPos>} — the decaying
+     * block-resource sites plus the vanilla-backed {@link #CULTIVATION_TOTEM_SITES}.
+     */
+    public static List<MemoryType<List<GlobalPos>>> spatialSiteTypes() {
+        return SPATIAL_SITE_TYPES;
+    }
+
+    private static List<MemoryType<List<GlobalPos>>> buildSpatialSiteTypes() {
+        List<MemoryType<List<GlobalPos>>> all = new ArrayList<>(decayingSpatialTypes());
+        all.add(CULTIVATION_TOTEM_SITES);
+        return List.copyOf(all);
     }
 
 }

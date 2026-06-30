@@ -5,6 +5,7 @@ import lombok.Getter;
 import net.minecraft.core.SectionPos;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -114,6 +115,30 @@ public final class WorldEvent {
      */
     @Nullable
     private final String detail;
+
+    /**
+     * Optional structured detail map for LLM phrasing (e.g. item, count, price).
+     * Serialized by {@link dev.breezes.settlements.domain.ai.perception.ObservationFactory}
+     * as {@code "detail.*"} metadata keys on promotion to episodic memory.
+     * Null when no structured detail was recorded.
+     */
+    @Nullable
+    private final Map<String, String> detailFields;
+
+    /**
+     * Optional content-addressed deduplication key for cross-witness convergence.
+     * <p>
+     * When present, {@link dev.breezes.settlements.domain.ai.perception.ObservationFactory}
+     * uses this UUID directly as the observation id instead of the actor-keyed derivation.
+     * Two villagers that independently witness the same subject in the same coarse
+     * spatial cell and time bucket will emit events with the same dedupeKey, so the
+     * first admitter's fact can be corroborated by the second through gossip rather than
+     * treated as an independent duplicate.
+     * <p>
+     * Null for all pre-sighting events, which use the existing witness-keyed derivation.
+     */
+    @Nullable
+    private final UUID dedupeKey;
 
     /**
      * Convenience builder that derives chunk coordinates from world position.

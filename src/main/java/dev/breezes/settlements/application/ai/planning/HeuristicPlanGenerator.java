@@ -21,6 +21,7 @@ import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.time.GameTicks;
 import dev.breezes.settlements.domain.time.TimeOfDay;
+import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
@@ -36,9 +37,17 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public class HeuristicPlanGenerator implements IPlanGenerator {
 
-    // Anchors are real game-tick positions (0 = 06:00 AM) used for creating slots with absolute times.
+    // Anchors are real game-tick positions (0 = 06:00 AM) used for creating slots with absolute times
     private static final int LUNCH_TICK = TimeOfDay.AT_12_00.getTick();
     private static final int DINNER_TICK = TimeOfDay.AT_17_30.getTick();
+
+    // Down-weight factor for behaviors whose declared opportunity requirements are not currently met.
+    // Package-private so a same-package test can assert the exact composed multiplier arithmetic.
+    @VisibleForTesting
+    static final double LOW_OPPORTUNITY_MULTIPLIER = 0.2;
+
+    // Base multiplier for windows that carry no day-type policy weighting
+    private static final EffectiveWeightMultiplier DEFAULT_EFFECTIVE_WEIGHT_MULTIPLIER = behavior -> 1.0D;
 
     @Override
     public DayPlan generate(PlanGenerationContext context) {
@@ -198,7 +207,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         int endLinear = Math.clamp(workEndLinear, minEndLinear, maxEndLinear);
 
         this.packWindow(slots, workBehaviors, workStartLinear, endLinear, 70, epoch,
-                behavior -> 1.0D,
+                DEFAULT_EFFECTIVE_WEIGHT_MULTIPLIER, context,
                 "Profession work block selected by the deterministic heuristic planner.");
     }
 
@@ -210,7 +219,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         int endLinear = toLinear(LUNCH_TICK, epoch) - 500;
 
         this.packWindow(slots, restOptions, firstOpenLinear, endLinear, 55, epoch,
-                behavior -> restDayMultiplier(behavior.descriptor(), policy),
+                behavior -> restDayMultiplier(behavior.descriptor(), policy), context,
                 "Rest days favor low-intensity, social, and leisure behaviors.");
     }
 
@@ -222,10 +231,11 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         // TODO: A SOCIAL weight multiplier seeded from CHA is the planned follow-up (context-aware weight extension).
         List<WeightedBehavior> candidates = palette.afternoonCandidates(context.genetics());
 
-        EffectiveWeightMultiplier multiplier = context.dayType() == PlanDayType.REST_DAY
+        EffectiveWeightMultiplier baseMultiplier = context.dayType() == PlanDayType.REST_DAY
                 ? behavior -> restDayMultiplier(behavior.descriptor(), policy)
-                : behavior -> 1.0D;
-        this.packWindow(slots, candidates, afternoonStartLinear, afternoonEndLinear, 50, epoch, multiplier,
+                : DEFAULT_EFFECTIVE_WEIGHT_MULTIPLIER;
+        this.packWindow(slots, candidates, afternoonStartLinear, afternoonEndLinear, 50, epoch,
+                baseMultiplier, context,
                 "Afternoon slots mix remaining duties with decompression and social time.");
     }
 
@@ -262,11 +272,22 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
      * never-emitted keys (coverage-first), and leaves gaps when the pool is exhausted — so
      * single-behavior pools like Nitwit produce sparsity rather than repeats.
      */
-    private void packWindow(List<PlanSlot> slots, List<WeightedBehavior> pool, int startLinear, int endLinear,
-                            int priority, int epoch, EffectiveWeightMultiplier multiplier, String reason) {
+    private void packWindow(List<PlanSlot> slots,
+                            List<WeightedBehavior> pool,
+                            int startLinear,
+                            int endLinear,
+                            int priority,
+                            int epoch,
+                            EffectiveWeightMultiplier baseMultiplier,
+                            PlanGenerationContext context,
+                            String reason) {
         if (pool.isEmpty() || endLinear <= startLinear) {
             return;
         }
+
+        // Every behavior-selection window folds in the opportunity factor on top of its base policy
+        // multiplier, so a resource the villager lacks is down-weighted wherever it could be scheduled.
+        EffectiveWeightMultiplier multiplier = baseMultiplier.andThen(opportunityMultiplier(context));
 
         // Build packing candidates — effective weight folds the day-type multiplier in, so rest-day
         // suppression of heavy work is invisible to the packer itself (it just sees lower weight → 0).
@@ -348,7 +369,8 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         return Math.max(1, behavior.descriptor().getEstimatedDuration().getTicksAsInt());
     }
 
-    private static double restDayMultiplier(BehaviorPlanningMetadata behavior, RestDayPolicy policy) {
+    @VisibleForTesting
+    static double restDayMultiplier(BehaviorPlanningMetadata behavior, RestDayPolicy policy) {
         if (behavior.getCategory() == BehaviorCategory.SOCIAL) {
             return policy.socialMultiplier();
         }
@@ -424,9 +446,32 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
 
     }
 
+    @VisibleForTesting
     @FunctionalInterface
-    private interface EffectiveWeightMultiplier {
+    interface EffectiveWeightMultiplier {
         double apply(WeightedBehavior behavior);
+
+        /**
+         * Composes this multiplier with another, producing a multiplier whose value is the product.
+         * Used to stack the opportunity factor with the rest-day or afternoon policy without
+         * replacing either.
+         */
+        default EffectiveWeightMultiplier andThen(EffectiveWeightMultiplier other) {
+            return behavior -> this.apply(behavior) * other.apply(behavior);
+        }
+    }
+
+    /**
+     * Returns a multiplier that applies {@link #LOW_OPPORTUNITY_MULTIPLIER} to behaviors listed
+     * in the context's lacking set, and 1.0 to all others.
+     * <p>
+     * Reads only the plain {@code Set<BehaviorKey>} from the context — no villager or brain access.
+     */
+    @VisibleForTesting
+    static EffectiveWeightMultiplier opportunityMultiplier(PlanGenerationContext context) {
+        return behavior -> context.behaviorsLackingOpportunity().contains(behavior.key())
+                ? LOW_OPPORTUNITY_MULTIPLIER
+                : 1.0D;
     }
 
 }

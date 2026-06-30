@@ -110,6 +110,8 @@ import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.CooldownRange;
 import dev.breezes.settlements.domain.ai.catalog.WorkIntensity;
 import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.planning.OpportunityRequirement;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
@@ -121,6 +123,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+
+import java.util.Set;
 
 /**
  * Registers all behavior variants as {@link BehaviorCatalogEntry} Dagger multibindings.
@@ -411,6 +416,9 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
+                        .opportunity(new OpportunityRequirement.InventoryItemOpportunity(
+                                Set.of(Items.RAW_IRON, Items.RAW_GOLD, Items.RAW_COPPER)))
+                        .opportunity(new OpportunityRequirement.JobSiteBlockOpportunity(Blocks.BLAST_FURNACE))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.BLAST_ORE.displayNameKey())
@@ -439,6 +447,9 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
+                        .opportunity(new OpportunityRequirement.InventoryItemOpportunity(
+                                Set.of(Items.BEEF, Items.PORKCHOP, Items.CHICKEN, Items.MUTTON, Items.RABBIT, Items.COD, Items.SALMON)))
+                        .opportunity(new OpportunityRequirement.JobSiteBlockOpportunity(Blocks.SMOKER))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.SMOKE_MEAT.displayNameKey())
@@ -517,6 +528,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.NETHER_WART_FARM_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_NETHER_WART.displayNameKey())
@@ -546,6 +559,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.HARVESTABLE_SUGARCANE_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_SUGARCANE.displayNameKey())
@@ -572,6 +587,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.FULL_HIVE_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.COLLECT_HONEY.displayNameKey())
@@ -598,6 +615,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.FULL_HIVE_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_HONEYCOMB.displayNameKey())
@@ -623,6 +642,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.RIPE_PUMPKIN_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_PUMPKIN.displayNameKey())
@@ -648,6 +669,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.RIPE_MELON_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_MELON.displayNameKey())
@@ -672,6 +695,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.RIPE_SWEET_BERRY_BUSH_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_SWEET_BERRIES.displayNameKey())
@@ -696,6 +721,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.RIPE_CROP_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_RIPE_CROPS.displayNameKey())
@@ -722,6 +749,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(60).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.CULTIVATION_TOTEM_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.CULTIVATE_PLOT.displayNameKey())
@@ -1091,6 +1120,7 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
+                        .opportunity(new OpportunityRequirement.JobSiteBlockOpportunity(Blocks.STONECUTTER))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.CUT_STONE.displayNameKey())
@@ -1116,6 +1146,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.ORE_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.HARVEST_ORE.displayNameKey())
@@ -1143,6 +1175,8 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.GRAVEL_SITES, MemoryTypeRegistry.SAND_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.EXCAVATE_SUBSTRATE.displayNameKey())

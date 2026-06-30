@@ -18,18 +18,23 @@ import java.util.UUID;
 /**
  * Builds {@link VillagerMonologueRequest} and {@link MonologueBatchRequest} from live villager state.
  * <p>
- * Centralizing assembly here means both the P2 dev-tool dump command and the future P3 evening sweep
- * drive from the same request shape — the sweep cannot silently diverge from what P2 fixtures captured.
+ * Centralizing assembly here means both the dev-tool dump command and the evening sweep
+ * drive from the same request shape — the sweep cannot silently diverge from what dump fixtures captured.
+ * <p>
+ * Persona content (including facets and anchors) is built by {@link PersonaBundleAssembler} and the
+ * spatial snapshot by {@link SnapshotAssembler}, so this class only stitches together the
+ * per-villager request: persona, snapshot, and the occasion buckets. Phrasing is owned by SIS;
+ * this assembler sends structure, never rendered strings.
  */
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class MonologueRequestAssembler {
 
     private final PersonaBundleAssembler personaBundleAssembler;
-    private final VillagerFacetDeriver facetDeriver;
-    private final MonologueSeedProjector seedProjector;
+    private final SnapshotAssembler snapshotAssembler;
     private final InferenceConfig inferenceConfig;
     private final DialogueConfig dialogueConfig;
+    private final EpisodicEntryAssembler episodicEntryAssembler;
 
     /**
      * Assembles a single-villager {@link MonologueBatchRequest} for the given set of occasions.
@@ -49,7 +54,7 @@ public final class MonologueRequestAssembler {
     /**
      * Assembles a multi-villager {@link MonologueBatchRequest} for the given villager-to-occasions mapping.
      * <p>
-     * Intended for the P3 evening sweep: one batch encompasses all villagers that need refreshed packs,
+     * Intended for the Phase 1 evening sweep: one batch encompasses all villagers that need refreshed packs,
      * keeping the number of backend round trips bounded at one per sweep regardless of village size.
      */
     public MonologueBatchRequest assembleForVillagers(
@@ -64,8 +69,6 @@ public final class MonologueRequestAssembler {
 
     private VillagerMonologueRequest buildVillagerRequest(@Nonnull BaseVillager villager,
                                                           @Nonnull Collection<Occasion> occasions) {
-        UUID observerId = villager.getUUID();
-        List<String> seeds = this.seedProjector.project(observerId, villager.getKnowledgeStore());
         List<OccasionBucketSpec> buckets = occasions.stream()
                 .map(occasion -> OccasionBucketSpec.builder()
                         .occasion(occasion)
@@ -73,15 +76,23 @@ public final class MonologueRequestAssembler {
                         .build())
                 .toList();
 
-        VillagerMonologueRequest.VillagerMonologueRequestBuilder requestBuilder =
-                VillagerMonologueRequest.builder()
-                        .villagerId(villager.getUUID())
-                        .persona(this.personaBundleAssembler.assemble(villager));
+        // Read the snapshot during synchronous server-thread assembly: SensedSiteReader does
+        // lazy-expiry mutation and is server-thread-only, so it must never run in the gateway's
+        // async callback. An empty read still serializes as {"sites":{}}, which SIS requires.
+        Snapshot snapshot = this.snapshotAssembler.assemble(villager);
 
-        this.facetDeriver.derive(villager).forEach(requestBuilder::facet);
-        seeds.forEach(requestBuilder::seed);
+        // Assemble episodic entries on the server thread alongside the snapshot read
+        UUID villagerId = villager.getUUID();
+        long currentTick = villager.level().getGameTime();
+        List<EpisodicEntryDTO> episodic = this.episodicEntryAssembler.assemble(villagerId, villager.getKnowledgeStore(), currentTick);
+
+        VillagerMonologueRequest.VillagerMonologueRequestBuilder requestBuilder = VillagerMonologueRequest.builder()
+                .villagerId(villagerId)
+                .persona(this.personaBundleAssembler.assemble(villager))
+                .snapshot(snapshot);
+
         buckets.forEach(requestBuilder::bucket);
-
+        episodic.forEach(requestBuilder::episodic);
         return requestBuilder.build();
     }
 

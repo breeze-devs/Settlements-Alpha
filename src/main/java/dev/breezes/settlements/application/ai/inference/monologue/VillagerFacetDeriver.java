@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Derives the low-cardinality {@link DialogueFacet} set for a villager from durable attachment state.
  * <p>
- * Extracted here so both {@link MonologueRequestAssembler} (MONOLOGUE requests) and
+ * Extracted here so both {@link PersonaBundleAssembler} (MONOLOGUE requests) and
  * {@code AmbientDialogueContextAssembler} (SCRIPTED context) read from exactly one source —
  * avoiding independent drift if new facets are added.
  */

@@ -34,21 +34,13 @@ public record InferenceConfig(
 
         @IntegerConfig(
                 type = ConfigurationType.GENERAL,
-                identifier = "max_concurrent_requests",
-                description = "Maximum concurrent inference capability requests for future bounded sweeps",
-                defaultValue = 2,
+                identifier = "max_episodic_entries",
+                description = "Maximum episodic memory entries sent to the inference service per villager per request. "
+                        + "Higher values give the model more to draw on at the cost of a larger prompt",
+                defaultValue = 50,
                 min = 1,
-                max = 8)
-        int maxConcurrentRequests,
-
-        @IntegerConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "deadline_slack_millis",
-                description = "Cooperative service-side deadline slack in milliseconds",
-                defaultValue = 250,
-                min = 0,
-                max = 5000)
-        int deadlineSlackMillis
+                max = 256)
+        int maxEpisodicEntries
 
 ) {
 

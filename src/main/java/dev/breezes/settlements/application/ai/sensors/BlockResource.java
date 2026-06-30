@@ -3,8 +3,8 @@ package dev.breezes.settlements.application.ai.sensors;
 import dev.breezes.settlements.domain.ai.memory.ConfirmedAbsenceRegion;
 import dev.breezes.settlements.domain.ai.memory.IMemoryWrite;
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
-import dev.breezes.settlements.domain.ai.memory.ObservationReport;
-import dev.breezes.settlements.domain.ai.memory.ObservationUpdateWrite;
+import dev.breezes.settlements.domain.ai.memory.SensedSiteReport;
+import dev.breezes.settlements.domain.ai.memory.SiteUpdateWrite;
 import dev.breezes.settlements.domain.world.blocks.BlockMatcher;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -17,7 +17,7 @@ public record BlockResource(@Nonnull BlockMatcher matcher,
                             @Nonnull MemoryType.DecayingSpatialMemoryType memoryType) {
 
     /**
-     * Produces an observation-update write from an index query result.
+     * Produces a site-update write from an index query result.
      * <p>
      * Returns empty only when there are no presences AND no confirmed-absence region —
      * an absence-only write (no presences, non-null region) must still be emitted so that
@@ -51,12 +51,12 @@ public record BlockResource(@Nonnull BlockMatcher matcher,
             return Optional.empty();
         }
 
-        ObservationReport report = ObservationReport.builder()
+        SensedSiteReport report = SensedSiteReport.builder()
                 .presences(presences)
                 .confirmedAbsenceRegion(region)
                 .build();
 
-        return Optional.of(new ObservationUpdateWrite(this.memoryType, report, nowTick));
+        return Optional.of(new SiteUpdateWrite(this.memoryType, report, nowTick));
     }
 
 }

@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
  * Two implementations exist:
  * <ul>
  *   <li>{@link MemoryWrite} — set/clear a value on a vanilla-backed memory.</li>
- *   <li>{@link ObservationUpdateWrite} — fold an observation report into a decaying spatial store.</li>
+ *   <li>{@link SiteUpdateWrite} — fold a sensed-site report into a decaying spatial store.</li>
  * </ul>
  */
 public interface IMemoryWrite {

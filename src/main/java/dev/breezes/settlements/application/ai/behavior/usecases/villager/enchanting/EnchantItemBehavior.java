@@ -32,6 +32,7 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
@@ -200,6 +201,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEM_ENCHANTED, null);
         outcome.markSucceeded();
         outcome.recordDeedDetail(enchantedItem.getItem().toString());
+        outcome.putDetailField("item", BuiltInRegistries.ITEM.getKey(enchantedItem.getItem()).getPath());
         context.declarePrimaryDeed(outcome);
 
         world.playSound(null, this.enchantingTablePos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1.0f, 1.0f);

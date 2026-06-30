@@ -92,11 +92,14 @@ public final class PerceptionPipeline {
         for (Observation observation : observations) {
             int similarPeerCount = observationTypeFrequencies[observation.type().ordinal()] - 1;
 
-            // Own deeds get a salience bump inside the gate so that meaningful completions
-            // reliably promote even when repetition dampens novelty.
+            // Own deeds get a salience bump
             boolean isSelfDeed = villager.getUUID().equals(observation.actorId());
             float score = this.importanceGate.score(observation, professionKey, genetics, similarPeerCount, isSelfDeed);
-            boolean forceAdmit = isSelfDeed && observation.eventType().isSelfRememberableTerminalEvent();
+
+            // Force-remember covers the doer of a salient deed OR any first-hand witnessed event
+            boolean forceAdmit = observation.eventType().isSelfRememberableTerminalEvent()
+                    && (isSelfDeed || observation.eventType().isSelfWitnessed());
+
             if (forceAdmit || this.importanceGate.shouldPromote(score)) {
                 // Promote into the per-villager knowledge store. Direct observations are first-hand (hop=0, hearsay=false).
                 Map<String, String> metadata = ObservationFactory.metadataFor(observation);

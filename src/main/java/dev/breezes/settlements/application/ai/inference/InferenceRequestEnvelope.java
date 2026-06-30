@@ -16,7 +16,6 @@ final class InferenceRequestEnvelope {
     private final UUID requestId;
     private final InferenceCapability capability;
     private final long deadlineMillis;
-    private final int deadlineSlackMillis;
     private final Object payload;
 
 }

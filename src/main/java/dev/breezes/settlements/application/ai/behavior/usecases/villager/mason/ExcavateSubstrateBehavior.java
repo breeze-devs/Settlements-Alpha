@@ -236,7 +236,10 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
         context.primaryDeed()
                 .ifPresent(outcome -> {
                     outcome.recordYield(totalItemCount(drops));
-                    outcome.recordDeedDetail(drops.getFirst().getItem().toString());
+                    String excavatedItem = BuiltInRegistries.ITEM.getKey(drops.getFirst().getItem()).getPath();
+                    outcome.recordDeedDetail(excavatedItem);
+                    // Override the generic "substrate" unit noun
+                    outcome.putDetailField("item", excavatedItem);
                 });
 
         return StepResult.noOp();

@@ -5,6 +5,7 @@ import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import lombok.Builder;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -33,6 +34,7 @@ public record Observation(
         @Nullable EventOutcome outcome,
         @Nullable String reason,
         @Nullable String detail,
+        @Nullable Map<String, String> detailFields,
         double posX,
         double posY,
         double posZ

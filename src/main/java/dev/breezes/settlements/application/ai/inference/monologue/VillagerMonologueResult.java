@@ -19,6 +19,6 @@ public final class VillagerMonologueResult {
     private final UUID villagerId;
 
     @Singular
-    private final Map<Occasion, List<GeneratedLine>> buckets;
+    private final Map<Occasion, List<String>> buckets;
 
 }

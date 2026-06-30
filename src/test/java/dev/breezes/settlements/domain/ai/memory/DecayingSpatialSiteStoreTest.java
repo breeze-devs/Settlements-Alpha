@@ -8,14 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for {@link DecayingSpatialObservationStore} and the underlying fold/decay logic.
+ * Tests for {@link DecayingSpatialSiteStore} and the underlying fold/decay logic.
  * All tests operate on packed longs and pure Java types — zero Minecraft types are used,
  * so no game environment is required.
  * <p>
  * Packed positions are computed with the same bit layout as {@code BlockPos.asLong()}:
  * X in bits [63..38], Z in bits [37..12], Y in bits [11..0] (all sign-extended 26/26/12 bits).
  */
-class DecayingSpatialObservationStoreTest {
+class DecayingSpatialSiteStoreTest {
 
     private static final long RETENTION_TICKS = 1000L;
     private static final int MAX_ENTRIES = 8;
@@ -33,7 +33,7 @@ class DecayingSpatialObservationStoreTest {
     @Test
     void upsert_newSite_getsInserted() {
         // Arrange
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long tick = 100L;
 
         // Act
@@ -47,7 +47,7 @@ class DecayingSpatialObservationStoreTest {
     @Test
     void upsert_existingSite_bumpsToFresherTick() {
         // Arrange
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long firstTick = 100L;
         long laterTick = 200L;
         store.update(reportWithPresences(POS_A, firstTick), firstTick);
@@ -64,20 +64,20 @@ class DecayingSpatialObservationStoreTest {
     }
 
     @Test
-    void upsert_olderObservationDoesNotOverwriteFresherTimestamp() {
+    void upsert_olderReportDoesNotOverwriteFresherTimestamp() {
         // Arrange
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long freshTick = 500L;
         long staleTick = 100L;
         store.update(reportWithPresences(POS_A, freshTick), freshTick);
 
-        // Act: a stale observation arrives for the same site (could be a late gossip).
+        // Act: a stale report arrives for the same site (could be a late gossip).
         store.update(reportWithPresences(POS_A, staleTick), freshTick); // nowTick = freshTick, observedTick = staleTick
 
         // Assert: site must survive past staleTick+RETENTION because the fresher timestamp wins.
         long checkTick = staleTick + RETENTION_TICKS + 1;
         assertTrue(store.hasLiveSites(checkTick),
-                "Fresher timestamp must be preserved; stale observation must not overwrite it");
+                "Fresher timestamp must be preserved; stale report must not overwrite it");
     }
 
     // -------------------------------------------------------------------------
@@ -88,7 +88,7 @@ class DecayingSpatialObservationStoreTest {
     void absenceRegion_deletesConfirmedAbsentSiteInsideRegion() {
         // Arrange: two sites, A inside the scan box, B outside.
         // POS_A = (10, 64, 20); POS_B = (30, 64, 40) — 20+ blocks away on X and Z.
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long tick = 100L;
         store.update(reportWithPresences(POS_A, tick), tick);
         store.update(reportWithPresences(POS_B, tick), tick);
@@ -96,7 +96,7 @@ class DecayingSpatialObservationStoreTest {
 
         // Act: confirmed-absence region centered on POS_A with radius 5 — covers A, not B.
         ConfirmedAbsenceRegion regionAroundA = ConfirmedAbsenceRegion.ofScanBox(10, 64, 20, 5, 5);
-        ObservationReport absenceReport = ObservationReport.builder()
+        SensedSiteReport absenceReport = SensedSiteReport.builder()
                 .presences(new Long2LongOpenHashMap()) // nothing seen this cycle
                 .confirmedAbsenceRegion(regionAroundA)
                 .build();
@@ -109,7 +109,7 @@ class DecayingSpatialObservationStoreTest {
     @Test
     void absenceRegion_sparesSitesThatAreAlsoInPresences() {
         // Arrange: site A inside the region.
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long tick = 100L;
         store.update(reportWithPresences(POS_A, tick), tick);
 
@@ -118,7 +118,7 @@ class DecayingSpatialObservationStoreTest {
         Long2LongOpenHashMap presences = new Long2LongOpenHashMap();
         presences.put(POS_A, tick + 1);
 
-        ObservationReport report = ObservationReport.builder()
+        SensedSiteReport report = SensedSiteReport.builder()
                 .presences(presences)
                 .confirmedAbsenceRegion(regionAroundA)
                 .build();
@@ -131,13 +131,13 @@ class DecayingSpatialObservationStoreTest {
     @Test
     void absenceRegion_sitesOutsideRegionAreNeverDeleted() {
         // Arrange: two sites. Region covers only A.
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long tick = 100L;
         store.update(reportWithPresences(POS_A, tick), tick);
         store.update(reportWithPresences(POS_C, tick), tick); // POS_C = (50, 64, 60) — far from region
 
         ConfirmedAbsenceRegion regionAroundA = ConfirmedAbsenceRegion.ofScanBox(10, 64, 20, 5, 5);
-        ObservationReport absenceReport = ObservationReport.builder()
+        SensedSiteReport absenceReport = SensedSiteReport.builder()
                 .presences(new Long2LongOpenHashMap())
                 .confirmedAbsenceRegion(regionAroundA)
                 .build();
@@ -157,7 +157,7 @@ class DecayingSpatialObservationStoreTest {
     @Test
     void incompleteReport_doesNotDeleteAnyRememberedSites() {
         // Arrange: two sites remembered.
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long tick = 100L;
         store.update(reportWithPresences(POS_A, tick), tick);
         store.update(reportWithPresences(POS_C, tick), tick);
@@ -165,7 +165,7 @@ class DecayingSpatialObservationStoreTest {
         // Act: incomplete scan with no confirmed-absence region, only sees POS_B.
         Long2LongOpenHashMap presences = new Long2LongOpenHashMap();
         presences.put(POS_B, tick + 1);
-        ObservationReport partialReport = ObservationReport.builder()
+        SensedSiteReport partialReport = SensedSiteReport.builder()
                 .presences(presences)
                 .confirmedAbsenceRegion(null) // incomplete — not authoritative over any area
                 .build();
@@ -182,7 +182,7 @@ class DecayingSpatialObservationStoreTest {
     @Test
     void ttlExpiry_siteIsLiveJustBeforeRetentionWindow() {
         // Arrange
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long observedTick = 100L;
         store.update(reportWithPresences(POS_A, observedTick), observedTick);
 
@@ -194,7 +194,7 @@ class DecayingSpatialObservationStoreTest {
     @Test
     void ttlExpiry_siteIsStaleJustAfterRetentionWindow() {
         // Arrange
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, MAX_ENTRIES);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, MAX_ENTRIES);
         long observedTick = 100L;
         store.update(reportWithPresences(POS_A, observedTick), observedTick);
 
@@ -210,7 +210,7 @@ class DecayingSpatialObservationStoreTest {
     @Test
     void sizeCap_evictsStalestEntryWhenCapExceeded() {
         // Arrange: cap of 2 entries.
-        DecayingSpatialObservationStore store = new DecayingSpatialObservationStore(RETENTION_TICKS, 2);
+        DecayingSpatialSiteStore store = new DecayingSpatialSiteStore(RETENTION_TICKS, 2);
         long tick = 100L;
         // POS_A observed first (oldest), POS_B slightly later, POS_C latest.
         store.update(reportWithPresences(POS_A, tick), tick);
@@ -241,10 +241,10 @@ class DecayingSpatialObservationStoreTest {
                 | (long) (y & 0xFFF);
     }
 
-    private static ObservationReport reportWithPresences(long packedPos, long observedTick) {
+    private static SensedSiteReport reportWithPresences(long packedPos, long observedTick) {
         Long2LongOpenHashMap presences = new Long2LongOpenHashMap();
         presences.put(packedPos, observedTick);
-        return ObservationReport.builder()
+        return SensedSiteReport.builder()
                 .presences(presences)
                 .confirmedAbsenceRegion(null)
                 .build();

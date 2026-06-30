@@ -16,10 +16,13 @@ import dev.breezes.settlements.application.ai.inference.InferenceCapability;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueBatchRequest;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
+import dev.breezes.settlements.application.ai.memory.SensedSiteReader;
 import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.memory.SensedSites;
+import dev.breezes.settlements.domain.ai.memory.SiteCoord;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.settlement.model.SettlementMetadata;
@@ -34,8 +37,6 @@ import dev.breezes.settlements.infrastructure.network.features.debug.packet.Clie
 import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -177,9 +178,12 @@ public class TestCommand {
         CommandSourceStack source = context.getSource();
         source.sendSuccess(() -> Component.literal("[memory] decaying spatial sites for " + baseVillager.getUUID() + ":"), false);
 
+        SensedSiteReader reader = SettlementsDagger.serverOrThrow().sensedSiteReader();
+        SensedSites sensedSites = reader.read(baseVillager.getSettlementsBrain());
         for (MemoryType.DecayingSpatialMemoryType type : MemoryTypeRegistry.decayingSpatialTypes()) {
-            List<GlobalPos> sites = baseVillager.getSettlementsBrain().getMemory(type).orElse(List.of());
-            String line = "  " + type.identifier() + " = " + sites.size() + describeSites(sites);
+            int count = sensedSites.count(type);
+            List<SiteCoord> coords = sensedSites.coords(type);
+            String line = "  " + type.identifier() + " = " + count + describeSites(coords);
             source.sendSuccess(() -> Component.literal(line), false);
         }
 
@@ -190,7 +194,7 @@ public class TestCommand {
      * Renders up to the first few sites as "(x,y,z)" tuples with a "+N more" suffix when the list
      * is longer. Sites are unordered — the decaying store returns them in store order, not by proximity.
      */
-    private static String describeSites(@Nonnull List<GlobalPos> sites) {
+    private static String describeSites(@Nonnull List<SiteCoord> sites) {
         if (sites.isEmpty()) {
             return "";
         }
@@ -198,10 +202,7 @@ public class TestCommand {
         int previewCount = Math.min(sites.size(), 5);
         String preview = sites.stream()
                 .limit(previewCount)
-                .map(globalPos -> {
-                    BlockPos pos = globalPos.pos();
-                    return "(" + pos.getX() + "," + pos.getY() + "," + pos.getZ() + ")";
-                })
+                .map(coord -> "(" + coord.x() + "," + coord.y() + "," + coord.z() + ")")
                 .reduce((a, b) -> a + " " + b)
                 .orElse("");
 
@@ -276,7 +277,7 @@ public class TestCommand {
         }
 
         int knowledgeStoreSize = baseVillager.getKnowledgeStore().size();
-        int seedCount = batchRequest.getVillagers().get(0).getSeeds().size();
+        int occasionCount = batchRequest.getVillagers().getFirst().getBuckets().size();
         String filename = outputPath.getFileName().toString();
 
         context.getSource().sendSuccess(() -> Component.literal(
@@ -285,7 +286,8 @@ public class TestCommand {
                         .map(o -> o.name().toLowerCase(Locale.ROOT))
                         .reduce((a, b) -> a + "," + b)
                         .orElse("none")
-                        + " | seeds=" + seedCount + "/" + knowledgeStoreSize
+                        + " | buckets=" + occasionCount
+                        + " | knowledge=" + knowledgeStoreSize
                         + " | file=" + filename), false);
         return Command.SINGLE_SUCCESS;
     }

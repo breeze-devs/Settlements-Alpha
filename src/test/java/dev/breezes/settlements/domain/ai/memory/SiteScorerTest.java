@@ -2,7 +2,7 @@ package dev.breezes.settlements.domain.ai.memory;
 
 import org.junit.jupiter.api.Test;
 
-import static dev.breezes.settlements.domain.ai.memory.DecayingSpatialObservationStoreTest.packPos;
+import static dev.breezes.settlements.domain.ai.memory.DecayingSpatialSiteStoreTest.packPos;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**

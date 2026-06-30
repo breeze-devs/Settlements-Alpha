@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -42,6 +44,13 @@ public final class BehaviorOutcome implements BehaviorState {
     @Nullable
     private String failureReason;
     private boolean silent;
+    /**
+     * Structured detail sub-fields for seed phrasing (e.g. item, count, price).
+     * Populated by behaviors that can supply structured context beyond the flat detail string.
+     * Null when no structured detail has been recorded.
+     */
+    @Nullable
+    private Map<String, String> detailFields;
 
     @Builder(access = AccessLevel.PRIVATE)
     private BehaviorOutcome(@Nullable WorldEventType deedType,
@@ -160,6 +169,22 @@ public final class BehaviorOutcome implements BehaviorState {
         this.failureReason = reason;
     }
 
+    /**
+     * Records one structured detail slot for deed phrasing.
+     * <p>
+     * Behaviors call this for detail they can supply structurally (e.g. trade item, price) rather
+     * than as a free-form string. The publisher will auto-derive {@code item}/{@code count} from
+     * {@link #magnitude}/{@link #unitNoun} for yield deeds; explicit values here take precedence
+     * so a behavior can override a specific slot if needed.
+     */
+    public void putDetailField(@Nonnull String key, @Nonnull String value) {
+        if (this.detailFields == null) {
+            this.detailFields = new HashMap<>();
+        }
+
+        this.detailFields.put(key, value);
+    }
+
     public boolean hasDeclaredDeed() {
         return this.deedType != null;
     }
@@ -189,6 +214,7 @@ public final class BehaviorOutcome implements BehaviorState {
         this.eventOutcome = null;
         this.detail = null;
         this.failureReason = null;
+        this.detailFields = null;
     }
 
 }

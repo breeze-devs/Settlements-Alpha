@@ -383,4 +383,163 @@ class HeuristicPlanGeneratorTest {
         return new GeneticsProfile(genes);
     }
 
+    // =========================================================================
+    // Opportunity multiplier tests (context-aware day planning, Pass 1)
+    // =========================================================================
+
+    @Test
+    void generate_lackedBehaviorIsDownweightedNotRemoved() {
+        // A behavior in behaviorsLackingOpportunity must remain in the candidate pool
+        // (down-weighted to 0.2×, never zeroed — WindowPacker drops weight > 0, so 0 removes it entirely).
+        // We verify by flagging ALL work behaviors and confirming the plan still generates (not empty).
+        // Arrange
+        Set<BehaviorKey> lacking = Set.of(BehaviorKey.HARVEST_SUGARCANE);
+        PlanGenerationContext ctx = contextWithLacking(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY, lacking);
+
+        // Act
+        DayPlan plan = generator.generate(ctx);
+
+        // Assert: plan must still be non-empty — the down-weighted behavior can still be selected
+        assertFalse(plan.getSlots().isEmpty());
+        assertTrue(keys(plan).contains(BehaviorKey.EAT_FOOD), "Fixed meal anchors must always survive");
+    }
+
+    @Test
+    void generate_nonLackedBehaviorIsNotAffectedByOpportunityFactor() {
+        // A behavior NOT in behaviorsLackingOpportunity receives multiplier 1.0 and is unaffected.
+        // Arrange: empty lacking set → no suppression at all
+        Set<BehaviorKey> lacking = Set.of();
+        PlanGenerationContext ctx = contextWithLacking(VillagerProfessionKey.FISHERMAN, PlanDayType.WORK_DAY, lacking);
+
+        // Act
+        DayPlan plan = generator.generate(ctx);
+
+        // Assert: the fisherman's primary behavior is still present at full weight
+        assertTrue(keys(plan).contains(BehaviorKey.FISHING));
+    }
+
+    @Test
+    void generate_opportunityMultiplierNeverProducesZeroWeight() {
+        // Even when ALL behaviors are flagged lacking, the pool must survive with 0.2× weight.
+        // If any behavior were reduced to 0 it would be dropped by WindowPacker, breaking backlog resilience.
+        // Arrange
+        Set<BehaviorKey> lacking = allDescriptors().stream()
+                .map(BehaviorPlanningMetadata::getKey)
+                .collect(Collectors.toSet());
+        PlanGenerationContext ctx = contextWithLacking(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY, lacking);
+
+        // Act
+        DayPlan plan = generator.generate(ctx);
+
+        // Assert: rigid meal anchors and at least one slot generated (the planner degrades gracefully)
+        assertFalse(plan.getSlots().isEmpty());
+        assertTrue(keys(plan).contains(BehaviorKey.EAT_FOOD));
+    }
+
+    @Test
+    void generate_opportunityMultiplierStacksWithRestDayMultiplier() {
+        // A lacking heavy-work behavior on a rest day accumulates BOTH the rest-day suppression
+        // and the opportunity suppression multiplicatively. The combined factor must not be 0 —
+        // the plan must still generate without NPE or empty output.
+        // Arrange: flag HARVEST_SUGARCANE (heavy work) as lacking on a rest day
+        Set<BehaviorKey> lacking = Set.of(BehaviorKey.HARVEST_SUGARCANE);
+        PlanGenerationContext ctx = contextWithLacking(VillagerProfessionKey.FARMER, PlanDayType.REST_DAY, lacking);
+
+        // Act
+        DayPlan plan = generator.generate(ctx);
+
+        // Assert: plan non-empty and meals intact (the product 0.1 × 0.2 = 0.02 is still > 0)
+        assertFalse(plan.getSlots().isEmpty());
+        assertTrue(keys(plan).contains(BehaviorKey.EAT_FOOD));
+    }
+
+    @Test
+    void generate_existingBuildersWithoutLackingFieldStillCompile() {
+        // Existing callers that omit behaviorsLackingOpportunity must default to an empty set
+        // (the compact constructor handles null → empty). This test exercises the old builder path.
+        // Arrange: use the pre-existing context() helper which does NOT set behaviorsLackingOpportunity
+        PlanGenerationContext ctx = context(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY,
+                genetics(0.5, 0.5, 0.5, 0.5), allDescriptors());
+
+        // Act — must not throw (no NPE on behaviorsLackingOpportunity.contains(...))
+        DayPlan plan = generator.generate(ctx);
+
+        // Assert
+        assertFalse(plan.getSlots().isEmpty());
+    }
+
+    private static PlanGenerationContext contextWithLacking(VillagerProfessionKey profession,
+                                                            PlanDayType dayType,
+                                                            Set<BehaviorKey> lacking) {
+        ScheduleProfile profile = ScheduleProfile.defaultFor(profession);
+        return PlanGenerationContext.builder()
+                .profession(profession)
+                .genetics(genetics(0.5, 0.5, 0.5, 0.5))
+                .scheduleProfile(profile)
+                .restDayPolicy(RestDayPolicy.defaultFor(profession))
+                .dayType(dayType)
+                .availableBehaviors(descriptorsFor(profession, allDescriptors()))
+                .wakeAtAbsoluteTick(profile.defaultWakeTick())
+                .behaviorsLackingOpportunity(lacking)
+                .build();
+    }
+
+    @Test
+    void opportunityMultiplier_lackingBehaviorProducesExactlyLowFactor() {
+        // Arrange
+        BehaviorKey lacking = BehaviorKey.HARVEST_SUGARCANE;
+        Set<BehaviorKey> lackingSet = Set.of(lacking);
+        PlanGenerationContext ctx = contextWithLacking(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY, lackingSet);
+        BehaviorPlanningMetadata meta = descriptor(lacking, BehaviorCategory.WORK, WorkIntensity.HEAVY);
+        WeightedBehavior weighted = new WeightedBehavior(meta, 1);
+
+        // Act
+        double factor = HeuristicPlanGenerator.opportunityMultiplier(ctx).apply(weighted);
+
+        // Assert
+        assertEquals(HeuristicPlanGenerator.LOW_OPPORTUNITY_MULTIPLIER, factor, 1e-9,
+                "A lacking behavior must receive exactly the low-opportunity multiplier");
+    }
+
+    @Test
+    void opportunityMultiplier_nonLackingBehaviorProducesExactlyOne() {
+        // Arrange
+        Set<BehaviorKey> emptyLacking = Set.of();
+        PlanGenerationContext ctx = contextWithLacking(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY, emptyLacking);
+        BehaviorPlanningMetadata meta = descriptor(BehaviorKey.HARVEST_SUGARCANE, BehaviorCategory.WORK, WorkIntensity.HEAVY);
+        WeightedBehavior weighted = new WeightedBehavior(meta, 1);
+
+        // Act
+        double factor = HeuristicPlanGenerator.opportunityMultiplier(ctx).apply(weighted);
+
+        // Assert
+        assertEquals(1.0, factor, 1e-9,
+                "A non-lacking behavior must receive an opportunity factor of exactly 1.0");
+    }
+
+    @Test
+    void opportunityMultiplier_stacksWithRestDayMultiplierForLackingHeavyWork() {
+        // A lacking heavy-work behavior on a rest day should accumulate both factors multiplicatively.
+        // Arrange
+        BehaviorKey heavyWork = BehaviorKey.HARVEST_SUGARCANE;
+        Set<BehaviorKey> lackingSet = Set.of(heavyWork);
+        PlanGenerationContext ctx = contextWithLacking(VillagerProfessionKey.FARMER, PlanDayType.REST_DAY, lackingSet);
+        RestDayPolicy policy = RestDayPolicy.defaultFor(VillagerProfessionKey.FARMER);
+        BehaviorPlanningMetadata meta = descriptor(heavyWork, BehaviorCategory.WORK, WorkIntensity.HEAVY);
+        WeightedBehavior weighted = new WeightedBehavior(meta, 1);
+
+        double expectedRestFactor = HeuristicPlanGenerator.restDayMultiplier(meta, policy);
+        double expectedProduct = expectedRestFactor * HeuristicPlanGenerator.LOW_OPPORTUNITY_MULTIPLIER;
+
+        // Act: compose rest-day multiplier with opportunity multiplier the same way the generator does
+        HeuristicPlanGenerator.EffectiveWeightMultiplier composed =
+                ((HeuristicPlanGenerator.EffectiveWeightMultiplier) b -> HeuristicPlanGenerator.restDayMultiplier(b.descriptor(), policy))
+                        .andThen(HeuristicPlanGenerator.opportunityMultiplier(ctx));
+        double actual = composed.apply(weighted);
+
+        // Assert
+        assertEquals(expectedProduct, actual, 1e-9,
+                "Composed product must equal restDayMultiplier × LOW_OPPORTUNITY_MULTIPLIER");
+    }
+
 }

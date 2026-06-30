@@ -1,5 +1,6 @@
 package dev.breezes.settlements.infrastructure.minecraft.attachments;
 
+import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -17,6 +18,18 @@ final class KnowledgeMetadataSanitizer {
 
     static final int MAX_VALUE_LENGTH = 128;
 
+    /**
+     * Exact-match allowed keys for structured observation metadata.
+     * <p>
+     * {@code outcome}, {@code reason}, and {@code detail} are included here because they now feed
+     * the LLM episodic memory (SIS owns phrasing). Previously, when phrasing was assembled mod-side,
+     * these fields were not needed at reload time and were silently dropped. Stripping them caused
+     * reloaded memories to lose failure framing and detail context — a live bug this set fixes.
+     * <p>
+     * Structured detail sub-fields ({@code "detail.*"}) are allowed via a prefix check in
+     * {@link #isAllowedKey} rather than enumerated here, so adding new detail slots requires
+     * no sanitizer change.
+     */
     private static final Set<String> ALLOWED_KEYS = Set.of(
             "event_type",
             "event_meta",
@@ -24,7 +37,10 @@ final class KnowledgeMetadataSanitizer {
             "registry_id",
             "pos_x",
             "pos_y",
-            "pos_z"
+            "pos_z",
+            "outcome",
+            "reason",
+            "detail"
     );
 
     static Map<String, String> sanitize(@Nullable Map<String, String> metadata) {
@@ -36,7 +52,7 @@ final class KnowledgeMetadataSanitizer {
         for (Map.Entry<String, String> entry : metadata.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            if (key == null || value == null || !ALLOWED_KEYS.contains(key)) {
+            if (key == null || value == null || !isAllowedKey(key)) {
                 continue;
             }
 
@@ -44,6 +60,17 @@ final class KnowledgeMetadataSanitizer {
         }
 
         return Map.copyOf(sanitized);
+    }
+
+    /**
+     * Returns true for any key that should survive the persistence boundary.
+     * <p>
+     * Structured detail slots ({@code "detail.item"}, {@code "detail.count"}, etc.) are accepted
+     * via prefix match so the allowlist does not need updating as new slot names are introduced.
+     * All other keys must appear in {@link #ALLOWED_KEYS}; arbitrary keys are still rejected.
+     */
+    private static boolean isAllowedKey(@Nonnull String key) {
+        return ALLOWED_KEYS.contains(key) || key.startsWith(ObservationMetadataKeys.DETAIL_PREFIX);
     }
 
     private static String truncate(@Nonnull String value) {

@@ -42,7 +42,7 @@ public sealed interface MemoryType<T> permits MemoryType.VanillaMemoryType, Memo
 
     /**
      * Writes a value to this memory. For decaying memories, calling this throws
-     * {@link UnsupportedOperationException} — they are written via the observation update path.
+     * {@link UnsupportedOperationException} — they are written via the site update path.
      */
     void write(@Nonnull MemoryAccess access, @Nonnull T value);
 
@@ -129,9 +129,9 @@ public sealed interface MemoryType<T> permits MemoryType.VanillaMemoryType, Memo
      * This is the structural guarantee that eliminates the footgun cast: the impl knows its own T,
      * so the store methods accept it without any runtime inspection.
      * <p>
-     * Writing a value directly is not supported because the decaying store uses an observation-update
+     * Writing a value directly is not supported because the decaying store uses a site-update
      * (upsert + confirmed-absence) protocol rather than wholesale overwrite. Any attempt to call
-     * {@link #write} here is a programming error — the caller must use {@link IBrain#updateObservation}.
+     * {@link #write} here is a programming error — the caller must use {@link IBrain#updateSites}.
      */
     record DecayingSpatialMemoryType(@Nonnull String identifier,
                                      long retentionTicks,
@@ -152,10 +152,10 @@ public sealed interface MemoryType<T> permits MemoryType.VanillaMemoryType, Memo
 
         @Override
         public void write(@Nonnull MemoryAccess access, @Nonnull List<GlobalPos> value) {
-            // Decaying memories are written via the observation update path, not wholesale overwrite.
+            // Decaying memories are written via the site update path, not wholesale overwrite.
             // Reaching here from a vanilla-style setMemory call is a caller bug.
             throw new UnsupportedOperationException(
-                    "Decaying memory '" + this.identifier + "' must be written via IBrain.updateObservation, not setMemory");
+                    "Decaying memory '" + this.identifier + "' must be written via IBrain.updateSites, not setMemory");
         }
 
         @Override

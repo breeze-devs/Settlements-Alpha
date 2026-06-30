@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -12,6 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * envelope shape — protocol version, capability, deadline fields, and nested payload —
  * so dump commands and future gateway-test fixtures are byte-faithful to what {@code post()}
  * would actually send.
+ * <p>
+ * deadlineSlackMillis was removed from the envelope because SIS uses extra="forbid" and does
+ * not define that field. The test formerly asserting its presence now asserts its absence.
  */
 class InferenceTransportSerializeSeamTest {
 
@@ -43,7 +47,7 @@ class InferenceTransportSerializeSeamTest {
     }
 
     @Test
-    void renderEnvelope_includesDeadlineMillisAndSlack() {
+    void renderEnvelope_includesDeadlineMillisAndOmitsSlack() {
         // Arrange
         this.transport = newTransport("http://localhost:9999", "");
 
@@ -56,8 +60,8 @@ class InferenceTransportSerializeSeamTest {
         // Assert
         assertTrue(json.contains("\"deadlineMillis\":5000"),
                 "deadlineMillis must reflect the supplied duration");
-        assertTrue(json.contains("\"deadlineSlackMillis\":250"),
-                "deadlineSlackMillis must be present from config");
+        assertFalse(json.contains("deadlineSlackMillis"),
+                "deadlineSlackMillis must not appear — SIS extra=forbid rejects it");
     }
 
     @Test
@@ -97,7 +101,7 @@ class InferenceTransportSerializeSeamTest {
     // -------------------------------------------------------------------------
 
     private HttpInferenceTransport newTransport(String endpoint, String apiKey) {
-        InferenceConfig config = new InferenceConfig(endpoint, apiKey, "en_us", 2, 250);
+        InferenceConfig config = new InferenceConfig(endpoint, apiKey, "en_us", 50);
         return new HttpInferenceTransport(config);
     }
 

@@ -9,11 +9,8 @@ import lombok.AllArgsConstructor;
  * {@link dev.breezes.settlements.domain.ai.perception.ObservationFactory#metadataFor}.
  * <p>
  * Keys are shared between the producer side (ObservationFactory writes them) and the
- * consumer side (MonologueSeedProjector and SeedPhrasebook read them). Keeping them in
- * the domain layer avoids both a circular dependency and duplicated string literals.
- * <p>
- * SeedPhrasebook re-exports the three phrasing-relevant keys as its own public constants
- * (delegating here) so call sites in the application layer have a single stable import.
+ * consumer side (EpisodicEntryAssembler reads them). Keeping them in the domain layer
+ * avoids a circular dependency and duplicated string literals.
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ObservationMetadataKeys {
@@ -61,6 +58,14 @@ public final class ObservationMetadataKeys {
      * Example value: "3 melons", "4 bread for 1 emerald".
      */
     public static final String DETAIL = "detail";
+
+    /**
+     * Prefix for structured detail sub-fields serialized into the flat metadata map.
+     * Each structured key is stored as {@code "detail." + slotName} (e.g. {@code "detail.item"},
+     * {@code "detail.count"}, {@code "detail.price"}).
+     * The assembler strips this prefix when building the wire-level {@code detail} map.
+     */
+    public static final String DETAIL_PREFIX = "detail.";
 
     /**
      * Optional structured {@link EventOutcome} name set by a behavior.

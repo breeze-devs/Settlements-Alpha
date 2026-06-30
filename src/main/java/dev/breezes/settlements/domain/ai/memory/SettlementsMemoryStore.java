@@ -13,31 +13,31 @@ import java.util.Optional;
 /**
  * Per-agent typed store for decaying memories, keyed by {@link MemoryType.DecayingSpatialMemoryType}.
  * <p>
- * Currently supports only the spatial block-resource observation type
+ * Currently supports only the spatial block-resource site type
  * ({@code List<GlobalPos>} with per-entry TTL decay). Additional decaying types
  * can be added as the migration progresses.
  * <p>
  * Transient: not serialized. Rebuilding from the index costs one scan period after load,
- * which is acceptable for block-resource observations (§4 of the v2 design doc).
+ * which is acceptable for block-resource sites (§4 of the v2 design doc).
  * <p>
  * This class is NOT thread-safe.
  */
 public final class SettlementsMemoryStore {
 
-    private final Map<String, DecayingSpatialObservationStore> spatialStores = new HashMap<>();
+    private final Map<String, DecayingSpatialSiteStore> spatialStores = new HashMap<>();
 
     /**
      * Returns the live, TTL-filtered, UNORDERED sites for the given decaying spatial memory type.
      * Empty when the store is absent or has no non-expired entries.
      * <p>
      * The list is intentionally unordered — consumers that need ordering (nearest-first, etc.)
-     * should use the scored overload on {@link DecayingSpatialObservationStore#liveSites} directly,
+     * should use the scored overload on {@link DecayingSpatialSiteStore#liveSites} directly,
      * or re-sort the result themselves.
      */
     public Optional<List<GlobalPos>> getSpatialMemory(@Nonnull MemoryType.DecayingSpatialMemoryType type,
                                                       @Nonnull ResourceKey<Level> dimension,
                                                       long nowTick) {
-        DecayingSpatialObservationStore store = this.spatialStores.get(type.identifier());
+        DecayingSpatialSiteStore store = this.spatialStores.get(type.identifier());
         if (store == null) {
             return Optional.empty();
         }
@@ -46,23 +46,23 @@ public final class SettlementsMemoryStore {
     }
 
     /**
-     * Updates an observation report into the store for the given decaying spatial memory type.
-     * Creates the store on first observation if it does not yet exist.
+     * Updates a sensed-site report into the store for the given decaying spatial memory type.
+     * Creates the store on first sensing if it does not yet exist.
      */
-    public void updateSpatialObservation(@Nonnull MemoryType.DecayingSpatialMemoryType type,
-                                         @Nonnull ObservationReport report,
-                                         long nowTick) {
-        DecayingSpatialObservationStore store = this.spatialStores.computeIfAbsent(
+    public void updateSpatialSites(@Nonnull MemoryType.DecayingSpatialMemoryType type,
+                                   @Nonnull SensedSiteReport report,
+                                   long nowTick) {
+        DecayingSpatialSiteStore store = this.spatialStores.computeIfAbsent(
                 type.identifier(),
-                ignored -> new DecayingSpatialObservationStore(type.retentionTicks(), type.maxEntries()));
+                ignored -> new DecayingSpatialSiteStore(type.retentionTicks(), type.maxEntries()));
         store.update(report, nowTick);
     }
 
     /**
-     * Clears the observation store for the given decaying spatial memory type.
+     * Clears the site store for the given decaying spatial memory type.
      */
     public void clearSpatialMemory(@Nonnull MemoryType.DecayingSpatialMemoryType type) {
-        DecayingSpatialObservationStore store = this.spatialStores.get(type.identifier());
+        DecayingSpatialSiteStore store = this.spatialStores.get(type.identifier());
         if (store != null) {
             store.clear();
         }
@@ -72,7 +72,7 @@ public final class SettlementsMemoryStore {
      * Returns true if the store for the given type has at least one non-expired entry.
      */
     public boolean hasSpatialMemory(@Nonnull MemoryType.DecayingSpatialMemoryType type, long nowTick) {
-        DecayingSpatialObservationStore store = this.spatialStores.get(type.identifier());
+        DecayingSpatialSiteStore store = this.spatialStores.get(type.identifier());
         return store != null && store.hasLiveSites(nowTick);
     }
 

@@ -1,6 +1,9 @@
 package dev.breezes.settlements.application.ai.dialogue;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,7 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Unit tests for {@link DialogueProviderFactory} mode resolution and fallback wiring.
  * No Minecraft types; pure domain logic.
  */
+@ExtendWith(MockitoExtension.class)
 class DialogueProviderFactoryTest {
+
+    @Mock
+    private MonologueRequestService monologueRequestService;
 
     @Test
     void create_scriptedMode_returnsScriptedProvider() {
@@ -17,7 +24,7 @@ class DialogueProviderFactoryTest {
         DialogueConfig config = config("SCRIPTED", true);
 
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex());
+        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex(), monologueRequestService);
 
         // Assert
         assertInstanceOf(ScriptedDialogueProvider.class, provider);
@@ -25,29 +32,28 @@ class DialogueProviderFactoryTest {
     }
 
     @Test
-    void create_rehearsedModeWithBlankEndpoint_fallsBackToScripted() {
-        // Arrange — phase 1 keeps REHEARSED on SCRIPTED until MONOLOGUE runtime wiring lands.
-        DialogueConfig config = config("REHEARSED", true);
-
-        // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex());
-
-        // Assert — must degrade to SCRIPTED, not build a client that throws on first call
-        assertInstanceOf(ScriptedDialogueProvider.class, provider);
-        assertTrue(provider.isEnabled());
-    }
-
-    @Test
-    void create_rehearsedMode_degradesToScriptedDuringPhaseOne() {
+    void create_rehearsedMode_returnsRehearsedProvider() {
         // Arrange
         DialogueConfig config = config("REHEARSED", true);
 
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex());
+        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex(), monologueRequestService);
 
-        // Assert
-        assertInstanceOf(ScriptedDialogueProvider.class, provider);
+        // Assert — REHEARSED now returns the real rehearsed provider with a scripted fallback rung
+        assertInstanceOf(RehearsedDialogueProvider.class, provider);
         assertTrue(provider.isEnabled());
+    }
+
+    @Test
+    void create_rehearsedMode_providerSupportsSweep() {
+        // Arrange
+        DialogueConfig config = config("REHEARSED", true);
+
+        // Act
+        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex(), monologueRequestService);
+
+        // Assert — sweep must be enabled for the evening event to dispatch
+        assertTrue(provider.supportsRehearsedDialogSweep());
     }
 
     @Test
@@ -56,7 +62,7 @@ class DialogueProviderFactoryTest {
         DialogueConfig config = config("garbage", true);
 
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex());
+        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex(), monologueRequestService);
 
         // Assert
         assertInstanceOf(ScriptedDialogueProvider.class, provider);

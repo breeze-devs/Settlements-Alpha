@@ -645,10 +645,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         this.planRuntimeState.clearPendingGeneration();
 
-        // Credibility is persisted on the entity, so the server-scope cache should only retain loaded observers
-        if (!this.level().isClientSide() && shouldEvictCredibility(reason)) {
+        // Prune cache
+        if (!this.level().isClientSide() && shouldEvictServerScopeCaches(reason)) {
             ServerComponent server = SettlementsDagger.serverOrThrow();
             server.reputationUtil().removeObserver(this.getUUID());
+            server.dialogueProvider().evict(this.getUUID());
         }
 
         super.remove(reason);
@@ -836,7 +837,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.bubbleService().applyCommand(this, command, this.level().getGameTime());
     }
 
-    private static boolean shouldEvictCredibility(@Nonnull RemovalReason reason) {
+    private static boolean shouldEvictServerScopeCaches(@Nonnull RemovalReason reason) {
         return reason == RemovalReason.KILLED
                 || reason == RemovalReason.DISCARDED
                 || reason.shouldSave();

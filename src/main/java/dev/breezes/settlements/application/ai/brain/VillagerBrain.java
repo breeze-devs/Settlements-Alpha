@@ -5,7 +5,7 @@ import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryAccess;
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
-import dev.breezes.settlements.domain.ai.memory.ObservationReport;
+import dev.breezes.settlements.domain.ai.memory.SensedSiteReport;
 import dev.breezes.settlements.domain.ai.memory.SettlementsMemoryStore;
 import dev.breezes.settlements.domain.ai.sensors.ISensor;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -92,10 +92,10 @@ public class VillagerBrain implements IBrain {
     }
 
     @Override
-    public void updateObservation(@Nonnull MemoryType.DecayingSpatialMemoryType type,
-                                  @Nonnull ObservationReport report,
-                                  long nowTick) {
-        this.access.decayingStore().updateSpatialObservation(type, report, nowTick);
+    public void updateSites(@Nonnull MemoryType.DecayingSpatialMemoryType type,
+                            @Nonnull SensedSiteReport report,
+                            long nowTick) {
+        this.access.decayingStore().updateSpatialSites(type, report, nowTick);
     }
 
     /**

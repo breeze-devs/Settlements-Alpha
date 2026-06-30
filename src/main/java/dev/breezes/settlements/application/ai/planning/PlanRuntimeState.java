@@ -53,6 +53,11 @@ public class PlanRuntimeState {
      */
     private int currentBehaviorElapsedTicks;
 
+    /**
+     * Ticks remaining before the current rigid plan slot may next attempt to start.
+     */
+    private int slotStartRetryDelayTicks;
+
     @Setter
     @Nullable
     private DayPlan pendingNextPlan;
@@ -85,6 +90,7 @@ public class PlanRuntimeState {
         this.overrideBehaviorKey = null;
         this.overrideElapsedTicks = 0;
         this.currentBehaviorElapsedTicks = 0;
+        this.slotStartRetryDelayTicks = 0;
         this.clearPendingGeneration();
         this.pendingNextPlan = null;
         this.planExhausted = false;
@@ -133,6 +139,14 @@ public class PlanRuntimeState {
 
     public void incrementCurrentBehaviorElapsedTicks(int delta) {
         this.currentBehaviorElapsedTicks += delta;
+    }
+
+    public void armSlotStartRetryDelay(int ticks) {
+        this.slotStartRetryDelayTicks = ticks;
+    }
+
+    public void decaySlotStartRetryDelay(int delta) {
+        this.slotStartRetryDelayTicks = Math.max(0, this.slotStartRetryDelayTicks - delta);
     }
 
     public void markPlanExhausted() {

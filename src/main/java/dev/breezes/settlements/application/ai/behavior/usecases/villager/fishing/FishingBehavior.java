@@ -451,6 +451,12 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
             BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.FISH_CAUGHT, null);
             outcome.markSucceeded();
             outcome.recordDeedDetail(this.describeCaughtFish());
+            if (this.caughtItem != null) {
+                outcome.putDetailField("item", BuiltInRegistries.ITEM.getKey(this.caughtItem.getItem()).getPath());
+            }
+            if (this.caughtFishSize != null && !this.caughtFishSize.isBlank()) {
+                outcome.putDetailField("size", this.caughtFishSize);
+            }
             context.declarePrimaryDeed(outcome);
         }
         this.caughtItem = null;

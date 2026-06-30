@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 /**
@@ -58,6 +59,7 @@ public final class ObservationFactory {
                 .outcome(event.getOutcome())
                 .reason(event.getReason())
                 .detail(event.getDetail())
+                .detailFields(event.getDetailFields())
                 .posX(event.getPosX())
                 .posY(event.getPosY())
                 .posZ(event.getPosZ())
@@ -68,7 +70,7 @@ public final class ObservationFactory {
      * Builds the persistence metadata only after the importance gate chooses to promote.
      */
     public static Map<String, String> metadataFor(@Nonnull Observation observation) {
-        Map<String, String> metadata = new HashMap<>(8);
+        Map<String, String> metadata = new HashMap<>();
         metadata.put(ObservationMetadataKeys.EVENT_TYPE, observation.eventType().name());
 
         if (observation.eventMetadata() != null) {
@@ -90,6 +92,14 @@ public final class ObservationFactory {
             metadata.put(ObservationMetadataKeys.DETAIL, observation.detail());
         }
 
+        // Serialize structured detail as "detail.<slot>" entries
+        Map<String, String> detailFields = observation.detailFields();
+        if (detailFields != null) {
+            for (Entry<String, String> entry : detailFields.entrySet()) {
+                metadata.put(ObservationMetadataKeys.DETAIL_PREFIX + entry.getKey(), entry.getValue());
+            }
+        }
+
         metadata.put(ObservationMetadataKeys.POS_X, String.valueOf(observation.posX()));
         metadata.put(ObservationMetadataKeys.POS_Y, String.valueOf(observation.posY()));
         metadata.put(ObservationMetadataKeys.POS_Z, String.valueOf(observation.posZ()));
@@ -98,6 +108,13 @@ public final class ObservationFactory {
     }
 
     private static UUID observationIdFor(@Nonnull WorldEvent event) {
+        // When a content-addressed dedupeKey is present, use it directly so that independent
+        // witnesses of the same subject converge on one fact id. The gossip subsystem can then
+        // recognize the shared id and call corroborate() rather than storing a second copy.
+        if (event.getDedupeKey() != null) {
+            return event.getDedupeKey();
+        }
+
         UUID actorId = event.getActorId();
         long actorMost = actorId != null ? actorId.getMostSignificantBits() : 0L;
         long actorLeast = actorId != null ? actorId.getLeastSignificantBits() : 0L;

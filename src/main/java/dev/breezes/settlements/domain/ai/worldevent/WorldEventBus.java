@@ -164,6 +164,13 @@ public final class WorldEventBus {
         return this.eventLog.size();
     }
 
+    /**
+     * The configured retention window in ticks
+     */
+    public long ttlTicks() {
+        return this.ttlTicks;
+    }
+
     private int findFirstNewIndex(long lastSeenSeq) {
         int firstNew = this.eventLog.size();
         for (int i = this.eventLog.size() - 1; i >= 0; i--) {

@@ -4,7 +4,7 @@ import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.junit.jupiter.api.Test;
 
-import static dev.breezes.settlements.domain.ai.memory.DecayingSpatialObservationStoreTest.packPos;
+import static dev.breezes.settlements.domain.ai.memory.DecayingSpatialSiteStoreTest.packPos;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -12,12 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for the pure fold logic in {@link ObservationReport#update(Long2ObjectOpenHashMap)}.
+ * Unit tests for the pure fold logic in {@link SensedSiteReport#update(Long2ObjectOpenHashMap)}.
  * <p>
  * Uses a plain {@code Long2ObjectOpenHashMap} directly — no stores, no MC types.
  * This verifies the three fold rules from the v2 spec (§6) in isolation.
  */
-class ObservationReportFoldTest {
+class SensedSiteReportFoldTest {
 
     private static final long POS_A = packPos(10, 64, 20);
     private static final long POS_B = packPos(30, 64, 40);
@@ -30,8 +30,8 @@ class ObservationReportFoldTest {
     @Test
     void fold_insertsNewPresence_whenSiteAbsent() {
         // Arrange
-        Long2ObjectOpenHashMap<SiteObservation> store = new Long2ObjectOpenHashMap<>();
-        ObservationReport report = reportWithPresences(POS_A, 100L);
+        Long2ObjectOpenHashMap<SiteEntry> store = new Long2ObjectOpenHashMap<>();
+        SensedSiteReport report = reportWithPresences(POS_A, 100L);
 
         // Act
         report.update(store);
@@ -44,9 +44,9 @@ class ObservationReportFoldTest {
     @Test
     void fold_upsertsPresence_bumpsToHigherTick() {
         // Arrange: existing entry at tick 50.
-        Long2ObjectOpenHashMap<SiteObservation> store = new Long2ObjectOpenHashMap<>();
-        store.put(POS_A, new SiteObservation(50L));
-        ObservationReport report = reportWithPresences(POS_A, 200L);
+        Long2ObjectOpenHashMap<SiteEntry> store = new Long2ObjectOpenHashMap<>();
+        store.put(POS_A, new SiteEntry(50L));
+        SensedSiteReport report = reportWithPresences(POS_A, 200L);
 
         // Act
         report.update(store);
@@ -58,9 +58,9 @@ class ObservationReportFoldTest {
     @Test
     void fold_upsert_keepsHigherExistingTick() {
         // Arrange: existing entry fresher than incoming.
-        Long2ObjectOpenHashMap<SiteObservation> store = new Long2ObjectOpenHashMap<>();
-        store.put(POS_A, new SiteObservation(500L));
-        ObservationReport report = reportWithPresences(POS_A, 100L); // older
+        Long2ObjectOpenHashMap<SiteEntry> store = new Long2ObjectOpenHashMap<>();
+        store.put(POS_A, new SiteEntry(500L));
+        SensedSiteReport report = reportWithPresences(POS_A, 100L); // older
 
         // Act
         report.update(store);
@@ -76,12 +76,12 @@ class ObservationReportFoldTest {
     @Test
     void fold_withAbsenceRegion_deletesAbsentSiteInsideRegion() {
         // Arrange: POS_A inside region, POS_B outside.
-        Long2ObjectOpenHashMap<SiteObservation> store = new Long2ObjectOpenHashMap<>();
-        store.put(POS_A, new SiteObservation(100L));
-        store.put(POS_B, new SiteObservation(100L));
+        Long2ObjectOpenHashMap<SiteEntry> store = new Long2ObjectOpenHashMap<>();
+        store.put(POS_A, new SiteEntry(100L));
+        store.put(POS_B, new SiteEntry(100L));
 
         ConfirmedAbsenceRegion regionAroundA = ConfirmedAbsenceRegion.ofScanBox(10, 64, 20, 5, 5);
-        ObservationReport report = ObservationReport.builder()
+        SensedSiteReport report = SensedSiteReport.builder()
                 .presences(new Long2LongOpenHashMap()) // nothing seen
                 .confirmedAbsenceRegion(regionAroundA)
                 .build();
@@ -97,14 +97,14 @@ class ObservationReportFoldTest {
     @Test
     void fold_withAbsenceRegion_sparesSiteAlsoInPresences() {
         // Arrange: POS_A inside region AND in presences.
-        Long2ObjectOpenHashMap<SiteObservation> store = new Long2ObjectOpenHashMap<>();
-        store.put(POS_A, new SiteObservation(100L));
+        Long2ObjectOpenHashMap<SiteEntry> store = new Long2ObjectOpenHashMap<>();
+        store.put(POS_A, new SiteEntry(100L));
 
         Long2LongOpenHashMap presences = new Long2LongOpenHashMap();
         presences.put(POS_A, 101L); // re-confirmed
 
         ConfirmedAbsenceRegion regionAroundA = ConfirmedAbsenceRegion.ofScanBox(10, 64, 20, 5, 5);
-        ObservationReport report = ObservationReport.builder()
+        SensedSiteReport report = SensedSiteReport.builder()
                 .presences(presences)
                 .confirmedAbsenceRegion(regionAroundA)
                 .build();
@@ -124,14 +124,14 @@ class ObservationReportFoldTest {
     @Test
     void fold_withoutAbsenceRegion_neverDeletesExistingSites() {
         // Arrange: POS_A and POS_C remembered. Report sees only POS_B.
-        Long2ObjectOpenHashMap<SiteObservation> store = new Long2ObjectOpenHashMap<>();
-        store.put(POS_A, new SiteObservation(100L));
-        store.put(POS_C, new SiteObservation(100L));
+        Long2ObjectOpenHashMap<SiteEntry> store = new Long2ObjectOpenHashMap<>();
+        store.put(POS_A, new SiteEntry(100L));
+        store.put(POS_C, new SiteEntry(100L));
 
         Long2LongOpenHashMap presences = new Long2LongOpenHashMap();
         presences.put(POS_B, 101L);
 
-        ObservationReport report = ObservationReport.builder()
+        SensedSiteReport report = SensedSiteReport.builder()
                 .presences(presences)
                 .confirmedAbsenceRegion(null)
                 .build();
@@ -174,10 +174,10 @@ class ObservationReportFoldTest {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static ObservationReport reportWithPresences(long packedPos, long observedTick) {
+    private static SensedSiteReport reportWithPresences(long packedPos, long observedTick) {
         Long2LongOpenHashMap presences = new Long2LongOpenHashMap();
         presences.put(packedPos, observedTick);
-        return ObservationReport.builder()
+        return SensedSiteReport.builder()
                 .presences(presences)
                 .confirmedAbsenceRegion(null)
                 .build();

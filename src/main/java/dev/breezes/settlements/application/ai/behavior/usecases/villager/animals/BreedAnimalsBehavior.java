@@ -282,8 +282,10 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
         // Record the species noun each time an animal is successfully fed; the second feed
         // (which triggers breeding) overwrites with the same value — idempotent and correct.
+        String speciesNoun = resolveSpeciesNoun(this.species);
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_BRED, null);
-        outcome.recordDeedDetail(resolveSpeciesNoun(this.species));
+        outcome.recordDeedDetail(speciesNoun);
+        outcome.putDetailField("species", speciesNoun);
         context.declarePrimaryDeed(outcome);
 
         return StepResult.noOp();

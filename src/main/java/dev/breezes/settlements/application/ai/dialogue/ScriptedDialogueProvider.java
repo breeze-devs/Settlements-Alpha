@@ -1,10 +1,12 @@
 package dev.breezes.settlements.application.ai.dialogue;
 
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,7 +32,7 @@ public final class ScriptedDialogueProvider implements DialogueProvider {
     }
 
     @Override
-    public void runEveningPackSweep() {
+    public void runEveningPackSweep(Collection<BaseVillager> villagers) {
         // SCRIPTED is static and localized through lang files, so there is nothing to precompute.
     }
 

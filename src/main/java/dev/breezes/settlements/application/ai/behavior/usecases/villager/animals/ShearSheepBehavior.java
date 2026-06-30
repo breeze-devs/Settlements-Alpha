@@ -120,24 +120,24 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
         return StagedStep.<BaseVillager>builder()
                 .name("ShearSheepBehavior")
                 .onStart(context -> {
-                    log.behaviorStatus("Creating speech bubble");
-                    ISettlementsVillager villager = context.getInitiator();
-
-                    BubbleMessage message = BubbleMessage.builder()
-                            .priority(0)
-                            .ttl(BUBBLE_TTL)
-                            .sourceType("behavior")
-                            .segments(List.of(
-                                    BubbleSegment.Sprite.builder()
-                                            .sprite(SpriteRef.SHEARS)
-                                            .frameDuration(ClockTicks.seconds(0.5))
-                                            .build(),
-                                    BubbleSegment.Sprite.builder()
-                                            .sprite(SpriteRef.SHEEP)
-                                            .frameDuration(ClockTicks.seconds(0.6))
-                                            .build()))
-                            .build();
-                    villager.upsertBubble(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY, message);
+                    // Speech bubble temporarily disabled; re-enable by restoring the upsert below (and the
+                    // matching removeBubbleByOwner in onEnd).
+                    // ISettlementsVillager villager = context.getInitiator();
+                    // BubbleMessage message = BubbleMessage.builder()
+                    //         .priority(0)
+                    //         .ttl(BUBBLE_TTL)
+                    //         .sourceType("behavior")
+                    //         .segments(List.of(
+                    //                 BubbleSegment.Sprite.builder()
+                    //                         .sprite(SpriteRef.SHEARS)
+                    //                         .frameDuration(ClockTicks.seconds(0.5))
+                    //                         .build(),
+                    //                 BubbleSegment.Sprite.builder()
+                    //                         .sprite(SpriteRef.SHEEP)
+                    //                         .frameDuration(ClockTicks.seconds(0.6))
+                    //                         .build()))
+                    //         .build();
+                    // villager.upsertBubble(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY, message);
                     return StepResult.noOp();
                 })
                 .initialStage(ShearStage.SHEAR_SHEEP)
@@ -146,9 +146,9 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                         ShearStage.PICKUP_WOOL, this.createPickupWoolStep()))
                 .nextStage(ShearStage.END)
                 .onEnd(context -> {
-                    log.behaviorStatus("Removing speech bubble");
-                    ISettlementsVillager villager = context.getInitiator();
-                    villager.removeBubbleByOwner(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY);
+                    // Speech bubble temporarily disabled; re-enable alongside the upsert in onStart.
+                    // ISettlementsVillager villager = context.getInitiator();
+                    // villager.removeBubbleByOwner(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY);
                     return StepResult.noOp();
                 })
                 .build();

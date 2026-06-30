@@ -353,9 +353,11 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.DEAL);
-        context.primaryDeed()
-                .ifPresent(outcome -> outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
-                        EventOutcome.SUCCESS, buildTradeDetail(session), null));
+        context.primaryDeed().ifPresent(outcome -> {
+            outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
+                    EventOutcome.SUCCESS, buildTradeDetail(session), null);
+            recordTradeDetailFields(outcome, session);
+        });
         return StepResult.complete();
     }
 
@@ -473,6 +475,19 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         int price = session.getBuyerOffer();
         String emeraldLabel = price == 1 ? "1 emerald" : price + " emeralds";
         return quantity + " " + itemPath + " for " + emeraldLabel;
+    }
+
+    /**
+     * Supplements the flat trade-detail string with structured slots for monologue phrasing
+     */
+    private static void recordTradeDetailFields(@Nonnull BehaviorOutcome outcome,
+                                                @Nonnull TradeSession session) {
+        String itemPath = BuiltInRegistries.ITEM.getKey(session.getMatchedItem()).getPath();
+        int price = session.getBuyerOffer();
+        String emeraldLabel = price == 1 ? "1 emerald" : price + " emeralds";
+        outcome.putDetailField("item", itemPath);
+        outcome.putDetailField("count", String.valueOf(session.getBundleSize()));
+        outcome.putDetailField("price", emeraldLabel);
     }
 
 }

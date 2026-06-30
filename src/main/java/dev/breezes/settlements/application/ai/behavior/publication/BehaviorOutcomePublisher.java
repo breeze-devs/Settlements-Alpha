@@ -17,6 +17,8 @@ import lombok.AllArgsConstructor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Single publication seam for terminal behavior outcomes.
@@ -111,7 +113,7 @@ public final class BehaviorOutcomePublisher {
 
         this.worldEventEmitter.emitTerminalBehaviorEvent(villager, key, deedType,
                 outcome.getPartnerId(), outcome.getRegistryId(), eventOutcome,
-                outcome.resolveDetail(), resolveReason(outcome));
+                outcome.resolveDetail(), resolveReason(outcome), buildDetailFields(outcome));
     }
 
     @Nullable
@@ -121,6 +123,36 @@ public final class BehaviorOutcomePublisher {
         }
 
         return null;
+    }
+
+    /**
+     * Derives the structured detail map to ship on the wire event.
+     * <p>
+     * Yield deeds (those declared with a unit noun) automatically get item + count entries. The
+     * count is emitted even when it is zero: an empty harvest is a real, narratable outcome, and
+     * SIS uses count 0 to voice the villager coming back empty-handed. Explicit
+     * {@link BehaviorOutcome#putDetailField} values are merged last so a behavior can override
+     * any auto-derived slot (e.g. supply a richer item label).
+     * <p>
+     * Returns null rather than an empty map so Gson omits the field entirely on the wire.
+     */
+    @Nullable
+    static Map<String, String> buildDetailFields(@Nonnull BehaviorOutcome outcome) {
+        Map<String, String> fields = new HashMap<>();
+
+        // Auto-derive item + count for any yield deed (unit noun present), including zero yields.
+        if (outcome.getUnitNoun() != null) {
+            fields.put("item", outcome.getUnitNoun());
+            fields.put("count", String.valueOf(outcome.getMagnitude()));
+        }
+
+        // Merge explicit fields; explicit values take precedence over auto-derived ones.
+        Map<String, String> explicit = outcome.getDetailFields();
+        if (explicit != null) {
+            fields.putAll(explicit);
+        }
+
+        return fields.isEmpty() ? null : Map.copyOf(fields);
     }
 
 }

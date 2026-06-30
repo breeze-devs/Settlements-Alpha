@@ -1,8 +1,8 @@
 package dev.breezes.settlements.domain.ai.perception;
 
-import dev.breezes.settlements.application.ai.inference.monologue.SeedPhrasebook;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.domain.ai.observation.Observation;
+import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
@@ -419,7 +419,7 @@ class ObservationFactoryTest {
         Map<String, String> metadata = ObservationFactory.metadataFor(observation);
 
         // Assert
-        assertEquals(EventOutcome.FAILURE.name(), metadata.get(SeedPhrasebook.METADATA_KEY_OUTCOME));
+        assertEquals(EventOutcome.FAILURE.name(), metadata.get(ObservationMetadataKeys.OUTCOME));
     }
 
     @Test
@@ -432,7 +432,7 @@ class ObservationFactoryTest {
         Map<String, String> metadata = ObservationFactory.metadataFor(observation);
 
         // Assert — key must be absent, not present with a null/empty value
-        assertNull(metadata.get(SeedPhrasebook.METADATA_KEY_OUTCOME));
+        assertNull(metadata.get(ObservationMetadataKeys.OUTCOME));
     }
 
     @Test
@@ -453,7 +453,7 @@ class ObservationFactoryTest {
         Map<String, String> metadata = ObservationFactory.metadataFor(observation);
 
         // Assert
-        assertEquals("target already paired", metadata.get(SeedPhrasebook.METADATA_KEY_REASON));
+        assertEquals("target already paired", metadata.get(ObservationMetadataKeys.REASON));
     }
 
     @Test
@@ -466,7 +466,7 @@ class ObservationFactoryTest {
         Map<String, String> metadata = ObservationFactory.metadataFor(observation);
 
         // Assert
-        assertNull(metadata.get(SeedPhrasebook.METADATA_KEY_REASON));
+        assertNull(metadata.get(ObservationMetadataKeys.REASON));
     }
 
     @Test
@@ -487,7 +487,7 @@ class ObservationFactoryTest {
         Map<String, String> metadata = ObservationFactory.metadataFor(observation);
 
         // Assert
-        assertEquals("3 melons", metadata.get(SeedPhrasebook.METADATA_KEY_DETAIL));
+        assertEquals("3 melons", metadata.get(ObservationMetadataKeys.DETAIL));
     }
 
     @Test
@@ -500,7 +500,94 @@ class ObservationFactoryTest {
         Map<String, String> metadata = ObservationFactory.metadataFor(observation);
 
         // Assert
-        assertNull(metadata.get(SeedPhrasebook.METADATA_KEY_DETAIL));
+        assertNull(metadata.get(ObservationMetadataKeys.DETAIL));
+    }
+
+    // -------------------------------------------------------------------------
+    // dedupeKey — observation id derivation
+    // -------------------------------------------------------------------------
+
+    @Test
+    void fromEvent_whenDedupeKeyPresent_usesItAsObservationId() {
+        // Arrange — a sighting event carries a content-addressed dedupeKey
+        UUID dedupeKey = UUID.randomUUID();
+        WorldEvent event = WorldEvent.builder()
+                .sequence(1L)
+                .gameTick(100L)
+                .type(WorldEventType.ZOMBIE_SIGHTED)
+                .actorId(UUID.randomUUID())
+                .posX(10).posY(64).posZ(-5)
+                .chunkX(0).chunkZ(0)
+                .dedupeKey(dedupeKey)
+                .build();
+
+        // Act
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Assert — observation id must be the dedupeKey, so co-witnesses converge
+        assertEquals(dedupeKey, observation.id(),
+                "When dedupeKey is present, observation id must equal it directly");
+    }
+
+    @Test
+    void fromEvent_twoEventsWithSameDedupeKey_produceTheSameObservationId() {
+        // Arrange — two villagers independently witness the same zombie; same dedupeKey
+        UUID dedupeKey = UUID.randomUUID();
+
+        WorldEvent witnessA = WorldEvent.builder()
+                .sequence(1L).gameTick(100L)
+                .type(WorldEventType.ZOMBIE_SIGHTED)
+                .actorId(UUID.randomUUID())
+                .posX(10).posY(64).posZ(-5)
+                .chunkX(0).chunkZ(0)
+                .dedupeKey(dedupeKey)
+                .build();
+
+        WorldEvent witnessB = WorldEvent.builder()
+                .sequence(2L).gameTick(100L)
+                .type(WorldEventType.ZOMBIE_SIGHTED)
+                .actorId(UUID.randomUUID())
+                .posX(10).posY(64).posZ(-5)
+                .chunkX(0).chunkZ(0)
+                .dedupeKey(dedupeKey)
+                .build();
+
+        // Act
+        UUID idA = ObservationFactory.fromEvent(witnessA, CURRENT_TICK).id();
+        UUID idB = ObservationFactory.fromEvent(witnessB, CURRENT_TICK).id();
+
+        // Assert — both witnesses produce the same observation id, enabling corroboration
+        assertEquals(idA, idB, "Co-witnesses with the same dedupeKey must produce the same observation id");
+    }
+
+    @Test
+    void fromEvent_whenDedupeKeyAbsent_fallsBackToActorKeyedDerivation() {
+        // Arrange — a normal (non-sighting) event with no dedupeKey
+        UUID actorId = UUID.randomUUID();
+        long sequence = 3L;
+        long gameTick = 200L;
+
+        WorldEvent event = WorldEvent.builder()
+                .sequence(sequence)
+                .gameTick(gameTick)
+                .type(WorldEventType.RESOURCE_HARVESTED)
+                .actorId(actorId)
+                .posX(0).posY(64).posZ(0)
+                .chunkX(0).chunkZ(0)
+                .build();
+
+        // Act
+        UUID observationId = ObservationFactory.fromEvent(event, CURRENT_TICK).id();
+
+        // Assert — must match the pre-existing actor-keyed formula exactly
+        long actorMost = actorId.getMostSignificantBits();
+        long actorLeast = actorId.getLeastSignificantBits();
+        UUID expected = new UUID(
+                actorMost ^ Long.rotateLeft(gameTick, 32),
+                actorLeast ^ gameTick ^ sequence);
+
+        assertEquals(expected, observationId,
+                "Absent dedupeKey must fall back to the existing actor-keyed derivation unchanged");
     }
 
     // -------------------------------------------------------------------------

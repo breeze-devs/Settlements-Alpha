@@ -136,9 +136,9 @@ public abstract class SocialCueCatalogModule {
                 })
                 .scriptFactory(villager -> dialogueProvider
                         .sampleAmbientLine(villager.getUUID(), contextAssembler.assemble(villager))
-                        // Has ambient line: show it for 4s
+                        // Has ambient line: show it for 10s
                         .map(line -> SocialCueScript.of(List.of(
-                                new CueStep.Bubble(line, ClockTicks.seconds(4)),
+                                new CueStep.Bubble(line, ClockTicks.seconds(10)),
                                 new CueStep.Wait(ClockTicks.seconds(3))
                         )))
                         // No line: an empty script occupies no time and shows nothing
@@ -432,7 +432,7 @@ public abstract class SocialCueCatalogModule {
     private static SocialCueScript buildDialogueScript(DialogueProvider dialogueProvider, UUID villagerUuid, DialogueContext context) {
         return dialogueProvider.sampleAmbientLine(villagerUuid, context)
                 .map(line -> SocialCueScript.of(List.of(
-                        new CueStep.Bubble(line, ClockTicks.seconds(4)),
+                        new CueStep.Bubble(line, ClockTicks.seconds(10)),
                         new CueStep.Wait(ClockTicks.seconds(3)))))
                 .orElseGet(() -> SocialCueScript.of(List.of()));
     }

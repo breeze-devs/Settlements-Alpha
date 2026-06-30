@@ -11,6 +11,7 @@ import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
+import dev.breezes.settlements.application.ai.memory.SensedSiteReader;
 import dev.breezes.settlements.application.ai.perception.PerceptionPipeline;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueArbiter;
@@ -35,12 +36,12 @@ import dev.breezes.settlements.bootstrap.event.WorldEventBusReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementServerEvents;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
+import dev.breezes.settlements.di.modules.server.ConcurrencyModule;
 import dev.breezes.settlements.di.modules.server.CredibilityModule;
 import dev.breezes.settlements.di.modules.server.DialogueServiceModule;
 import dev.breezes.settlements.di.modules.server.GossipModule;
 import dev.breezes.settlements.di.modules.server.OverridePolicyModule;
 import dev.breezes.settlements.di.modules.server.PerceptionModule;
-import dev.breezes.settlements.di.modules.server.ConcurrencyModule;
 import dev.breezes.settlements.di.modules.server.PlanningModule;
 import dev.breezes.settlements.di.modules.server.PoolModule;
 import dev.breezes.settlements.di.modules.server.SensorCatalogModule;
@@ -160,6 +161,8 @@ public interface ServerComponent {
     InferenceTransport inferenceTransport();
 
     MonologueRequestAssembler monologueRequestAssembler();
+
+    SensedSiteReader sensedSiteReader();
 
     EventLaneConfig eventLaneConfig();
 

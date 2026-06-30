@@ -9,9 +9,11 @@ import dev.breezes.settlements.application.ai.sensors.BlockResourceSensor;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensor;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
+import dev.breezes.settlements.application.ai.sensors.EntitySightingEmitterSensor;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 
@@ -26,11 +28,6 @@ public abstract class SensorCatalogModule {
     @Multibinds
     abstract Set<BlockResource> blockResources();
 
-    // TODO: sensor assignment is currently universal — every villager ticks every registered sensor.
-    //  Decide the long-term model: per-profession pools (mirroring PoolModule for behaviors) would cut
-    //  the per-tick big-scan cost at the 1000+ NPC target, but universal sensing may be correct for the
-    //  LLM planner, whose structured world-model is meant to be role-agnostic (design doc D4, open
-    //  questions #3 sensor-sharing-granularity and #7 registration-mechanism).
     @Provides
     @IntoSet
     static VillagerSensorFactory blockResourceSensor(BlockResourceSensorConfig config,
@@ -44,6 +41,12 @@ public abstract class SensorCatalogModule {
     @IntoSet
     static VillagerSensorFactory entityPerceptionSensor(EntityPerceptionSensorConfig config) {
         return villager -> new EntityPerceptionSensor(config, villager);
+    }
+
+    @Provides
+    @IntoSet
+    static VillagerSensorFactory entitySightingEmitterSensor(WorldEventEmitter emitter) {
+        return villager -> new EntitySightingEmitterSensor(emitter, villager);
     }
 
     @Provides

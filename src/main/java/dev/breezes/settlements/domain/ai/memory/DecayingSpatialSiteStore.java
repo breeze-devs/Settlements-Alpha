@@ -14,40 +14,40 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Per-agent decaying spatial observation store for a single block resource type.
+ * Per-agent decaying spatial site store for a single block resource type.
  * <p>
- * Stores timestamped site observations as packed {@code BlockPos.asLong()} keys in a fastutil map.
+ * Stores timestamped site entries as packed {@code BlockPos.asLong()} keys in a fastutil map.
  * Decay is lazy: entries past their TTL are filtered on read and purged opportunistically during fold operations.
  * A size cap with stalest-first eviction bounds memory for roaming villagers.
  * <p>
  * This class is NOT thread-safe.
  */
-public final class DecayingSpatialObservationStore {
+public final class DecayingSpatialSiteStore {
 
     private static final int DEFAULT_MAX_ENTRIES = 256;
 
     private final long retentionTicks;
     private final int maxEntries;
-    private final Long2ObjectOpenHashMap<SiteObservation> observations;
+    private final Long2ObjectOpenHashMap<SiteEntry> siteEntries;
 
-    public DecayingSpatialObservationStore(long retentionTicks, int maxEntries) {
+    public DecayingSpatialSiteStore(long retentionTicks, int maxEntries) {
         this.retentionTicks = retentionTicks;
         this.maxEntries = maxEntries;
-        this.observations = new Long2ObjectOpenHashMap<>(Math.min(maxEntries, 64));
+        this.siteEntries = new Long2ObjectOpenHashMap<>(Math.min(maxEntries, 64));
     }
 
-    public DecayingSpatialObservationStore(long retentionTicks) {
+    public DecayingSpatialSiteStore(long retentionTicks) {
         this(retentionTicks, DEFAULT_MAX_ENTRIES);
     }
 
     /**
-     * Updates this store with an observation report, then evicts stalest entries if the size cap was breached.
+     * Updates this store with a sensed-site report, then evicts stalest entries if the size cap was breached.
      * Expiry filtering happens on the entries already present before the update.
      */
-    public void update(@Nonnull ObservationReport report, long nowTick) {
+    public void update(@Nonnull SensedSiteReport report, long nowTick) {
         // Eagerly expire before folding
         this.expireStale(nowTick);
-        report.update(this.observations);
+        report.update(this.siteEntries);
 
         // Cap enforcement: remove the stalest entries if we exceeded maxEntries
         this.evictStalestIfNeeded();
@@ -68,10 +68,10 @@ public final class DecayingSpatialObservationStore {
      */
     public List<GlobalPos> liveView(@Nonnull ResourceKey<Level> dimension, long nowTick) {
         long cutoff = nowTick - this.retentionTicks;
-        List<GlobalPos> result = new ArrayList<>(this.observations.size());
+        List<GlobalPos> result = new ArrayList<>(this.siteEntries.size());
         List<Long> toRemove = null;
 
-        for (Long2ObjectMap.Entry<SiteObservation> entry : this.observations.long2ObjectEntrySet()) {
+        for (Long2ObjectMap.Entry<SiteEntry> entry : this.siteEntries.long2ObjectEntrySet()) {
             if (entry.getValue().lastSeenTick() < cutoff) {
                 // Lazy expiry: collect for removal, do not remove inside the entry-set iteration.
                 if (toRemove == null) {
@@ -86,7 +86,7 @@ public final class DecayingSpatialObservationStore {
 
         if (toRemove != null) {
             for (long key : toRemove) {
-                this.observations.remove(key);
+                this.siteEntries.remove(key);
             }
         }
 
@@ -114,10 +114,10 @@ public final class DecayingSpatialObservationStore {
                                      long nowTick,
                                      @Nonnull SiteScorer scorer) {
         long cutoff = nowTick - this.retentionTicks;
-        List<ScoredSite> liveEntries = new ArrayList<>(this.observations.size());
+        List<ScoredSite> liveEntries = new ArrayList<>(this.siteEntries.size());
         List<Long> toRemove = null;
 
-        for (Long2ObjectMap.Entry<SiteObservation> entry : this.observations.long2ObjectEntrySet()) {
+        for (Long2ObjectMap.Entry<SiteEntry> entry : this.siteEntries.long2ObjectEntrySet()) {
             if (entry.getValue().lastSeenTick() < cutoff) {
                 // Lazy expiry: collect for removal, do not remove inside the entry-set iteration.
                 if (toRemove == null) {
@@ -134,7 +134,7 @@ public final class DecayingSpatialObservationStore {
 
         if (toRemove != null) {
             for (long key : toRemove) {
-                this.observations.remove(key);
+                this.siteEntries.remove(key);
             }
         }
 
@@ -159,7 +159,7 @@ public final class DecayingSpatialObservationStore {
      */
     public boolean hasLiveSites(long nowTick) {
         long cutoff = nowTick - this.retentionTicks;
-        for (var entry : this.observations.long2ObjectEntrySet()) {
+        for (var entry : this.siteEntries.long2ObjectEntrySet()) {
             if (entry.getValue().lastSeenTick() >= cutoff) {
                 return true;
             }
@@ -187,19 +187,19 @@ public final class DecayingSpatialObservationStore {
      * Clears all entries
      */
     public void clear() {
-        this.observations.clear();
+        this.siteEntries.clear();
     }
 
     /**
      * Returns the number of entries currently in the store, including potentially-expired ones.
      */
     public int size() {
-        return this.observations.size();
+        return this.siteEntries.size();
     }
 
     private void expireStale(long nowTick) {
         long cutoff = nowTick - this.retentionTicks;
-        this.observations.long2ObjectEntrySet().removeIf(e -> e.getValue().lastSeenTick() < cutoff);
+        this.siteEntries.long2ObjectEntrySet().removeIf(e -> e.getValue().lastSeenTick() < cutoff);
     }
 
     /**
@@ -207,17 +207,17 @@ public final class DecayingSpatialObservationStore {
      * {@code lastSeenTick} (i.e. oldest / stalest) until within bounds.
      */
     private void evictStalestIfNeeded() {
-        if (this.observations.size() <= this.maxEntries) {
+        if (this.siteEntries.size() <= this.maxEntries) {
             return;
         }
 
         // Collect all entries, sort by tick ascending, remove the excess oldest ones.
-        int excess = this.observations.size() - this.maxEntries;
-        this.observations.long2ObjectEntrySet().stream()
+        int excess = this.siteEntries.size() - this.maxEntries;
+        this.siteEntries.long2ObjectEntrySet().stream()
                 .sorted(Comparator.comparingLong(e -> e.getValue().lastSeenTick()))
                 .limit(excess)
                 .map(Long2ObjectMap.Entry::getLongKey)
-                .forEach(key -> this.observations.remove(key.longValue()));
+                .forEach(key -> this.siteEntries.remove(key.longValue()));
     }
 
     /**

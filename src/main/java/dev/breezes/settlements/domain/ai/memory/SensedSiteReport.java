@@ -19,11 +19,11 @@ import javax.annotation.Nullable;
  *       but were NOT in presences — the sensor looked authoritatively and found nothing there.</li>
  *   <li>TTL expiry is orthogonal and lazy (handled at read time in the store).</li>
  * </ol>
- * The sensor is stateless: one ObservationReport per scan cycle, nothing retained between scans.
+ * The sensor is stateless: one SensedSiteReport per scan cycle, nothing retained between scans.
  */
 @Getter
 @Builder
-public final class ObservationReport {
+public final class SensedSiteReport {
 
     /**
      * Sites the sensor confirmed present this cycle: packed {@code BlockPos.asLong()} → observed game tick.
@@ -44,18 +44,18 @@ public final class ObservationReport {
 
     /**
      * Folds this report into the given store.
-     * Pure logic: operates only on packed longs and SiteObservation — no Minecraft types.
+     * Pure logic: operates only on packed longs and SiteEntry — no Minecraft types.
      */
-    public void update(@Nonnull Long2ObjectOpenHashMap<SiteObservation> store) {
+    public void update(@Nonnull Long2ObjectOpenHashMap<SiteEntry> store) {
         // Pass 1: upsert all presences — presence confirms a site, never removes.
         this.presences.long2LongEntrySet().forEach(entry -> {
             long packedPos = entry.getLongKey();
             long observedTick = entry.getLongValue();
-            store.merge(packedPos, new SiteObservation(observedTick),
+            store.merge(packedPos, new SiteEntry(observedTick),
                     (existing, incoming) -> existing.keepFresher(incoming.lastSeenTick()));
         });
 
-        // Pass 2: if the region is confirmed, purge remembered sites inside it that were NOT seen.
+        // if the region is confirmed, purge remembered sites inside it that were NOT seen.
         // Sites outside the region are left alone — "I didn't look there" is not absence evidence.
         if (this.confirmedAbsenceRegion == null) {
             return;
@@ -63,7 +63,7 @@ public final class ObservationReport {
 
         store.long2ObjectEntrySet().removeIf(entry -> {
             long packedPos = entry.getLongKey();
-            // Only delete if: (a) inside the confirmed box AND (b) not in the presences set.
+            // Only delete if: inside the confirmed box AND not in the presences set.
             return this.confirmedAbsenceRegion.contains(packedPos)
                     && !this.presences.containsKey(packedPos);
         });

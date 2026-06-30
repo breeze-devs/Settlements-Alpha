@@ -80,7 +80,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             boolean passed = precondition.test(entity);
             this.latestPreconditionEvaluationResults.put(precondition.getClass(), passed);
             if (!passed) {
-                log.behaviorStatus("Precondition '{}' is not met", precondition.description());
+                log.behaviorTrace("Precondition '{}' is not met", precondition.description());
                 allPassed = false;
             }
         }

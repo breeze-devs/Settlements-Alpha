@@ -267,6 +267,11 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
     }
 
     private void initBehaviors() {
+        // Do not initialize behaviors if the wolf is not tamed
+        if (this.getOwner() == null) {
+            return;
+        }
+
         WolfWalkConfig wolfWalkConfig = SettlementsDagger.serverOrThrow().wolfWalkConfig();
         this.wolfBehaviors.add(new WolfWalkBehavior(wolfWalkConfig));
     }

@@ -13,8 +13,7 @@ class InferenceConfigTest {
                 "http://localhost:12345//   ",
                 "",
                 "en_us",
-                2,
-                250);
+                50);
 
         // Act
         String normalizedBaseUrl = config.normalizedBaseUrl();
@@ -26,7 +25,7 @@ class InferenceConfigTest {
     @Test
     void normalizedBaseUrl_returnsEmptyWhenEndpointIsNull() {
         // Arrange
-        InferenceConfig config = new InferenceConfig(null, "", "en_us", 2, 250);
+        InferenceConfig config = new InferenceConfig(null, "", "en_us", 50);
 
         // Act
         String normalizedBaseUrl = config.normalizedBaseUrl();

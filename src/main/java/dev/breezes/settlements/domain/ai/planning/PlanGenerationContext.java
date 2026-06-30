@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.ai.planning;
 
+import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.WeightedBehavior;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
@@ -10,6 +11,7 @@ import dev.breezes.settlements.domain.world.WorldCalendar;
 import lombok.Builder;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Immutable input bundle supplied to {@link IPlanGenerator#generate} when constructing a plan.
@@ -18,12 +20,17 @@ import java.util.List;
  * Values must be immutable or detached snapshots because async generators may consume this context
  * away from Minecraft's server thread.
  *
- * @param chronotypeSeed             Stable per-villager seed for deterministic chronotype offsets.
- *                                   Consumed by the generator to jitter sleep and meal anchors per villager.
- * @param pendingInvestigateTipCount Number of unverified hearsay tips in the villager's knowledge store
- *                                   at plan-generation time. A value &gt; 0 causes the planner to inject
- *                                   an Investigate scout slot into the morning work block.
- *                                   Defaults to 0 when not supplied by the caller.
+ * @param chronotypeSeed              Stable per-villager seed for deterministic chronotype offsets.
+ *                                    Consumed by the generator to jitter sleep and meal anchors per villager.
+ * @param pendingInvestigateTipCount  Number of unverified hearsay tips in the villager's knowledge store
+ *                                    at plan-generation time. A value &gt; 0 causes the planner to inject
+ *                                    an Investigate scout slot into the morning work block.
+ *                                    Defaults to 0 when not supplied by the caller.
+ * @param behaviorsLackingOpportunity Behavior keys whose declared opportunity requirements are not currently
+ *                                    satisfied. The heuristic planner down-weights these by
+ *                                    {@code LOW_OPPORTUNITY_MULTIPLIER} rather than removing them entirely,
+ *                                    so the pool's resilience backlog is preserved.
+ *                                    Defaults to an empty set when not supplied (e.g. by older tests).
  */
 @Builder
 public record PlanGenerationContext(
@@ -35,11 +42,15 @@ public record PlanGenerationContext(
         List<WeightedBehavior> availableBehaviors,
         long wakeAtAbsoluteTick,
         long chronotypeSeed,
-        int pendingInvestigateTipCount
+        int pendingInvestigateTipCount,
+        Set<BehaviorKey> behaviorsLackingOpportunity
 ) {
 
     public PlanGenerationContext {
         availableBehaviors = List.copyOf(availableBehaviors);
+        behaviorsLackingOpportunity = behaviorsLackingOpportunity == null
+                ? Set.of()
+                : Set.copyOf(behaviorsLackingOpportunity);
     }
 
     /**

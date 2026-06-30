@@ -1,5 +1,8 @@
 package dev.breezes.settlements.application.ai.dialogue;
 
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,13 +32,15 @@ public interface DialogueProvider {
     Optional<DialogueLine> sampleAmbientLine(UUID villagerUuid, DialogueContext context);
 
     /**
-     * Kicks off the evening batch sweep. Called once per in-game evening from the server-tick event.
+     * Kicks off the evening batch sweep for the given loaded villagers. Called once per in-game
+     * evening from the server-tick event, after the caller enumerates all loaded BaseVillagers.
      * <p>
-     * This is a no-op in SCRIPTED mode; REHEARSED mode performs async generation within
-     * the configured sweep deadline.
+     * This is a no-op in SCRIPTED mode. In REHEARSED mode the sweep dispatches async generation
+     * within the configured deadline — it must never block the calling (tick) thread.
      *
+     * @param villagers all currently loaded villagers; the provider may filter internally
      */
-    void runEveningPackSweep();
+    void runEveningPackSweep(Collection<BaseVillager> villagers);
 
     /**
      * Returns {@code true} if this provider is effectively enabled — i.e. will ever produce
@@ -43,6 +48,15 @@ public interface DialogueProvider {
      * disabled, avoiding any wasted work.
      */
     boolean isEnabled();
+
+    /**
+     * Drops any per-villager state this provider holds for {@code villagerUuid}.
+     *
+     * @param villagerUuid the id of the villager being removed
+     */
+    default void evict(UUID villagerUuid) {
+        // No per-villager state to drop by default.
+    }
 
     /**
      * Returns true for providers that can use evening batch context collection.

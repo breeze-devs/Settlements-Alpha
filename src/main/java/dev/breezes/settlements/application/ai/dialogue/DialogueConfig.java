@@ -51,9 +51,9 @@ public record DialogueConfig(
                 type = ConfigurationType.GENERAL,
                 identifier = "pack_sweep_deadline_seconds",
                 description = "Total time budget in seconds for the evening REHEARSED sweep across all villagers.",
-                defaultValue = 30,
+                defaultValue = 60,
                 min = 5,
-                max = 120)
+                max = 300)
         int packSweepDeadlineSeconds
 
 ) {

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.ai.catalog;
 
+import dev.breezes.settlements.domain.ai.planning.OpportunityRequirement;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.GameTicks;
 import lombok.Builder;
@@ -41,6 +42,14 @@ public class BehaviorPlanningMetadata {
 
     @Singular
     private final Set<String> producedObservationHints;
+
+    /**
+     * Plan-time opportunity signals this behavior declares.
+     * Empty means "never down-weight" — most of the catalog carries no requirements.
+     * Evaluated before each plan generation by {@link dev.breezes.settlements.application.ai.planning.OpportunityForecaster}.
+     */
+    @Singular
+    private final Set<OpportunityRequirement> opportunities;
 
     private final GameTicks estimatedDuration;
 

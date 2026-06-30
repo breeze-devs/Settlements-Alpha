@@ -6,10 +6,14 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -26,6 +30,11 @@ import java.util.UUID;
 public final class WorldEventEmitter {
 
     private final WorldEventBus bus;
+
+    /**
+     * dedupeKey → game tick after which a co-witness may re-announce the same sighting
+     */
+    private final Map<UUID, Long> recentSightingEmissions = new HashMap<>();
 
     /**
      * Returns the overworld game time so emitted events share the same clock as
@@ -81,7 +90,8 @@ public final class WorldEventEmitter {
                                           @Nullable UUID registryId,
                                           @Nullable EventOutcome outcome,
                                           @Nullable String detail,
-                                          @Nullable String reason) {
+                                          @Nullable String reason,
+                                          @Nullable Map<String, String> detailFields) {
         long gameTick = overworldTime(actor);
         this.bus.emit(
                 WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
@@ -92,7 +102,8 @@ public final class WorldEventEmitter {
                         .metadata(key.id())
                         .outcome(outcome)
                         .detail(detail)
-                        .reason(reason),
+                        .reason(reason)
+                        .detailFields(detailFields),
                 gameTick);
     }
 
@@ -130,6 +141,65 @@ public final class WorldEventEmitter {
                         .targetId(targetId)
                         .registryId(sessionId),
                 gameTick);
+    }
+
+    /**
+     * Emits a sighting event recording that a villager directly observed {@code subject}.
+     * <p>
+     * A sighting has no single doer, so no actor is recorded: every villager that perceives the
+     * event (subject to the perception gate) treats it as its own first-hand observation, rather
+     * than inheriting whichever witness happened to emit first. Position is anchored to the subject
+     * so spatial grounding and coarse-cell deduplication both use the subject's actual location.
+     * <p>
+     * Co-witnesses that compute the same {@code dedupeKey} collapse to a single bus emission for the
+     * retention window, so fan-out stays bounded by distinct sightings rather than by crowd size.
+     *
+     * @param witness      the villager whose sensor fired (used only as the emission clock source)
+     * @param subject      the entity that was observed
+     * @param entityTypeId namespaced entity type string (e.g. "minecraft:zombie"), computed once by the caller
+     * @param type         the sighting event type (ZOMBIE_SIGHTED, PLAYER_SIGHTED, etc.)
+     * @param dedupeKey    content-addressed UUID from {@link dev.breezes.settlements.domain.ai.perception.SightingDedupeKeyFactory}
+     *                     so independent co-witnesses converge on the same episodic fact
+     */
+    public void emitSighting(@Nonnull BaseVillager witness,
+                             @Nonnull Entity subject,
+                             @Nonnull String entityTypeId,
+                             @Nonnull WorldEventType type,
+                             @Nonnull UUID dedupeKey) {
+        long gameTick = overworldTime(witness);
+
+        // Cross-witness fan-out suppression: while this sighting is still live on the bus, every
+        // nearby villager visits it once through its cursor, so a co-witness re-announcing the same
+        // content-addressed fact is pure waste
+        purgeExpiredSightingEmissions(gameTick);
+        if (isSightingSuppressed(dedupeKey, gameTick)) {
+            return;
+        }
+
+        // actorId is deliberately left null -- a sighting is witnessed, not done
+        WorldEvent.WorldEventBuilder builder = WorldEvent.fromPos(subject.getX(), subject.getY(), subject.getZ())
+                .type(type)
+                .actorId(null)
+                .targetId(subject.getUUID())
+                .metadata(entityTypeId)
+                .dedupeKey(dedupeKey);
+
+        // Snapshot the player's display name at emit time
+        if (subject instanceof Player player) {
+            builder.detailFields(Map.of("player", player.getName().getString()));
+        }
+
+        this.bus.emit(builder, gameTick);
+        this.recentSightingEmissions.put(dedupeKey, gameTick + this.bus.ttlTicks());
+    }
+
+    private boolean isSightingSuppressed(UUID dedupeKey, long currentTick) {
+        Long expiry = this.recentSightingEmissions.get(dedupeKey);
+        return expiry != null && currentTick < expiry;
+    }
+
+    private void purgeExpiredSightingEmissions(long currentTick) {
+        this.recentSightingEmissions.values().removeIf(expiry -> expiry <= currentTick);
     }
 
     public void emitDayPlanInvalidated(BaseVillager villager) {

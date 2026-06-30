@@ -6,6 +6,8 @@ import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.dialogue.DialogueLineIndex;
 import dev.breezes.settlements.application.ai.dialogue.DialogueProvider;
 import dev.breezes.settlements.application.ai.dialogue.DialogueProviderFactory;
+import dev.breezes.settlements.application.ai.dialogue.MonologueRequestService;
+import dev.breezes.settlements.application.ai.dialogue.OccasionSetResolver;
 import dev.breezes.settlements.application.ai.inference.HttpInferenceTransport;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.HttpMonologueGateway;
@@ -26,8 +28,16 @@ public final class DialogueServiceModule {
 
     @Provides
     @ServerScope
-    static DialogueProvider dialogueProvider(DialogueConfig config, DialogueLineIndex lineIndex) {
-        return DialogueProviderFactory.create(config, lineIndex);
+    static OccasionSetResolver occasionSetResolver() {
+        return new OccasionSetResolver();
+    }
+
+    @Provides
+    @ServerScope
+    static DialogueProvider dialogueProvider(DialogueConfig config,
+                                             DialogueLineIndex lineIndex,
+                                             MonologueRequestService monologueRequestService) {
+        return DialogueProviderFactory.create(config, lineIndex, monologueRequestService);
     }
 
     @Provides

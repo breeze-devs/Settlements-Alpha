@@ -1,7 +1,7 @@
 package dev.breezes.settlements.domain.ai.brain;
 
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
-import dev.breezes.settlements.domain.ai.memory.ObservationReport;
+import dev.breezes.settlements.domain.ai.memory.SensedSiteReport;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import net.minecraft.world.level.Level;
 
@@ -46,14 +46,14 @@ public interface IBrain {
     void clearMemory(@Nonnull MemoryType<?> type);
 
     /**
-     * Applies an observation report to a decaying spatial memory store.
+     * Applies a sensed-site report to a decaying spatial memory store.
      * <p>
      * The parameter is typed as {@link MemoryType.DecayingSpatialMemoryType} (not the sealed
      * supertype) so the compiler enforces at every call site that only decaying memories enter
      * this path — eliminating the runtime {@code isDecaying()} guard that previously existed.
      */
-    void updateObservation(@Nonnull MemoryType.DecayingSpatialMemoryType type,
-                           @Nonnull ObservationReport report,
-                           long nowTick);
+    void updateSites(@Nonnull MemoryType.DecayingSpatialMemoryType type,
+                     @Nonnull SensedSiteReport report,
+                     long nowTick);
 
 }

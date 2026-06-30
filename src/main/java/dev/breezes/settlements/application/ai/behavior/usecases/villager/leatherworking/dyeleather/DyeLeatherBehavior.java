@@ -282,6 +282,7 @@ public class DyeLeatherBehavior extends VillagerStateMachineBehavior {
                     if (this.chosenColor != null) {
                         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LEATHER_DYED, null);
                         outcome.recordDeedDetail(this.chosenColor.getName());
+                        outcome.putDetailField("color", this.chosenColor.getName());
                         ctx.declarePrimaryDeed(outcome);
                     }
 

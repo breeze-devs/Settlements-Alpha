@@ -1,7 +1,7 @@
 package dev.breezes.settlements.domain.ai.memory;
 
 /**
- * Pluggable ordering strategy for the live-sites view produced by the decaying observation store.
+ * Pluggable ordering strategy for the live-sites view produced by the decaying site store.
  * <p>
  * Lower score = higher priority (treated as a comparator key). The default implementation
  * scores by squared distance from the querying origin. Future implementations can blend

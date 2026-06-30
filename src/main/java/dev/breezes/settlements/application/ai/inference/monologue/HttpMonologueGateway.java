@@ -3,8 +3,7 @@ package dev.breezes.settlements.application.ai.inference.monologue;
 import com.google.gson.Gson;
 import dev.breezes.settlements.application.ai.dialogue.Occasion;
 import dev.breezes.settlements.application.ai.inference.InferenceCapability;
-import dev.breezes.settlements.application.ai.inference.InferenceProtocol;
-import dev.breezes.settlements.application.ai.inference.InferenceResponseEnvelope;
+import dev.breezes.settlements.application.ai.inference.InferenceStreamHandle;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,11 +14,17 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * HTTP-backed MONOLOGUE gateway. Transport failures resolve to an empty capability response.
+ * HTTP-backed MONOLOGUE gateway. Transport errors are absorbed and produce no villager results;
+ * the caller sees an empty stream, and the scripted dialogue floor takes over for all villagers.
+ * <p>
+ * The backend streams NDJSON: one {@link VillagerMonologueResult} JSON object per line emitted
+ * as soon as that villager's upstream generation finishes. Each line is parsed independently so
+ * a single malformed line cannot discard the rest of the stream.
  */
 @CustomLog
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
@@ -30,97 +35,55 @@ public final class HttpMonologueGateway implements MonologueGateway {
     private final InferenceTransport transport;
 
     @Override
-    public CompletableFuture<MonologueBatchResponse> generate(@Nonnull MonologueBatchRequest request,
-                                                              @Nonnull Duration deadline) {
-        return this.transport.post(InferenceCapability.MONOLOGUE, request, deadline)
-                .thenApply(response -> response.body()
-                        .map(HttpMonologueGateway::parse)
-                        .orElseGet(HttpMonologueGateway::emptyResponse));
+    public InferenceStreamHandle generate(@Nonnull MonologueBatchRequest request,
+                                          @Nonnull Duration deadline,
+                                          @Nonnull Consumer<VillagerMonologueResult> onVillager) {
+        return this.transport.postStreaming(InferenceCapability.MONOLOGUE, request, deadline,
+                line -> this.parseLine(line, onVillager));
     }
 
-    private static MonologueBatchResponse parse(String body) {
+    /**
+     * Parses one NDJSON line and, if valid, invokes {@code onVillager}.
+     * A bad line (malformed JSON, missing id, null result) is logged and skipped — the stream
+     * continues and remaining villagers are unaffected.
+     */
+    private void parseLine(String line, Consumer<VillagerMonologueResult> onVillager) {
+        String trimmed = line.strip();
+        if (trimmed.isEmpty()) {
+            return;
+        }
+
         try {
-            InferenceResponseEnvelope envelope = GSON.fromJson(body, InferenceResponseEnvelope.class);
-            if (envelope == null || envelope.getPayload() == null || envelope.getPayload().isJsonNull()) {
-                return emptyResponse();
+            VillagerMonologueResult result = GSON.fromJson(trimmed, VillagerMonologueResult.class);
+            if (result != null && result.getVillagerId() != null) {
+                onVillager.accept(normalizeVillager(result));
             }
-
-            if (envelope.getProtocolVersion() != InferenceProtocol.VERSION) {
-                log.error("MONOLOGUE response protocol version {} is unsupported", envelope.getProtocolVersion());
-                return emptyResponse();
-            }
-
-            MonologueBatchResponse response = GSON.fromJson(envelope.getPayload(), MonologueBatchResponse.class);
-            return response == null ? emptyResponse() : normalize(response);
         } catch (RuntimeException e) {
-            log.error("MONOLOGUE response parse failed: {}", e.getMessage());
-            return emptyResponse();
+            log.error("MONOLOGUE response line parse failed: {}", e.getMessage());
         }
-    }
-
-    private static MonologueBatchResponse normalize(MonologueBatchResponse response) {
-        return MonologueBatchResponse.builder()
-                .villagers(normalizeVillagers(response.getVillagers()))
-                .build();
-    }
-
-    private static List<VillagerMonologueResult> normalizeVillagers(List<VillagerMonologueResult> villagers) {
-        if (villagers == null) {
-            return List.of();
-        }
-
-        return villagers.stream()
-                .map(HttpMonologueGateway::normalizeVillager)
-                .toList();
     }
 
     private static VillagerMonologueResult normalizeVillager(VillagerMonologueResult villager) {
-        if (villager == null) {
-            return VillagerMonologueResult.builder().build();
-        }
-
         return VillagerMonologueResult.builder()
                 .villagerId(villager.getVillagerId())
                 .buckets(normalizeBuckets(villager.getBuckets()))
                 .build();
     }
 
-    private static Map<Occasion, List<GeneratedLine>> normalizeBuckets(Map<Occasion, List<GeneratedLine>> buckets) {
+    private static Map<Occasion, List<String>> normalizeBuckets(Map<Occasion, List<String>> buckets) {
         if (buckets == null) {
             return Map.of();
         }
 
+        // Null-safety only: SIS returns bare, already-sanitized strings; the render-side cap and
+        // formatting strip happen later in MonologueRequestService#toPack.
         return buckets.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> normalizeLines(entry.getValue())));
-    }
-
-    private static List<GeneratedLine> normalizeLines(List<GeneratedLine> lines) {
-        if (lines == null) {
-            return List.of();
-        }
-
-        return lines.stream()
-                .map(HttpMonologueGateway::normalizeLine)
-                .toList();
-    }
-
-    private static GeneratedLine normalizeLine(GeneratedLine line) {
-        if (line == null) {
-            return GeneratedLine.builder().status(LineStatus.OK).build();
-        }
-
-        return GeneratedLine.builder()
-                .text(line.getText())
-                .status(line.getStatus() == null ? LineStatus.OK : line.getStatus())
-                .build();
-    }
-
-    private static MonologueBatchResponse emptyResponse() {
-        return MonologueBatchResponse.builder()
-                .villagers(List.of())
-                .build();
+                        entry -> entry.getValue().stream()
+                                .filter(Objects::nonNull)
+                                .toList()));
     }
 
 }
