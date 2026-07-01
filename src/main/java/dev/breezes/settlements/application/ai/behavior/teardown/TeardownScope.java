@@ -27,7 +27,6 @@ import java.util.Deque;
 @CustomLog
 public final class TeardownScope {
 
-    // Head of deque = most recently tracked (LIFO pop order)
     private final Deque<TeardownObligation> live = new ArrayDeque<>();
 
     @Nullable

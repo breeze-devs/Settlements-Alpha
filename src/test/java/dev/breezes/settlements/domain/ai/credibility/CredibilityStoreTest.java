@@ -23,10 +23,6 @@ class CredibilityStoreTest {
         this.sourceId = UUID.randomUUID();
     }
 
-    // -------------------------------------------------------------------------
-    // Default / unknown source
-    // -------------------------------------------------------------------------
-
     @Test
     void getMultiplier_returnsOneForUnknownSource() {
         // Arrange: no record for source
@@ -44,10 +40,6 @@ class CredibilityStoreTest {
         // Assert
         assertEquals(CredibilityStore.NEUTRAL_SCORE, score, 0.001f);
     }
-
-    // -------------------------------------------------------------------------
-    // Confirmation bumps score above neutral
-    // -------------------------------------------------------------------------
 
     @Test
     void recordConfirmation_raisesScoreAboveNeutral() {
@@ -76,10 +68,6 @@ class CredibilityStoreTest {
         assertTrue(multiplier > 1.0f,
                 "Expected multiplier > 1.0 after confirmation, got " + multiplier);
     }
-
-    // -------------------------------------------------------------------------
-    // Refutation pushes score below neutral — but LESS than confirmation raises
-    // -------------------------------------------------------------------------
 
     @Test
     void recordRefutation_lowersScoreBelowNeutral() {
@@ -113,10 +101,6 @@ class CredibilityStoreTest {
                 "Confirmation delta should exceed refutation delta (asymmetry), confirm=" + confirmDeviation + " refute=" + refuteDeviation);
     }
 
-    // -------------------------------------------------------------------------
-    // Staleness scaling
-    // -------------------------------------------------------------------------
-
     @Test
     void fresherTip_producesSmallerPenaltyForStaleTip() {
         // Arrange: same origin and source but different verification timing
@@ -141,10 +125,6 @@ class CredibilityStoreTest {
         assertTrue(freshDeviation > staleDeviation,
                 "Fresh refutation should produce a larger penalty than stale refutation, fresh=" + freshDeviation + " stale=" + staleDeviation);
     }
-
-    // -------------------------------------------------------------------------
-    // Decay toward neutral
-    // -------------------------------------------------------------------------
 
     @Test
     void tickDecay_pullsScoreTowardNeutral_afterConfirmation() {
@@ -202,10 +182,6 @@ class CredibilityStoreTest {
         assertEquals(expected, fastDecayStore.getScore(this.sourceId), 0.001f);
     }
 
-    // -------------------------------------------------------------------------
-    // Score clamping
-    // -------------------------------------------------------------------------
-
     @Test
     void score_clampedAtMaxAfterManyConfirmations() {
         // Arrange: apply many confirmations at max staleness scale
@@ -234,10 +210,6 @@ class CredibilityStoreTest {
                 "Score should be clamped at MIN_SCORE, got " + score);
     }
 
-    // -------------------------------------------------------------------------
-    // Neutral anchor — key correctness requirement
-    // -------------------------------------------------------------------------
-
     @Test
     void getMultiplier_atExactNeutralScore_returnsOnePointZero() {
         // Arrange: a source that has a recorded tally exactly at NEUTRAL_SCORE.
@@ -253,7 +225,7 @@ class CredibilityStoreTest {
 
         // Assert: neutral score (no data) must produce exactly 1.0, not 0.9.
         assertEquals(1.0f, multiplier, 0.001f,
-                "Neutral / unknown source must return multiplier of 1.0, not the old 0.9 value");
+                "Neutral / unknown source must return a multiplier of exactly 1.0 (documented contract)");
     }
 
     @Test
@@ -288,10 +260,6 @@ class CredibilityStoreTest {
         assertEquals(CredibilityStore.MAX_MULTIPLIER, multiplier, 0.01f);
     }
 
-    // -------------------------------------------------------------------------
-    // FIFO eviction
-    // -------------------------------------------------------------------------
-
     @Test
     void fifoEviction_removesOldestEntryWhenFull() {
         // Arrange: fill the store to capacity
@@ -314,10 +282,6 @@ class CredibilityStoreTest {
         assertTrue(this.store.getScore(newSource) > CredibilityStore.NEUTRAL_SCORE,
                 "Newly admitted source should have a score above neutral");
     }
-
-    // -------------------------------------------------------------------------
-    // Staleness scale helper
-    // -------------------------------------------------------------------------
 
     @Test
     void stalenessScale_maxAtZeroAge() {

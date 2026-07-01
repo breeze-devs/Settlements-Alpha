@@ -13,11 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TeardownScopeTest {
 
-    // -------------------------------------------------------------------------
     // Fake obligation — records discharge calls without touching MC objects.
     // ServerLevel is never used; null is safe to pass in tests.
-    // -------------------------------------------------------------------------
-
     private static class RecordingObligation implements TeardownObligation {
 
         private final String id;
@@ -64,10 +61,6 @@ class TeardownScopeTest {
         }
 
     }
-
-    // -------------------------------------------------------------------------
-    // Tests
-    // -------------------------------------------------------------------------
 
     @Test
     void teardownAll_dischargesInLifoOrder() {

@@ -50,10 +50,6 @@ class OverridePolicyTest {
         this.villagerId = UUID.randomUUID();
     }
 
-    // -------------------------------------------------------------------------
-    // SocialAcceptOverridePolicy
-    // -------------------------------------------------------------------------
-
     @Test
     void socialAccept_returnsEmpty_whenNoPendingInvites() {
         // Arrange
@@ -102,10 +98,6 @@ class OverridePolicyTest {
         assertTrue(result.isPresent());
         assertEquals(BehaviorKey.TRADE_ACCEPT, result.get().getBehaviorKey());
     }
-
-    // -------------------------------------------------------------------------
-    // UrgentInvestigateOverridePolicy — tested via domain logic only
-    // -------------------------------------------------------------------------
 
     @Test
     void urgentInvestigate_returnsEmpty_whenStoreIsEmpty() {
@@ -158,10 +150,7 @@ class OverridePolicyTest {
         assertEquals(BehaviorKey.INVESTIGATE, result.get().getBehaviorKey());
     }
 
-    // -------------------------------------------------------------------------
     // Test-only subclasses that expose the domain-logic seam without needing Minecraft
-    // -------------------------------------------------------------------------
-
     /**
      * Wraps SocialAcceptOverridePolicy with a test-friendly evaluate that doesn't need a ServerLevel.
      */
@@ -224,10 +213,6 @@ class OverridePolicyTest {
             return Optional.empty();
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static KnowledgeEntry hearsayEntry(UUID originId, UUID sourceId, float weight, long originTick) {
         KnowledgeEntry direct = KnowledgeEntry.fromDirectObservation(

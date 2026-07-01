@@ -17,9 +17,7 @@ import java.util.List;
 
 public final class TeardownLedgerAttachmentCodec {
 
-    // -------------------------------------------------------------------------
     // Per-subtype MapCodecs (dispatch requires MapCodec, not Codec)
-    // -------------------------------------------------------------------------
 
     private static final MapCodec<DiscardEntityObligation> DISCARD_ENTITY_CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
@@ -49,9 +47,7 @@ public final class TeardownLedgerAttachmentCodec {
                     ResourceLocation.CODEC.fieldOf("owned_block").forGetter(RestoreBlockObligation::ownedBlockId)
             ).apply(instance, RestoreBlockObligation::new));
 
-    // -------------------------------------------------------------------------
     // Dispatched obligation codec
-    // -------------------------------------------------------------------------
 
     /**
      * Type-discriminated codec for all {@link TeardownObligation} subtypes.
@@ -64,9 +60,7 @@ public final class TeardownLedgerAttachmentCodec {
             TeardownLedgerAttachmentCodec::typeKeyOf,
             TeardownLedgerAttachmentCodec::mapCodecForTypeKey);
 
-    // -------------------------------------------------------------------------
     // LedgerEntry codec
-    // -------------------------------------------------------------------------
 
     static final Codec<LedgerEntry> ENTRY_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
@@ -74,9 +68,7 @@ public final class TeardownLedgerAttachmentCodec {
                     Codec.INT.optionalFieldOf("failed_attempts", 0).forGetter(LedgerEntry::getFailedAttempts)
             ).apply(instance, LedgerEntry::new));
 
-    // -------------------------------------------------------------------------
     // State codec (top-level, registered with the attachment)
-    // -------------------------------------------------------------------------
 
     public static final Codec<TeardownLedgerAttachmentState> STATE_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
@@ -88,9 +80,7 @@ public final class TeardownLedgerAttachmentCodec {
     private TeardownLedgerAttachmentCodec() {
     }
 
-    // -------------------------------------------------------------------------
     // Dispatch helpers
-    // -------------------------------------------------------------------------
 
     private static String typeKeyOf(TeardownObligation obligation) {
         if (obligation instanceof DiscardEntityObligation) {

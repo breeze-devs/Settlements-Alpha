@@ -49,10 +49,6 @@ class PlanOverrideSlotTest {
         this.runtime = new PlanRuntimeState();
     }
 
-    // -------------------------------------------------------------------------
-    // Initial state
-    // -------------------------------------------------------------------------
-
     @Test
     void isOverrideActive_falseOnInit() {
         assertFalse(runtime.isOverrideActive());
@@ -67,10 +63,6 @@ class PlanOverrideSlotTest {
     void overrideBehaviorKey_nullOnInit() {
         assertNull(runtime.getOverrideBehaviorKey());
     }
-
-    // -------------------------------------------------------------------------
-    // installOverride
-    // -------------------------------------------------------------------------
 
     @Test
     void installOverride_setsActiveAndKey() {
@@ -93,10 +85,6 @@ class PlanOverrideSlotTest {
         // Assert
         assertEquals(BehaviorKey.TRADE_ACCEPT, runtime.getOverrideBehaviorKey());
     }
-
-    // -------------------------------------------------------------------------
-    // clearOverride
-    // -------------------------------------------------------------------------
 
     @Test
     void clearOverride_resetsToIdle() {
@@ -123,10 +111,6 @@ class PlanOverrideSlotTest {
         assertFalse(runtime.isOverrideActive());
     }
 
-    // -------------------------------------------------------------------------
-    // reset clears the override slot
-    // -------------------------------------------------------------------------
-
     @Test
     void reset_clearsOverrideSlot() {
         // Arrange
@@ -141,10 +125,7 @@ class PlanOverrideSlotTest {
         assertNull(runtime.getOverrideBehaviorKey());
     }
 
-    // -------------------------------------------------------------------------
-    // Override elapsed-ticks accounting (drives the wedged-override safety net)
-    // -------------------------------------------------------------------------
-
+    // Override elapsed-ticks accounting drives the wedged-override safety net
     @Test
     void overrideElapsedTicks_zeroOnInit() {
         assertEquals(0, runtime.getOverrideElapsedTicks());
@@ -203,10 +184,7 @@ class PlanOverrideSlotTest {
         assertEquals(0, runtime.getOverrideElapsedTicks());
     }
 
-    // -------------------------------------------------------------------------
     // Re-attempt policy: INTERRUPTED → PENDING on override completion
-    // -------------------------------------------------------------------------
-
     @Test
     void interruptedSlot_isRestoredToPending_whenOverrideCompletes() {
         // Arrange — simulate suspendIfActive having marked the slot INTERRUPTED,
@@ -252,10 +230,6 @@ class PlanOverrideSlotTest {
         // Assert
         assertEquals(PlanSlotStatus.PENDING, slot.getStatus());
     }
-
-    // -------------------------------------------------------------------------
-    // Window-closed skip policy (exercising PlanRunner static helpers)
-    // -------------------------------------------------------------------------
 
     @Test
     void windowClosed_slotIsSkipped_notRetriedForever() {
@@ -319,10 +293,7 @@ class PlanOverrideSlotTest {
         assertFalse(closed);
     }
 
-    // -------------------------------------------------------------------------
-    // Override pre-emption decision: override wins over active plan slot
-    // -------------------------------------------------------------------------
-
+    // Override pre-emption: override wins over active plan slot
     @Test
     void overrideInstalled_planSlotMustBeSuspended_firstToAvoidDualOwnership() {
         // Arrange — documents the invariant that suspendIfActive is called BEFORE
@@ -402,10 +373,6 @@ class PlanOverrideSlotTest {
         assertSame(aPolicy, ordered.getFirst());
         assertSame(zPolicy, ordered.get(1));
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static PlanSlot planSlot(BehaviorKey key, PlanSlotStatus status) {
         return planSlot(1_000, 300, key, status);

@@ -18,10 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class GossipGuardsTest {
 
-    // -------------------------------------------------------------------------
-    // Guard 1 — origin-id dedupe (news does not ping-pong back as fresh)
-    // -------------------------------------------------------------------------
-
     @Test
     void guard1_receiverDoesNotAdmitEntryTwiceViaAnyPath() {
         // Arrange – villager A observes a fact
@@ -79,10 +75,6 @@ class GossipGuardsTest {
         assertNotEquals(AdmitResult.NEW_ENTRY, pingBackResult,
                 "Ping-pong back to initiator must not create a new entry");
     }
-
-    // -------------------------------------------------------------------------
-    // Guard 2 — hop cap (settlement never becomes a perfect-information network)
-    // -------------------------------------------------------------------------
 
     @Test
     void guard2_entryAtCapIsStoredButFlagged() {

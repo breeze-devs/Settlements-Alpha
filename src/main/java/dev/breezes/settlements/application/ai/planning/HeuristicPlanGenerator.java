@@ -408,10 +408,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         /**
          * Afternoon candidates ordered by social preference: social-first for high-CHA villagers,
          * social-last for low-CHA — then light work, then leisure fills the remainder.
-         * <p>
-         * NOTE: under the new weighted-random pick in {@link WindowPacker}, the list ORDER no longer
-         * affects which key is chosen — only weight does. The CHA-ordering here is preserved for
-         * readability/future use; a proper SOCIAL weight multiplier from CHA is the planned fix.
          */
         List<WeightedBehavior> afternoonCandidates(GeneticsProfile genetics) {
             boolean socialPreference = genetics.getGeneValue(GeneType.CHARISMA) >= 0.45;

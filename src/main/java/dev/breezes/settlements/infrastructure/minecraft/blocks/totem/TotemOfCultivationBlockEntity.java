@@ -56,8 +56,8 @@ public class TotemOfCultivationBlockEntity extends BlockEntity {
     public static final float FLOAT_HEIGHT_BLOCKS = 3.0F;
 
     /**
-     * Server-tick throttle for the {@code valid} flag: slightly longer than the old 10s value
-     * to reduce redundant full-zone scans while still reacting to structural changes quickly.
+     * Server-tick throttle for the {@code valid} flag, long enough to avoid redundant
+     * full-zone scans while still reacting to structural changes quickly.
      */
     private static final long VALIDITY_RECHECK_INTERVAL_TICKS = ClockTicks.seconds(16).getTicks();
 
@@ -267,8 +267,8 @@ public class TotemOfCultivationBlockEntity extends BlockEntity {
      * to farmland (i.e. it is in the dirt tag). This ensures the sensor skips totems placed
      * over water that is entirely surrounded by non-tillable surfaces (stone, paths, etc.).
      * <p>
-     * Structured as a separate named method so Phase 3/4 can reuse {@link #streamZoneCells(BlockPos)}
-     * for their own tile enumeration without duplicating this check.
+     * Structured as a separate named method so future tilling/planting behaviors can reuse
+     * {@link #streamZoneCells(BlockPos)} without duplicating this check.
      */
     public void recomputeValidity(@Nonnull Level level) {
         boolean wasValid = this.valid;
@@ -306,8 +306,8 @@ public class TotemOfCultivationBlockEntity extends BlockEntity {
     /**
      * Enumerates all candidate zone cell positions at water Y, excluding the center water source.
      * <p>
-     * This is the authoritative zone enumeration seam — Phase 3/4 tilling and planting behaviors
-     * will call it to discover which cells need attention, rather than re-deriving the geometry.
+     * This is the authoritative zone enumeration seam — future tilling and planting behaviors
+     * should call it to discover which cells need attention, rather than re-deriving the geometry.
      * Positions are constructed lazily so short-circuiting terminal operations, such as
      * {@code anyMatch}, do not materialize the remainder of the grid.
      */
@@ -378,7 +378,6 @@ public class TotemOfCultivationBlockEntity extends BlockEntity {
 
     /**
      * Adjusts the X-axis half-extent by {@code delta}, wrapping within [MIN, MAX].
-     * Phase 2 resize interaction drives this via sneak+right-click.
      */
     public void cycleHalfExtentX(int delta) {
         this.halfExtentX = wrapHalfExtent(this.halfExtentX + delta);

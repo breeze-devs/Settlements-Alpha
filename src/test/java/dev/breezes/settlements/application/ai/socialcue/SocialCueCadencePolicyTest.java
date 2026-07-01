@@ -14,10 +14,6 @@ class SocialCueCadencePolicyTest {
     private static final double ACTIVITY_FACTOR = 1.0;
     private static final double JITTER = 0.25;
 
-    // -------------------------------------------------------------------------
-    // cooldownTicks — CHA × jitter interaction
-    // -------------------------------------------------------------------------
-
     @Test
     void cooldownTicks_linearNeutralChaAndMidJitter_returnsMidpointMultiplier() {
         // Arrange: linear CHA=0.5 lands halfway between the configured endpoint multipliers.
@@ -137,10 +133,6 @@ class SocialCueCadencePolicyTest {
 
         assertFalse(result < 0, "cooldownTicks must never return a negative value");
     }
-
-    // -------------------------------------------------------------------------
-    // initialScanPhaseTicks
-    // -------------------------------------------------------------------------
 
     @Test
     void initialScanPhaseTicks_zeroRandom_returnsZero() {

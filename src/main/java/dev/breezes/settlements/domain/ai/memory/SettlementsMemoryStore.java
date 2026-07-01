@@ -13,9 +13,9 @@ import java.util.Optional;
 /**
  * Per-agent typed store for decaying memories, keyed by {@link MemoryType.DecayingSpatialMemoryType}.
  * <p>
- * Currently supports only the spatial block-resource site type
+ * Supports the spatial block-resource site type
  * ({@code List<GlobalPos>} with per-entry TTL decay). Additional decaying types
- * can be added as the migration progresses.
+ * can be added by extension.
  * <p>
  * Transient: not serialized. Rebuilding from the index costs one scan period after load,
  * which is acceptable for block-resource sites (§4 of the v2 design doc).

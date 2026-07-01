@@ -4,7 +4,6 @@ import java.util.Map;
 
 /**
  * Represents the result of a behavior step tick.
- * Replaces the ambiguous Optional<Stage> return type.
  */
 public sealed interface StepResult {
 

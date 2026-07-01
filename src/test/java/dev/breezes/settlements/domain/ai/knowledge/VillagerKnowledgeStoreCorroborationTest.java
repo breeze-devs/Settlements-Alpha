@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for the Phase 6 corroboration path in {@link VillagerKnowledgeStore}.
+ * Unit tests for the corroboration path in {@link VillagerKnowledgeStore}.
  * Covers the dedupe branch enhancement: same-source duplicate vs. independent corroboration
  * vs. hop-cap rejection. No Minecraft types are used.
  */
@@ -23,10 +23,6 @@ class VillagerKnowledgeStoreCorroborationTest {
     void setUp() {
         this.store = new VillagerKnowledgeStore();
     }
-
-    // -------------------------------------------------------------------------
-    // admit() — corroboration integrated into the live dedupe branch
-    // -------------------------------------------------------------------------
 
     @Test
     void admit_returnsFalse_andCorroborates_whenDifferentSourceSharesSameOrigin() {
@@ -123,8 +119,8 @@ class VillagerKnowledgeStoreCorroborationTest {
     @Test
     void corroboration_weightNeverExceedsTwiceOriginal_afterManyCorroborations() {
         // Arrange: original weight is 2.0, so the cap must be 4.0 regardless of corroboration count.
-        // With CORROBORATION_BUMP = 0.1 and the old bug (cap = current * 2), weight would grow
-        // unboundedly because the ceiling rose with every bump.
+        // The cap must be computed against the original weight, not the current weight, or repeated
+        // corroborations grow the score unboundedly because the ceiling would rise with every bump.
         UUID originId = UUID.randomUUID();
         UUID sourceA = UUID.randomUUID();
         float originalWeight = 2.0f;
@@ -143,10 +139,6 @@ class VillagerKnowledgeStoreCorroborationTest {
         assertTrue(stored.getWeight() <= cap,
                 "Weight must never exceed 2× the original weight; expected ≤ " + cap + " but was " + stored.getWeight());
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static KnowledgeEntry hearsayEntry(UUID originId, UUID sourceId, int hop, float weight) {
         // Build via fromDirectObservation + fromHearsay to avoid constructor coupling

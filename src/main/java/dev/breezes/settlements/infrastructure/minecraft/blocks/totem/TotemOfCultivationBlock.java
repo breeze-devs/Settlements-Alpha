@@ -46,7 +46,7 @@ import javax.annotation.Nullable;
  * instabreak. Only a water source block beneath it keeps it alive — if the water is drained,
  * neighborChanged triggers canSurvive which returns false, and the block drops for free with no polling.
  * <p>
- * The floating spinning totem mesh is render-only and lives in Phase 2 (BlockEntityRenderer).
+ * The floating spinning totem mesh is render-only, handled separately by {@link TotemOfCultivationRenderer}.
  * The block entity (TotemOfCultivationBlockEntity) holds all zone configuration.
  */
 public class TotemOfCultivationBlock extends BaseEntityBlock {

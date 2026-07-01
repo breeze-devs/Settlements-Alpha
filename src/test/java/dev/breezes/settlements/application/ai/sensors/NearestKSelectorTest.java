@@ -31,10 +31,6 @@ class NearestKSelectorTest {
     // Position outside the box:
     private static final long POS_OUTSIDE = packPos(20, 64, 20); // |x|=20 > radius 10
 
-    // -------------------------------------------------------------------------
-    // More in-box hits than K → truncated=true, only K nearest kept
-    // -------------------------------------------------------------------------
-
     @Test
     void whenHitsExceedK_keepsKNearestAndReportsTruncated() {
         // Arrange: three in-box positions, K=2. FAR should be dropped.
@@ -52,10 +48,6 @@ class NearestKSelectorTest {
         assertNotContains(result.sites(), POS_FAR, "farthest site must be evicted");
     }
 
-    // -------------------------------------------------------------------------
-    // Fewer or equal in-box hits than K → truncated=false, all kept
-    // -------------------------------------------------------------------------
-
     @Test
     void whenHitsDoNotExceedK_keepsAllAndReportsNotTruncated() {
         // Arrange: two in-box positions, K=5.
@@ -71,10 +63,6 @@ class NearestKSelectorTest {
         assertContains(result.sites(), POS_NEAR);
         assertContains(result.sites(), POS_MID);
     }
-
-    // -------------------------------------------------------------------------
-    // Out-of-box hits are excluded and do not count toward K or truncation
-    // -------------------------------------------------------------------------
 
     @Test
     void outOfBoxHitsAreExcludedAndDoNotCountTowardTruncation() {
@@ -106,10 +94,6 @@ class NearestKSelectorTest {
         assertFalse(result.truncated());
         assertTrue(result.sites().isEmpty());
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     /**
      * Packs block coordinates into a long using the same bit layout as

@@ -27,8 +27,6 @@ class SnapshotAssemblerTest {
     private static final MemoryType<List<GlobalPos>> ORE_TYPE =
             MemoryType.decaying("ore_sites", ClockTicks.hours(2), 32);
 
-    // -- token transform --
-
     @Test
     void toWireToken_stripsSitesSuffixAndUppercases() {
         // Arrange / Act / Assert
@@ -36,8 +34,6 @@ class SnapshotAssemblerTest {
         assertEquals("ORE", SnapshotAssembler.toWireToken("ore_sites"));
         assertEquals("CULTIVATION_TOTEM", SnapshotAssembler.toWireToken("cultivation_totem_sites"));
     }
-
-    // -- snapshot transform --
 
     @Test
     void toSnapshot_mapsTokensAndCoordTriples() {
@@ -71,7 +67,7 @@ class SnapshotAssemblerTest {
         // Act
         Snapshot snapshot = SnapshotAssembler.toSnapshot(sensedSites);
 
-        // Assert — empty map preserves the Phase 0 "{\"sites\":{}}" guarantee
+        // Assert — empty map preserves the required "{\"sites\":{}}" wire guarantee
         assertTrue(snapshot.getSites().isEmpty());
     }
 

@@ -90,7 +90,6 @@ public final class VanillaBehaviorPackages {
         coreBehaviors.addAll(List.of(
                 Pair.of(0, new Swim(0.8F)),
                 Pair.of(0, InteractWithDoor.create()),
-//                Pair.of(0, new OpenFenceGates()),
                 Pair.of(0, new LookAtTargetSink(45, 90)),
                 Pair.of(0, new VillagerPanicTrigger()),
                 Pair.of(0, WakeUp.create()),

@@ -20,10 +20,6 @@ class WorldEventBusTest {
         this.bus = new WorldEventBus();
     }
 
-    // -------------------------------------------------------------------------
-    // Append + visitDelta
-    // -------------------------------------------------------------------------
-
     @Test
     void emit_assignsMonotonicSeq() {
         // Arrange
@@ -128,10 +124,6 @@ class WorldEventBusTest {
         assertTrue(visited.isEmpty());
     }
 
-    // -------------------------------------------------------------------------
-    // Eviction
-    // -------------------------------------------------------------------------
-
     @Test
     void evict_removesOldEvents_retainsRecent() {
         // Arrange
@@ -179,10 +171,6 @@ class WorldEventBusTest {
         assertEquals(130L, remaining.get(0).getGameTick());
     }
 
-    // -------------------------------------------------------------------------
-    // currentSeq
-    // -------------------------------------------------------------------------
-
     @Test
     void currentSeq_returnsZeroForEmptyBus() {
         assertEquals(0L, bus.currentSeq());
@@ -197,10 +185,6 @@ class WorldEventBusTest {
         // Act & Assert
         assertEquals(event.getSequence(), bus.currentSeq());
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static WorldEvent.WorldEventBuilder buildBuilder(UUID actorId, WorldEventType type) {
         return WorldEvent.fromPos(0, 64, 0)

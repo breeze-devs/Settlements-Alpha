@@ -211,7 +211,6 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
         List<ItemEntity> spawned = Location.of(pos, world).center(true).dropItems(drops, true);
         spawned.forEach(itemEntity -> itemEntity.setPickUpDelay(ClockTicks.seconds(5).getTicksAsInt()));
 
-        // Replace block
         BlockState replacement = this.createReplacementState(oreState);
         world.setBlockAndUpdate(pos, replacement);
 

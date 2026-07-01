@@ -20,10 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SocialCueAdmissionLogicTest {
 
-    // -------------------------------------------------------------------------
-    // Channel disjoint guard
-    // -------------------------------------------------------------------------
-
     @Test
     void channelDisjoint_allowsAdmissionWhenNoBehaviorRunning() {
         // Arrange – empty occupied set simulates no active behavior.
@@ -65,10 +61,6 @@ class SocialCueAdmissionLogicTest {
         assertFalse(Collections.disjoint(cueChannels, occupiedChannels));
     }
 
-    // -------------------------------------------------------------------------
-    // Duration cap guard
-    // -------------------------------------------------------------------------
-
     @Test
     void durationCap_acceptsScriptAtOrUnderMax() {
         // Arrange – exactly at the 5 s / 100-tick cap.
@@ -90,10 +82,6 @@ class SocialCueAdmissionLogicTest {
         // Act & Assert
         assertTrue(script.getTotalDuration().getTicks() > SocialCueScript.MAX_DURATION.getTicks());
     }
-
-    // -------------------------------------------------------------------------
-    // Per-key cooldown
-    // -------------------------------------------------------------------------
 
     @Test
     void perKeyCooldown_blocksDuringWindow() {
@@ -130,10 +118,6 @@ class SocialCueAdmissionLogicTest {
         // Act & Assert
         assertFalse(state.isCueOnCooldown("farewell", 1100L));
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static SocialCue buildCue(String key, ClockTicks cooldown) {
         return SocialCue.builder()

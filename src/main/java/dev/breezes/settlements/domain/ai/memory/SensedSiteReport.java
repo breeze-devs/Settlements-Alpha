@@ -36,8 +36,8 @@ public final class SensedSiteReport {
      * Null when the scan was incomplete — missing sections mean we cannot confirm absence anywhere
      * in the box, so we never delete based on an incomplete scan.
      * <p>
-     * Finer per-section absence is a future enhancement (P4); for now we derive this coarsely
-     * from the {@code complete} flag on the query result: complete → whole scan box; not complete → null.
+     * Absence is derived coarsely from the {@code complete} flag on the query result, since
+     * finer per-section absence would require per-section completeness tracking: complete → whole scan box; not complete → null.
      */
     @Nullable
     private final ConfirmedAbsenceRegion confirmedAbsenceRegion;

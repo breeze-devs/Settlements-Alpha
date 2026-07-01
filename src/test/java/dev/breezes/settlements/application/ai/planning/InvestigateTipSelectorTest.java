@@ -39,10 +39,6 @@ class InvestigateTipSelectorTest {
         this.observerUUID = UUID.randomUUID();
     }
 
-    // -------------------------------------------------------------------------
-    // isPendingTip
-    // -------------------------------------------------------------------------
-
     @Test
     void isPendingTip_trueForUnresolvedHearsay() {
         // Arrange
@@ -79,10 +75,6 @@ class InvestigateTipSelectorTest {
         assertFalse(InvestigateTipSelector.isPendingTip(refuted));
     }
 
-    // -------------------------------------------------------------------------
-    // select() — no entries
-    // -------------------------------------------------------------------------
-
     @Test
     void select_returnsNullWhenNoEntries() {
         // Arrange: empty store
@@ -118,10 +110,6 @@ class InvestigateTipSelectorTest {
         // Assert
         assertNull(result);
     }
-
-    // -------------------------------------------------------------------------
-    // select() — picks highest-weight tip
-    // -------------------------------------------------------------------------
 
     @Test
     void select_returnsHighestWeightPendingTip() {
@@ -161,10 +149,6 @@ class InvestigateTipSelectorTest {
         assertNotNull(result);
         assertEquals(pendingId, result.getOriginObservationId());
     }
-
-    // -------------------------------------------------------------------------
-    // select() — credibility discount
-    // -------------------------------------------------------------------------
 
     @Test
     void select_appliesCredibilityMultiplierToRanking() {
@@ -222,10 +206,6 @@ class InvestigateTipSelectorTest {
         assertEquals(neutralTipId, result.getOriginObservationId(),
                 "Neutral-credibility tip should outrank near-zero-credibility tip even with lower raw weight");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static KnowledgeEntry directEntry(UUID originId, float weight) {
         return KnowledgeEntry.fromDirectObservation(

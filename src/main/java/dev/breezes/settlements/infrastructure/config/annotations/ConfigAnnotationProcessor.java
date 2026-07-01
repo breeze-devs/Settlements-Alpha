@@ -44,9 +44,7 @@ public class ConfigAnnotationProcessor {
         ConfigurationAnnotationRegistry registry = new ConfigurationAnnotationRegistry();
         List<Runnable> tasks = new ArrayList<>();
 
-        // ===== PROCESS LEGACY FIELD-BASED CONFIGS =====
-        // TODO: deprecated - will be removed once all behaviors migrate to Records
-        log.info("Processing legacy field-based configurations...");
+        log.info("Processing field-based configurations...");
         List<ConfigAnnotationSubProcessor<?>> processors = List.of(
                 new BooleanConfigAnnotationProcessor(),
                 new DoubleConfigAnnotationProcessor(),
@@ -64,12 +62,11 @@ public class ConfigAnnotationProcessor {
                     // processors
                     .collect(Collectors.toSet());
             if (!fields.isEmpty()) {
-                log.debug("- Found {} legacy @{} fields", fields.size(), processor.getAnnotationClass().getSimpleName());
+                log.debug("- Found {} @{} fields", fields.size(), processor.getAnnotationClass().getSimpleName());
                 tasks.add(processor.buildConfig(registry, fields));
             }
         }
 
-        // ===== PROCESS NEW RECORD-BASED CONFIGS =====
         log.info("Processing Record-based configurations...");
         RecordConfigProcessor recordProcessor = new RecordConfigProcessor();
 
@@ -85,7 +82,6 @@ public class ConfigAnnotationProcessor {
             tasks.add(task);
         }
 
-        // ===== BUILD CONFIG SPECS AND REGISTER =====
         log.info("Compiling {} config files", registry.getFileBuilderMap().size());
         for (Map.Entry<String, ModConfigSpec.Builder> entry : registry.getFileBuilderMap().entrySet()) {
             log.info("  - {}", entry.getKey());

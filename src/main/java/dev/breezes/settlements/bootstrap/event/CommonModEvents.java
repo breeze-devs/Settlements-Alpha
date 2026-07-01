@@ -16,7 +16,6 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
@@ -49,16 +48,6 @@ public class CommonModEvents {
         // for the VillageAnimalSpawner's positional check.
         event.register(EntityRegistry.SETTLEMENTS_WOLF.get(), SpawnPlacementTypes.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 Animal::checkAnimalSpawnRules, RegisterSpawnPlacementsEvent.Operation.OR);
-    }
-
-    @SubscribeEvent
-    public static void onCommonSetup(@Nonnull FMLCommonSetupEvent event) {
-        // Register packets
-        event.enqueueWork(() -> {
-//            log.debug("Registering packets...");
-//            PacketHandler.registerPackets();
-//            log.debug("Packet registration complete");
-        });
     }
 
     @SubscribeEvent

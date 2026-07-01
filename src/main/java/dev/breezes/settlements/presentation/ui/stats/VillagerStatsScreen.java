@@ -304,7 +304,7 @@ public class VillagerStatsScreen extends LayoutScreen {
         this.cachedWalletText = loading;
     }
 
-    // ---- Body ----
+    // Body
 
     private UIElement buildBody() {
         return LinearLayout.horizontal()
@@ -317,7 +317,7 @@ public class VillagerStatsScreen extends LayoutScreen {
                 .build();
     }
 
-    // ---- Left Panel ----
+    // Left Panel
 
     private UIElement buildLeftPanel() {
         return LinearLayout.vertical()
@@ -479,7 +479,7 @@ public class VillagerStatsScreen extends LayoutScreen {
         return new ItemStack(item);
     }
 
-    // ---- Right Panel ----
+    // Right Panel
 
     private UIElement buildRightPanel() {
         return LinearLayout.vertical()
@@ -743,7 +743,7 @@ public class VillagerStatsScreen extends LayoutScreen {
         return tooltipStack;
     }
 
-    // ---- Footer ----
+    // Footer
 
     private UIElement buildFooter(@Nonnull Button closeBtn) {
         return LinearLayout.horizontal()
@@ -812,7 +812,7 @@ public class VillagerStatsScreen extends LayoutScreen {
         });
     }
 
-    // ---- Utility ----
+    // Utility
 
     private int getReputationColor(int reputation) {
         if (reputation <= -10) return theme.errorColor();
@@ -820,7 +820,7 @@ public class VillagerStatsScreen extends LayoutScreen {
         return theme.successColor();
     }
 
-    // ---- Panel sizing ----
+    // Panel sizing
 
     private int getPanelWidth() {
         int viewportMaxWidth = Math.max(240, this.width - PANEL_MARGIN * 2);

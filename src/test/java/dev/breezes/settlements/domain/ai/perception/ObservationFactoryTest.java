@@ -22,10 +22,6 @@ class ObservationFactoryTest {
 
     private static final long CURRENT_TICK = 500L;
 
-    // -------------------------------------------------------------------------
-    // Type mapping
-    // -------------------------------------------------------------------------
-
     @Test
     void fromEvent_mapsTradeCompletedToSocialObservationType() {
         // Arrange
@@ -110,10 +106,6 @@ class ObservationFactoryTest {
         assertEquals(ObservationType.TASK_COMPLETION, observation.type());
     }
 
-    // -------------------------------------------------------------------------
-    // Timestamp
-    // -------------------------------------------------------------------------
-
     @Test
     void fromEvent_usesProvidedCurrentTickAsTimestamp() {
         // Arrange
@@ -125,10 +117,6 @@ class ObservationFactoryTest {
         // Assert
         assertEquals(CURRENT_TICK, observation.timestampTick());
     }
-
-    // -------------------------------------------------------------------------
-    // Base importance — social acts score at or above the promotion threshold
-    // -------------------------------------------------------------------------
 
     @Test
     void fromEvent_tradeCompletedBaseImportanceExceedsPromotionThreshold() {
@@ -158,10 +146,6 @@ class ObservationFactoryTest {
                 "Behavior-started base importance " + observation.baseImportance() +
                         " should be < promotion threshold " + MemoryImportanceGate.PROMOTION_THRESHOLD);
     }
-
-    // -------------------------------------------------------------------------
-    // Metadata
-    // -------------------------------------------------------------------------
 
     @Test
     void metadataFor_containsEventType() {
@@ -319,10 +303,6 @@ class ObservationFactoryTest {
         assertEquals(targetId, observation.relatedEntity());
     }
 
-    // -------------------------------------------------------------------------
-    // WS3a: outcome / reason / detail — fromEvent propagation
-    // -------------------------------------------------------------------------
-
     @Test
     void fromEvent_propagatesOutcomeOntoObservation() {
         // Arrange
@@ -385,7 +365,7 @@ class ObservationFactoryTest {
 
     @Test
     void fromEvent_absenceOfNewFields_leavesNullsOnObservation() {
-        // Arrange — a plain event without outcome/reason/detail (mirrors all pre-WS3a events)
+        // Arrange — a plain event without outcome/reason/detail
         WorldEvent event = worldEvent(WorldEventType.TRADE_COMPLETED);
 
         // Act
@@ -396,10 +376,6 @@ class ObservationFactoryTest {
         assertNull(observation.reason());
         assertNull(observation.detail());
     }
-
-    // -------------------------------------------------------------------------
-    // WS3a: outcome / reason / detail — metadataFor writes keys conditionally
-    // -------------------------------------------------------------------------
 
     @Test
     void metadataFor_writesOutcomeKeyWhenPresent() {
@@ -503,10 +479,6 @@ class ObservationFactoryTest {
         assertNull(metadata.get(ObservationMetadataKeys.DETAIL));
     }
 
-    // -------------------------------------------------------------------------
-    // dedupeKey — observation id derivation
-    // -------------------------------------------------------------------------
-
     @Test
     void fromEvent_whenDedupeKeyPresent_usesItAsObservationId() {
         // Arrange — a sighting event carries a content-addressed dedupeKey
@@ -589,10 +561,6 @@ class ObservationFactoryTest {
         assertEquals(expected, observationId,
                 "Absent dedupeKey must fall back to the existing actor-keyed derivation unchanged");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static WorldEvent worldEvent(WorldEventType type) {
         return worldEvent(type, UUID.randomUUID(), 1L);

@@ -17,10 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class BehaviorOutcomePublisherDetailTest {
 
-    // -------------------------------------------------------------------------
-    // Auto-derive from magnitude + unitNoun (yield deeds)
-    // -------------------------------------------------------------------------
-
     @Test
     void buildDetailFields_magnitudeAndUnitNoun_returnsItemAndCount() {
         // Arrange — a harvest deed with 3 melons
@@ -61,10 +57,6 @@ class BehaviorOutcomePublisherDetailTest {
         // Assert — auto-derive requires both magnitude and unitNoun
         assertNull(result);
     }
-
-    // -------------------------------------------------------------------------
-    // Explicit detailFields from behaviors (trade, etc.)
-    // -------------------------------------------------------------------------
 
     @Test
     void buildDetailFields_explicitFieldsOnly_returnsExplicitFields() {

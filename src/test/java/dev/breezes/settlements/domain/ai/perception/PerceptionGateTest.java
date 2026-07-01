@@ -15,10 +15,6 @@ class PerceptionGateTest {
     private static final int VILLAGER_CHUNK_X = 10;
     private static final int VILLAGER_CHUNK_Z = 10;
 
-    // -------------------------------------------------------------------------
-    // Namespace rejection
-    // -------------------------------------------------------------------------
-
     @Test
     void admits_rejectsSystemNamespaceEventRegardlessOfDistance() {
         // Arrange — system event right next to the villager (same chunk)
@@ -36,10 +32,6 @@ class PerceptionGateTest {
         // Act & Assert
         assertFalse(PerceptionGate.admits(event, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z));
     }
-
-    // -------------------------------------------------------------------------
-    // Manhattan distance checks
-    // -------------------------------------------------------------------------
 
     @Test
     void admits_admitsWorldEventInSameChunk() {
@@ -118,10 +110,6 @@ class PerceptionGateTest {
                     "Expected WORLD event " + type + " to be admitted at distance 0");
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static WorldEvent worldEvent(WorldEventType type, int chunkX, int chunkZ) {
         return WorldEvent.builder()

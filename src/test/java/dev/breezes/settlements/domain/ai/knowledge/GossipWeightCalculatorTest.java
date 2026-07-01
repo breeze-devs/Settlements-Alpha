@@ -17,10 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class GossipWeightCalculatorTest {
 
-    // -------------------------------------------------------------------------
-    // Staleness
-    // -------------------------------------------------------------------------
-
     @Test
     void staleness_freshFactRetainsNearlyFullWeight() {
         // Arrange – 0 ticks elapsed
@@ -53,10 +49,6 @@ class GossipWeightCalculatorTest {
         // Assert – more time = less staleness score
         assertTrue(early > later, "More elapsed time should yield lower staleness score");
     }
-
-    // -------------------------------------------------------------------------
-    // Hop penalty
-    // -------------------------------------------------------------------------
 
     @Test
     void hopPenalty_noHopsIsNoDecay() {
@@ -97,10 +89,6 @@ class GossipWeightCalculatorTest {
         assertEquals(atCap, aboveCap, 0.001f);
     }
 
-    // -------------------------------------------------------------------------
-    // CHA bonus
-    // -------------------------------------------------------------------------
-
     @Test
     void charismaBonus_lowChaYieldsLowerBonus() {
         // Arrange
@@ -127,10 +115,6 @@ class GossipWeightCalculatorTest {
         assertEquals(1.0f, bonus, 0.001f);
     }
 
-    // -------------------------------------------------------------------------
-    // Composite
-    // -------------------------------------------------------------------------
-
     @Test
     void compute_hearsayEntryIsAlwaysLowerWeightThanOriginal() {
         // Arrange
@@ -148,10 +132,6 @@ class GossipWeightCalculatorTest {
         assertTrue(adjusted < originalWeight,
                 "Hearsay entry weight should always be less than the original weight");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static GeneticsProfile genetics(double charisma) {
         Map<GeneType, Gene> genes = new EnumMap<>(GeneType.class);

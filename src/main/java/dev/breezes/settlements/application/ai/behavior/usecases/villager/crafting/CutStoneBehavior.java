@@ -90,11 +90,9 @@ public class CutStoneBehavior extends VillagerStateMachineBehavior {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
-        // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.STONECUTTER), 1);
         this.preconditions.add(this.jobSiteBlockExistsCondition);
 
-        // Initialize variables
         this.stoneCutter = null;
         this.currentRecipe = null;
         this.initialBlockDisplay = null;

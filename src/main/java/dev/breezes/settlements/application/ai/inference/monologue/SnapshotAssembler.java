@@ -49,7 +49,7 @@ public final class SnapshotAssembler {
 
     /**
      * Pure projection of sensed sites to the SIS wire snapshot. An empty read yields an empty
-     * snapshot that still serializes as {@code {"sites":{}}}, preserving the Phase 0 guarantee.
+     * snapshot that still serializes as {@code {"sites":{}}}, matching the SIS contract for an empty snapshot.
      */
     static Snapshot toSnapshot(@Nonnull SensedSites sensedSites) {
         Snapshot.SnapshotBuilder builder = Snapshot.builder();

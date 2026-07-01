@@ -26,10 +26,6 @@ class SocialCueRuntimeStateTest {
         this.state = new SocialCueRuntimeState();
     }
 
-    // -------------------------------------------------------------------------
-    // Active cue lifecycle
-    // -------------------------------------------------------------------------
-
     @Test
     void isCueActive_falseOnInit() {
         assertFalse(this.state.isCueActive());
@@ -82,10 +78,6 @@ class SocialCueRuntimeStateTest {
         assertFalse(this.state.isCueOnCooldown("greet", cue.getCooldown().getTicks()));
     }
 
-    // -------------------------------------------------------------------------
-    // Per-target cooldown
-    // -------------------------------------------------------------------------
-
     @Test
     void targetCooldown_respectsRecordedExpiry() {
         // Arrange
@@ -109,10 +101,6 @@ class SocialCueRuntimeStateTest {
         assertFalse(this.state.isTargetOnCooldown(unknown, 100L));
     }
 
-    // -------------------------------------------------------------------------
-    // Gaze slot
-    // -------------------------------------------------------------------------
-
     @Test
     void gazeTarget_nullWhenNoActiveCue() {
         assertNull(this.state.getGazeLookTarget());
@@ -135,10 +123,6 @@ class SocialCueRuntimeStateTest {
         // Assert – cleared on finish.
         assertNull(this.state.getGazeLookTarget());
     }
-
-    // -------------------------------------------------------------------------
-    // Step advancement
-    // -------------------------------------------------------------------------
 
     @Test
     void advance_incrementsNextStepIndex() {
@@ -171,10 +155,6 @@ class SocialCueRuntimeStateTest {
         assertFalse(this.state.isTargetOnCooldown(playerId, 0L));
     }
 
-    // -------------------------------------------------------------------------
-    // Admission scan cadence
-    // -------------------------------------------------------------------------
-
     @Test
     void admissionScan_dueOnFirstTickAfterInit() {
         // A freshly constructed state schedules no scan, so any non-negative tick is already due.
@@ -201,10 +181,6 @@ class SocialCueRuntimeStateTest {
         // Assert – next scan falls back to "due immediately".
         Assertions.assertEquals(0L, this.state.getNextAdmissionScanTick());
     }
-
-    // -------------------------------------------------------------------------
-    // targetCooldowns sweep on finish
-    // -------------------------------------------------------------------------
 
     @Test
     void finish_sweepsExpiredTargetCooldowns() {
@@ -270,10 +246,6 @@ class SocialCueRuntimeStateTest {
         assertFalse(this.state.isTargetOnCooldown(t3, 0L));
     }
 
-    // -------------------------------------------------------------------------
-    // Explicit-cooldown overload of finish
-    // -------------------------------------------------------------------------
-
     @Test
     void finish_withExplicitCooldown_recordsThatCooldownNotCueCooldown() {
         // Arrange
@@ -309,10 +281,6 @@ class SocialCueRuntimeStateTest {
         assertNull(this.state.getGazeLookTarget());
     }
 
-    // -------------------------------------------------------------------------
-    // admissionScanInitialized flag
-    // -------------------------------------------------------------------------
-
     @Test
     void admissionScanInitialized_falseOnInit() {
         assertFalse(this.state.isAdmissionScanInitialized());
@@ -338,10 +306,6 @@ class SocialCueRuntimeStateTest {
         // Assert
         assertFalse(this.state.isAdmissionScanInitialized());
     }
-
-    // -------------------------------------------------------------------------
-    // cancelActiveCue — sleep/suppression path
-    // -------------------------------------------------------------------------
 
     @Test
     void cancelActiveCue_clearsCueAndGaze_withoutRecordingCooldown() {
@@ -403,10 +367,6 @@ class SocialCueRuntimeStateTest {
         assertTrue(this.state.isTargetOnCooldown(playerId, 0L),
                 "per-target cooldown must not be cleared by a cancel — the greeting already happened");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static SocialCue buildCue(String key) {
         SocialCueScript script = SocialCueScript.of(List.of(

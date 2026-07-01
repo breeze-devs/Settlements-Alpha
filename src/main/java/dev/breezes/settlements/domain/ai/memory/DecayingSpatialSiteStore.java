@@ -98,9 +98,9 @@ public final class DecayingSpatialSiteStore {
      * Lower score = higher priority (e.g. nearer for the distance scorer).
      * <p>
      * Expired entries are filtered out and removed opportunistically.
-     * This overload is intended for the P6 context-aware planner and any other consumer
-     * that needs an ordered view; the default read path should use the zero-argument
-     * {@link #liveView(ResourceKey, long)} overload to avoid the sort overhead.
+     * This overload serves consumers that need a scored priority ordering (e.g. the
+     * context-aware planner); the zero-argument {@link #liveView(ResourceKey, long)}
+     * overload should be preferred elsewhere to avoid the sort overhead.
      *
      * @param dimension the dimension key to embed in each {@code GlobalPos}
      * @param originX   X coordinate of the querying entity

@@ -14,24 +14,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>
  * Critical invariants:
  * <ol>
- *   <li>All pre-sighting constants keep byte-identical behaviour: both flags equal the old
- *       {@code terminalDeed} value, so {@link WorldEventType#isSelfRememberableTerminalEvent()}
- *       and {@link WorldEventType#isSeedWorthy()} return the same value they always did.</li>
- *   <li>The new sighting constants (ZOMBIE_SIGHTED through GOLEM_SIGHTED) exercise the
+ *   <li>All pre-sighting constants must have forceRemember == seedWorthy, so
+ *       {@link WorldEventType#isSelfRememberableTerminalEvent()} and
+ *       {@link WorldEventType#isSeedWorthy()} agree, preserving the single-flag semantics
+ *       existing callers depend on.</li>
+ *   <li>The sighting constants (ZOMBIE_SIGHTED through GOLEM_SIGHTED) exercise the
  *       decoupling: ZOMBIE_SIGHTED has forceRemember=true AND seedWorthy=true, while the
  *       social sightings have forceRemember=false AND seedWorthy=true.</li>
  * </ol>
  */
 class WorldEventTypeTest {
 
-    // -------------------------------------------------------------------------
-    // Pre-sighting constants: forceRemember == seedWorthy (old behaviour preserved)
-    // -------------------------------------------------------------------------
-
     /**
-     * All constants defined before the sighting types must have the same flag value for
-     * isSelfRememberableTerminalEvent() and isSeedWorthy() — they behaved identically before
-     * the split and must continue to do so to avoid breaking the existing pipeline.
+     * All constants defined before the sighting types must keep forceRemember == seedWorthy,
+     * so existing consumers of the single flag are unaffected.
      */
     @ParameterizedTest
     @EnumSource(value = WorldEventType.class, names = {
@@ -58,7 +54,7 @@ class WorldEventTypeTest {
 
         // Assert — decoupling must not alter existing constant behaviour
         assertEquals(forceRemember, seedWorthy,
-                "Pre-sighting constant " + type + " must have matching flags (old terminalDeed semantics)");
+                "Pre-sighting constant " + type + " must have matching forceRemember/seedWorthy flags");
     }
 
     @Test
@@ -90,10 +86,6 @@ class WorldEventTypeTest {
         assertFalse(type.isSelfRememberableTerminalEvent(), "TRADE_INVITE_SENT must not force-remember (transitional step)");
         assertFalse(type.isSeedWorthy(), "TRADE_INVITE_SENT must not seed monologue");
     }
-
-    // -------------------------------------------------------------------------
-    // New sighting constants: forceRemember and seedWorthy are decoupled
-    // -------------------------------------------------------------------------
 
     @Test
     void zombieSighted_isForceRememberAndSeedWorthy() {
@@ -135,10 +127,6 @@ class WorldEventTypeTest {
         assertTrue(type.isSeedWorthy(), "GOLEM_SIGHTED must be seed-worthy");
     }
 
-    // -------------------------------------------------------------------------
-    // Flag independence: the two accessors are truly decoupled for sighting types
-    // -------------------------------------------------------------------------
-
     @Test
     void sightingConstants_forceRememberAndSeedWorthyAreIndependent() {
         // Arrange — social sightings have forceRemember=false but seedWorthy=true
@@ -158,10 +146,6 @@ class WorldEventTypeTest {
             assertTrue(seedWorthy, type + " seedWorthy must be true");
         }
     }
-
-    // -------------------------------------------------------------------------
-    // selfWitnessed: sightings have no single doer; deeds do
-    // -------------------------------------------------------------------------
 
     @ParameterizedTest
     @EnumSource(value = WorldEventType.class, names = {

@@ -12,37 +12,37 @@ public record BehaviorKey(String id) {
 
     private static final String DISPLAY_NAME_KEY_PREFIX = "ui.settlements.behavior.behavior.";
 
-    // ---- Universal ----
+    // Universal
     public static final BehaviorKey EAT_FOOD = new BehaviorKey("eat_food");
 
-    // ---- Logistics (universal) ----
+    // Logistics (universal)
     public static final BehaviorKey MANAGE_CHESTS = new BehaviorKey("manage_chests");
     public static final BehaviorKey COLLECT_DEMANDED_ITEM = new BehaviorKey("collect_demanded_item");
 
-    // ---- Social (universal) ----
+    // Social (universal)
     public static final BehaviorKey TRADE_INITIATE = new BehaviorKey("trade_initiate");
     public static final BehaviorKey TRADE_ACCEPT = new BehaviorKey("trade_accept");
     public static final BehaviorKey COURTSHIP_INITIATE = new BehaviorKey("courtship_initiate");
     public static final BehaviorKey COURTSHIP_ACCEPT = new BehaviorKey("courtship_accept");
 
-    // ---- Investigate (universal, triggered by planner or override lane) ----
+    // Investigate (universal, triggered by planner or override lane)
     public static final BehaviorKey INVESTIGATE = new BehaviorKey("investigate");
 
-    // ---- Support / Village ----
+    // Support / Village
     public static final BehaviorKey REPAIR_IRON_GOLEM = new BehaviorKey("repair_iron_golem");
 
-    // ---- Smithing ----
+    // Smithing
     public static final BehaviorKey BLAST_ORE = new BehaviorKey("blast_ore");
 
-    // ---- Butchering ----
+    // Butchering
     public static final BehaviorKey SMOKE_MEAT = new BehaviorKey("smoke_meat");
     public static final BehaviorKey BUTCHER_LIVESTOCK = new BehaviorKey("butcher_livestock");
 
-    // ---- Cleric ----
+    // Cleric
     public static final BehaviorKey THROW_POTIONS = new BehaviorKey("throw_potions");
     public static final BehaviorKey HARVEST_NETHER_WART = new BehaviorKey("harvest_nether_wart");
 
-    // ---- Farming ----
+    // Farming
     public static final BehaviorKey HARVEST_SUGARCANE = new BehaviorKey("harvest_sugarcane");
     public static final BehaviorKey COLLECT_HONEY = new BehaviorKey("collect_honey");
     public static final BehaviorKey HARVEST_HONEYCOMB = new BehaviorKey("harvest_honeycomb");
@@ -52,7 +52,7 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey HARVEST_RIPE_CROPS = new BehaviorKey("harvest_ripe_crops");
     public static final BehaviorKey CULTIVATE_PLOT = new BehaviorKey("cultivate_plot");
 
-    // ---- Animal handling ----
+    // Animal handling
     public static final BehaviorKey MILK_COW = new BehaviorKey("milk_cow");
     public static final BehaviorKey BREED_CHICKENS = new BehaviorKey("breed_chickens");
     public static final BehaviorKey BREED_COWS = new BehaviorKey("breed_cows");
@@ -65,30 +65,30 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey WASH_WOLF = new BehaviorKey("wash_wolf");
     public static final BehaviorKey FEED_WOLF = new BehaviorKey("feed_wolf");
 
-    // ---- Idle / Leisure ----
+    // Idle / Leisure
     public static final BehaviorKey WALK_DOG = new BehaviorKey("walk_dog");
 
-    // ---- Nitwit / Mischief ----
+    // Nitwit / Mischief
     public static final BehaviorKey RING_BELL = new BehaviorKey("ring_bell");
     public static final BehaviorKey THROW_EGGS = new BehaviorKey("throw_eggs");
     public static final BehaviorKey CHASE_CHICKENS = new BehaviorKey("chase_chickens");
 
-    // ---- Surveying ----
+    // Surveying
     public static final BehaviorKey SURVEY_LANDSCAPE = new BehaviorKey("survey_landscape");
 
-    // ---- Fishing ----
+    // Fishing
     public static final BehaviorKey FISHING = new BehaviorKey("fishing");
 
-    // ---- Crafting ----
+    // Crafting
     public static final BehaviorKey CUT_STONE = new BehaviorKey("cut_stone");
     public static final BehaviorKey CRAFT_GOODS = new BehaviorKey("craft_goods");
     public static final BehaviorKey HARVEST_ORE = new BehaviorKey("harvest_ore");
     public static final BehaviorKey EXCAVATE_SUBSTRATE = new BehaviorKey("excavate_substrate");
 
-    // ---- Enchanting ----
+    // Enchanting
     public static final BehaviorKey ENCHANT_ITEM = new BehaviorKey("enchant_item");
 
-    // ---- Leatherworking ----
+    // Leatherworking
     public static final BehaviorKey WASH_LEATHER = new BehaviorKey("wash_leather");
     public static final BehaviorKey DYE_LEATHER = new BehaviorKey("dye_leather");
 

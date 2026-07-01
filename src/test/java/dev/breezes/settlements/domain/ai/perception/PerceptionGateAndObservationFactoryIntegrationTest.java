@@ -42,10 +42,6 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
         this.bus = new WorldEventBus();
     }
 
-    // -------------------------------------------------------------------------
-    // Anti-telepathy: proximity determines knowledge
-    // -------------------------------------------------------------------------
-
     @Test
     void nearbyVillagerAdmitsEvent_distantVillagerDoesNot() {
         // Arrange
@@ -91,10 +87,6 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
         assertEquals(0, distantBuffer.size(), "distant villager should have no observations");
     }
 
-    // -------------------------------------------------------------------------
-    // System events are never admitted regardless of distance
-    // -------------------------------------------------------------------------
-
     @Test
     void systemEventsAreNeverAdmitted_evenAtZeroDistance() {
         // Arrange
@@ -112,10 +104,6 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
         // Assert — none of the SYSTEM events should have been admitted
         assertEquals(0, buffer.size());
     }
-
-    // -------------------------------------------------------------------------
-    // Self-event skipping is tracked separately (cursor advance)
-    // -------------------------------------------------------------------------
 
     @Test
     void cursorAdvances_afterProcessingDelta() {
@@ -137,10 +125,6 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
         List<WorldEvent> nextDelta = visitDelta(state.getLastSeenSeq());
         assertTrue(nextDelta.isEmpty(), "no new events should be visible after cursor advance");
     }
-
-    // -------------------------------------------------------------------------
-    // Importance scoring: high-CHA villager promotes social observations
-    // -------------------------------------------------------------------------
 
     @Test
     void importanceGate_highCharismaVillagerPromotesSocialObservations() {
@@ -178,10 +162,6 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
         assertFalse(gate.shouldPromote(score),
                 "routine behavior event should not promote for an average villager (score=" + score + ")");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private WorldEvent emitEvent(WorldEventType type, int chunkX, int chunkZ) {
         return this.bus.emit(

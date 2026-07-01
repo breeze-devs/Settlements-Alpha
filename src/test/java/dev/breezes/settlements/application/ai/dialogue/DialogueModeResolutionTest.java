@@ -46,10 +46,6 @@ class DialogueModeResolutionTest {
         assertEquals(DialogueMode.SCRIPTED, config.resolvedMode());
     }
 
-    // -------------------------------------------------------------------------
-    // Helper
-    // -------------------------------------------------------------------------
-
     private static DialogueConfig configWithMode(String mode) {
         // Construct the record with only the mode field meaningful; use defaults for the rest.
         return new DialogueConfig(

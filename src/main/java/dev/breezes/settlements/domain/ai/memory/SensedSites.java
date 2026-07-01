@@ -20,7 +20,7 @@ import java.util.Map;
  * so consumers can query any {@code MemoryType<List<GlobalPos>>} without first checking
  * for key presence.
  * <p>
- * Exposes two read shapes that the roadmap's Phase 3 (planner) and Phase 4 (snapshot) need:
+ * Exposes two read shapes needed by planning consumers and diagnostic snapshots:
  * <ul>
  *   <li>Coord-dump via {@link #coordsByType()} / {@link #coords(MemoryType)}</li>
  *   <li>Presence/count via {@link #isPresent(MemoryType)} / {@link #count(MemoryType)}</li>

@@ -214,10 +214,9 @@ class HeuristicPlanGeneratorTest {
 
     @Test
     void generate_restDaySleepInWithPendingTipKeepsAllSlotsWithinDayBoundary() {
-        // Reproduces the rest-day crash: a +1h sleep-in plus a positive chronotype offset pushes wake
-        // PAST the profession's work-start (epoch 2354 vs work-start tick 2000). That previously wrapped
-        // workStartLinear to ~a full day, flinging the injected Investigate scout slot across the day
-        // boundary, which DayPlan rejected with "slot window must not cross the plan day boundary".
+        // Regression guard: a +1h sleep-in plus a positive chronotype offset can push wake PAST the
+        // profession's work-start (epoch 2354 vs work-start tick 2000), which must not wrap
+        // workStartLinear across the day boundary (DayPlan rejects slots crossing the day boundary).
         long wakeAtAbsoluteTick = 482_354L; // 482354 % 24000 = 2354
         PlanGenerationContext context = PlanGenerationContext.builder()
                 .profession(VillagerProfessionKey.MASON)
@@ -383,10 +382,6 @@ class HeuristicPlanGeneratorTest {
         return new GeneticsProfile(genes);
     }
 
-    // =========================================================================
-    // Opportunity multiplier tests (context-aware day planning, Pass 1)
-    // =========================================================================
-
     @Test
     void generate_lackedBehaviorIsDownweightedNotRemoved() {
         // A behavior in behaviorsLackingOpportunity must remain in the candidate pool
@@ -455,9 +450,9 @@ class HeuristicPlanGeneratorTest {
 
     @Test
     void generate_existingBuildersWithoutLackingFieldStillCompile() {
-        // Existing callers that omit behaviorsLackingOpportunity must default to an empty set
-        // (the compact constructor handles null → empty). This test exercises the old builder path.
-        // Arrange: use the pre-existing context() helper which does NOT set behaviorsLackingOpportunity
+        // Callers that omit behaviorsLackingOpportunity must default to an empty set
+        // (compact constructor null-safety).
+        // Arrange: the context() helper does NOT set behaviorsLackingOpportunity
         PlanGenerationContext ctx = context(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY,
                 genetics(0.5, 0.5, 0.5, 0.5), allDescriptors());
 

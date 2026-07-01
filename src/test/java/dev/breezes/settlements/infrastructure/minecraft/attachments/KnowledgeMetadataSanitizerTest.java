@@ -106,10 +106,6 @@ class KnowledgeMetadataSanitizerTest {
                 () -> sanitized.put("event_meta", "mutated"));
     }
 
-    // -------------------------------------------------------------------------
-    // Newly preserved keys: outcome, reason, detail (flat), detail.* (structured)
-    // -------------------------------------------------------------------------
-
     @Test
     void sanitize_preservesOutcomeKey() {
         // Arrange — outcome feeds LLM failure framing; must survive the persistence boundary

@@ -122,10 +122,6 @@ class HttpInferenceTransportTest {
         assertEquals("Bearer secret-token", capturedRequest.header("Authorization"));
     }
 
-    // -----------------------------------------------------------------------
-    // postStreaming — progressive NDJSON delivery, error handling, cancellation
-    // -----------------------------------------------------------------------
-
     @Test
     void postStreaming_deliversEachNonBlankLineInOrder() throws Exception {
         // Arrange — three NDJSON lines with a blank line that must be skipped

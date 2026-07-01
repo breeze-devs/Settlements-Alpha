@@ -14,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * so dump commands and future gateway-test fixtures are byte-faithful to what {@code post()}
  * would actually send.
  * <p>
- * deadlineSlackMillis was removed from the envelope because SIS uses extra="forbid" and does
- * not define that field. The test formerly asserting its presence now asserts its absence.
+ * deadlineSlackMillis must never appear on the wire — SIS uses extra="forbid" and rejects
+ * unknown fields.
  */
 class InferenceTransportSerializeSeamTest {
 
@@ -95,10 +95,6 @@ class InferenceTransportSerializeSeamTest {
         // Assert – requestId must be a UUID-shaped value
         assertTrue(json.contains("\"requestId\""), "requestId field must be present");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private HttpInferenceTransport newTransport(String endpoint, String apiKey) {
         InferenceConfig config = new InferenceConfig(endpoint, apiKey, "en_us", 50);

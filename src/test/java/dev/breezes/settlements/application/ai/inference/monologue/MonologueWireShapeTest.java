@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Locks the Phase 0 wire shape of the MONOLOGUE envelope against the SIS contract.
+ * Locks the MONOLOGUE envelope wire shape against the SIS contract.
  * <p>
  * All DTOs are constructed by hand — no Minecraft objects. The assertions mirror SIS's
  * extra="forbid" validation: any unknown key here would produce a 422 in SIS.
@@ -215,13 +215,9 @@ class MonologueWireShapeTest {
         JsonObject firstVillager = firstVillager(payload);
 
         // Assert — seeds and top-level facets are gone; SIS extra=forbid would 422 them
-        assertFalse(firstVillager.has("seeds"), "seeds must not appear — phrasing now lives in SIS");
-        assertFalse(firstVillager.has("facets"), "top-level facets must not appear — they moved under persona");
+        assertFalse(firstVillager.has("seeds"), "seeds must not appear — line phrasing is owned by SIS, not the mod");
+        assertFalse(firstVillager.has("facets"), "top-level facets must not appear — facets live under persona");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private JsonObject firstVillager(MonologueBatchRequest payload) {
         String json = this.transport.renderEnvelope(InferenceCapability.MONOLOGUE, payload, Duration.ofSeconds(30));

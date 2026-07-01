@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Regression tests for the Phase 3 soft-refute behavior:
+ * Regression tests for the soft-refute behavior:
  * <ul>
  *   <li>Selector skips a tip that is still within its post-timeout cooldown window.</li>
  *   <li>After ATTEMPT_CAP timeouts the tip is resolved REFUTED and source credibility drops.</li>
@@ -39,10 +39,6 @@ class InvestigateSoftRefuteTest {
         this.store = new VillagerKnowledgeStore();
         this.observerUUID = UUID.randomUUID();
     }
-
-    // -------------------------------------------------------------------------
-    // Cooldown filtering
-    // -------------------------------------------------------------------------
 
     @Test
     void select_skipsTipOnCooldown() {
@@ -106,10 +102,6 @@ class InvestigateSoftRefuteTest {
         assertEquals(eligibleTipId, result.getOriginObservationId(),
                 "Selector must skip cooled tip even when it has higher raw weight");
     }
-
-    // -------------------------------------------------------------------------
-    // Soft-refute after ATTEMPT_CAP
-    // -------------------------------------------------------------------------
 
     @Test
     void recordNavigationTimeout_incrementsAttemptCount() {
@@ -191,10 +183,6 @@ class InvestigateSoftRefuteTest {
         assertNotNull(result, "Tip below attempt cap should become eligible again after cooldown");
         assertEquals(tipId, result.getOriginObservationId());
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static KnowledgeEntry hearsayEntry(UUID originId, UUID sourceId, float weight) {
         KnowledgeEntry direct = KnowledgeEntry.fromDirectObservation(

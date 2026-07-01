@@ -32,10 +32,6 @@ class GossipSessionRegistryTest {
         this.receiverId = UUID.randomUUID();
     }
 
-    // -------------------------------------------------------------------------
-    // Happy path
-    // -------------------------------------------------------------------------
-
     @Test
     void happyPath_sendInviteAcceptComplete_freesBothParticipants() {
         // Arrange
@@ -92,10 +88,6 @@ class GossipSessionRegistryTest {
         assertFalse(this.registry.getActiveSession(initiatorId).isPresent());
     }
 
-    // -------------------------------------------------------------------------
-    // Invite TTL reaper
-    // -------------------------------------------------------------------------
-
     @Test
     void inviteTimeout_unacceptedInviteIsAborted_freesBothParticipants() {
         // Arrange
@@ -140,10 +132,6 @@ class GossipSessionRegistryTest {
         assertTrue(this.registry.isParticipating(initiatorId));
         assertTrue(this.registry.isParticipating(receiverId));
     }
-
-    // -------------------------------------------------------------------------
-    // FIX #2 regression — ACCEPTED session whose cue never completes must be reaped
-    // -------------------------------------------------------------------------
 
     @Test
     void sessionMaxLifetime_acceptedSessionThatNeverCompletes_isAborted_freesBothParticipants() {
@@ -208,10 +196,6 @@ class GossipSessionRegistryTest {
         // Assert — completed phase is preserved (reaper must not transition terminal sessions)
         assertEquals(GossipPhase.COMPLETED, session.getPhase());
     }
-
-    // -------------------------------------------------------------------------
-    // Helper
-    // -------------------------------------------------------------------------
 
     private static KnowledgeEntry knowledgeEntry() {
         return KnowledgeEntry.fromDirectObservation(

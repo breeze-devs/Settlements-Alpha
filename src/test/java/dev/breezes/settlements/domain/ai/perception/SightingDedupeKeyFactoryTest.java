@@ -19,10 +19,6 @@ class SightingDedupeKeyFactoryTest {
     private static final String ZOMBIE_TYPE = "minecraft:zombie";
     private static final String PLAYER_TYPE = "minecraft:player";
 
-    // -------------------------------------------------------------------------
-    // Stability — same inputs → same UUID
-    // -------------------------------------------------------------------------
-
     @Test
     void computeDedupeKey_sameInputs_returnsSameUuid() {
         // Arrange
@@ -32,10 +28,6 @@ class SightingDedupeKeyFactoryTest {
         // Assert
         assertEquals(first, second, "Identical inputs must produce the same UUID");
     }
-
-    // -------------------------------------------------------------------------
-    // Differentiation — any differing input → different UUID
-    // -------------------------------------------------------------------------
 
     @Test
     void computeDedupeKey_differentEntityType_returnsDifferentUuid() {
@@ -85,10 +77,6 @@ class SightingDedupeKeyFactoryTest {
         assertNotEquals(keyInChunk0, keyInChunk1, "Positions in different chunk columns must produce different UUIDs");
     }
 
-    // -------------------------------------------------------------------------
-    // 2D chunk grouping — positions in the same chunk column converge
-    // -------------------------------------------------------------------------
-
     @Test
     void computeDedupeKey_positionsInSameChunkColumn_returnsSameUuid() {
         // Arrange — block 1 and block 15 are both in chunk 0 (both >> 4 == 0)
@@ -101,8 +89,8 @@ class SightingDedupeKeyFactoryTest {
 
     @Test
     void computeDedupeKey_differentElevationSameChunkColumn_returnsSameUuid() {
-        // Arrange — the factory no longer accepts Y, so vertical offset cannot influence the key.
-        // This proves Y-independence at the API level: the two calls are spatially identical inputs.
+        // Arrange — the factory has no Y parameter, so vertical offset cannot influence the key;
+        // this proves Y-independence at the API level: the two calls are spatially identical inputs.
         UUID keyLow = SightingDedupeKeyFactory.computeDedupeKey(ZOMBIE_TYPE, 5, 5, 1000L);
         UUID keyHigh = SightingDedupeKeyFactory.computeDedupeKey(ZOMBIE_TYPE, 5, 5, 1000L);
 
@@ -122,10 +110,6 @@ class SightingDedupeKeyFactoryTest {
         // Assert
         assertEquals(keyA, keyB, "Ticks within the same time bucket must produce the same UUID");
     }
-
-    // -------------------------------------------------------------------------
-    // Negative coordinates (common in Minecraft world-gen)
-    // -------------------------------------------------------------------------
 
     @Test
     void computeDedupeKey_negativeCoordinates_stableAndDistinct() {

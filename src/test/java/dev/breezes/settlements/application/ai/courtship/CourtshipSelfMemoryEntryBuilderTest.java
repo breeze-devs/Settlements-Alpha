@@ -22,10 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class CourtshipSelfMemoryEntryBuilderTest {
 
-    // -------------------------------------------------------------------------
-    // Metadata keys
-    // -------------------------------------------------------------------------
-
     @Test
     void buildMetadata_containsEventTypeKey() {
         // Arrange
@@ -75,10 +71,6 @@ class CourtshipSelfMemoryEntryBuilderTest {
         // Assert
         assertEquals(reason, metadata.get(ObservationMetadataKeys.REASON));
     }
-
-    // -------------------------------------------------------------------------
-    // Entry shape
-    // -------------------------------------------------------------------------
 
     @Test
     void build_entryHasHopZero() {

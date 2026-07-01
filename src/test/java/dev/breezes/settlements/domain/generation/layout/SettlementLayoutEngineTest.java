@@ -173,7 +173,7 @@ class SettlementLayoutEngineTest {
         LayoutResult village = this.engine.generateLayout(
                 LayoutTestFixtures.standardReport(),
                 LayoutTestFixtures.villageProfile(18L),
-                manifest(20),  // VILLAGE maxBuildings = 20
+                manifest(20),
                 LayoutTestFixtures.lookup()
         );
         LayoutResult town = this.engine.generateLayout(

@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 @ClientSide
 public final class Elements {
 
-    // ---- Text ----
+    // Text
 
     public static UIElement text(@Nonnull Supplier<Component> textSupplier, int color) {
         return new TextElement(textSupplier, color, false);
@@ -34,7 +34,7 @@ public final class Elements {
         return new ClickableTextElement(text, color, hoverColor, onClick);
     }
 
-    // ---- Item Icon ----
+    // Item Icon
 
     public static UIElement itemIcon(@Nonnull Supplier<ItemStack> stackSupplier,
                                      @Nonnull IntSupplier borderColorSupplier,
@@ -49,19 +49,19 @@ public final class Elements {
         return new ItemIconElement(stackSupplier, borderColorSupplier, tooltipStackSupplier, countSupplier);
     }
 
-    // ---- Rectangle ----
+    // Rectangle
 
     public static RectBuilder rect() {
         return new RectBuilder();
     }
 
-    // ---- Sprite ----
+    // Sprite
 
     public static UIElement sprite(@Nonnull ResourceLocation texture, int width, int height) {
         return new SpriteElement(texture, width, height);
     }
 
-    // ---- Nine Patch ----
+    // Nine Patch
 
     public static UIElement ninePatch(@Nonnull ResourceLocation texture,
                                       int cornerSize,
@@ -70,7 +70,7 @@ public final class Elements {
         return new NinePatchElement(texture, cornerSize, textureWidth, textureHeight);
     }
 
-    // ---- Custom ----
+    // Custom
 
     public static UIElement custom(@Nonnull SizeConstraint widthConstraint,
                                    @Nonnull SizeConstraint heightConstraint,
@@ -78,7 +78,7 @@ public final class Elements {
         return new CustomElement(widthConstraint, heightConstraint, renderer);
     }
 
-    // ---- Spacer / Flex ----
+    // Spacer / Flex
 
     public static UIElement spacer(int width, int height) {
         return new SpacerElement(SizeConstraint.fixed(width), SizeConstraint.fixed(height));
@@ -88,20 +88,20 @@ public final class Elements {
         return new SpacerElement(SizeConstraint.FILL, SizeConstraint.FILL);
     }
 
-    // ---- Dividers ----
+    // Dividers
 
     public static UIElement hLine(int color) {
         return new HLineElement(color);
     }
 
-    // ---- Functional Interfaces ----
+    // Functional Interfaces
 
     @FunctionalInterface
     public interface CustomRenderer {
         void render(@Nonnull GuiGraphics graphics, @Nonnull Bounds bounds, int mouseX, int mouseY, float partialTick);
     }
 
-    // ---- Inner Element Classes ----
+    // Inner Element Classes
 
     private static class TextElement extends BaseElement {
 
@@ -270,7 +270,7 @@ public final class Elements {
 
     }
 
-    // ---- RectElement with Builder ----
+    // RectElement with Builder
 
     public static class RectBuilder {
 

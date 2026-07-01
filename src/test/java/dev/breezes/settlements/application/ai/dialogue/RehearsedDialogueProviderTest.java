@@ -50,10 +50,6 @@ class RehearsedDialogueProviderTest {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // install + sampleAmbientLine — happy path
-    // -----------------------------------------------------------------------
-
     @Test
     void sampleAmbientLine_matchingOccasionInstalled_returnsInstalledLine() {
         // Arrange
@@ -143,10 +139,6 @@ class RehearsedDialogueProviderTest {
         assertTrue(second.get() instanceof DialogueLine.Translatable);
     }
 
-    // -----------------------------------------------------------------------
-    // needsRefresh
-    // -----------------------------------------------------------------------
-
     @Test
     void needsRefresh_noPackInstalled_returnsTrue() {
         // Arrange
@@ -213,10 +205,6 @@ class RehearsedDialogueProviderTest {
         assertTrue(provider.needsRefresh(villagerUuid));
     }
 
-    // -----------------------------------------------------------------------
-    // new sweep — atomic replace
-    // -----------------------------------------------------------------------
-
     @Test
     void newSweep_replacesExistingPackForSameVillager() {
         // Arrange — install a pack, then install a new one for the same villager
@@ -251,10 +239,6 @@ class RehearsedDialogueProviderTest {
         assertEquals("New morning line", literal.text());
     }
 
-    // -----------------------------------------------------------------------
-    // isEnabled
-    // -----------------------------------------------------------------------
-
     @Test
     void isEnabled_withPacksInstalled_returnsTrue() {
         // Arrange
@@ -277,10 +261,6 @@ class RehearsedDialogueProviderTest {
         // Act + Assert
         assertTrue(provider.isEnabled());
     }
-
-    // -----------------------------------------------------------------------
-    // H1 — epoch guard: stale results are dropped
-    // -----------------------------------------------------------------------
 
     @Test
     void installOnePack_currentEpoch_installsAndIsServed() {
@@ -333,10 +313,6 @@ class RehearsedDialogueProviderTest {
                 "Stale result must be dropped; fallback Translatable must be served");
     }
 
-    // -----------------------------------------------------------------------
-    // H1 — cancellation: a new sweep cancels the previous in-flight handle
-    // -----------------------------------------------------------------------
-
     @Test
     void rotateSweepHandle_cancelsExistingHandle() {
         // Arrange — install an old handle as the current in-flight sweep
@@ -351,10 +327,6 @@ class RehearsedDialogueProviderTest {
         // Assert — the old handle was cancelled
         verify(oldHandle).cancel();
     }
-
-    // -----------------------------------------------------------------------
-    // H2 — per-villager progressive install: each pack installs as it arrives
-    // -----------------------------------------------------------------------
 
     @Test
     void installOnePack_multiplePacksAtCurrentEpoch_eachInstalledIndependently() {
@@ -389,10 +361,6 @@ class RehearsedDialogueProviderTest {
         assertTrue(line2.isPresent());
         assertEquals("Pack two idle", ((DialogueLine.Literal) line2.get()).text());
     }
-
-    // -----------------------------------------------------------------------
-    // evict — villager removal drops its packs (no unbounded growth across churn)
-    // -----------------------------------------------------------------------
 
     @Test
     void evict_installedVillager_subsequentSampleFallsBack() {

@@ -10,8 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VillagerStatsScreenUtilTest {
 
-    // ---- professionKeySuffix ----
-
     @Test
     void professionKeySuffix_withNamespace() {
         assertEquals("farmer", VillagerStatsUtil.professionKeySuffix("minecraft:farmer"));
@@ -31,8 +29,6 @@ class VillagerStatsScreenUtilTest {
     void professionKeySuffix_emptyAfterColon() {
         assertEquals("", VillagerStatsUtil.professionKeySuffix("minecraft:"));
     }
-
-    // ---- isUnemployed ----
 
     @Test
     void isUnemployed_none() {
@@ -54,8 +50,6 @@ class VillagerStatsScreenUtilTest {
         assertTrue(VillagerStatsUtil.isUnemployed("none"));
     }
 
-    // ---- formatProfessionName ----
-
     @Test
     void formatProfessionName_simple() {
         assertEquals("Farmer", VillagerStatsUtil.formatProfessionName("minecraft:farmer"));
@@ -70,8 +64,6 @@ class VillagerStatsScreenUtilTest {
     void formatProfessionName_noNamespace() {
         assertEquals("Librarian", VillagerStatsUtil.formatProfessionName("librarian"));
     }
-
-    // ---- getReputationTitleKey ----
 
     @ParameterizedTest
     @CsvSource({

@@ -8,8 +8,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class HexChartRendererTest {
 
-    // ---- Grade letter tests ----
-
     @ParameterizedTest
     @CsvSource({
             "1.0, A",
@@ -31,8 +29,6 @@ class HexChartRendererTest {
     void getGradeLetter_returnsCorrectGrade(double value, String expectedGrade) {
         Assertions.assertEquals(expectedGrade, HexChartRenderer.getGradeLetter(value));
     }
-
-    // ---- Data vertex computation tests ----
 
     @Test
     void computeDataVertices_allOnes_verticesAtFullRadius() {
@@ -98,8 +94,6 @@ class HexChartRendererTest {
         Assertions.assertEquals(cx, vertices[0][0], 0.5F);
         Assertions.assertEquals(cy, vertices[0][1], 0.5F);
     }
-
-    // ---- Hover detection tests ----
 
     @Test
     void getHoveredAxis_outsideBounds_returnsNegativeOne() {

@@ -16,10 +16,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
-import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
-import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
-import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
-import dev.breezes.settlements.application.ui.bubble.SpriteRef;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.PerceivedEntityExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -31,7 +27,6 @@ import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.animation.PickUpAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
-import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
@@ -119,38 +114,11 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     protected StagedStep<BaseVillager> createControlStep() {
         return StagedStep.<BaseVillager>builder()
                 .name("ShearSheepBehavior")
-                .onStart(context -> {
-                    // Speech bubble temporarily disabled; re-enable by restoring the upsert below (and the
-                    // matching removeBubbleByOwner in onEnd).
-                    // ISettlementsVillager villager = context.getInitiator();
-                    // BubbleMessage message = BubbleMessage.builder()
-                    //         .priority(0)
-                    //         .ttl(BUBBLE_TTL)
-                    //         .sourceType("behavior")
-                    //         .segments(List.of(
-                    //                 BubbleSegment.Sprite.builder()
-                    //                         .sprite(SpriteRef.SHEARS)
-                    //                         .frameDuration(ClockTicks.seconds(0.5))
-                    //                         .build(),
-                    //                 BubbleSegment.Sprite.builder()
-                    //                         .sprite(SpriteRef.SHEEP)
-                    //                         .frameDuration(ClockTicks.seconds(0.6))
-                    //                         .build()))
-                    //         .build();
-                    // villager.upsertBubble(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY, message);
-                    return StepResult.noOp();
-                })
                 .initialStage(ShearStage.SHEAR_SHEEP)
                 .stageStepMap(Map.of(
                         ShearStage.SHEAR_SHEEP, this.createShearSheepStep(),
                         ShearStage.PICKUP_WOOL, this.createPickupWoolStep()))
                 .nextStage(ShearStage.END)
-                .onEnd(context -> {
-                    // Speech bubble temporarily disabled; re-enable alongside the upsert in onStart.
-                    // ISettlementsVillager villager = context.getInitiator();
-                    // villager.removeBubbleByOwner(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY);
-                    return StepResult.noOp();
-                })
                 .build();
     }
 

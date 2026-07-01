@@ -15,7 +15,7 @@ import java.util.Objects;
  */
 public record VillagerProfessionKey(@Nonnull String id) {
 
-    // ---- Vanilla professions ----
+    // Vanilla professions
     public static final VillagerProfessionKey NONE = new VillagerProfessionKey("none");
     public static final VillagerProfessionKey ARMORER = new VillagerProfessionKey("armorer");
     public static final VillagerProfessionKey BUTCHER = new VillagerProfessionKey("butcher");
@@ -32,7 +32,7 @@ public record VillagerProfessionKey(@Nonnull String id) {
     public static final VillagerProfessionKey TOOLSMITH = new VillagerProfessionKey("toolsmith");
     public static final VillagerProfessionKey WEAPONSMITH = new VillagerProfessionKey("weaponsmith");
 
-    // ---- Custom Settlements professions ----
+    // Custom Settlements professions
     // Add constants here as new professions are introduced.
     // Ensure the string matches the name used during NeoForge registry registration.
 

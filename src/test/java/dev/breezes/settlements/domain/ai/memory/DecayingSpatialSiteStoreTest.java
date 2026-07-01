@@ -26,10 +26,6 @@ class DecayingSpatialSiteStoreTest {
     private static final long POS_B = packPos(30, 64, 40);
     private static final long POS_C = packPos(50, 64, 60);
 
-    // -------------------------------------------------------------------------
-    // Fold: upsert-bumps-timestamp
-    // -------------------------------------------------------------------------
-
     @Test
     void upsert_newSite_getsInserted() {
         // Arrange
@@ -79,10 +75,6 @@ class DecayingSpatialSiteStoreTest {
         assertTrue(store.hasLiveSites(checkTick),
                 "Fresher timestamp must be preserved; stale report must not overwrite it");
     }
-
-    // -------------------------------------------------------------------------
-    // Fold: absence-deletes-only-inside-region
-    // -------------------------------------------------------------------------
 
     @Test
     void absenceRegion_deletesConfirmedAbsentSiteInsideRegion() {
@@ -150,10 +142,6 @@ class DecayingSpatialSiteStoreTest {
         assertEquals(1, store.size()); // A deleted, C retained
     }
 
-    // -------------------------------------------------------------------------
-    // Fold: non-confirmed scan never deletes
-    // -------------------------------------------------------------------------
-
     @Test
     void incompleteReport_doesNotDeleteAnyRememberedSites() {
         // Arrange: two sites remembered.
@@ -174,10 +162,6 @@ class DecayingSpatialSiteStoreTest {
         // Assert: A and C must still be remembered; B was newly added.
         assertEquals(3, store.size(), "Incomplete scan must never delete previously-known sites");
     }
-
-    // -------------------------------------------------------------------------
-    // TTL: entries expire lazily on read
-    // -------------------------------------------------------------------------
 
     @Test
     void ttlExpiry_siteIsLiveJustBeforeRetentionWindow() {
@@ -203,10 +187,6 @@ class DecayingSpatialSiteStoreTest {
         assertFalse(store.hasLiveSites(justAfter), "Site must be expired just past the TTL window");
     }
 
-    // -------------------------------------------------------------------------
-    // Size cap: stalest-first eviction
-    // -------------------------------------------------------------------------
-
     @Test
     void sizeCap_evictsStalestEntryWhenCapExceeded() {
         // Arrange: cap of 2 entries.
@@ -222,10 +202,6 @@ class DecayingSpatialSiteStoreTest {
         // Assert: only 2 entries remain; POS_A (the stalest) should have been evicted.
         assertEquals(2, store.size(), "Store must evict down to maxEntries after a fold that exceeds the cap");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     /**
      * Packs block coordinates into a long using the same bit layout as

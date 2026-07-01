@@ -18,10 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SocialCueTimingPolicyTest {
 
-    // =========================================================================
-    // isStepDue
-    // =========================================================================
-
     @Test
     void isStepDue_trueWhenGameTimeReachesStepStart() {
         // Arrange – step 0 fires at t=1000, step 1 (Wait 20) fires at t=1000, step 2 fires at t=1020.
@@ -70,10 +66,6 @@ class SocialCueTimingPolicyTest {
         assertTrue(SocialCueTimingPolicy.isStepDue(script, 2, start, 15L));
     }
 
-    // =========================================================================
-    // isReadyToFinish — trailing Wait holds the cue active
-    // =========================================================================
-
     @Test
     void isReadyToFinish_falseWhenStepsNotYetExhausted() {
         // Arrange – step 1 of 3 still pending; duration irrelevant.
@@ -119,10 +111,6 @@ class SocialCueTimingPolicyTest {
         // Act & Assert
         assertTrue(SocialCueTimingPolicy.isReadyToFinish(2, 2, 500L, 0L, 500L));
     }
-
-    // =========================================================================
-    // End-to-end timeline: greet_player-style [Gaze, Gesture, Bubble, Wait(40)]
-    // =========================================================================
 
     @Test
     void greetPlayerTimeline_gazeAndGestureFireImmediately_waitHoldsCueActive() {

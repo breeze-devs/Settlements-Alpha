@@ -29,10 +29,6 @@ class VillagerKnowledgeStoreTest {
         this.store = new VillagerKnowledgeStore();
     }
 
-    // -------------------------------------------------------------------------
-    // Guard 1 — dedupe on origin id
-    // -------------------------------------------------------------------------
-
     @Test
     void admit_acceptsNewEntry() {
         // Arrange
@@ -80,10 +76,6 @@ class VillagerKnowledgeStoreTest {
         assertFalse(this.store.knows(UUID.randomUUID()));
     }
 
-    // -------------------------------------------------------------------------
-    // Guard 2 — hop cap
-    // -------------------------------------------------------------------------
-
     @Test
     void admit_rejectsEntryBeyondHopCap() {
         // Arrange – entry at hop MAX_HOP_COUNT + 1 should be rejected
@@ -128,10 +120,6 @@ class VillagerKnowledgeStoreTest {
         assertEquals(2, shareable.size());
         assertTrue(shareable.stream().noneMatch(e -> e.getOriginObservationId().equals(cappedId)));
     }
-
-    // -------------------------------------------------------------------------
-    // Query
-    // -------------------------------------------------------------------------
 
     @Test
     void findByOriginId_returnsEntryWhenPresent() {
@@ -186,10 +174,6 @@ class VillagerKnowledgeStoreTest {
         assertEquals(1, this.store.size());
     }
 
-    // -------------------------------------------------------------------------
-    // Capacity eviction
-    // -------------------------------------------------------------------------
-
     @Test
     void admit_evictsOldestWhenFull() {
         // Arrange – fill to capacity
@@ -231,10 +215,6 @@ class VillagerKnowledgeStoreTest {
         assertTrue(smallStore.knows(secondId));
         assertTrue(smallStore.knows(thirdId));
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static KnowledgeEntry directEntry(UUID originId, String content, float weight) {
         return KnowledgeEntry.fromDirectObservation(

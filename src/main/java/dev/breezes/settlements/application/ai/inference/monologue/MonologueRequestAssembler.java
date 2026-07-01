@@ -54,11 +54,10 @@ public final class MonologueRequestAssembler {
     /**
      * Assembles a multi-villager {@link MonologueBatchRequest} for the given villager-to-occasions mapping.
      * <p>
-     * Intended for the Phase 1 evening sweep: one batch encompasses all villagers that need refreshed packs,
-     * keeping the number of backend round trips bounded at one per sweep regardless of village size.
+     * One batch covers all villagers needing refreshed packs, keeping backend round trips bounded
+     * at one per sweep regardless of village size.
      */
-    public MonologueBatchRequest assembleForVillagers(
-            @Nonnull Map<BaseVillager, Collection<Occasion>> villagersWithOccasions) {
+    public MonologueBatchRequest assembleForVillagers(@Nonnull Map<BaseVillager, Collection<Occasion>> villagersWithOccasions) {
         MonologueBatchRequest.MonologueBatchRequestBuilder builder = MonologueBatchRequest.builder()
                 .locale(this.inferenceConfig.locale());
         for (Map.Entry<BaseVillager, Collection<Occasion>> entry : villagersWithOccasions.entrySet()) {

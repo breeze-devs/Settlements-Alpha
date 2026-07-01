@@ -15,10 +15,6 @@ class DialogueResponseSanitizerTest {
 
     private static final int CAP = 120;
 
-    // -------------------------------------------------------------------------
-    // Basic sanitization
-    // -------------------------------------------------------------------------
-
     @Test
     void sanitize_returnsEmptyForNull() {
         // Arrange / Act
@@ -49,10 +45,6 @@ class DialogueResponseSanitizerTest {
         assertEquals(Optional.of("Hello there."), result);
     }
 
-    // -------------------------------------------------------------------------
-    // Minecraft formatting code stripping
-    // -------------------------------------------------------------------------
-
     @Test
     void sanitize_stripsMinecraftFormattingCodes() {
         // Arrange
@@ -64,10 +56,6 @@ class DialogueResponseSanitizerTest {
         // Assert
         assertEquals(Optional.of("Golden text"), result);
     }
-
-    // -------------------------------------------------------------------------
-    // Character cap
-    // -------------------------------------------------------------------------
 
     @Test
     void sanitize_clampsToCharCap() {
@@ -93,10 +81,6 @@ class DialogueResponseSanitizerTest {
         // Assert
         assertEquals(Optional.of("Short line."), result);
     }
-
-    // -------------------------------------------------------------------------
-    // Edge cases
-    // -------------------------------------------------------------------------
 
     @Test
     void sanitize_returnsEmptyAfterStrippingLeadsToBlank() {

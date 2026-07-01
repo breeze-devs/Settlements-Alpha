@@ -26,7 +26,6 @@ import javax.annotation.Nonnull;
 public class PacketRegistry {
 
     public static void bindPacketHandlers(@Nonnull RegisterPayloadHandlersEvent event) {
-        // Register with Minecraft registrar
         PayloadRegistrar registrar = event.registrar(SettlementsMod.MOD_ID).optional();
 
         registerClient(registrar, ClientBoundSettlementDebugPacket.ID, ClientBoundSettlementDebugPacket.CODEC);

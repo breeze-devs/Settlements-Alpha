@@ -58,10 +58,6 @@ class EpisodicEntryAssemblerTest {
         return new InferenceConfig("http://localhost:9999", "", "en_us", maxEpisodicEntries);
     }
 
-    // -------------------------------------------------------------------------
-    // Empty store
-    // -------------------------------------------------------------------------
-
     @Test
     void assemble_emptyStore_returnsEmptyList() {
         // Arrange — store is empty
@@ -72,10 +68,6 @@ class EpisodicEntryAssemblerTest {
         // Assert
         assertTrue(result.isEmpty());
     }
-
-    // -------------------------------------------------------------------------
-    // Non-seed-worthy entries excluded
-    // -------------------------------------------------------------------------
 
     @Test
     void assemble_nonSeedWorthyEventType_entryExcluded() {
@@ -115,10 +107,6 @@ class EpisodicEntryAssemblerTest {
         // Assert — unknown event type treated as non-seed-worthy
         assertTrue(result.isEmpty());
     }
-
-    // -------------------------------------------------------------------------
-    // Perspective derivation
-    // -------------------------------------------------------------------------
 
     @Test
     void assemble_hop0_actorEqualsObserver_perspectiveIsParticipant() {
@@ -172,10 +160,6 @@ class EpisodicEntryAssemblerTest {
         assertEquals("HEARSAY", result.get(0).getPerspective());
     }
 
-    // -------------------------------------------------------------------------
-    // Actor field
-    // -------------------------------------------------------------------------
-
     @Test
     void assemble_participant_actorFieldIsNull() {
         // Arrange — PARTICIPANT perspective: actor name must be null (SIS renders "I")
@@ -213,10 +197,6 @@ class EpisodicEntryAssemblerTest {
         // Assert
         assertEquals(expectedActorName, result.get(0).getActor());
     }
-
-    // -------------------------------------------------------------------------
-    // Target naming gate
-    // -------------------------------------------------------------------------
 
     @Test
     void assemble_tradeCompleted_targetFieldIsResolvedName() {
@@ -281,10 +261,6 @@ class EpisodicEntryAssemblerTest {
         assertNull(result.get(0).getTarget());
     }
 
-    // -------------------------------------------------------------------------
-    // Source field
-    // -------------------------------------------------------------------------
-
     @Test
     void assemble_hearsay_sourceFieldIsResolvedName() {
         // Arrange
@@ -309,10 +285,6 @@ class EpisodicEntryAssemblerTest {
         // Assert — first-hand entries have no gossip source; field must be absent on wire
         assertNull(result.get(0).getSource());
     }
-
-    // -------------------------------------------------------------------------
-    // Outcome and reason pass-through
-    // -------------------------------------------------------------------------
 
     @Test
     void assemble_outcomeAndReasonPresentInMetadata_passthroughToDto() {
@@ -357,10 +329,6 @@ class EpisodicEntryAssemblerTest {
         assertNull(result.get(0).getReason());
     }
 
-    // -------------------------------------------------------------------------
-    // ageTicks calculation
-    // -------------------------------------------------------------------------
-
     @Test
     void assemble_ageTicks_isCurrentTickMinusAdmittedAtTick() {
         // Arrange — entry admitted at tick 9000; current tick is 10000
@@ -385,10 +353,6 @@ class EpisodicEntryAssemblerTest {
         // Assert — clamped to zero, never negative
         assertEquals(0L, result.get(0).getAgeTicks());
     }
-
-    // -------------------------------------------------------------------------
-    // Deduplication by originObservationId
-    // -------------------------------------------------------------------------
 
     @Test
     void assemble_dedupeByOriginId_prefersLowerHop() {
@@ -434,10 +398,6 @@ class EpisodicEntryAssemblerTest {
         assertEquals(WorldEventType.RESOURCE_HARVESTED.name(), result.get(0).getEventType());
     }
 
-    // -------------------------------------------------------------------------
-    // Sorting
-    // -------------------------------------------------------------------------
-
     @Test
     void assemble_sortsByWeightDescending() {
         // Arrange — three seed-worthy entries with distinct weights
@@ -455,10 +415,6 @@ class EpisodicEntryAssemblerTest {
         assertEquals("RESOURCE_HARVESTED", result.get(2).getEventType());
     }
 
-    // -------------------------------------------------------------------------
-    // Cap at MAX_EPISODIC_ENTRIES
-    // -------------------------------------------------------------------------
-
     @Test
     void assemble_capsAtMaxEpisodicEntries() {
         // Arrange — more entries than the cap; each with a distinct actor to ensure unique origin ids
@@ -475,10 +431,6 @@ class EpisodicEntryAssemblerTest {
         // Assert
         assertEquals(MAX_EPISODIC_ENTRIES, result.size());
     }
-
-    // -------------------------------------------------------------------------
-    // Structured detail map (detail.* metadata keys)
-    // -------------------------------------------------------------------------
 
     @Test
     void assemble_detailPrefixedMetadataKeys_populateDetailMapOnDto() {
@@ -557,10 +509,6 @@ class EpisodicEntryAssemblerTest {
         assertEquals("1 emerald", detail.get("price"));
     }
 
-    // -------------------------------------------------------------------------
-    // Hop field pass-through
-    // -------------------------------------------------------------------------
-
     @Test
     void assemble_hopFieldMatchesEntryHop() {
         // Arrange — hearsay entry at hop=1
@@ -584,10 +532,6 @@ class EpisodicEntryAssemblerTest {
         // Assert
         assertEquals(0, result.get(0).getHop());
     }
-
-    // -------------------------------------------------------------------------
-    // Position pass-through (pos_x / pos_y / pos_z metadata → pos[])
-    // -------------------------------------------------------------------------
 
     @Test
     void assemble_posMetadataPresent_posPopulatedAsFlooredInts() {
@@ -659,10 +603,6 @@ class EpisodicEntryAssemblerTest {
         // Assert
         assertNull(pos);
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static KnowledgeEntry directEntryWithPos(@Nullable UUID actorId,
                                                      WorldEventType eventType,

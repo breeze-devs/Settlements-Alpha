@@ -21,8 +21,8 @@ import java.util.Map;
  * <p>
  * Must be called on the server thread. {@code DecayingSpatialSiteStore} is not thread-safe:
  * the {@code getMemory} live-view path performs lazy-expiry removal (a mutation) during the read,
- * so calling this off-thread risks concurrent modification. All current consumers — Phase 3
- * day-planner and Phase 4 snapshot assembler — run on the server thread before any worker
+ * so calling this off-thread risks concurrent modification. All current consumers (the
+ * day-planner and snapshot assembler) run on the server thread before any worker
  * hand-off, so no synchronization is introduced here.
  */
 @ServerScope

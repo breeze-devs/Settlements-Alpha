@@ -41,9 +41,7 @@ public final class VillagerTeardownLedger implements ITeardownLedger {
         this.live = new ArrayList<>();
     }
 
-    // -------------------------------------------------------------------------
     // ITeardownLedger — write-through from TeardownScope
-    // -------------------------------------------------------------------------
 
     @Override
     public void add(@Nonnull TeardownObligation obligation) {
@@ -55,9 +53,7 @@ public final class VillagerTeardownLedger implements ITeardownLedger {
         this.live.remove(obligation);
     }
 
-    // -------------------------------------------------------------------------
     // ITeardownLedger — reconciler interface
-    // -------------------------------------------------------------------------
 
     @Override
     public List<LedgerEntry> pendingOrphans() {
@@ -81,9 +77,7 @@ public final class VillagerTeardownLedger implements ITeardownLedger {
         return false;
     }
 
-    // -------------------------------------------------------------------------
     // ITeardownLedger — persistence
-    // -------------------------------------------------------------------------
 
     @Override
     public List<LedgerEntry> snapshot() {

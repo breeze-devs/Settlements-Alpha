@@ -29,7 +29,6 @@ public class JobSiteBlockExistsCondition<T extends Villager> implements IEntityC
 
     @Override
     public boolean test(@Nullable T villager) {
-        // Reset variable before determining if the condition is met
         this.jobSiteBlock = null;
 
         Optional<Location> locationOptional = Optional.ofNullable(villager)

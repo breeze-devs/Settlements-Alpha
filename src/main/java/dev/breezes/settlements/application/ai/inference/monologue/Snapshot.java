@@ -14,7 +14,7 @@ import java.util.Map;
  * sites maps a site-type wire token (e.g. "RIPE_MELON") to a list of [x,y,z] coord arrays.
  * Gson serializes this as {"sites":{...}}, matching SIS's SnapshotDTO exactly.
  * <p>
- * Phase 0 always sends an empty map; Phase 4 populates it from the decaying spatial memory.
+ * An empty map is valid; population comes from the decaying spatial memory via the assembler.
  * SIS requires this field even when empty — it must serialize as {"sites":{}} not be absent.
  */
 @Builder

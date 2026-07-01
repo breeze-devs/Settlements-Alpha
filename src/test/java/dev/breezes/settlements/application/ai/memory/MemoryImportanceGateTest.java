@@ -53,10 +53,8 @@ class MemoryImportanceGateTest {
      * Pins the corrected novelty behavior: a lone observation of a unique type should score
      * novelty=1.5 (the "nothing like this" tier), not 1.0 (the "seen one before" tier).
      * <p>
-     * The pre-P5 bug passed the full drained batch (including the observation itself) as the
-     * recentContext list, so the count of same-type observations was always ≥1 even for a
-     * lone unique observation, yielding novelty=1.0 instead of 1.5 (~33% systematic dampening).
-     * The fix: pass only the *other* observations in the batch (exclude self) as the peer list.
+     * Guards against counting the observation itself as a peer, which would dampen novelty
+     * for unique-type observations.
      */
     @Test
     void score_uniqueObservationScoredAgainstEmptyPeersGetsMaxNovelty() {
@@ -103,8 +101,6 @@ class MemoryImportanceGateTest {
 
         assertTrue(highCharismaScore > lowCharismaScore);
     }
-
-    // --- Self-deed salience bump tests ---
 
     /**
      * A RESOURCE deed at base 1.8 must promote when the actor is the

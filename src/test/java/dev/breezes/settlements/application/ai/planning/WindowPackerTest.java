@@ -39,10 +39,6 @@ class WindowPackerTest {
     private static final BehaviorKey KEY_B = BehaviorKey.of("test_b");
     private static final BehaviorKey KEY_C = BehaviorKey.of("test_c");
 
-    // =========================================================================
-    // Empty / degenerate inputs
-    // =========================================================================
-
     @Test
     void pack_emptyPool_returnsEmpty() {
         // Arrange
@@ -85,10 +81,6 @@ class WindowPackerTest {
         assertTrue(result.isEmpty());
     }
 
-    // =========================================================================
-    // All slots fit within the window
-    // =========================================================================
-
     @RepeatedTest(30)
     void pack_allSlotsFitWithinWindow() {
         // Arrange
@@ -111,10 +103,6 @@ class WindowPackerTest {
                     "slot end " + (slot.startLinear() + slot.durationTicks()) + " must be <= " + end);
         }
     }
-
-    // =========================================================================
-    // Per-key spacing invariant
-    // =========================================================================
 
     @RepeatedTest(30)
     void pack_singleKeyLargeCooldown_consecutiveSlotsAreSpacedByCooldown() {
@@ -178,10 +166,6 @@ class WindowPackerTest {
                 "Slot count " + result.size() + " exceeds max expected " + maxExpected);
     }
 
-    // =========================================================================
-    // Coverage invariant — every key appears at least once for diverse pools
-    // =========================================================================
-
     @RepeatedTest(30)
     void pack_diversePool_everyKeyAppearsAtLeastOnce() {
         // Arrange — window wide enough for all three keys to fit at least once
@@ -235,10 +219,6 @@ class WindowPackerTest {
         }
     }
 
-    // =========================================================================
-    // Priority decrements with each emitted slot
-    // =========================================================================
-
     @RepeatedTest(20)
     void pack_priorityDecreasesWithEachEmittedSlot() {
         // Arrange
@@ -264,10 +244,6 @@ class WindowPackerTest {
         }
     }
 
-    // =========================================================================
-    // Zero-weight exclusion acts as rest-day suppression
-    // =========================================================================
-
     @RepeatedTest(20)
     void pack_mixedWeights_zeroWeightCandidatesNeverAppear() {
         // Arrange — KEY_B has zero weight and must be excluded even when KEY_A's cooldown is active
@@ -286,10 +262,6 @@ class WindowPackerTest {
         assertTrue(result.stream().noneMatch(s -> s.key().equals(KEY_B)),
                 "Zero-weight key must never appear in the output");
     }
-
-    // =========================================================================
-    // Helpers
-    // =========================================================================
 
     private static WindowPacker.PackingCandidate candidate(BehaviorKey key, double weight,
                                                            int durationTicks, CooldownRange cooldown) {

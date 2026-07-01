@@ -6,11 +6,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Centralized bridge into the Dagger graph during the migration away from
- * ad-hoc singletons.
+ * Centralized bridge into the Dagger graph.
  * <p>
  * We keep exactly one static access point so bootstrap-owned objects can reach
- * the application graph without preserving the current service-locator sprawl.
+ * the application graph instead of a service-locator sprawl.
  */
 @CustomLog
 public final class SettlementsDagger {

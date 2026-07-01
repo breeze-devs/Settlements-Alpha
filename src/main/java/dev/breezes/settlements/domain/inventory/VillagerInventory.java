@@ -101,7 +101,7 @@ public class VillagerInventory implements IVillagerEquipment {
         return this.backpack.distinctKinds();
     }
 
-    // --- Bypass helpers (config concern, not the ledger's job) ---
+    // Bypass helpers (config concern, not the ledger's job)
 
     public boolean containsOrBypassed(@Nonnull Item item, boolean bypass) {
         return bypass || this.contains(item);
@@ -114,7 +114,7 @@ public class VillagerInventory implements IVillagerEquipment {
         return this.consume(item, amount) == amount;
     }
 
-    // --- Equipment ---
+    // Equipment
 
     public Optional<ItemStack> getMainHand() {
         return this.getEquipped(EquipmentSlot.MAIN_HAND);

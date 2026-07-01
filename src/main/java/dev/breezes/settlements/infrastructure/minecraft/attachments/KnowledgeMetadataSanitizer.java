@@ -21,10 +21,9 @@ final class KnowledgeMetadataSanitizer {
     /**
      * Exact-match allowed keys for structured observation metadata.
      * <p>
-     * {@code outcome}, {@code reason}, and {@code detail} are included here because they now feed
-     * the LLM episodic memory (SIS owns phrasing). Previously, when phrasing was assembled mod-side,
-     * these fields were not needed at reload time and were silently dropped. Stripping them caused
-     * reloaded memories to lose failure framing and detail context — a live bug this set fixes.
+     * {@code outcome}, {@code reason}, and {@code detail} are allowlisted because they feed the
+     * episodic memory (SIS owns phrasing); dropping them on reload would strip failure framing
+     * and detail context from resurfaced memories.
      * <p>
      * Structured detail sub-fields ({@code "detail.*"}) are allowed via a prefix check in
      * {@link #isAllowedKey} rather than enumerated here, so adding new detail slots requires

@@ -27,10 +27,6 @@ class OreRegenDataManagerTest {
 
     private final OreRegenDataManager manager = new OreRegenDataManager();
 
-    // -------------------------------------------------------------------------
-    // Host filter correctness
-    // -------------------------------------------------------------------------
-
     @Test
     void stone_host_never_returns_deepslate_only_entry() {
         // Arrange
@@ -101,10 +97,6 @@ class OreRegenDataManagerTest {
         assertTrue(deepslateRoll.isPresent(), "Null/blank host must be treated as ANY for DEEPSLATE");
     }
 
-    // -------------------------------------------------------------------------
-    // Empty / no-match table
-    // -------------------------------------------------------------------------
-
     @Test
     void empty_table_returns_empty_optional() {
         // Arrange
@@ -130,10 +122,6 @@ class OreRegenDataManagerTest {
         // Assert
         assertFalse(result.isPresent(), "No compatible entries must yield Optional.empty");
     }
-
-    // -------------------------------------------------------------------------
-    // Validation / error handling
-    // -------------------------------------------------------------------------
 
     @Test
     void invalid_entries_are_skipped_and_valid_ones_loaded() {
@@ -173,10 +161,6 @@ class OreRegenDataManagerTest {
         assertTrue(deepslateResult.isPresent(), "Unknown host must fall back to ANY — eligible for DEEPSLATE");
         assertEquals(OreRegenEntry.HostFilter.ANY, stoneResult.get().getHost());
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static ResourceLocation resource(String name) {
         return ResourceLocation.parse("settlements:settlements/mining/ore_weights/" + name);

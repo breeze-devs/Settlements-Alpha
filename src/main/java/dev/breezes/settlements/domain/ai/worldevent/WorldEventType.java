@@ -176,8 +176,8 @@ public enum WorldEventType {
 
     /**
      * Salient events a villager always self-remembers, bypassing the importance gate.
-     * Backed by {@link #forceRemember} rather than the old unified terminal-deed flag so
-     * sighting types can choose force-remember independently of monologue seed inclusion.
+     * Sighting types can choose force-remember independently of monologue seed
+     * inclusion via {@link #seedWorthy}.
      */
     public boolean isSelfRememberableTerminalEvent() {
         return this.forceRemember;

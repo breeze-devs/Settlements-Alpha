@@ -23,10 +23,6 @@ class SensedSiteReportFoldTest {
     private static final long POS_B = packPos(30, 64, 40);
     private static final long POS_C = packPos(50, 64, 60);
 
-    // -------------------------------------------------------------------------
-    // Rule 1: upsert — presence confirms, max(existing, incoming) timestamp
-    // -------------------------------------------------------------------------
-
     @Test
     void fold_insertsNewPresence_whenSiteAbsent() {
         // Arrange
@@ -68,10 +64,6 @@ class SensedSiteReportFoldTest {
         // Assert: 500 is kept (max semantics).
         assertEquals(500L, store.get(POS_A).lastSeenTick());
     }
-
-    // -------------------------------------------------------------------------
-    // Rule 2: absence-region — deletes inside-region non-presence sites
-    // -------------------------------------------------------------------------
 
     @Test
     void fold_withAbsenceRegion_deletesAbsentSiteInsideRegion() {
@@ -117,10 +109,6 @@ class SensedSiteReportFoldTest {
         assertEquals(101L, store.get(POS_A).lastSeenTick(), "Timestamp must be updated from presences");
     }
 
-    // -------------------------------------------------------------------------
-    // Rule 3: no absence-region → never delete
-    // -------------------------------------------------------------------------
-
     @Test
     void fold_withoutAbsenceRegion_neverDeletesExistingSites() {
         // Arrange: POS_A and POS_C remembered. Report sees only POS_B.
@@ -146,10 +134,6 @@ class SensedSiteReportFoldTest {
         assertNotNull(store.get(POS_C));
     }
 
-    // -------------------------------------------------------------------------
-    // ConfirmedAbsenceRegion membership (bit-math correctness)
-    // -------------------------------------------------------------------------
-
     @Test
     void confirmedAbsenceRegion_containsPositionsInsideBounds() {
         // Arrange: region centered at (0, 64, 0) with radius 10.
@@ -169,10 +153,6 @@ class SensedSiteReportFoldTest {
         assertFalse(region.contains(packPos(0, 70, 0)), "Just outside Y must not be contained");
         assertFalse(region.contains(packPos(0, 64, 11)), "Just outside Z must not be contained");
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private static SensedSiteReport reportWithPresences(long packedPos, long observedTick) {
         Long2LongOpenHashMap presences = new Long2LongOpenHashMap();

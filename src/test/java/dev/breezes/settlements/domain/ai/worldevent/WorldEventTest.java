@@ -8,18 +8,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Unit tests for {@link WorldEvent} builder — verifies that the three new WS3a fields
- * (outcome, reason, detail) are carried correctly and that events built without them
- * leave them null.
+ * Unit tests for the {@link WorldEvent} builder — verifies outcome/reason/detail are carried
+ * correctly and default to null when unset.
  * No Minecraft types are used.
  */
 class WorldEventTest {
 
     private static final UUID ACTOR_ID = UUID.randomUUID();
-
-    // -------------------------------------------------------------------------
-    // New fields round-trip through builder
-    // -------------------------------------------------------------------------
 
     @Test
     void builder_carryOutcome() {
@@ -80,10 +75,6 @@ class WorldEventTest {
         assertEquals("4 bread for 1 emerald", event.getDetail());
     }
 
-    // -------------------------------------------------------------------------
-    // Absent new fields leave nulls — existing events are unaffected
-    // -------------------------------------------------------------------------
-
     @Test
     void builder_outcomeAbsent_isNull() {
         // Arrange + Act — no outcome set
@@ -123,10 +114,6 @@ class WorldEventTest {
         assertEquals("harvest_melon", event.getMetadata());
         assertEquals(EventOutcome.SUCCESS, event.getOutcome());
     }
-
-    // -------------------------------------------------------------------------
-    // Helper
-    // -------------------------------------------------------------------------
 
     /**
      * Returns a builder pre-seeded with the mandatory fields so individual tests

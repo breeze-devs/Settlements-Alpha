@@ -252,10 +252,6 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
 
     /**
      * Tills, clears, and plants a single cell in one motion.
-     * <p>
-     * Earlier this was three separate passes (till / scythe / plant), but to the player the villager
-     * just swings a hoe once. On the animation's impact frame we play the till sound, clear whatever
-     * sits above the cell, ensure the ground is farmland, and seed the resolved crop.
      */
     private BehaviorStep<BaseVillager> createCultivateStep() {
         return TimeBasedStep.<BaseVillager>builder()

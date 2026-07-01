@@ -227,12 +227,10 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         int count = 0;
 
         for (BlockPos offset : EnchantingTableBlock.BOOKSHELF_OFFSETS) {
-            // Early return if we already reached max
             if (count >= MAX_BOOKSHELF_COUNT) {
                 return MAX_BOOKSHELF_COUNT;
             }
 
-            // Check bookshelf existence
             BlockPos bookshelfPos = enchantingTablePosition.offset(offset);
             if (!world.getBlockState(bookshelfPos).is(Blocks.BOOKSHELF)) {
                 continue;

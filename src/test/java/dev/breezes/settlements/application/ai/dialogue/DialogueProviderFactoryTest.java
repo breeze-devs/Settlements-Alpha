@@ -69,10 +69,6 @@ class DialogueProviderFactoryTest {
         assertTrue(provider.isEnabled());
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
     private static DialogueConfig config(String mode, boolean scriptedChatter) {
         return new DialogueConfig(
                 mode,
