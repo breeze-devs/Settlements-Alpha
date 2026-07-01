@@ -102,8 +102,10 @@ public class CommonModEvents {
             event.addListener(component.harvestHoneycombYieldDataManager());
             event.addListener(component.excavateSubstrateDataManager());
             event.addListener(component.tradeCatalogDataManager());
+            event.addListener(component.craftCatalogDataManager());
             event.addListener(component.oreRegenDataManager());
             event.addListener(component.generationDataValidationReloadListener());
+            event.addListener(component.craftCatalogValidationReloadListener());
             event.addListener(component.nbtTemplateResolver());
         });
     }

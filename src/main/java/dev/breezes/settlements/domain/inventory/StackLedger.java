@@ -120,6 +120,23 @@ public class StackLedger implements IVillagerBackpack {
     }
 
     @Override
+    public int consumeMatching(@Nonnull ItemMatch match, int amount) {
+        if (amount <= 0) {
+            return 0;
+        }
+
+        // Collect matching keys first to avoid mutating the map during iteration
+        List<ItemStack> matchingKeys = new ArrayList<>();
+        for (ItemStack key : this.counts.keySet()) {
+            if (ItemMatches.test(match, key)) {
+                matchingKeys.add(key);
+            }
+        }
+
+        return this.drainFromKeys(matchingKeys, amount);
+    }
+
+    @Override
     public List<BackpackEntry> entries() {
         List<BackpackEntry> result = new ArrayList<>(this.counts.size());
         for (Object2IntMap.Entry<ItemStack> entry : this.counts.object2IntEntrySet()) {

@@ -1,0 +1,67 @@
+{
+  "profession": "minecraft:toolsmith",
+  "recipes": [
+    {
+      "id": "iron_pickaxe",
+      "inputs": [
+        { "item": "minecraft:iron_ingot", "count": 3 },
+        { "item": "minecraft:stick", "count": 2 }
+      ],
+      "output": { "item": "minecraft:iron_pickaxe", "count": 1 }
+    },
+    {
+      "id": "iron_axe",
+      "inputs": [
+        { "item": "minecraft:iron_ingot", "count": 3 },
+        { "item": "minecraft:stick", "count": 2 }
+      ],
+      "output": { "item": "minecraft:iron_axe", "count": 1 }
+    },
+    {
+      "id": "iron_shovel",
+      "inputs": [
+        { "item": "minecraft:iron_ingot", "count": 1 },
+        { "item": "minecraft:stick", "count": 2 }
+      ],
+      "output": { "item": "minecraft:iron_shovel", "count": 1 }
+    },
+    {
+      "id": "iron_hoe",
+      "inputs": [
+        { "item": "minecraft:iron_ingot", "count": 2 },
+        { "item": "minecraft:stick", "count": 2 }
+      ],
+      "output": { "item": "minecraft:iron_hoe", "count": 1 }
+    },
+    {
+      "id": "shears",
+      "inputs": [
+        { "item": "minecraft:iron_ingot", "count": 2 }
+      ],
+      "output": { "item": "minecraft:shears", "count": 1 }
+    },
+    {
+      "id": "flint_and_steel",
+      "inputs": [
+        { "item": "minecraft:iron_ingot", "count": 1 },
+        { "item": "minecraft:flint", "count": 1 }
+      ],
+      "output": { "item": "minecraft:flint_and_steel", "count": 1 }
+    },
+    {
+      "id": "fishing_rod",
+      "inputs": [
+        { "item": "minecraft:stick", "count": 3 },
+        { "item": "minecraft:string", "count": 2 }
+      ],
+      "output": { "item": "minecraft:fishing_rod", "count": 1 }
+    },
+    {
+      "id": "bucket",
+      "inputs": [
+        { "item": "minecraft:iron_ingot", "count": 3 }
+      ],
+      "output": { "item": "minecraft:bucket", "count": 1 }
+    }
+  ]
+}

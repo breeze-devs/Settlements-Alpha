@@ -145,6 +145,62 @@
       "dump": {
         "above": 32
       }
+    },
+    {
+      "id": "buy_string",
+      "match": {
+        "item": "minecraft:string"
+      },
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 35
+      }
+    },
+    {
+      "id": "fishing_rod",
+      "match": {
+        "item": "minecraft:fishing_rod"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 10,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "bucket",
+      "match": {
+        "item": "minecraft:bucket"
+      },
+      "offer": {
+        "above": 2,
+        "basePrice": 6,
+        "priceJitter": 1,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "flint_and_steel",
+      "match": {
+        "item": "minecraft:flint_and_steel"
+      },
+      "offer": {
+        "above": 1,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 8
+      }
     }
   ]
 }

@@ -14,6 +14,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CraftGoodsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
@@ -175,6 +176,12 @@ public final class ConfigModule {
     @Singleton
     static CutStoneConfig cutStoneConfig() {
         return ConfigFactory.create(CutStoneConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static CraftGoodsConfig craftGoodsConfig() {
+        return ConfigFactory.create(CraftGoodsConfig.class);
     }
 
     @Provides

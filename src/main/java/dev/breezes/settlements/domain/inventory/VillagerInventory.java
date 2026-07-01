@@ -49,6 +49,19 @@ public class VillagerInventory implements IVillagerEquipment {
         return this.backpack.countMatching(match);
     }
 
+    public int consumeMatching(@Nonnull ItemMatch match, int amount) {
+        if (amount <= 0) {
+            return 0;
+        }
+
+        int consumed = this.backpack.consumeMatching(match, amount);
+        if (consumed > 0) {
+            this.inventoryVersion++;
+        }
+
+        return consumed;
+    }
+
     public int consume(@Nonnull Item item, int amount) {
         if (amount <= 0) {
             return 0;

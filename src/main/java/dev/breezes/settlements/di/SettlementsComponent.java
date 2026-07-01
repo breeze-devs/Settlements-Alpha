@@ -2,14 +2,17 @@ package dev.breezes.settlements.di;
 
 import dagger.Component;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.bootstrap.event.CraftCatalogValidationReloadListener;
 import dev.breezes.settlements.bootstrap.event.GenerationDataValidationReloadListener;
 import dev.breezes.settlements.di.modules.BehaviorServicesModule;
 import dev.breezes.settlements.di.modules.ConfigModule;
+import dev.breezes.settlements.di.modules.CraftingModule;
 import dev.breezes.settlements.di.modules.DataManagerModule;
 import dev.breezes.settlements.di.modules.EconomyModule;
 import dev.breezes.settlements.di.modules.WorldGenerationModule;
 import dev.breezes.settlements.domain.generation.pipeline.GenerationPipeline;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.crafting.CraftCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.SpecializationDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
@@ -33,6 +36,7 @@ import javax.inject.Singleton;
         DataManagerModule.class,
         BehaviorServicesModule.class,
         EconomyModule.class,
+        CraftingModule.class,
         WorldGenerationModule.class,
 })
 public interface SettlementsComponent {
@@ -65,9 +69,13 @@ public interface SettlementsComponent {
 
     TradeCatalogDataManager tradeCatalogDataManager();
 
+    CraftCatalogDataManager craftCatalogDataManager();
+
     OreRegenDataManager oreRegenDataManager();
 
     GenerationDataValidationReloadListener generationDataValidationReloadListener();
+
+    CraftCatalogValidationReloadListener craftCatalogValidationReloadListener();
 
     NbtTemplateResolver nbtTemplateResolver();
 

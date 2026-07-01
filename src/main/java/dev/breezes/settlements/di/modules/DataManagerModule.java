@@ -3,6 +3,7 @@ package dev.breezes.settlements.di.modules;
 import dagger.Module;
 import dagger.Provides;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.crafting.CraftCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.SpecializationDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
@@ -98,6 +99,12 @@ public final class DataManagerModule {
     @Singleton
     static TradeCatalogDataManager tradeCatalogDataManager() {
         return new TradeCatalogDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static CraftCatalogDataManager craftCatalogDataManager() {
+        return new CraftCatalogDataManager();
     }
 
     @Provides

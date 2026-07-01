@@ -246,6 +246,21 @@
       "dump": {
         "above": 64
       }
+    },
+    {
+      "id": "feather",
+      "match": {
+        "item": "minecraft:feather"
+      },
+      "offer": {
+        "above": 8,
+        "basePrice": 2,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 64
+      }
     }
   ]
 }

@@ -1,0 +1,27 @@
+{
+  "profession": "minecraft:cleric",
+  "recipes": [
+    {
+      "id": "glass",
+      "inputs": [
+        { "item": "minecraft:sand", "count": 4 }
+      ],
+      "output": { "item": "minecraft:glass", "count": 4 }
+    },
+    {
+      "id": "glass_bottle",
+      "inputs": [
+        { "item": "minecraft:glass", "count": 3 }
+      ],
+      "output": { "item": "minecraft:glass_bottle", "count": 3 }
+    },
+    {
+      "id": "golden_apple",
+      "inputs": [
+        { "item": "minecraft:gold_ingot", "count": 8 },
+        { "item": "minecraft:apple", "count": 1 }
+      ],
+      "output": { "item": "minecraft:golden_apple", "count": 1 }
+    }
+  ]
+}

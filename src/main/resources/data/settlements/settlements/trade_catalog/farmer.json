@@ -267,6 +267,21 @@
         "buyPricePerUnit": 2,
         "priority": 20
       }
+    },
+    {
+      "id": "sugar",
+      "match": {
+        "item": "minecraft:sugar"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 2,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 128
+      }
     }
   ]
 }

@@ -49,6 +49,14 @@ public interface IVillagerBackpack {
     int consume(ItemStack variant, int amount);
 
     /**
+     * Drains up to {@code amount} across every stored kind matching {@code match}, in stored order.
+     * The symmetric counterpart to {@link #countMatching}, needed to spend tag-based inputs
+     * (e.g. {@code c:wools}) that {@link #consume(Item, int)} cannot address.
+     * Returns the actual number consumed (0..amount).
+     */
+    int consumeMatching(ItemMatch match, int amount);
+
+    /**
      * Adds all items in {@code stack} to the ledger. Always succeeds — capacity is infinite.
      */
     void add(ItemStack stack);

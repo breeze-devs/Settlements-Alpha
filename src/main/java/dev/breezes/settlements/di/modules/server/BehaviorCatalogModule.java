@@ -31,6 +31,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtsh
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipPresenter;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CraftGoodsBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CraftGoodsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemBehavior;
@@ -110,6 +112,7 @@ import dev.breezes.settlements.domain.ai.catalog.WorkIntensity;
 import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.planning.OpportunityRequirement;
+import dev.breezes.settlements.domain.crafting.catalog.CraftCatalogRegistry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
@@ -1100,6 +1103,34 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("stonecutter"))
                         .build())
                 .factory(() -> new CutStoneBehavior(config, support))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry craftGoods(CraftGoodsConfig config,
+                                           BehaviorSupport support,
+                                           CraftCatalogRegistry craftCatalog,
+                                           TradeCatalogRegistry tradeCatalog) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.CRAFT_GOODS)
+                        .displayName("Craft Goods")
+                        .description("Turn raw materials into finished goods at the profession workstation")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.CRAFT_GOODS.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("crafting_table"))
+                        .build())
+                .factory(() -> new CraftGoodsBehavior(config, support, craftCatalog, tradeCatalog))
                 .build();
     }
 

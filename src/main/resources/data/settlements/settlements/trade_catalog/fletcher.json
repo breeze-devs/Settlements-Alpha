@@ -111,6 +111,17 @@
       "dump": {
         "above": 8
       }
+    },
+    {
+      "id": "buy_iron",
+      "match": {
+        "item": "minecraft:iron_ingot"
+      },
+      "restock": {
+        "below": 8,
+        "buyPricePerUnit": 6,
+        "priority": 30
+      }
     }
   ]
 }
