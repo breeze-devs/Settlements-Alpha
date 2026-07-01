@@ -68,6 +68,13 @@ public final class SocialCueRuntimeState {
     private long nextAdmissionScanTick;
 
     /**
+     * Absolute game-tick before which non-bypass cues are suppressed lane-wide, regardless of
+     * their own per-key cooldown so a villager cannot chain cues back-to-back.
+     * Only cues marked {@code bypassLaneRefractory} may still be admitted during this window.
+     */
+    private long laneQuietUntil;
+
+    /**
      * WorldEventBus cursor. Stores the seq of the last event processed by this villager;
      * a consumer drains only events with {@code seq > lastSeenSeq}.
      * Initialized to 0; {@link #seedCursor} skips pre-load history from {@code WorldEventBus.currentSeq()}.
@@ -198,6 +205,24 @@ public final class SocialCueRuntimeState {
     }
 
     /**
+     * Marks this villager's lane as quiet until the given absolute game-tick
+     */
+    public void markLaneQuietUntil(long tick) {
+        this.laneQuietUntil = tick;
+    }
+
+    public boolean isLaneQuiet(long gameTime) {
+        return gameTime < this.laneQuietUntil;
+    }
+
+    /**
+     * Latches a failed fire-chance roll onto the per-key cooldown, without an active cue.
+     */
+    public void recordCueDeclined(String cueKey, long gameTime, long cooldownTicks) {
+        this.cueCooldowns.put(cueKey, gameTime + cooldownTicks);
+    }
+
+    /**
      * Records the absolute game-tick at which the next catalog admission scan becomes due.
      * Called by the arbiter immediately before it runs a scan.
      */
@@ -233,6 +258,7 @@ public final class SocialCueRuntimeState {
         this.cueCooldowns.clear();
         this.targetCooldowns.clear();
         this.nextAdmissionScanTick = 0L;
+        this.laneQuietUntil = 0L;
         this.lastSeenSeq = 0L;
         this.admissionScanInitialized = false;
     }

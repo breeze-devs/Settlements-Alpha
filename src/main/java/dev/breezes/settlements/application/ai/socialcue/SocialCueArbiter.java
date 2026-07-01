@@ -55,6 +55,13 @@ public final class SocialCueArbiter {
      */
     private static final ClockTicks INITIAL_ADMISSION_SPREAD = ClockTicks.seconds(4);
 
+    /**
+     * Minimum gap enforced between spontaneous bubbles on the same villager, regardless of which cue key fires.
+     * <p>
+     * Reactive cues (bypassLaneRefractory) opt out since they answer something external.
+     */
+    private static final ClockTicks LANE_REFRACTORY = ClockTicks.seconds(12);
+
     private final Set<SocialCueCatalogEntry> catalog;
     private final SocialCuePresenter presenter;
     private final EventLaneConfig eventLaneConfig;
@@ -131,6 +138,8 @@ public final class SocialCueArbiter {
                     this.eventLaneConfig.socialCueCooldownJitterFraction(),
                     villager.getRandom().nextDouble());
             runtimeState.finish(gameTime, cooldownTicks);
+            // Set cooldown
+            runtimeState.markLaneQuietUntil(gameTime + LANE_REFRACTORY.getTicks());
         }
     }
 
@@ -140,6 +149,11 @@ public final class SocialCueArbiter {
         for (SocialCueCatalogEntry entry : this.catalog) {
             // Skip if this cue key is on per-key cooldown.
             if (runtimeState.isCueOnCooldown(entry.getKey(), gameTime)) {
+                continue;
+            }
+
+            // Non-bypass cues stay silent for a short window after any cue completes
+            if (!entry.isBypassLaneRefractory() && runtimeState.isLaneQuiet(gameTime)) {
                 continue;
             }
 
@@ -156,6 +170,12 @@ public final class SocialCueArbiter {
 
             // Per-target cooldown: do not greet the same entity on every cycle.
             if (runtimeState.isTargetOnCooldown(uuidFromKey(contextKey.get()), gameTime)) {
+                continue;
+            }
+
+            // Fire-chance roll: thin out cues that are otherwise eligible on every qualifying tick
+            if (entry.getFireChance() < 1.0 && villager.getRandom().nextDouble() >= entry.getFireChance()) {
+                runtimeState.recordCueDeclined(entry.getKey(), gameTime, entry.getCooldown().getTicks());
                 continue;
             }
 

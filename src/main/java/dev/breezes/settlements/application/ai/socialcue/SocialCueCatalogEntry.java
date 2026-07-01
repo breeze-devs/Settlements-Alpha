@@ -38,6 +38,20 @@ public final class SocialCueCatalogEntry {
     private final ClockTicks perTargetCooldown;
 
     /**
+     * Probability in [0, 1] that the cue actually fires once its trigger and all checks pass.
+     * <p>
+     * Defaults to 1.0 (always fires).
+     */
+    @Builder.Default
+    private final double fireChance = 1.0;
+
+    /**
+     * Whether this cue may still be admitted while the villager's lane is in cooldown
+     */
+    @Builder.Default
+    private final boolean bypassLaneRefractory = false;
+
+    /**
      * Script factory invoked by the arbiter once the cue is admitted.
      * Receives the villager so scripts can encode the target in a Gaze step.
      */

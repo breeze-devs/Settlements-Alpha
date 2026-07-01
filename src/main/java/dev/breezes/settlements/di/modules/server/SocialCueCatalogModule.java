@@ -56,6 +56,15 @@ public abstract class SocialCueCatalogModule {
     private static final ClockTicks ZOMBIE_SIGHTED_COOLDOWN = ClockTicks.minutes(2);
     private static final int CLOCK_WINDOW_TICKS = ClockTicks.seconds(30).getTicksAsInt();
 
+    private static final double SITUATIONAL_DIALOGUE_FIRE_CHANCE = 0.33;
+    private static final double ZOMBIE_REACTION_FIRE_CHANCE = 0.5;
+
+    /**
+     * Per-villager spread applied to the occasion window's start tick so a settlement's morning
+     * greetings do not all become eligible on the exact same tick.
+     */
+    private static final ClockTicks WINDOW_JITTER = ClockTicks.minutes(2);
+
     @Multibinds
     abstract Set<SocialCueCatalogEntry> socialCueCatalogEntries();
 
@@ -72,6 +81,7 @@ public abstract class SocialCueCatalogModule {
                 .channel(BehaviorChannel.INTERACTION)
                 .cooldown(ClockTicks.seconds(60))
                 .perTargetCooldown(ClockTicks.minutes(10))
+                .bypassLaneRefractory(true)
                 .scriptFactory(villager -> {
                     Optional<Player> nearestPlayer = villager.getSettlementsBrain()
                             .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
@@ -156,6 +166,8 @@ public abstract class SocialCueCatalogModule {
                 .channel(BehaviorChannel.INTERACTION)
                 .cooldown(ZOMBIE_SIGHTED_COOLDOWN)
                 .perTargetCooldown(ClockTicks.minutes(5))
+                .fireChance(ZOMBIE_REACTION_FIRE_CHANCE)
+                .bypassLaneRefractory(true)
                 .trigger(villager -> {
                     if (!dialogueProvider.isEnabled()) {
                         return Optional.empty();
@@ -173,8 +185,9 @@ public abstract class SocialCueCatalogModule {
     static SocialCueCatalogEntry morningDialogue(DialogueProvider dialogueProvider,
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("morning", Occasion.MORNING,
-                villager -> dialogueProvider.isEnabled() && isCurrentDayTickInWindow(villager, TimeOfDay.AT_07_00.getTick()),
-                dialogueProvider, contextAssembler);
+                villager -> dialogueProvider.isEnabled()
+                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_07_00.getTick(), WINDOW_JITTER.getTicksAsInt()),
+                dialogueProvider, contextAssembler, SITUATIONAL_DIALOGUE_FIRE_CHANCE);
     }
 
     @Provides
@@ -182,8 +195,9 @@ public abstract class SocialCueCatalogModule {
     static SocialCueCatalogEntry eveningDialogue(DialogueProvider dialogueProvider,
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("evening", Occasion.EVENING,
-                villager -> dialogueProvider.isEnabled() && isCurrentDayTickInWindow(villager, TimeOfDay.AT_18_00.getTick()),
-                dialogueProvider, contextAssembler);
+                villager -> dialogueProvider.isEnabled()
+                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_18_00.getTick(), WINDOW_JITTER.getTicksAsInt()),
+                dialogueProvider, contextAssembler, SITUATIONAL_DIALOGUE_FIRE_CHANCE);
     }
 
     @Provides
@@ -192,8 +206,8 @@ public abstract class SocialCueCatalogModule {
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("rest_day", Occasion.REST_DAY,
                 villager -> dialogueProvider.isEnabled() && isRestDay(villager)
-                        && isCurrentDayTickInWindow(villager, TimeOfDay.AT_10_00.getTick()),
-                dialogueProvider, contextAssembler);
+                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_10_00.getTick(), WINDOW_JITTER.getTicksAsInt()),
+                dialogueProvider, contextAssembler, SITUATIONAL_DIALOGUE_FIRE_CHANCE);
     }
 
     /**
@@ -299,6 +313,9 @@ public abstract class SocialCueCatalogModule {
                 // per-target rate limit keyed on it can never match across sessions and would
                 // misleadingly imply a limit that does not actually fire.
                 .perTargetCooldown(ClockTicks.ZERO)
+                // A prompt response to a pending invite from another villager; the receiver's own
+                // quiet period must not suppress it or the invite would silently expire unanswered.
+                .bypassLaneRefractory(true)
                 .trigger(receiver -> {
                     // Pure predicate: check whether an invite exists and return its session id.
                     // No registry mutation happens here.
@@ -414,13 +431,15 @@ public abstract class SocialCueCatalogModule {
                                                           Occasion occasion,
                                                           Predicate<BaseVillager> triggerPredicate,
                                                           DialogueProvider dialogueProvider,
-                                                          AmbientDialogueContextAssembler contextAssembler) {
+                                                          AmbientDialogueContextAssembler contextAssembler,
+                                                          double fireChance) {
         return SocialCueCatalogEntry.builder()
                 .key(key)
                 .channel(BehaviorChannel.SOCIAL)
                 .channel(BehaviorChannel.INTERACTION)
                 .cooldown(SITUATIONAL_DIALOGUE_COOLDOWN)
                 .perTargetCooldown(ClockTicks.ZERO)
+                .fireChance(fireChance)
                 .trigger(villager -> triggerPredicate.test(villager)
                         ? Optional.of(key)
                         : Optional.empty())
@@ -444,9 +463,17 @@ public abstract class SocialCueCatalogModule {
                 .closest(Zombie.class, Zombie::isAlive, villager);
     }
 
-    private static boolean isCurrentDayTickInWindow(BaseVillager villager, int startTick) {
+    /**
+     * Like a fixed-window check, but the window's start tick is shifted by a per-villager offset
+     * in {@code [-jitterTicks, +jitterTicks]} so a whole settlement does not become eligible for
+     * the same occasion cue on the exact same tick.
+     */
+    private static boolean isCurrentDayTickInWindowJittered(BaseVillager villager, int startTick, int jitterTicks) {
+        long offset = Math.floorMod(villager.getUUID().getLeastSignificantBits(), 2L * jitterTicks + 1) - jitterTicks;
+        int jitteredStartTick = Math.floorMod(startTick + (int) offset, TimeOfDay.TICKS_PER_DAY);
+
         int currentTick = Math.floorMod(villager.level().getDayTime(), TimeOfDay.TICKS_PER_DAY);
-        int elapsed = Math.floorMod(currentTick - startTick, TimeOfDay.TICKS_PER_DAY);
+        int elapsed = Math.floorMod(currentTick - jitteredStartTick, TimeOfDay.TICKS_PER_DAY);
         return elapsed < CLOCK_WINDOW_TICKS;
     }
 

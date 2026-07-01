@@ -122,6 +122,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static final int MAX_DISCHARGE_ATTEMPTS = 10;
     private static final float BREED_HUNGER_THRESHOLD = 0.7F;
     private static final int BREED_FOOD_REQUIREMENT = 32;
+    // Chance a bred child is born a nitwit, echoing the profession variety of vanilla natural-spawn villages.
+    private static final float NITWIT_BREED_CHANCE = 0.03F;
     private static final ItemMatch FOODS_MATCH = new ItemMatch.TagRef(Tags.Items.FOODS);
     public static final float PANIC_DAMAGE_THRESHOLD = 0.1F;
 
@@ -383,6 +385,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         child.getGenetics().replaceWith(this.genetics.crossover(partnerGenetics, this.random));
 
         child.finalizeSpawn(level, level.getCurrentDifficultyAt(child.blockPosition()), MobSpawnType.BREEDING, null);
+
+        // Child has a chance to be nitwit
+        if (this.random.nextFloat() < NITWIT_BREED_CHANCE) {
+            child.setVillagerData(child.getVillagerData().setProfession(VillagerProfession.NITWIT));
+        }
+
         return child;
     }
 
