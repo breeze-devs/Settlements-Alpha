@@ -68,10 +68,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.leather
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.DepositSurplusBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.DepositSurplusConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.ManageChestsBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.ManageChestsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensBehavior;
@@ -148,51 +146,26 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry takeFromChest(TakeFromChestConfig config, BehaviorSupport support) {
+    static BehaviorCatalogEntry manageChests(ManageChestsConfig config, BehaviorSupport support) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
-                        .key(BehaviorKey.TAKE_FROM_CHEST)
-                        .displayName("Fetch from Chest")
-                        .description("Fetch a needed item from a nearby village chest")
+                        .key(BehaviorKey.MANAGE_CHESTS)
+                        .displayName("Manage Chests")
+                        .description("Fetch needed items and deposit surplus across nearby village chests")
                         .category(BehaviorCategory.WORK)
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(ClockTicks.seconds(15).asGameTicks())
+                        .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey(BehaviorKey.TAKE_FROM_CHEST.displayNameKey())
+                        .displayNameKey(BehaviorKey.MANAGE_CHESTS.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("chest"))
                         .build())
-                .factory(() -> new TakeFromChestBehavior(config, support))
-                .build();
-    }
-
-    @Provides
-    @IntoSet
-    static BehaviorCatalogEntry depositSurplus(DepositSurplusConfig config, BehaviorSupport support) {
-        return BehaviorCatalogEntry.builder()
-                .descriptor(BehaviorPlanningMetadata.builder()
-                        .key(BehaviorKey.DEPOSIT_SURPLUS)
-                        .displayName("Deposit Surplus")
-                        .description("Deposit surplus inventory into a nearby village chest")
-                        .category(BehaviorCategory.WORK)
-                        .intensity(WorkIntensity.LIGHT)
-                        .requiredChannel(BehaviorChannel.MOVEMENT)
-                        .requiredChannel(BehaviorChannel.INTERACTION)
-                        .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(ClockTicks.seconds(15).asGameTicks())
-                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
-                        .interruptible(true)
-                        .build())
-                .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey(BehaviorKey.DEPOSIT_SURPLUS.displayNameKey())
-                        .iconItemId(ResourceLocation.withDefaultNamespace("chest"))
-                        .build())
-                .factory(() -> new DepositSurplusBehavior(config, support))
+                .factory(() -> new ManageChestsBehavior(config, support))
                 .build();
     }
 

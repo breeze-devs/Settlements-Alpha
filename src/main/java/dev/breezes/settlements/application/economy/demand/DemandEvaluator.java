@@ -38,7 +38,7 @@ public final class DemandEvaluator {
             staticDemandByMatch.put(demand.match(), demand);
             int currentCount = countMatchingInventory(villager, demand.match());
             int shortfall = Math.max(demand.desiredMinCount() - currentCount, 0);
-            if (shortfall <= 0) {
+            if (shortfall == 0) {
                 continue;
             }
 

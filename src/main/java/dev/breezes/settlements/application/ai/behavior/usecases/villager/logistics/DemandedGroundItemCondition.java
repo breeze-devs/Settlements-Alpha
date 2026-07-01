@@ -38,7 +38,6 @@ public class DemandedGroundItemCondition implements IEntityCondition<BaseVillage
     @Override
     public boolean test(@Nullable BaseVillager villager) {
         // Always null the previous result so callers never see stale resolutions
-        // even when the precondition check is throttled (matches ChestWithDemandedItemCondition's contract).
         this.resolution = null;
         if (villager == null) {
             return false;

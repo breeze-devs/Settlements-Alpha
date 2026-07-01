@@ -26,13 +26,18 @@ import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.RepairIronGolemAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
+import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -50,6 +55,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
     private static final float HEAL_AMOUNT = 25.0f;
     private static final int DEFAULT_REPAIR_ATTEMPTS = 1;
+    private static final int BUFF_DURATION_TICKS = ClockTicks.minutes(20).getTicksAsInt();
 
     private enum RepairStage implements StageKey {
         REPAIR_GOLEM,
@@ -117,6 +123,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
                     }
 
                     this.targetToRepair.heal(HEAL_AMOUNT);
+                    this.applyProfessionBuff(ctx.getInitiator());
                     this.shouldRewardExperience = true;
 
                     if (ctx.primaryDeed().isEmpty()) {
@@ -191,6 +198,42 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         this.targetToRepair = null;
         this.remainingRepairAttempts = 0;
         this.shouldRewardExperience = false;
+    }
+
+    /**
+     * Reward the repaired golem with a buff tied to the smith's trade, so a golem kept in service
+     * visibly benefits from its caretaker's specialty. Potency scales with the smith's expertise.
+     */
+    private void applyProfessionBuff(@Nonnull BaseVillager villager) {
+        Holder<MobEffect> effect = resolveBuffEffect(villager.getProfession());
+        if (effect == null) {
+            return;
+        }
+
+        int amplifier = resolveBuffAmplifier(villager.getMinecraftEntity().getExpertise().getLevel());
+        this.targetToRepair.addEffect(new MobEffectInstance(effect, BUFF_DURATION_TICKS, amplifier, false, true));
+    }
+
+    @Nullable
+    private static Holder<MobEffect> resolveBuffEffect(@Nonnull VillagerProfessionKey profession) {
+        // Strings mirror the VillagerProfessionKey constants; only smithing trades repair golems.
+        return switch (profession.id()) {
+            case "armorer" -> MobEffects.DAMAGE_RESISTANCE;
+            case "weaponsmith" -> MobEffects.DAMAGE_BOOST;
+            case "toolsmith" -> MobEffects.MOVEMENT_SPEED;
+            default -> null;
+        };
+    }
+
+    private static int resolveBuffAmplifier(int expertiseLevel) {
+        // Novice/apprentice grant level I, journeyman/expert level II, master level III.
+        if (expertiseLevel >= Expertise.MASTER.getLevel()) {
+            return 2;
+        }
+        if (expertiseLevel >= Expertise.JOURNEYMAN.getLevel()) {
+            return 1;
+        }
+        return 0;
     }
 
     private Optional<IronGolem> findClosestDamagedIronGolem(@Nonnull BaseVillager villager) {

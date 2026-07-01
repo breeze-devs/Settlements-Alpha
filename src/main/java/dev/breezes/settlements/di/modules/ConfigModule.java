@@ -32,8 +32,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.investi
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.DepositSurplusConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.TakeFromChestConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.ManageChestsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
@@ -312,14 +311,8 @@ public final class ConfigModule {
 
     @Provides
     @Singleton
-    static TakeFromChestConfig takeFromChestConfig() {
-        return ConfigFactory.create(TakeFromChestConfig.class);
-    }
-
-    @Provides
-    @Singleton
-    static DepositSurplusConfig depositSurplusConfig() {
-        return ConfigFactory.create(DepositSurplusConfig.class);
+    static ManageChestsConfig manageChestsConfig() {
+        return ConfigFactory.create(ManageChestsConfig.class);
     }
 
     @Provides

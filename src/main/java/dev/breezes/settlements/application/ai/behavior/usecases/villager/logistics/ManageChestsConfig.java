@@ -7,13 +7,13 @@ import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 
-@BehaviorConfig(name = "deposit_surplus", type = ConfigurationType.BEHAVIOR)
-public record DepositSurplusConfig(
+@BehaviorConfig(name = "manage_chests", type = ConfigurationType.BEHAVIOR)
+public record ManageChestsConfig(
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
                 description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_DESCRIPTION,
-                defaultValue = 10,
+                defaultValue = 20,
                 min = 1)
         int preconditionCheckCooldownMin,
 
@@ -21,7 +21,7 @@ public record DepositSurplusConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_IDENTIFIER,
                 description = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MAX_DESCRIPTION,
-                defaultValue = 30,
+                defaultValue = 60,
                 min = 1)
         int preconditionCheckCooldownMax,
 
@@ -29,7 +29,7 @@ public record DepositSurplusConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_IDENTIFIER,
                 description = BehaviorConfigConstants.BEHAVIOR_COOLDOWN_MIN_DESCRIPTION,
-                defaultValue = 10,
+                defaultValue = 30,
                 min = 1)
         int behaviorCooldownMin,
 
@@ -42,7 +42,7 @@ public record DepositSurplusConfig(
         int behaviorCooldownMax
 ) implements BehaviorTimingConfig {
 
-    public DepositSurplusConfig {
+    public ManageChestsConfig {
         BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
                 behaviorCooldownMin, behaviorCooldownMax);
     }

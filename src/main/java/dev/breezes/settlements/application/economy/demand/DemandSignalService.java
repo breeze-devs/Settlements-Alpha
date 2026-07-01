@@ -63,7 +63,7 @@ public final class DemandSignalService {
 
     /**
      * Returns a precondition that passes when the villager holds enough of the matched item.
-     * Emits a demand signal when the villager is short so TakeFromChest/Trade can procure it.
+     * Emits a demand signal when the villager is short so behaviors can procure it.
      * The gate and signal are suppressed entirely when bypassInventoryRequirements is on.
      */
     public ICondition<BaseVillager> requireItem(@Nonnull ItemMatch match,
