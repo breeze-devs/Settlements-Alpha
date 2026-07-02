@@ -1,9 +1,8 @@
-{
+﻿{
   "biome": "minecraft:eroded_badlands",
   "resource_densities": {
     "ARID": 0.8,
     "STONE": 0.6,
     "ORE_BEARING": 0.6
-  },
-  "water_type": null
+  }
 }

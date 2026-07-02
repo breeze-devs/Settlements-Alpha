@@ -4,31 +4,31 @@
     {
       "id": "bread",
       "inputs": [
-        { "item": "minecraft:wheat", "count": 3 }
+        { "match": { "item": "minecraft:wheat" }, "count": 3 }
       ],
       "output": { "item": "minecraft:bread", "count": 1 }
     },
     {
       "id": "cookie",
       "inputs": [
-        { "item": "minecraft:wheat", "count": 2 },
-        { "item": "minecraft:cocoa_beans", "count": 1 }
+        { "match": { "item": "minecraft:wheat" }, "count": 2 },
+        { "match": { "item": "minecraft:cocoa_beans" }, "count": 1 }
       ],
       "output": { "item": "minecraft:cookie", "count": 8 }
     },
     {
       "id": "pumpkin_pie",
       "inputs": [
-        { "item": "minecraft:pumpkin", "count": 1 },
-        { "item": "minecraft:sugar", "count": 1 },
-        { "item": "minecraft:egg", "count": 1 }
+        { "match": { "item": "minecraft:pumpkin" }, "count": 1 },
+        { "match": { "item": "minecraft:sugar" }, "count": 1 },
+        { "match": { "item": "minecraft:egg" }, "count": 1 }
       ],
       "output": { "item": "minecraft:pumpkin_pie", "count": 1 }
     },
     {
       "id": "sugar",
       "inputs": [
-        { "item": "minecraft:sugar_cane", "count": 1 }
+        { "match": { "item": "minecraft:sugar_cane" }, "count": 1 }
       ],
       "output": { "item": "minecraft:sugar", "count": 1 }
     }

@@ -736,7 +736,7 @@ public class PlanRunner {
             }
             runtime.getPendingArrivals().offer(plan);
         });
-        log.behaviorStatus("Submitted async next-plan generation for villager {}: wakeAtAbsoluteTick={}",
+        log.debug("Submitted async next-plan generation for villager {}: wakeAtAbsoluteTick={}",
                 villager.getUUID(), nextWakeAtAbsoluteTick);
     }
 

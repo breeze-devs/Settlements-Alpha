@@ -35,7 +35,7 @@ class CraftCatalogDataManagerTest {
     @Test
     void validJson_parsesItemAndTagInputs() {
         // Arrange & Act
-        this.manager.loadForTest(Map.of(
+        this.manager.reload(Map.of(
                 resource("settlements:craft_catalog/shepherd"),
                 JsonParser.parseString("""
                         {
@@ -43,12 +43,12 @@ class CraftCatalogDataManagerTest {
                           "recipes": [
                             {
                               "id": "string",
-                              "inputs": [ { "tag": "c:wools", "count": 4 } ],
+                              "inputs": [ { "match": { "tag": "c:wools" }, "count": 4 } ],
                               "output": { "item": "minecraft:string", "count": 16 }
                             },
                             {
                               "id": "shears",
-                              "inputs": [ { "item": "minecraft:iron_ingot", "count": 2 } ],
+                              "inputs": [ { "match": { "item": "minecraft:iron_ingot" }, "count": 2 } ],
                               "output": { "item": "minecraft:shears", "count": 1 }
                             }
                           ]
@@ -78,13 +78,13 @@ class CraftCatalogDataManagerTest {
     @Test
     void missingOutput_dropsWholeFile() {
         // Arrange & Act — one malformed recipe fails the whole file (per-file isolation)
-        this.manager.loadForTest(Map.of(
+        this.manager.reload(Map.of(
                 resource("settlements:craft_catalog/invalid"),
                 JsonParser.parseString("""
                         {
                           "profession": "minecraft:farmer",
                           "recipes": [
-                            { "id": "no_output", "inputs": [ { "item": "minecraft:wheat", "count": 3 } ] }
+                            { "id": "no_output", "inputs": [ { "match": { "item": "minecraft:wheat" }, "count": 3 } ] }
                           ]
                         }
                         """)
@@ -104,7 +104,7 @@ class CraftCatalogDataManagerTest {
                   "recipes": [
                     {
                       "id": "bread",
-                      "inputs": [ { "item": "minecraft:wheat", "count": 3 } ],
+                      "inputs": [ { "match": { "item": "minecraft:wheat" }, "count": 3 } ],
                       "output": { "item": "minecraft:bread", "count": 1 }
                     }
                   ]
@@ -114,13 +114,13 @@ class CraftCatalogDataManagerTest {
                 {
                   "profession": "minecraft:cleric",
                   "recipes": [
-                    { "id": "bad", "inputs": [ { "count": 4 } ], "output": { "item": "minecraft:glass", "count": 4 } }
+                    { "id": "bad", "inputs": [ { "match": {}, "count": 4 } ], "output": { "item": "minecraft:glass", "count": 4 } }
                   ]
                 }
                 """));
 
         // Act
-        this.manager.loadForTest(entries);
+        this.manager.reload(entries);
 
         // Assert
         assertFalse(this.manager.recipesFor(VillagerProfessionKey.FARMER).isEmpty());
@@ -130,7 +130,7 @@ class CraftCatalogDataManagerTest {
     @Test
     void defaultResourceFiles_allCraftProfessionsLoad() throws IOException {
         // Arrange & Act
-        this.manager.loadForTest(loadDefaultEntries());
+        this.manager.reload(loadDefaultEntries());
 
         // Assert — guard every shipped craft catalog against parse regressions
         for (String profession : CRAFT_PROFESSION_FILES) {

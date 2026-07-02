@@ -4,7 +4,6 @@ import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.AllArgsConstructor;
-import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -27,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * no bed reservation, and the knowledge transfer is a single atomic write on completion.
  */
 @ServerScope
-@CustomLog
 @AllArgsConstructor(onConstructor_ = @Inject)
 public final class GossipSessionRegistry {
 
@@ -100,8 +98,6 @@ public final class GossipSessionRegistry {
         this.activeSessionsByParticipant.put(receiverId, session);
         this.invitesByReceiver.put(receiverId, invite);
 
-        log.info("GossipSession opened: sessionId={}, initiator={}, receiver={}, origin={}",
-                sessionId, initiatorId, receiverId, entryToShare.getOriginObservationId());
         return session;
     }
 
@@ -153,7 +149,6 @@ public final class GossipSessionRegistry {
         }
 
         session.transitionTo(GossipPhase.ACCEPTED);
-        log.info("GossipSession accepted: sessionId={}, receiver={}", session.getSessionId(), receiverId);
         return session;
     }
 
@@ -181,8 +176,6 @@ public final class GossipSessionRegistry {
         this.activeSessionsByParticipant.remove(session.getInitiatorId());
         this.activeSessionsByParticipant.remove(session.getReceiverId());
         this.invitesByReceiver.remove(session.getReceiverId());
-
-        log.info("GossipSession closed: sessionId={}, phase={}", sessionId, terminalPhase);
     }
 
     /**
@@ -204,7 +197,6 @@ public final class GossipSessionRegistry {
         this.invitesByReceiver.entrySet().removeIf(entry -> {
             if (entry.getValue().expireAtTick() < currentTick) {
                 UUID sessionId = entry.getValue().sessionId();
-                log.debug("GossipSession invite timed out: sessionId={}, receiver={}", sessionId, entry.getKey());
 
                 // Close the session if it hasn't been accepted yet.
                 GossipSession session = this.sessionsById.get(sessionId);
@@ -229,7 +221,6 @@ public final class GossipSessionRegistry {
         }
 
         for (UUID sessionId : expiredSessionIds) {
-            log.debug("GossipSession exceeded max lifetime: sessionId={}", sessionId);
             closeSession(sessionId, GossipPhase.ABORTED);
         }
     }

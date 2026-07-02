@@ -30,7 +30,7 @@ class OreRegenDataManagerTest {
     @Test
     void stone_host_never_returns_deepslate_only_entry() {
         // Arrange
-        manager.loadForTest(Map.of(
+        manager.reload(Map.of(
                 resource("stone_iron"), entry("minecraft:iron_ore", 50.0, "stone"),
                 resource("deepslate_iron"), entry("minecraft:deepslate_iron_ore", 50.0, "deepslate")
         ));
@@ -48,7 +48,7 @@ class OreRegenDataManagerTest {
     @Test
     void deepslate_host_never_returns_stone_only_entry() {
         // Arrange
-        manager.loadForTest(Map.of(
+        manager.reload(Map.of(
                 resource("stone_iron"), entry("minecraft:iron_ore", 50.0, "stone"),
                 resource("deepslate_iron"), entry("minecraft:deepslate_iron_ore", 50.0, "deepslate")
         ));
@@ -66,7 +66,7 @@ class OreRegenDataManagerTest {
     @Test
     void any_host_entry_is_eligible_for_both_stone_and_deepslate() {
         // Arrange — only an "any" entry in the table
-        manager.loadForTest(Map.of(
+        manager.reload(Map.of(
                 resource("coal_any"), entry("minecraft:coal_ore", 10.0, "any")
         ));
 
@@ -77,14 +77,14 @@ class OreRegenDataManagerTest {
         // Assert
         assertTrue(stoneRoll.isPresent(), "ANY entry must be eligible for STONE host");
         assertTrue(deepslateRoll.isPresent(), "ANY entry must be eligible for DEEPSLATE host");
-        assertEquals("minecraft:coal_ore", stoneRoll.get().getBlockId());
-        assertEquals("minecraft:coal_ore", deepslateRoll.get().getBlockId());
+        assertEquals(ResourceLocation.parse("minecraft:coal_ore"), stoneRoll.get().getBlockId());
+        assertEquals(ResourceLocation.parse("minecraft:coal_ore"), deepslateRoll.get().getBlockId());
     }
 
     @Test
     void blank_host_in_json_defaults_to_any_and_matches_both_hosts() {
-        // Arrange — omit the host field (null raw host)
-        manager.loadForTest(Map.of(
+        // Arrange — omit the host field (absent host)
+        manager.reload(Map.of(
                 resource("iron_no_host"), entry("minecraft:iron_ore", 10.0, null)
         ));
 
@@ -93,14 +93,14 @@ class OreRegenDataManagerTest {
         Optional<OreRegenEntry> deepslateRoll = manager.rollForHost(DormantOreBlock.Host.DEEPSLATE);
 
         // Assert
-        assertTrue(stoneRoll.isPresent(), "Null/blank host must be treated as ANY for STONE");
-        assertTrue(deepslateRoll.isPresent(), "Null/blank host must be treated as ANY for DEEPSLATE");
+        assertTrue(stoneRoll.isPresent(), "Absent host must be treated as ANY for STONE");
+        assertTrue(deepslateRoll.isPresent(), "Absent host must be treated as ANY for DEEPSLATE");
     }
 
     @Test
     void empty_table_returns_empty_optional() {
         // Arrange
-        manager.loadForTest(Map.of());
+        manager.reload(Map.of());
 
         // Act
         Optional<OreRegenEntry> result = manager.rollForHost(DormantOreBlock.Host.STONE);
@@ -112,7 +112,7 @@ class OreRegenDataManagerTest {
     @Test
     void no_compatible_entries_for_host_returns_empty_optional() {
         // Arrange — only deepslate entries, request stone
-        manager.loadForTest(Map.of(
+        manager.reload(Map.of(
                 resource("deepslate_coal"), entry("minecraft:deepslate_coal_ore", 30.0, "deepslate")
         ));
 
@@ -126,7 +126,7 @@ class OreRegenDataManagerTest {
     @Test
     void invalid_entries_are_skipped_and_valid_ones_loaded() {
         // Arrange — one missing block id, one zero weight, one valid
-        manager.loadForTest(Map.of(
+        manager.reload(Map.of(
                 resource("missing_block"), JsonParser.parseString("""
                         { "weight": 10, "host": "stone" }
                         """),
@@ -140,26 +140,22 @@ class OreRegenDataManagerTest {
 
         // Assert
         assertEquals(1, manager.getAllEntries().size(), "Only the valid entry should be loaded");
-        assertEquals("minecraft:coal_ore", manager.getAllEntries().getFirst().getBlockId());
+        assertEquals(ResourceLocation.parse("minecraft:coal_ore"), manager.getAllEntries().getFirst().getBlockId());
     }
 
     @Test
-    void unknown_host_string_is_normalised_to_any() {
+    void unknown_host_string_rejects_whole_entry() {
         // Arrange
-        manager.loadForTest(Map.of(
+        manager.reload(Map.of(
                 resource("weird_host"), JsonParser.parseString("""
                         { "block": "minecraft:coal_ore", "weight": 10, "host": "nether" }
                         """)
         ));
 
-        // Act — an "any"-normalised entry is eligible for both hosts
-        Optional<OreRegenEntry> stoneResult = manager.rollForHost(DormantOreBlock.Host.STONE);
-        Optional<OreRegenEntry> deepslateResult = manager.rollForHost(DormantOreBlock.Host.DEEPSLATE);
-
-        // Assert
-        assertTrue(stoneResult.isPresent(), "Unknown host must fall back to ANY — eligible for STONE");
-        assertTrue(deepslateResult.isPresent(), "Unknown host must fall back to ANY — eligible for DEEPSLATE");
-        assertEquals(OreRegenEntry.HostFilter.ANY, stoneResult.get().getHost());
+        // Assert — an unknown host value fails the whole entry under strict decode
+        assertTrue(manager.getAllEntries().isEmpty(), "Unknown host must reject the whole entry");
+        assertFalse(manager.rollForHost(DormantOreBlock.Host.STONE).isPresent());
+        assertFalse(manager.rollForHost(DormantOreBlock.Host.DEEPSLATE).isPresent());
     }
 
     private static ResourceLocation resource(String name) {
@@ -182,7 +178,7 @@ class OreRegenDataManagerTest {
         return IntStream.range(0, times)
                 .mapToObj(i -> manager.rollForHost(host))
                 .filter(Optional::isPresent)
-                .map(o -> o.get().getBlockId())
+                .map(o -> o.get().getBlockId().toString())
                 .collect(Collectors.toSet());
     }
 

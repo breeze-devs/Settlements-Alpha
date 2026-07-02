@@ -1,8 +1,9 @@
-{
+﻿{
   "biome": "minecraft:snowy_plains",
   "resource_densities": {
     "FROZEN": 0.9
   },
-  "water_type": null,
-  "template_tags": ["snowy"]
+  "template_tags": [
+    "snowy"
+  ]
 }

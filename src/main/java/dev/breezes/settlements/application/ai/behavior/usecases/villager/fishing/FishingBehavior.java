@@ -482,13 +482,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
             return Optional.empty();
         }
 
-        ResourceLocation itemId = ResourceLocation.tryParse(catchEntry.getItemId());
-        if (itemId == null) {
-            log.warn("Invalid fish catch item id '{}'", catchEntry.getItemId());
-            return Optional.empty();
-        }
-
-        return BuiltInRegistries.ITEM.getOptional(itemId)
+        return BuiltInRegistries.ITEM.getOptional(catchEntry.getItemId())
                 .filter(item -> item != Items.AIR)
                 .map(ItemStack::new);
     }

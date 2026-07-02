@@ -4,26 +4,26 @@
     {
       "id": "arrow",
       "inputs": [
-        { "item": "minecraft:flint", "count": 1 },
-        { "item": "minecraft:stick", "count": 1 },
-        { "item": "minecraft:feather", "count": 1 }
+        { "match": { "item": "minecraft:flint" }, "count": 1 },
+        { "match": { "item": "minecraft:stick" }, "count": 1 },
+        { "match": { "item": "minecraft:feather" }, "count": 1 }
       ],
       "output": { "item": "minecraft:arrow", "count": 8 }
     },
     {
       "id": "bow",
       "inputs": [
-        { "item": "minecraft:stick", "count": 3 },
-        { "item": "minecraft:string", "count": 3 }
+        { "match": { "item": "minecraft:stick" }, "count": 3 },
+        { "match": { "item": "minecraft:string" }, "count": 3 }
       ],
       "output": { "item": "minecraft:bow", "count": 1 }
     },
     {
       "id": "crossbow",
       "inputs": [
-        { "item": "minecraft:stick", "count": 3 },
-        { "item": "minecraft:iron_ingot", "count": 1 },
-        { "item": "minecraft:string", "count": 2 }
+        { "match": { "item": "minecraft:stick" }, "count": 3 },
+        { "match": { "item": "minecraft:iron_ingot" }, "count": 1 },
+        { "match": { "item": "minecraft:string" }, "count": 2 }
       ],
       "output": { "item": "minecraft:crossbow", "count": 1 }
     }

@@ -96,6 +96,36 @@
       "dump": {
         "above": 128
       }
+    },
+    {
+      "id": "white_bed",
+      "match": {
+        "item": "minecraft:white_bed"
+      },
+      "offer": {
+        "above": 2,
+        "basePrice": 4,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "white_carpet",
+      "match": {
+        "item": "minecraft:white_carpet"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 2,
+        "priceJitter": 0,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 128
+      }
     }
   ]
 }

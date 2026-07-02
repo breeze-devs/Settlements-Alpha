@@ -1,30 +1,24 @@
 package dev.breezes.settlements.infrastructure.minecraft.data.fishing;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import dev.breezes.settlements.domain.fishing.FishCatchEntry;
+import dev.breezes.settlements.domain.fishing.FishCatchEntryCodec;
+import dev.breezes.settlements.infrastructure.minecraft.data.framework.CodecJsonDataManager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
-import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class FishCatchDataManager extends SimpleJsonResourceReloadListener {
+public class FishCatchDataManager extends CodecJsonDataManager<FishCatchEntry> {
 
     private static final String DIRECTORY_PATH = "settlements/fishing/catches";
-
-    private static final Gson GSON = new GsonBuilder().create();
 
     private List<FishCatchEntry> catches = List.of();
     private double[] cumulativeWeights = new double[0];
@@ -32,45 +26,23 @@ public class FishCatchDataManager extends SimpleJsonResourceReloadListener {
 
     @Inject
     public FishCatchDataManager() {
-        super(GSON, DIRECTORY_PATH);
+        super(DIRECTORY_PATH, FishCatchEntryCodec.CODEC);
     }
 
     @Override
-    protected void apply(@Nonnull Map<ResourceLocation, JsonElement> entries,
-                         @Nonnull ResourceManager resourceManager,
-                         @Nonnull ProfilerFiller profiler) {
-        Map<String, FishCatchEntry> parsed = new HashMap<>();
-        int errorCount = 0;
+    protected String label() {
+        return "fish catch entry";
+    }
 
-        for (Map.Entry<ResourceLocation, JsonElement> entry : entries.entrySet()) {
-            ResourceLocation fileId = entry.getKey();
-            JsonElement json = entry.getValue();
-
-            try {
-                FishCatchEntry data = GSON.fromJson(json, FishCatchEntry.class);
-                if (data == null || data.getEntityId() == null || data.getItemId() == null) {
-                    log.warn("Invalid fish catch entry in '{}': missing required fields", fileId);
-                    errorCount++;
-                    continue;
-                }
-                if (data.getWeight() <= 0) {
-                    log.warn("Invalid fish catch entry in '{}': weight must be > 0", fileId);
-                    errorCount++;
-                    continue;
-                }
-
-                if (parsed.containsKey(data.getEntityId())) {
-                    log.warn("Duplicate fish catch entity '{}' from file '{}', overwriting",
-                            data.getEntityId(), fileId);
-                }
-                parsed.put(data.getEntityId(), data);
-            } catch (Exception e) {
-                log.warn("Failed to parse fish catch from file '{}': {}", fileId, e.getMessage());
-                errorCount++;
-            }
+    @Override
+    protected void onReloaded(@Nonnull Map<ResourceLocation, FishCatchEntry> values) {
+        // A later file overrides an earlier one that declares the same catch entity
+        Map<ResourceLocation, FishCatchEntry> deduplicatedByEntity = new LinkedHashMap<>();
+        for (FishCatchEntry entry : values.values()) {
+            deduplicatedByEntity.put(entry.getEntityId(), entry);
         }
 
-        List<FishCatchEntry> loadedCatches = List.copyOf(parsed.values());
+        List<FishCatchEntry> loadedCatches = List.copyOf(deduplicatedByEntity.values());
         double[] loadedCumulativeWeights = new double[loadedCatches.size()];
         double runningWeight = 0.0;
 
@@ -82,7 +54,6 @@ public class FishCatchDataManager extends SimpleJsonResourceReloadListener {
         this.catches = loadedCatches;
         this.cumulativeWeights = loadedCumulativeWeights;
         this.totalWeight = runningWeight;
-        log.info("Loaded {} fish catch entries ({} errors)", parsed.size(), errorCount);
     }
 
     public List<FishCatchEntry> getAllEntries() {

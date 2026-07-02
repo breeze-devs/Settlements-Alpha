@@ -136,6 +136,21 @@
       "dump": {
         "above": 16
       }
+    },
+    {
+      "id": "golden_apple",
+      "match": {
+        "item": "minecraft:golden_apple"
+      },
+      "offer": {
+        "above": 2,
+        "basePrice": 16,
+        "priceJitter": 4,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 16
+      }
     }
   ]
 }

@@ -50,6 +50,12 @@ public final class BuildingDefinition {
         if (npcCount < 0) {
             throw new IllegalArgumentException("npcCount must be >= 0");
         }
+        if (zoneTierPreference.minInclusive() < 0 || zoneTierPreference.maxInclusive() > 4) {
+            throw new IllegalArgumentException("zone tier bounds must be within 0-4");
+        }
+        if (zoneTierPreference.minInclusive() > zoneTierPreference.maxInclusive()) {
+            throw new IllegalArgumentException("zone_tier_min must be <= zone_tier_max");
+        }
         this.id = id;
         this.displayInfo = displayInfo;
         this.traitAffinities = Map.copyOf(traitAffinities);

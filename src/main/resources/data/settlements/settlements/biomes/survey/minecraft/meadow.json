@@ -1,7 +1,6 @@
-{
+﻿{
   "biome": "minecraft:meadow",
   "resource_densities": {
     "FLORAL": 0.7
-  },
-  "water_type": null
+  }
 }

@@ -4,22 +4,22 @@
     {
       "id": "string",
       "inputs": [
-        { "tag": "c:wools", "count": 4 }
+        { "match": { "tag": "c:wools" }, "count": 4 }
       ],
       "output": { "item": "minecraft:string", "count": 16 }
     },
     {
       "id": "white_bed",
       "inputs": [
-        { "tag": "c:wools", "count": 3 },
-        { "tag": "minecraft:planks", "count": 3 }
+        { "match": { "tag": "c:wools" }, "count": 3 },
+        { "match": { "tag": "minecraft:planks" }, "count": 3 }
       ],
       "output": { "item": "minecraft:white_bed", "count": 1 }
     },
     {
       "id": "white_carpet",
       "inputs": [
-        { "tag": "c:wools", "count": 2 }
+        { "match": { "tag": "c:wools" }, "count": 2 }
       ],
       "output": { "item": "minecraft:white_carpet", "count": 3 }
     }

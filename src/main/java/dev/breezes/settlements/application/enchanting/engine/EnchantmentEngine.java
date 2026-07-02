@@ -71,9 +71,9 @@ public class EnchantmentEngine {
             int cost = selected.costForLevel(level);
 
             Optional<Holder.Reference<Enchantment>> enchantmentHolder =
-                    PoolFilter.resolveEnchantment(selected.getEnchantmentId(), registryAccess);
+                    PoolFilter.resolveEnchantment(selected.enchantmentId(), registryAccess);
             if (enchantmentHolder.isEmpty()) {
-                log.behaviorWarn("Could not resolve enchantment '{}', skipping", selected.getEnchantmentId());
+                log.behaviorWarn("Could not resolve enchantment '{}', skipping", selected.enchantmentId());
                 rollsPerformed++;
                 continue;
             }
@@ -87,7 +87,7 @@ public class EnchantmentEngine {
             pool = PoolFilter.filter(pool, result, appliedThisSession, expertise, remainingBudget, registryAccess);
 
             log.behaviorStatus("Roll {}: {} lv.{} (cost={}, remaining={}, pool={})",
-                    rollsPerformed, selected.getEnchantmentId(), level, cost, remainingBudget, pool.size());
+                    rollsPerformed, selected.enchantmentId(), level, cost, remainingBudget, pool.size());
         }
 
         result.set(DataComponentRegistry.VILLAGER_ENCHANT_ATTEMPTED.get(), true);

@@ -1,7 +1,6 @@
-{
+﻿{
   "biome": "minecraft:dark_forest",
   "resource_densities": {
     "LUMBER": 0.9
-  },
-  "water_type": null
+  }
 }

@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nullable;
@@ -15,6 +16,7 @@ import java.util.Set;
  */
 @Builder
 @Getter
+@ToString
 public final class TemplateMetadata {
 
     private final String id;

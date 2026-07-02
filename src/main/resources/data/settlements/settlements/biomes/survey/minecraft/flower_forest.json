@@ -1,8 +1,7 @@
-{
+﻿{
   "biome": "minecraft:flower_forest",
   "resource_densities": {
     "LUMBER": 0.6,
     "FLORAL": 0.8
-  },
-  "water_type": null
+  }
 }

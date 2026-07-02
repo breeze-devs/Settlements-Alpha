@@ -77,25 +77,11 @@ public class CommonModEvents {
             log.info("Registering Dagger-managed data reload listeners");
 
             // These listeners must come from the root component because AddReloadListenerEvent
-            // fires before the server subcomponent exists for a given world/session.
-            event.addListener(component.enchantmentCostDataManager());
-            event.addListener(component.specializationDataManager());
-            event.addListener(component.fishCatchDataManager());
-            event.addListener(component.biomeSurveyDataManager());
-            event.addListener(component.traitDefinitionDataManager());
-            event.addListener(component.traitScorerDataManager());
-            event.addListener(component.historyEventDataManager());
-            event.addListener(component.buildingDefinitionDataManager());
-            event.addListener(component.collectHoneyYieldDataManager());
-            event.addListener(component.cultivationCropDataManager());
-            event.addListener(component.harvestHoneycombYieldDataManager());
-            event.addListener(component.excavateSubstrateDataManager());
-            event.addListener(component.tradeCatalogDataManager());
-            event.addListener(component.craftCatalogDataManager());
-            event.addListener(component.oreRegenDataManager());
-            event.addListener(component.generationDataValidationReloadListener());
-            event.addListener(component.craftCatalogValidationReloadListener());
-            event.addListener(component.nbtTemplateResolver());
+            // fires before the server subcomponent exists for a given world/session. Producers are
+            // drained fully before post-listeners so validators always observe populated managers;
+            // the Dagger multibinding means a newly added listener is wired here automatically.
+            component.dataReloadListeners().forEach(event::addListener);
+            component.postReloadListeners().forEach(event::addListener);
         });
     }
 

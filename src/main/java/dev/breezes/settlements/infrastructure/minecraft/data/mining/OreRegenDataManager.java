@@ -1,18 +1,13 @@
 package dev.breezes.settlements.infrastructure.minecraft.data.mining;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.annotations.SerializedName;
 import dev.breezes.settlements.domain.mining.OreRegenEntry;
+import dev.breezes.settlements.domain.mining.OreRegenEntryCodec;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.DormantOreBlock;
+import dev.breezes.settlements.infrastructure.minecraft.data.framework.CodecJsonDataManager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,15 +18,13 @@ import javax.inject.Inject;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 @CustomLog
-public class OreRegenDataManager extends SimpleJsonResourceReloadListener {
+public class OreRegenDataManager extends CodecJsonDataManager<OreRegenEntry> {
 
     private static final String DIRECTORY_PATH = "settlements/mining/ore_weights";
-    private static final Gson GSON = new GsonBuilder().create();
 
     private List<OreRegenEntry> entries = List.of();
     private Map<OreRegenEntry, Double> stoneCandidates = Map.of();
@@ -39,62 +32,25 @@ public class OreRegenDataManager extends SimpleJsonResourceReloadListener {
 
     @Inject
     public OreRegenDataManager() {
-        super(GSON, DIRECTORY_PATH);
+        super(DIRECTORY_PATH, OreRegenEntryCodec.CODEC);
     }
 
     @Override
-    protected void apply(@Nonnull Map<ResourceLocation, JsonElement> resources,
-                         @Nullable ResourceManager resourceManager,
-                         @Nullable ProfilerFiller profiler) {
-        Map<String, OreRegenEntry> parsed = new LinkedHashMap<>();
-        int errorCount = 0;
-
-        for (Map.Entry<ResourceLocation, JsonElement> resource : resources.entrySet()) {
-            ResourceLocation fileId = resource.getKey();
-            try {
-                RawOreRegenEntry raw = GSON.fromJson(resource.getValue(), RawOreRegenEntry.class);
-
-                if (raw == null || raw.blockId == null || raw.blockId.isBlank()) {
-                    log.warn("Skipping ore regen entry '{}': missing required 'block' field", fileId);
-                    errorCount++;
-                    continue;
-                }
-                if (raw.weight <= 0) {
-                    log.warn("Skipping ore regen entry '{}': weight must be > 0, got {}", fileId, raw.weight);
-                    errorCount++;
-                    continue;
-                }
-
-                OreRegenEntry.HostFilter hostFilter = parseHostFilter(raw.rawHost, fileId.toString());
-                OreRegenEntry normalised = OreRegenEntry.builder()
-                        .blockId(raw.blockId)
-                        .weight(raw.weight)
-                        .host(hostFilter)
-                        .build();
-
-                if (parsed.containsKey(normalised.getBlockId())) {
-                    log.warn("Duplicate ore regen entry for block '{}' in file '{}', overwriting",
-                            normalised.getBlockId(), fileId);
-                }
-                parsed.put(normalised.getBlockId(), normalised);
-            } catch (Exception e) {
-                log.warn("Failed to parse ore regen entry from file '{}': {}", fileId, e.getMessage());
-                errorCount++;
-            }
-        }
-
-        this.entries = List.copyOf(parsed.values());
-        this.stoneCandidates = buildCandidatesForHost(DormantOreBlock.Host.STONE, this.entries);
-        this.deepslateCandidates = buildCandidatesForHost(DormantOreBlock.Host.DEEPSLATE, this.entries);
-        log.info("Loaded {} ore regen entries ({} errors)", this.entries.size(), errorCount);
+    protected String label() {
+        return "ore regen entry";
     }
 
-    /**
-     * Exposed so unit tests can load JSON directly without a running Minecraft server.
-     * Mirrors the ExcavateSubstrateYieldDataManager pattern.
-     */
-    public void loadForTest(@Nonnull Map<ResourceLocation, JsonElement> resources) {
-        this.apply(resources, null, null);
+    @Override
+    protected void onReloaded(@Nonnull Map<ResourceLocation, OreRegenEntry> values) {
+        // A later file overrides an earlier one that declares the same block
+        Map<ResourceLocation, OreRegenEntry> deduplicatedByBlock = new LinkedHashMap<>();
+        for (OreRegenEntry entry : values.values()) {
+            deduplicatedByBlock.put(entry.getBlockId(), entry);
+        }
+
+        this.entries = List.copyOf(deduplicatedByBlock.values());
+        this.stoneCandidates = buildCandidatesForHost(DormantOreBlock.Host.STONE, this.entries);
+        this.deepslateCandidates = buildCandidatesForHost(DormantOreBlock.Host.DEEPSLATE, this.entries);
     }
 
     /**
@@ -129,15 +85,7 @@ public class OreRegenDataManager extends SimpleJsonResourceReloadListener {
      * @return the resolved block state, or empty if the block no longer exists
      */
     public Optional<BlockState> resolveBlockState(@Nonnull OreRegenEntry entry) {
-        ResourceLocation blockLocation;
-        try {
-            blockLocation = ResourceLocation.parse(entry.getBlockId());
-        } catch (Exception e) {
-            log.warn("Ore regen entry has an unparseable block id '{}': {}", entry.getBlockId(), e.getMessage());
-            return Optional.empty();
-        }
-
-        Block block = BuiltInRegistries.BLOCK.get(blockLocation);
+        Block block = BuiltInRegistries.BLOCK.get(entry.getBlockId());
         // BuiltInRegistries.BLOCK.get returns air for unknown ids, just like ITEM.
         if (block == Blocks.AIR) {
             log.warn("Ore regen entry references block '{}' which no longer resolves — skipping", entry.getBlockId());
@@ -177,37 +125,8 @@ public class OreRegenDataManager extends SimpleJsonResourceReloadListener {
         };
     }
 
-    private static OreRegenEntry.HostFilter parseHostFilter(@Nullable String rawHost, @Nonnull String fileId) {
-        if (rawHost == null || rawHost.isBlank()) {
-            return OreRegenEntry.HostFilter.ANY;
-        }
-
-        return switch (rawHost.trim().toLowerCase(Locale.ROOT)) {
-            case "stone" -> OreRegenEntry.HostFilter.STONE;
-            case "deepslate" -> OreRegenEntry.HostFilter.DEEPSLATE;
-            case "any" -> OreRegenEntry.HostFilter.ANY;
-            default -> {
-                log.warn("Unknown host filter '{}' in ore regen entry '{}' — defaulting to ANY", rawHost, fileId);
-                yield OreRegenEntry.HostFilter.ANY;
-            }
-        };
-    }
-
     public List<OreRegenEntry> getAllEntries() {
         return this.entries;
-    }
-
-    private static class RawOreRegenEntry {
-
-        @SerializedName("block")
-        private String blockId;
-
-        @SerializedName("weight")
-        private double weight;
-
-        @SerializedName("host")
-        private String rawHost;
-
     }
 
 }

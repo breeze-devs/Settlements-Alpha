@@ -27,7 +27,7 @@ class GenerationDataValidatorTest {
 
     @BeforeEach
     void resetManagers() {
-        this.traitManager.loadForTest(Map.of(
+        this.traitManager.reload(Map.of(
                 resource("settlements:traits/definitions/farming"), JsonParser.parseString("""
                         {
                           "id": "settlements:settlement_traits/farming",
@@ -43,11 +43,11 @@ class GenerationDataValidatorTest {
 
     @Test
     void unknown_scorer_trait_is_excluded_from_active_registry() {
-        this.scorerManager.loadForTest(Map.of(
+        this.scorerManager.reload(Map.of(
                 resource("settlements:traits/scoring/farming"), scorerJson("settlements:settlement_traits/farming"),
                 resource("settlements:traits/scoring/unknown"), scorerJson("settlements:settlement_traits/unknown")
         ));
-        this.buildingManager.loadForTest(Map.of());
+        this.buildingManager.reload(Map.of());
 
         this.validator.validateAndApply(this.traitManager, this.scorerManager, this.buildingManager);
 
@@ -58,8 +58,8 @@ class GenerationDataValidatorTest {
 
     @Test
     void building_with_unknown_trait_is_excluded_from_active_registry() {
-        this.scorerManager.loadForTest(Map.of());
-        this.buildingManager.loadForTest(Map.of(
+        this.scorerManager.reload(Map.of());
+        this.buildingManager.reload(Map.of(
                 resource("settlements:buildings/definitions/valid"), JsonParser.parseString("""
                         {
                           "id": "settlements:building_definitions/valid_building",
@@ -75,7 +75,6 @@ class GenerationDataValidatorTest {
                           "minimum_rank": "FLAVOR",
                           "footprint_width": 2,
                           "footprint_depth": 2,
-                          "npc_profession": null,
                           "npc_count": 0
                         }
                         """),
@@ -94,7 +93,6 @@ class GenerationDataValidatorTest {
                           "minimum_rank": "FLAVOR",
                           "footprint_width": 2,
                           "footprint_depth": 2,
-                          "npc_profession": null,
                           "npc_count": 0
                         }
                         """)

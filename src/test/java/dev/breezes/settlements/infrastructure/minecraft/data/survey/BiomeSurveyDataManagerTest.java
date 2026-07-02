@@ -17,17 +17,16 @@ class BiomeSurveyDataManagerTest {
     @Test
     void parsesTemplateTagsWhenPresent() {
         BiomeSurveyDataManager manager = new BiomeSurveyDataManager();
-        manager.apply(Map.of(
+        manager.reload(Map.of(
                 ResourceLocation.parse("settlements:biomes/survey/minecraft/taiga"),
                 json("""
                         {
                           "biome": "minecraft:taiga",
                           "resource_densities": {"LUMBER": 0.6},
-                          "water_type": null,
                           "template_tags": ["taiga", "cold"]
                         }
                         """)
-        ), null, null);
+        ));
 
         assertEquals(Set.of("taiga", "cold"), manager.lookup(BiomeId.of("minecraft:taiga")).templateTags());
     }
@@ -35,7 +34,7 @@ class BiomeSurveyDataManagerTest {
     @Test
     void missingSurveyUsesDefaultEmptyTemplateTags() {
         BiomeSurveyDataManager manager = new BiomeSurveyDataManager();
-        manager.apply(Map.of(), null, null);
+        manager.reload(Map.of());
 
         assertTrue(manager.lookup(BiomeId.of("minecraft:not_real")).templateTags().isEmpty());
     }

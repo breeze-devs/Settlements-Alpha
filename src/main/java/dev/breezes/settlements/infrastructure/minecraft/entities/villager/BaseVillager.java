@@ -729,8 +729,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             brain.setDefaultActivity(Activity.IDLE);
             brain.setActiveActivityIfPossible(Activity.IDLE);
         }
-
-        log.info("Registered plan-runner driven behavior orchestration");
     }
 
     private void registerBabyBrainGoals(Brain<Villager> brain,

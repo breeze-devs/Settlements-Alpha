@@ -1,9 +1,8 @@
-{
+﻿{
   "biome": "minecraft:badlands",
   "resource_densities": {
     "ARID": 0.7,
     "STONE": 0.5,
     "ORE_BEARING": 0.7
-  },
-  "water_type": null
+  }
 }

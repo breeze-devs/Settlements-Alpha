@@ -4,22 +4,22 @@
     {
       "id": "paper",
       "inputs": [
-        { "item": "minecraft:sugar_cane", "count": 3 }
+        { "match": { "item": "minecraft:sugar_cane" }, "count": 3 }
       ],
       "output": { "item": "minecraft:paper", "count": 3 }
     },
     {
       "id": "book",
       "inputs": [
-        { "item": "minecraft:paper", "count": 3 },
-        { "item": "minecraft:leather", "count": 1 }
+        { "match": { "item": "minecraft:paper" }, "count": 3 },
+        { "match": { "item": "minecraft:leather" }, "count": 1 }
       ],
       "output": { "item": "minecraft:book", "count": 1 }
     },
     {
       "id": "bookshelf",
       "inputs": [
-        { "item": "minecraft:book", "count": 3 }
+        { "match": { "item": "minecraft:book" }, "count": 3 }
       ],
       "output": { "item": "minecraft:bookshelf", "count": 1 }
     }

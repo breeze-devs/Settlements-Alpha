@@ -15,7 +15,6 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
@@ -300,15 +299,7 @@ public class VillagerFishingHook extends Projectile {
         }
 
         FishCatchEntry entry = catchEntry.get();
-        ResourceLocation entityId = ResourceLocation.tryParse(entry.getEntityId());
-        if (entityId == null) {
-            log.warn("Invalid fish catch entity id '{}'", entry.getEntityId());
-            this.selectedCatchEntry = null;
-            this.selectedCatchSize = null;
-            return Optional.empty();
-        }
-
-        Optional<Entity> entity = BuiltInRegistries.ENTITY_TYPE.getOptional(entityId)
+        Optional<Entity> entity = BuiltInRegistries.ENTITY_TYPE.getOptional(entry.getEntityId())
                 .map(entityType -> entityType.create(this.level()))
                 .map(createdEntity -> (Entity) createdEntity);
         if (entity.isEmpty()) {

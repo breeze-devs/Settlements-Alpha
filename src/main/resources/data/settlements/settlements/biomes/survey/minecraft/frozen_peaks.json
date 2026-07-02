@@ -1,8 +1,7 @@
-{
+﻿{
   "biome": "minecraft:frozen_peaks",
   "resource_densities": {
     "STONE": 0.6,
     "FROZEN": 0.9
-  },
-  "water_type": null
+  }
 }

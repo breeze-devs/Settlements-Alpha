@@ -1,5 +1,4 @@
-{
+﻿{
   "biome": "minecraft:mushroom_fields",
-  "resource_densities": {},
-  "water_type": null
+  "resource_densities": {}
 }

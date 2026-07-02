@@ -18,7 +18,7 @@ class TradePriceResolverTest {
     private static final TradeCatalogDataManager CATALOG = new TradeCatalogDataManager();
 
     static {
-        CATALOG.loadForTest(Map.of(
+        CATALOG.reload(Map.of(
                 ResourceLocation.parse("settlements:trade_catalog/shepherd"),
                 JsonParser.parseString("""
                         {
@@ -62,7 +62,7 @@ class TradePriceResolverTest {
     @Test
     void demandPriceIsAlwaysDeterministic() {
         TradeCatalogDataManager manager = new TradeCatalogDataManager();
-        manager.loadForTest(Map.of(
+        manager.reload(Map.of(
                 ResourceLocation.parse("settlements:trade_catalog/custom"),
                 JsonParser.parseString("""
                         {
@@ -92,7 +92,7 @@ class TradePriceResolverTest {
     @Test
     void offerBundlePriceReturnsBundleBasePriceWhenJitterIsZero() {
         TradeCatalogDataManager manager = new TradeCatalogDataManager();
-        manager.loadForTest(Map.of(
+        manager.reload(Map.of(
                 ResourceLocation.parse("settlements:trade_catalog/custom_offer"),
                 JsonParser.parseString("""
                         {

@@ -41,7 +41,7 @@ public final class PoolFilter {
             return true;
         }
 
-        return resolveEnchantment(cost.getEnchantmentId(), registryAccess)
+        return resolveEnchantment(cost.enchantmentId(), registryAccess)
                 .map(item::supportsEnchantment)
                 .orElse(false);
     }
@@ -49,7 +49,7 @@ public final class PoolFilter {
     private static boolean isSessionCompatible(@Nonnull EnchantmentCostData cost,
                                                @Nonnull List<Holder<Enchantment>> appliedThisSession,
                                                @Nonnull RegistryAccess registryAccess) {
-        Optional<Holder.Reference<Enchantment>> candidateHolder = resolveEnchantment(cost.getEnchantmentId(), registryAccess);
+        Optional<Holder.Reference<Enchantment>> candidateHolder = resolveEnchantment(cost.enchantmentId(), registryAccess);
         if (candidateHolder.isEmpty()) {
             return false;
         }
@@ -67,7 +67,7 @@ public final class PoolFilter {
     }
 
     private static boolean isAffordable(@Nonnull EnchantmentCostData cost, int remainingBudget) {
-        return cost.getBaseCost() <= remainingBudget;
+        return cost.baseCost() <= remainingBudget;
     }
 
     public static Optional<Holder.Reference<Enchantment>> resolveEnchantment(@Nonnull String enchantmentId,

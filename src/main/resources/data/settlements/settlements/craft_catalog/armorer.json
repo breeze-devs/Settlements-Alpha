@@ -4,28 +4,28 @@
     {
       "id": "iron_helmet",
       "inputs": [
-        { "item": "minecraft:iron_ingot", "count": 5 }
+        { "match": { "item": "minecraft:iron_ingot" }, "count": 5 }
       ],
       "output": { "item": "minecraft:iron_helmet", "count": 1 }
     },
     {
       "id": "iron_chestplate",
       "inputs": [
-        { "item": "minecraft:iron_ingot", "count": 8 }
+        { "match": { "item": "minecraft:iron_ingot" }, "count": 8 }
       ],
       "output": { "item": "minecraft:iron_chestplate", "count": 1 }
     },
     {
       "id": "iron_leggings",
       "inputs": [
-        { "item": "minecraft:iron_ingot", "count": 7 }
+        { "match": { "item": "minecraft:iron_ingot" }, "count": 7 }
       ],
       "output": { "item": "minecraft:iron_leggings", "count": 1 }
     },
     {
       "id": "iron_boots",
       "inputs": [
-        { "item": "minecraft:iron_ingot", "count": 4 }
+        { "match": { "item": "minecraft:iron_ingot" }, "count": 4 }
       ],
       "output": { "item": "minecraft:iron_boots", "count": 1 }
     }

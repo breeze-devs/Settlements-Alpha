@@ -1,8 +1,9 @@
-{
+﻿{
   "biome": "minecraft:savanna",
   "resource_densities": {
     "LUMBER": 0.3
   },
-  "water_type": null,
-  "template_tags": ["savanna"]
+  "template_tags": [
+    "savanna"
+  ]
 }

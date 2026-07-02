@@ -4,14 +4,14 @@
     {
       "id": "paper",
       "inputs": [
-        { "item": "minecraft:sugar_cane", "count": 12 }
+        { "match": { "item": "minecraft:sugar_cane" }, "count": 12 }
       ],
       "output": { "item": "minecraft:paper", "count": 12 }
     },
     {
       "id": "map",
       "inputs": [
-        { "item": "minecraft:paper", "count": 8 }
+        { "match": { "item": "minecraft:paper" }, "count": 8 }
       ],
       "output": { "item": "minecraft:map", "count": 1 }
     }

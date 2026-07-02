@@ -51,11 +51,4 @@ public interface TradeCatalogRegistry {
      */
     List<SupplyEntry> supplyFor(@Nonnull VillagerProfessionKey profession);
 
-    /**
-     * Monotonic version of the currently loaded catalog snapshot.
-     * Callers can cache the last observed value and only rebuild derived views when the data pack
-     * reload pipeline has published a new catalog.
-     */
-    int catalogVersion();
-
 }

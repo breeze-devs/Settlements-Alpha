@@ -4,16 +4,16 @@
     {
       "id": "iron_sword",
       "inputs": [
-        { "item": "minecraft:iron_ingot", "count": 2 },
-        { "item": "minecraft:stick", "count": 1 }
+        { "match": { "item": "minecraft:iron_ingot" }, "count": 2 },
+        { "match": { "item": "minecraft:stick" }, "count": 1 }
       ],
       "output": { "item": "minecraft:iron_sword", "count": 1 }
     },
     {
       "id": "shield",
       "inputs": [
-        { "tag": "minecraft:planks", "count": 6 },
-        { "item": "minecraft:iron_ingot", "count": 1 }
+        { "match": { "tag": "minecraft:planks" }, "count": 6 },
+        { "match": { "item": "minecraft:iron_ingot" }, "count": 1 }
       ],
       "output": { "item": "minecraft:shield", "count": 1 }
     }

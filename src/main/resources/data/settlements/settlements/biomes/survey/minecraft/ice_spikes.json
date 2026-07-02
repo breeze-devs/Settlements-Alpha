@@ -1,7 +1,6 @@
-{
+﻿{
   "biome": "minecraft:ice_spikes",
   "resource_densities": {
     "FROZEN": 1.0
-  },
-  "water_type": null
+  }
 }

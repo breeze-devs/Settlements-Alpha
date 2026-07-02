@@ -1,9 +1,8 @@
-{
+﻿{
   "biome": "minecraft:plains",
   "resource_densities": {
     "LUMBER": 0.1,
     "FLORAL": 0.4
   },
-  "water_type": null,
   "template_tags": []
 }

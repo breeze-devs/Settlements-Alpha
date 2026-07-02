@@ -1,7 +1,6 @@
-{
+﻿{
   "biome": "minecraft:old_growth_spruce_taiga",
   "resource_densities": {
     "LUMBER": 0.8
-  },
-  "water_type": null
+  }
 }

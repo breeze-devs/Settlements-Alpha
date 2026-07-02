@@ -35,7 +35,7 @@ class TradeCatalogDataManagerTest {
 
     @Test
     void validJson_loadsAndNormalizesProfessionIds() {
-        this.manager.loadForTest(Map.of(
+        this.manager.reload(Map.of(
                 resource("settlements:trade_catalog/farmer"),
                 JsonParser.parseString("""
                         {
@@ -86,7 +86,7 @@ class TradeCatalogDataManagerTest {
 
     @Test
     void missingRequiredField_isRejected() {
-        this.manager.loadForTest(Map.of(
+        this.manager.reload(Map.of(
                 resource("settlements:trade_catalog/invalid"),
                 JsonParser.parseString("""
                         {
@@ -112,7 +112,7 @@ class TradeCatalogDataManagerTest {
 
     @Test
     void invalidRungOrder_isRejected() {
-        this.manager.loadForTest(Map.of(
+        this.manager.reload(Map.of(
                 resource("settlements:trade_catalog/invalid_order"),
                 JsonParser.parseString("""
                         {
@@ -143,7 +143,7 @@ class TradeCatalogDataManagerTest {
 
     @Test
     void defaultResourceFiles_allProfessionsLoadWithStock() throws IOException {
-        this.manager.loadForTest(loadDefaultEntries());
+        this.manager.reload(loadDefaultEntries());
 
         for (String profession : DEFAULT_PROFESSION_FILES) {
             // A parse error in a shipped file is only logged as a warning and silently drops the

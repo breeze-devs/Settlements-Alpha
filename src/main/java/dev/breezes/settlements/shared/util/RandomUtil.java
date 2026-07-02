@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.ToDoubleFunction;
 
 public class RandomUtil {
 
@@ -67,6 +68,43 @@ public class RandomUtil {
 
         // Floating-point accumulation can fall just short of totalWeight; the last entry is the correct pick
         return last;
+    }
+
+    /**
+     * Weighted pick that reads weights straight off the source list via {@code weigher}, so hot callers
+     * don't allocate an intermediate weight map on every call.
+     * <p>
+     * Non-positive weights are ignored; returns empty when nothing is selectable.
+     */
+    public static <T> Optional<T> weightedChoice(@Nonnull List<T> items, @Nonnull ToDoubleFunction<T> weigher) {
+        double totalWeight = 0;
+        for (T item : items) {
+            double weight = weigher.applyAsDouble(item);
+            if (weight > 0) {
+                totalWeight += weight;
+            }
+        }
+        if (totalWeight <= 0) {
+            return Optional.empty();
+        }
+
+        double targetWeight = randomDouble(0, totalWeight);
+        double currentWeight = 0;
+        T last = null;
+        for (T item : items) {
+            double weight = weigher.applyAsDouble(item);
+            if (weight <= 0) {
+                continue;
+            }
+            currentWeight += weight;
+            last = item;
+            if (currentWeight > targetWeight) {
+                return Optional.of(last);
+            }
+        }
+
+        // Floating-point accumulation can fall just short of totalWeight; the last positive entry is the correct pick
+        return Optional.ofNullable(last);
     }
 
     /**

@@ -1,9 +1,8 @@
-{
+﻿{
   "biome": "minecraft:wooded_badlands",
   "resource_densities": {
     "LUMBER": 0.5,
     "STONE": 0.4,
     "ORE_BEARING": 0.5
-  },
-  "water_type": null
+  }
 }

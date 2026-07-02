@@ -31,7 +31,7 @@ class GenerationDataValidatorMockitoTest {
 
     @BeforeEach
     void setUp() {
-        this.scorerManager.loadForTest(Map.of(
+        this.scorerManager.reload(Map.of(
                 resource("settlements:traits/scoring/farming"), JsonParser.parseString("""
                         {
                           "trait": "settlements:settlement_traits/farming",
@@ -59,7 +59,7 @@ class GenerationDataValidatorMockitoTest {
                         }
                         """)
         ));
-        this.buildingManager.loadForTest(Map.of());
+        this.buildingManager.reload(Map.of());
     }
 
     @Test

@@ -4,7 +4,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
-import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,7 @@ class BuildingDefinitionDataManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        this.manager.apply(loadDefaultEntries(), null, null);
+        this.manager.reload(loadDefaultEntries());
     }
 
     @Test
@@ -114,11 +113,11 @@ class BuildingDefinitionDataManagerTest {
     }
 
     @Test
-    void malformed_json_skipped() throws IOException {
+    void malformed_zone_range_skipped() throws IOException {
         Map<ResourceLocation, JsonElement> entries = loadDefaultEntries();
-        entries.put(resource("settlements:buildings/definitions/bad_json"), JsonParser.parseString("""
+        entries.put(resource("settlements:buildings/definitions/bad_range"), JsonParser.parseString("""
                 {
-                  "id": "settlements:building_definitions/bad_json_test",
+                  "id": "settlements:building_definitions/bad_range_test",
                   "placement_priority": 1,
                   "zone_tier_min": 3,
                   "zone_tier_max": 2,
@@ -129,15 +128,14 @@ class BuildingDefinitionDataManagerTest {
                   "minimum_rank": "FLAVOR",
                   "footprint_width": 1,
                   "footprint_depth": 1,
-                  "npc_profession": null,
                   "npc_count": 0
                 }
                 """));
 
-        this.manager.apply(entries, null, null);
+        this.manager.reload(entries);
 
         assertEquals(15, this.manager.allBuildings().size());
-        assertTrue(this.manager.byId("settlements:building_definitions/bad_json_test").isEmpty());
+        assertTrue(this.manager.byId("settlements:building_definitions/bad_range_test").isEmpty());
     }
 
     @Test
@@ -155,19 +153,18 @@ class BuildingDefinitionDataManagerTest {
                   "minimum_rank": "FLAVOR",
                   "footprint_width": 1,
                   "footprint_depth": 1,
-                  "npc_profession": null,
                   "npc_count": 0
                 }
                 """));
 
-        this.manager.apply(entries, null, null);
+        this.manager.reload(entries);
 
         assertEquals(15, this.manager.allBuildings().size());
     }
 
     @Test
-    void unknown_trait_in_affinities() throws IOException {
-        Map<ResourceLocation, JsonElement> entries = Map.of(
+    void unknown_trait_in_affinities_rejects_whole_entry() {
+        this.manager.reload(Map.of(
                 resource("settlements:buildings/definitions/unknown_trait"),
                 JsonParser.parseString("""
                         {
@@ -185,21 +182,18 @@ class BuildingDefinitionDataManagerTest {
                           "minimum_rank": "FLAVOR",
                           "footprint_width": 2,
                           "footprint_depth": 2,
-                          "npc_profession": null,
                           "npc_count": 0
                         }
                         """)
-        );
+        ));
 
-        this.manager.apply(entries, null, null);
-
-        BuildingDefinition definition = this.manager.byId("settlements:building_definitions/unknown_trait_test").orElseThrow();
-        assertEquals(Map.of(LUMBER, 0.5f), definition.traitAffinities());
+        // Under strict decode a malformed trait id fails the whole entry rather than dropping just the bad key.
+        assertTrue(this.manager.byId("settlements:building_definitions/unknown_trait_test").isEmpty());
     }
 
     @Test
-    void unknown_resource_in_requires() {
-        this.manager.apply(Map.of(
+    void unknown_resource_in_requires_rejects_whole_entry() {
+        this.manager.reload(Map.of(
                 resource("settlements:buildings/definitions/unknown_resource"),
                 JsonParser.parseString("""
                         {
@@ -214,19 +208,18 @@ class BuildingDefinitionDataManagerTest {
                           "minimum_rank": "FLAVOR",
                           "footprint_width": 2,
                           "footprint_depth": 2,
-                          "npc_profession": null,
                           "npc_count": 0
                         }
                         """
-                )), null, null);
+                )));
 
-        BuildingDefinition definition = this.manager.byId("settlements:building_definitions/unknown_resource_test").orElseThrow();
-        assertEquals(Set.of(ResourceTag.LUMBER), definition.requiresResources());
+        // An unknown resource tag anywhere in the list rejects the whole entry.
+        assertTrue(this.manager.byId("settlements:building_definitions/unknown_resource_test").isEmpty());
     }
 
     @Test
     void preferred_tags_are_parsed_as_flat_strings() {
-        this.manager.apply(Map.of(
+        this.manager.reload(Map.of(
                 resource("settlements:buildings/definitions/preferred_tags"),
                 JsonParser.parseString("""
                         {
@@ -242,11 +235,10 @@ class BuildingDefinitionDataManagerTest {
                           "preferred_tags": ["taiga", "charred"],
                           "footprint_width": 2,
                           "footprint_depth": 2,
-                          "npc_profession": null,
                           "npc_count": 0
                         }
                         """)
-        ), null, null);
+        ));
 
         BuildingDefinition definition = this.manager.byId("settlements:building_definitions/preferred_tags_test").orElseThrow();
         assertEquals(Set.of("taiga", "charred"), definition.preferredTags());

@@ -17,7 +17,7 @@ public final class SelectionEngine {
 
     public static int calculateLevel(@Nonnull EnchantmentCostData cost, int remainingBudget) {
         int maxAffordable = findMaxAffordableLevel(cost, remainingBudget);
-        int capped = Math.min(maxAffordable, cost.getMaxLevel());
+        int capped = Math.min(maxAffordable, cost.maxLevel());
         if (capped <= 1) {
             return 1;
         }
@@ -33,11 +33,11 @@ public final class SelectionEngine {
 
     private static int findMaxAffordableLevel(@Nonnull EnchantmentCostData cost, int remainingBudget) {
         // Single-level enchantments
-        if (cost.getLevelMultiplier() == 0) {
-            return cost.getBaseCost() <= remainingBudget ? 1 : 0;
+        if (cost.levelMultiplier() == 0) {
+            return cost.baseCost() <= remainingBudget ? 1 : 0;
         }
 
-        int maxLevel = ((remainingBudget - cost.getBaseCost()) / cost.getLevelMultiplier()) + 1;
+        int maxLevel = ((remainingBudget - cost.baseCost()) / cost.levelMultiplier()) + 1;
         return Math.max(0, maxLevel);
     }
 

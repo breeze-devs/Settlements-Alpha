@@ -1,20 +1,17 @@
 package dev.breezes.settlements.domain.fishing;
 
-import com.google.gson.annotations.SerializedName;
 import lombok.Builder;
 import lombok.Value;
+import net.minecraft.resources.ResourceLocation;
 
 @Value
 @Builder
 public class FishCatchEntry {
 
-    @SerializedName("entity")
-    String entityId;
+    ResourceLocation entityId;
 
-    @SerializedName("item")
-    String itemId;
+    ResourceLocation itemId;
 
-    @SerializedName("weight")
     double weight;
 
 }

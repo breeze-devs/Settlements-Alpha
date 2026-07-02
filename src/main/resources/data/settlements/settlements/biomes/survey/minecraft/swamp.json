@@ -1,8 +1,7 @@
-{
+﻿{
   "biome": "minecraft:swamp",
   "resource_densities": {
     "LUMBER": 0.4,
     "FRESHWATER": 0.3
-  },
-  "water_type": null
+  }
 }

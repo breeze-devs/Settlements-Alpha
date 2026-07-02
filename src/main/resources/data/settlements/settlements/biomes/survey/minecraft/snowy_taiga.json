@@ -1,9 +1,11 @@
-{
+﻿{
   "biome": "minecraft:snowy_taiga",
   "resource_densities": {
     "LUMBER": 0.5,
     "FROZEN": 0.6
   },
-  "water_type": null,
-  "template_tags": ["taiga", "snowy"]
+  "template_tags": [
+    "taiga",
+    "snowy"
+  ]
 }

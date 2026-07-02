@@ -1,8 +1,7 @@
-{
+﻿{
   "biome": "minecraft:stony_peaks",
   "resource_densities": {
     "STONE": 0.8,
     "ORE_BEARING": 0.6
-  },
-  "water_type": null
+  }
 }

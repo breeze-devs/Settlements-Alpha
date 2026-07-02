@@ -4,22 +4,22 @@
     {
       "id": "saddle",
       "inputs": [
-        { "item": "minecraft:leather", "count": 3 },
-        { "item": "minecraft:iron_ingot", "count": 1 }
+        { "match": { "item": "minecraft:leather" }, "count": 3 },
+        { "match": { "item": "minecraft:iron_ingot" }, "count": 1 }
       ],
       "output": { "item": "minecraft:saddle", "count": 1 }
     },
     {
       "id": "item_frame",
       "inputs": [
-        { "item": "minecraft:leather", "count": 1 }
+        { "match": { "item": "minecraft:leather" }, "count": 1 }
       ],
       "output": { "item": "minecraft:item_frame", "count": 1 }
     },
     {
       "id": "bundle",
       "inputs": [
-        { "item": "minecraft:leather", "count": 2 }
+        { "match": { "item": "minecraft:leather" }, "count": 2 }
       ],
       "output": { "item": "minecraft:bundle", "count": 1 }
     }

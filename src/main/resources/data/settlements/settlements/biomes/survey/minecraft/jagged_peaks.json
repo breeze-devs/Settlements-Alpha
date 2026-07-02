@@ -1,9 +1,8 @@
-{
+﻿{
   "biome": "minecraft:jagged_peaks",
   "resource_densities": {
     "STONE": 0.7,
     "ORE_BEARING": 0.5,
     "FROZEN": 0.7
-  },
-  "water_type": null
+  }
 }

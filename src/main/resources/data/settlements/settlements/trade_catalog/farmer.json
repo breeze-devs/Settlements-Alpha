@@ -282,6 +282,51 @@
       "dump": {
         "above": 128
       }
+    },
+    {
+      "id": "bread",
+      "match": {
+        "item": "minecraft:bread"
+      },
+      "offer": {
+        "above": 16,
+        "basePrice": 2,
+        "priceJitter": 0,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "cookie",
+      "match": {
+        "item": "minecraft:cookie"
+      },
+      "offer": {
+        "above": 32,
+        "basePrice": 2,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
+      "dump": {
+        "above": 256
+      }
+    },
+    {
+      "id": "pumpkin_pie",
+      "match": {
+        "item": "minecraft:pumpkin_pie"
+      },
+      "offer": {
+        "above": 8,
+        "basePrice": 2,
+        "priceJitter": 1,
+        "bundleSize": 2
+      },
+      "dump": {
+        "above": 64
+      }
     }
   ]
 }

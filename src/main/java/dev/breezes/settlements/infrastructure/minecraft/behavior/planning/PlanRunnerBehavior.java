@@ -40,9 +40,6 @@ public class PlanRunnerBehavior extends Behavior<Villager> {
     protected boolean checkExtraStartConditions(@Nonnull ServerLevel level, @Nonnull Villager villager) {
         boolean isBaseVillager = villager instanceof BaseVillager;
         boolean isSafe = !VillagerPanicTrigger.isHurt(villager) && !VillagerPanicTrigger.hasHostile(villager);
-        if (!isBaseVillager || !isSafe) {
-            log.behaviorWarn("PlanRunnerBehavior start blocked: baseVillager={}, safe={}", isBaseVillager, isSafe);
-        }
         return isBaseVillager && isSafe;
     }
 
@@ -56,11 +53,6 @@ public class PlanRunnerBehavior extends Behavior<Villager> {
         // Returning false here would let vanilla stop the wrapper when activities switch. The runner
         // must stay alive so it can suspend/resume inner behavior explicitly across PANIC/RAID/etc.
         return true;
-    }
-
-    @Override
-    protected void start(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
-        log.behaviorStatus("PlanRunnerBehavior STARTED for {}", villager.getUUID());
     }
 
     @Override
@@ -96,7 +88,6 @@ public class PlanRunnerBehavior extends Behavior<Villager> {
 
     @Override
     protected void stop(@Nonnull ServerLevel level, @Nonnull Villager villager, long gameTime) {
-        log.behaviorStatus("PlanRunnerBehavior STOPPED for {}", villager.getUUID());
         if (villager instanceof BaseVillager baseVillager) {
             this.planRunner.forceStop(level, baseVillager);
         }

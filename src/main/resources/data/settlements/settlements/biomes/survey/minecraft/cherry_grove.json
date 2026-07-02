@@ -1,8 +1,7 @@
-{
+﻿{
   "biome": "minecraft:cherry_grove",
   "resource_densities": {
     "LUMBER": 0.5,
     "FLORAL": 0.6
-  },
-  "water_type": null
+  }
 }

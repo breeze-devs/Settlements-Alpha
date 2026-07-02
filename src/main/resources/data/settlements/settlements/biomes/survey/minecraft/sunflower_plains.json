@@ -1,7 +1,6 @@
-{
+﻿{
   "biome": "minecraft:sunflower_plains",
   "resource_densities": {
     "FLORAL": 0.4
-  },
-  "water_type": null
+  }
 }

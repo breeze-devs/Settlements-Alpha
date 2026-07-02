@@ -27,7 +27,7 @@ class TraitDefinitionDataManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        this.manager.apply(loadDefaultEntries(), null, null);
+        this.manager.reload(loadDefaultEntries());
     }
 
     @Test
@@ -62,7 +62,7 @@ class TraitDefinitionDataManagerTest {
                 }
                 """);
 
-        this.manager.apply(entries, null, null);
+        this.manager.reload(entries);
 
         assertTrue(this.manager.allTraitIds().isEmpty());
     }
@@ -91,7 +91,7 @@ class TraitDefinitionDataManagerTest {
                 }
                 """));
 
-        this.manager.apply(entries, null, null);
+        this.manager.reload(entries);
 
         assertEquals(1, this.manager.allTraitIds().size());
         assertEquals("Second", this.manager.byId(TraitId.of("settlements:settlement_traits/lumber")).orElseThrow().displayInfo().displayName());

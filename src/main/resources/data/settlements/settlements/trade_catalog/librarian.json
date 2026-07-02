@@ -115,6 +115,21 @@
       "dump": {
         "above": 8
       }
+    },
+    {
+      "id": "bookshelf",
+      "match": {
+        "item": "minecraft:bookshelf"
+      },
+      "offer": {
+        "above": 4,
+        "basePrice": 8,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 64
+      }
     }
   ]
 }

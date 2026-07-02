@@ -1,10 +1,10 @@
 package dev.breezes.settlements.infrastructure.minecraft.data.farming.hive;
 
 import com.google.gson.JsonParser;
-import dev.breezes.settlements.domain.farming.hive.HiveHarvestBlockData;
-import dev.breezes.settlements.domain.farming.hive.HiveHarvestItemEntry;
 import dev.breezes.settlements.di.DaggerTestSettlementsComponent;
 import dev.breezes.settlements.di.TestSettlementsComponent;
+import dev.breezes.settlements.domain.common.yields.WeightedYieldItem;
+import dev.breezes.settlements.domain.common.yields.WeightedYieldTable;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ class CollectHoneyYieldDataManagerTest {
     @BeforeEach
     void setUp() {
         // Arrange
-        this.manager.loadForTest(Map.of(
+        this.manager.reload(Map.of(
                 resource("settlements:settlements/farming/collect_honey/default"), JsonParser.parseString("""
                         {
                           "block": "default",
@@ -70,19 +70,19 @@ class CollectHoneyYieldDataManagerTest {
     @Test
     void rollEntries_falls_back_to_global_default_when_block_specific_expertise_is_missing() {
         // Act
-        List<HiveHarvestItemEntry> drops = this.manager.rollEntries("novice", "minecraft:bee_hive");
+        List<WeightedYieldItem> drops = this.manager.rollEntries("novice", "minecraft:bee_hive");
 
         // Assert
         assertEquals(1, drops.size());
-        assertEquals("minecraft:honey_bottle", drops.getFirst().getItemId());
-        assertEquals(1, drops.getFirst().getMinCount());
-        assertEquals(1, drops.getFirst().getMaxCount());
+        assertEquals(ResourceLocation.parse("minecraft:honey_bottle"), drops.getFirst().item());
+        assertEquals(1, drops.getFirst().minCount());
+        assertEquals(1, drops.getFirst().maxCount());
     }
 
     @Test
-    void loadForTest_skips_invalid_pool_without_positive_weight_items() {
+    void reload_skips_invalid_pool_without_positive_weight_items() {
         // Act
-        Map<String, HiveHarvestBlockData> loaded = this.manager.allBlockData();
+        Map<String, WeightedYieldTable> loaded = this.manager.allBlockData();
 
         // Assert
         assertTrue(loaded.containsKey("default"));

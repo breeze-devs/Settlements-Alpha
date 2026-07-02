@@ -18,7 +18,7 @@ public final class PoolWeightResolver {
                                                            @Nullable SpecializationProfile profile) {
         Map<EnchantmentCostData, Double> weightedPool = new LinkedHashMap<>();
         for (EnchantmentCostData entry : filteredPool) {
-            double weight = profile != null ? profile.getWeight(entry.getEnchantmentId()) : 1.0;
+            double weight = profile != null ? profile.getWeight(entry.enchantmentId()) : 1.0;
             if (weight > 0.0) {
                 weightedPool.put(entry, weight);
             }

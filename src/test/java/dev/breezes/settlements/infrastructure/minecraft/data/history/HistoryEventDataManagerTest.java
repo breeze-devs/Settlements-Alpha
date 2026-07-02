@@ -3,9 +3,6 @@ package dev.breezes.settlements.infrastructure.minecraft.data.history;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import dev.breezes.settlements.domain.generation.history.HistoryEventDefinition;
-import dev.breezes.settlements.domain.generation.model.profile.TraitId;
-import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
-import dev.breezes.settlements.domain.generation.model.survey.WaterFeatureType;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,14 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HistoryEventDataManagerTest {
 
-    private static final TraitId LUMBER = TraitId.of("settlements:settlement_traits/lumber");
-    private static final TraitId DEFENSE = TraitId.of("settlements:settlement_traits/defense");
-
     private final HistoryEventDataManager manager = new HistoryEventDataManager();
 
     @BeforeEach
     void setUp() throws IOException {
-        this.manager.apply(loadDefaultEntries(), null, null);
+        this.manager.reload(loadDefaultEntries());
     }
 
     @Test
@@ -67,14 +61,16 @@ class HistoryEventDataManagerTest {
                 }
                 """));
 
-        this.manager.apply(entries, null, null);
+        this.manager.reload(entries);
 
         assertEquals(12, this.manager.allEvents().size());
     }
 
     @Test
-    void unknownTraitInModifiersIsFiltered() {
-        this.manager.apply(Map.of(
+    void unknownTraitRejectsEntry() {
+        // Strict decoding: an unknown trait id anywhere in the entry (including inside a map)
+        // fails the WHOLE entry rather than dropping just the offending element.
+        this.manager.reload(Map.of(
                 resource("settlements:history/events/unknown_trait"),
                 JsonParser.parseString("""
                         {
@@ -98,15 +94,17 @@ class HistoryEventDataManagerTest {
                           "narrative_text": "test"
                         }
                         """)
-        ), null, null);
+        ));
 
-        HistoryEventDefinition definition = this.manager.allEvents().getFirst();
-        assertEquals(Map.of(LUMBER, 0.5f), definition.traitModifiers());
+        assertTrue(this.manager.allEvents().stream()
+                .noneMatch(definition -> definition.id().equals("settlements:settlement_events/unknown_trait")));
     }
 
     @Test
-    void unknownResourceTagIsFiltered() {
-        this.manager.apply(Map.of(
+    void unknownResourceTagRejectsEntry() {
+        // Strict decoding: an unknown resource tag anywhere in the entry (including inside a list)
+        // fails the WHOLE entry rather than dropping just the offending element.
+        this.manager.reload(Map.of(
                 resource("settlements:history/events/unknown_resource"),
                 JsonParser.parseString("""
                         {
@@ -129,17 +127,15 @@ class HistoryEventDataManagerTest {
                           "narrative_text": "test"
                         }
                         """)
-        ), null, null);
+        ));
 
-        HistoryEventDefinition definition = this.manager.allEvents().getFirst();
-        assertEquals(Set.of(ResourceTag.LUMBER), definition.preconditions().requiredResourceTags());
-        assertEquals(Set.of(WaterFeatureType.RIVER), definition.preconditions().requiredWaterFeatures());
-        assertEquals(Map.of(DEFENSE, 0.2f), definition.preconditions().minTraitWeights());
+        assertTrue(this.manager.allEvents().stream()
+                .noneMatch(definition -> definition.id().equals("settlements:settlement_events/unknown_resource")));
     }
 
     @Test
     void preconditionsDefaultToNone() {
-        this.manager.apply(Map.of(
+        this.manager.reload(Map.of(
                 resource("settlements:history/events/no_preconditions"),
                 JsonParser.parseString("""
                         {
@@ -154,9 +150,12 @@ class HistoryEventDataManagerTest {
                           "narrative_text": "test"
                         }
                         """)
-        ), null, null);
+        ));
 
-        HistoryEventDefinition definition = this.manager.allEvents().getFirst();
+        HistoryEventDefinition definition = this.manager.allEvents().stream()
+                .filter(event -> event.id().equals("settlements:settlement_events/no_preconditions"))
+                .findFirst()
+                .orElseThrow();
         assertEquals(Map.of(), definition.preconditions().minTraitWeights());
         assertEquals(Set.of(), definition.preconditions().requiredResourceTags());
         assertEquals(Set.of(), definition.preconditions().requiredWaterFeatures());

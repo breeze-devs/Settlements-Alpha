@@ -161,6 +161,36 @@
         "buyPricePerUnit": 6,
         "priority": 30
       }
+    },
+    {
+      "id": "item_frame",
+      "match": {
+        "item": "minecraft:item_frame"
+      },
+      "offer": {
+        "above": 4,
+        "basePrice": 4,
+        "priceJitter": 1,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 32
+      }
+    },
+    {
+      "id": "bundle",
+      "match": {
+        "item": "minecraft:bundle"
+      },
+      "offer": {
+        "above": 2,
+        "basePrice": 12,
+        "priceJitter": 2,
+        "bundleSize": 1
+      },
+      "dump": {
+        "above": 16
+      }
     }
   ]
 }

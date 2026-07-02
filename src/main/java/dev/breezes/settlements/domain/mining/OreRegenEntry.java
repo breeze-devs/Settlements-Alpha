@@ -1,7 +1,10 @@
 package dev.breezes.settlements.domain.mining;
 
+import com.mojang.serialization.Codec;
 import lombok.Builder;
 import lombok.Value;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.StringRepresentable;
 
 /**
  * A single entry in the ore-regen weighted table.
@@ -14,10 +17,8 @@ public class OreRegenEntry {
 
     /**
      * Fully-qualified block id, e.g. {@code minecraft:iron_ore}.
-     * Resolved to a {@code BlockState} at application time, not stored here,
-     * because registry lookups cannot run in tests.
      */
-    String blockId;
+    ResourceLocation blockId;
 
     /**
      * Relative roll weight — higher means more likely. Must be > 0.
@@ -35,8 +36,23 @@ public class OreRegenEntry {
      * Mirrors {@code DormantOreBlock.Host} but adds {@code ANY} so one global entry
      * can feed both block types without requiring two JSON files.
      */
-    public enum HostFilter {
-        STONE, DEEPSLATE, ANY
+    public enum HostFilter implements StringRepresentable {
+        STONE("stone"),
+        DEEPSLATE("deepslate"),
+        ANY("any");
+
+        public static final Codec<HostFilter> CODEC = StringRepresentable.fromEnum(HostFilter::values);
+
+        private final String serializedName;
+
+        HostFilter(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return this.serializedName;
+        }
     }
 
 }
