@@ -4,8 +4,10 @@ The generation system is data-driven from day one. All configuration lives in JS
 via Minecraft's datapack system. Modpack authors and addon developers can customize behavior without
 touching source code.
 
-All datapack managers implement `SimpleJsonResourceReloadListener` and are registered in
-`DataReloadEvents`. On `/reload`, all JSON is reparsed and the NBT template catalog is rebuilt.
+This document covers only the **field-level schema** of the generation-owned datapack files. For how
+those files are decoded, validated, and registered — the codec base classes, the reload pipeline, and
+how to add a loader — see the [Datapack System](../datapack_system.md) reference. On `/reload`, all JSON
+is reparsed and the NBT template catalog is rebuilt.
 
 ## Table of Contents
 
@@ -28,13 +30,15 @@ Defines per-biome resource contributions and water classification. The mod ships
 `template_tags` flows into `TemplateResolutionContext` when this biome is dominant at the settlement
 site, influencing which template variants are selected.
 
+`water_type` is optional — **omit it entirely** for a biome with no water feature (an explicit `null`
+fails strict decode; see [Datapack System → Codec conventions](../datapack_system.md#codec-conventions)).
+
 ```json
 {
   "biome": "minecraft:dark_forest",
   "resource_densities": {
     "LUMBER": 0.9
   },
-  "water_type": null,
   "template_tags": [
     "forest"
   ]

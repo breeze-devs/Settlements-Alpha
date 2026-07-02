@@ -1,252 +1,344 @@
 # Behavior System
 
-This document covers how villager behaviors are registered, resolved, and wired into the Minecraft brain. For the
-Dagger fundamentals that underpin this system, see [Dagger Guide](dagger_guide.md).
+This document covers how villager behaviors are registered, resolved into a day plan, and executed against the
+Minecraft entity tick. For the Dagger fundamentals that underpin this system, see [Dagger Guide](dagger_guide.md); for
+the step-by-step "add a behavior" recipe, see [Common Tasks](common_tasks.md#add-a-new-behavior).
 
 ---
 
 ## Overview
 
-Behaviors are the core gameplay feature of Settlements. Each behavior (fishing, smelting, shearing sheep, etc.) is a
-stateful use case that ticks every server tick for the villager that owns it. The behavior system has three layers:
+Behaviors are the core gameplay feature of Settlements. Each behavior (fishing, harvesting pumpkins, trading, etc.) is a
+stateful state machine (`VillagerStateMachineBehavior`) that runs for the villager that owns it. Settlements does **not**
+register its behaviors as vanilla brain `Behavior`/`Activity` entries and does **not** let vanilla `GateBehavior` pick
+them by weight. Instead it builds a **day plan** per villager and runs the plan with a **custom executor** that ticks the
+active behavior directly. The vanilla `Brain` is still ticked — but only to host that executor and to run vanilla
+reflexes (panic, raid) and gated ambient life.
 
-1. **Registration** — `BehaviorModule` declares which behaviors exist and which professions use them.
-2. **Resolution** — `BehaviorPackageResolver` groups registrations by profession and resolves them per villager.
-3. **Consumption** — `BaseVillager.registerCustomGoals()` wires resolved behaviors into Minecraft's brain system.
+The pipeline has four stages:
 
-Sensors complete the read/write loop around memories:
+1. **Registration** — `BehaviorCatalogModule` describes every behavior (`BehaviorCatalogEntry`); `PoolModule` maps each
+   profession to the `BehaviorKey`s it may perform (`ProfessionBehaviorPool`).
+2. **Resolution** — `BehaviorPoolResolver` joins a villager's profession pool (plus universal behaviors) against the
+   catalog into a `List<WeightedBehavior>` (availability + planning metadata).
+3. **Planning** — `HeuristicPlanGenerator` packs the available behaviors into an ordered `DayPlan` of time-windowed
+   `PlanSlot`s, using each behavior's category, intensity, cooldown, duration, and opportunity.
+4. **Execution** — `PlanRunner`, hosted inside the always-on `PlanRunnerBehavior` (vanilla CORE activity), walks the
+   plan each server tick and calls `IBehavior.tick(...)` on the active behavior.
 
-- Sensors write `MemoryModuleType` values into the brain.
-- Behaviors read those memories as preconditions or live inputs.
+```
+Registration                    Resolution                 Planning                    Execution
+┌────────────────────┐          ┌──────────────────┐       ┌───────────────────┐       ┌──────────────────────┐
+│ BehaviorCatalog    │          │ BehaviorPool     │       │ HeuristicPlan     │       │ PlanRunnerBehavior   │
+│ Module (@IntoSet   │          │ Resolver         │       │ Generator         │       │  (vanilla CORE host) │
+│ BehaviorCatalog-   │─catalog─→│ resolve(prof) +  │─List< │ generate(ctx)     │─Day-  │   └→ PlanRunner.tick │
+│ Entry)             │          │ universals       │ Weig- │  → DayPlan/       │ Plan─→│      → IBehavior     │
+│ PoolModule (@Into- │─pools──→ │  → List<Weighted │ hted> │    PlanSlot[]     │       │        .tick(...)    │
+│ Set ProfessionPool)│          │  Behavior>       │       │ (+ Opportunity-   │       │  PlanContextSwitcher │
+│ BehaviorKey        │          │                  │       │  Forecaster)      │       │  (aligns Activity)   │
+└────────────────────┘          └──────────────────┘       └───────────────────┘       └──────────────────────┘
+```
 
-For V1, custom sensors should be vanilla `Sensor<Villager>` subclasses registered through `SensorTypeRegistry` and
-added to `BaseVillager.SENSOR_TYPES`. The older `AbstractSensor` framework under `application/ai/sensors/` is not
-currently wired into the brain tick path.
-
-The `application/ai/sensors/AbstractSensor` framework currently present in the codebase is a parallel design that is
-not wired into `BaseVillager` and is therefore dormant. Do not add new sensors to that framework unless there is an
-explicit plan to wire and tick it.
+Sensors complete the read/write loop around memories: sensors write memory, behaviors and the planner read it. There
+are **two live sensor frameworks** (see [Sensors](#sensors-the-read-side) below and
+[Villager Memory](common_tasks.md#villager-memory-vanilla-backed-vs-decaying)).
 
 ---
 
-```
-BehaviorModule                    BehaviorPackageResolver              BaseVillager
-┌───────────────────┐            ┌───────────────────────┐             ┌─────────────────┐
-│ @Provides @IntoSet│            │ @Inject constructor   │             │ registerCustom  │
-│ BehaviorRegistra- │──→ Set ──→ │ groups by profession  │──resolve()─→│ Goals()         │
-│ tion              │            │ at component creation │             │ adds to brain   │
-└───────────────────┘            └───────────────────────┘             └─────────────────┘
-```
+## Stage 1 — Registration
 
----
+Registration is split across two modules because "what a behavior *is*" and "which professions may *do* it" are
+separate concerns.
 
-## BehaviorRegistration
+### The catalog — `BehaviorCatalogModule`
 
-**File:** `di/behavior/BehaviorRegistration.java`
+**File:** `di/modules/server/BehaviorCatalogModule.java`
 
-An immutable record that holds all metadata for a single behavior binding:
+Every behavior has exactly one `@Provides @IntoSet static BehaviorCatalogEntry` method here. The entry *describes* the
+behavior; it does **not** bind it to a profession.
 
-```
-@Builder
-public record BehaviorRegistration(
-    
-    // which profession uses this behavior
-    VillagerProfessionKey profession,
-    
-    // creates a fresh behavior instance
-    Supplier<IBehavior<BaseVillager>> behaviorFactory,
-    
-    // WORK, IDLE, MEET, etc.
-    Activity activity,
-    
-    // relative weight in Minecraft's behavior choice
-    int weight,
-    
-    // priority for UI snapshot ordering
-    int priority
+**`BehaviorCatalogEntry`** (`di/catalog/BehaviorCatalogEntry.java`) is a record of:
 
-)
-```
-
-**Key design decisions:**
-
-- **`Supplier` factory, not a direct instance.** Behaviors are stateful (they track cooldowns, targets, step progress).
-  Each villager entity gets its own behavior instance. The `Supplier` defers creation until `resolve()` is called
-  during villager brain registration.
-- **`weight`** controls how Minecraft's `GateBehavior` selects among competing behaviors in the same activity. Higher
-  weight = more likely to be chosen.
-- **`priority`** controls ordering in the behavior controller UI snapshot. Higher priority = shown first.
-
----
-
-## BehaviorModule
-
-**File:** `di/modules/server/BehaviorModule.java`
-
-The single, centralized catalog of all behavior-to-profession bindings. Every behavior in the mod has exactly one
-`@Provides @IntoSet` method here.
-
-### Structure
-
-Each method:
-
-1. Receives its config (and any other dependencies) as parameters — Dagger injects these from `ConfigModule` /
-   `DataManagerModule`.
-2. Returns a `BehaviorRegistration` that captures the profession, activity, and a factory `Supplier` that closes over
-   the injected config.
+- `BehaviorPlanningMetadata descriptor` — the planner-facing metadata: `BehaviorKey key`, `BehaviorCategory category`
+  (`WORK | SOCIAL | SELF_CARE | LEISURE | COMBAT`), `WorkIntensity intensity` (`HEAVY | LIGHT | NONE`), the required
+  `BehaviorChannel`s, `cooldown` (`CooldownRange`), `estimatedDuration`, `interruptible`, and zero or more
+  `OpportunityRequirement`s.
+- `BehaviorDisplayMetadata displayInfo` — display name key + icon item, for the day-plan UI.
+- `Supplier<IBehavior<BaseVillager>> factory` — creates a fresh behavior instance per run.
 
 ```
 @Provides
 @IntoSet
-static BehaviorRegistration fishermanFishing(FishingConfig config, HungerConfig hungerConfig) {
-    return work(VillagerProfessionKey.FISHERMAN, () -> new FishingBehavior(config, hungerConfig));
+static BehaviorCatalogEntry harvestPumpkin(HarvestPumpkinConfig config, BehaviorSupport support) {
+    return BehaviorCatalogEntry.builder()
+            .descriptor(BehaviorPlanningMetadata.builder()
+                    .key(BehaviorKey.HARVEST_PUMPKIN)
+                    .category(BehaviorCategory.WORK)
+                    .intensity(WorkIntensity.HEAVY)
+                    .requiredChannel(BehaviorChannel.MOVEMENT)
+                    .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                    .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                            Set.of(MemoryTypeRegistry.RIPE_PUMPKIN_SITES)))
+                    .build())
+            .displayInfo(BehaviorDisplayMetadata.builder()...build())
+            .factory(() -> new HarvestPumpkinBehavior(config, support))
+            .build();
 }
 ```
 
-### Helper methods
+The set is indexed by `BehaviorCatalogImpl` (implements `IBehaviorCatalog`), which exposes `getDescriptor(key)`,
+`createBehavior(key)` (invokes the entry's `factory` → fresh instance), and `exists(key)`.
 
-| Method                                        | Activity        | Weight | Priority |
-|-----------------------------------------------|-----------------|--------|----------|
-| `work(profession, factory)`                   | `Activity.WORK` | 10     | 10       |
-| `core(profession, factory)`                   | `Activity.CORE` | 10     | 10       |
-| `registration(profession, activity, factory)` | (any)           | 10     | 10       |
+### The pools — `PoolModule`
 
-### Current registrations
+**File:** `di/modules/server/PoolModule.java`
 
-- **Armorer**
-    - RepairIronGolem
-    - BlastOre
-- **Butcher**
-    - BreedPigs
-    - SmokeMeat
-    - ButcherLivestock
-- **Cleric**
-    - ThrowPotions (WORK, MEET, IDLE)
-    - HarvestSoulSand
-- **Farmer**
-    - HarvestSugarCane
-    - CollectHoney
-    - HarvestHoneycomb
-    - TameWolf
-    - TameCat
-    - BreedChickens
-    - MilkCow
-- **Fisherman**
-    - TameCat
-    - Fishing
-- **Fletcher**
-    - BreedChickens
-- **Leatherworker**
-    - BreedCows
-- **Librarian**
-    - EnchantItem
-- **Mason**
-    - CutStone
-    - HarvestOre
-- **Shepherd**
-    - ShearSheep
-    - TameWolf
-- **Toolsmith**
-    - RepairIronGolem
-- **Weaponsmith**
-    - RepairIronGolem
-
-**Cross-profession CORE behaviors** — registered once per vanilla profession constant (including `NONE` and `NITWIT`):
-
-- **All professions** (CORE)
-    - EatFood
-
-Note: Cleric's `ThrowPotions` is registered for three activities (WORK, MEET, IDLE), so it appears in each of those
-activity phases. Each activity registration creates a separate behavior instance.
-
-Note: `EatFood` is a universal behavior that every villager needs regardless of profession. It is currently registered
-with a separate `@Provides @IntoSet` method per profession constant. This is a known DRY limitation of the flat-set
-registration model — any behavior that must apply to all professions requires one entry per profession.
-
----
-
-## BehaviorPackageResolver
-
-**File:** `di/behavior/BehaviorPackageResolver.java`
-
-A `@ServerScope` service that pre-processes the full `Set<BehaviorRegistration>` into a lookup map at component
-creation time, then serves resolved behavior packages on demand.
-
-### Construction (eager grouping)
+Each profession's available behaviors are a `@Provides @IntoSet static ProfessionBehaviorPool` method — a pure
+availability mapping from a `VillagerProfessionKey` (a record with static constants, not an enum) to a list of
+`PoolEntry`s. A `PoolEntry` is a `BehaviorKey` plus an optional relative weight (default 1; larger weights bias the
+planner toward that behavior in packed windows).
 
 ```
-@Inject
-public BehaviorPackageResolver(Set<BehaviorRegistration> registrations) {
-    this.professionBehaviors = registrations.stream()
-        .sorted(...)   // by profession ID → activity → priority → weight
-        .collect(Collectors.groupingBy(BehaviorRegistration::profession));
+static ProfessionBehaviorPool farmerPool() {
+    return ProfessionBehaviorPool.builder()
+            .profession(VillagerProfessionKey.FARMER)
+            .entry(PoolEntry.of(BehaviorKey.HARVEST_PUMPKIN))
+            .entry(PoolEntry.of(BehaviorKey.HARVEST_MELON))
+            // ...
+            .build();
 }
 ```
 
-This runs once when the `ServerComponent` is created. Villager entity spawns do not re-scan the catalog.
+Universal behaviors are **not** listed per profession — see [Resolution](#stage-2--resolution).
 
-### Resolution
+### `BehaviorKey`
 
-```
-ResolvedBehaviors resolve(VillagerProfessionKey profession, Activity activity)
-```
+**File:** `domain/ai/catalog/BehaviorKey.java`
 
-For a given profession and activity, `resolve()`:
+The stable identity used everywhere else (catalog descriptor, pool entries, plan slots, day-plan UI). A new behavior
+needs a new `BehaviorKey` constant.
 
-1. Filters registrations to the requested activity.
-2. Calls each `behaviorFactory.get()` to create a fresh behavior instance.
-3. Wraps it in a `DefaultBehaviorAdapter` for Minecraft's brain system.
-4. Creates a `BehaviorBinding` for UI tracking.
-5. Returns both lists bundled as `ResolvedBehaviors`.
-
-The **same behavior instance** is shared between the brain (which ticks it) and the UI snapshot builder (which reads
-its live state). This is intentional — the UI shows real-time behavior status.
-
-### ResolvedBehaviors
-
-```
-public record ResolvedBehaviors(
-    List<Pair<? extends BehaviorControl<? super Villager>, Integer>> choiceBehaviors,  // for brain
-    List<BehaviorBinding> trackedBindings                                              // for UI
-)
-```
+> **The wiring seam:** the catalog entry and its config are Dagger-validated at compile time, but the pool mapping and
+> `BehaviorKey` are not checked against the catalog. A behavior with a catalog entry that no pool references is dead —
+> it will never be planned. See the [checklist in Common Tasks](common_tasks.md#add-a-new-behavior).
 
 ---
 
-## Consumption in BaseVillager
+## Stage 2 — Resolution
 
-**File:** `infrastructure/minecraft/entities/villager/BaseVillager.java`
+**File:** `application/ai/catalog/BehaviorPoolResolver.java` (`@ServerScope`)
 
-When a villager's brain is registered (`registerCustomGoals()`), it:
-
-1. Gets the `BehaviorPackageResolver` from `SettlementsDagger.serverOrThrow().behaviorPackageResolver()`.
-2. Resolves behaviors for each activity (IDLE, WORK, MEET).
-3. Passes `choiceBehaviors` to `VanillaBehaviorPackages` which merges them with vanilla behaviors into Minecraft's
-   `Brain`.
-4. Collects `trackedBindings` for the behavior controller UI.
+Injected with the `IBehaviorCatalog` and the `Set<ProfessionBehaviorPool>` from `PoolModule`. Its one method:
 
 ```
-BehaviorPackageResolver resolver = SettlementsDagger.serverOrThrow().behaviorPackageResolver();
-
-// For each activity:
-BehaviorPackageResolver.ResolvedBehaviors workResolved = resolver.resolve(professionKey, Activity.WORK);
-brain.addActivityWithConditions(Activity.WORK,
-    VanillaBehaviorPackages.getWorkPackage(profession, 0.5F, workResolved.choiceBehaviors()), ...);
-trackedBehaviors.addAll(workResolved.trackedBindings());
+List<WeightedBehavior> resolve(VillagerProfessionKey profession)
 ```
 
-`BaseVillager` uses `SettlementsDagger` because Minecraft controls entity creation — constructor injection is not
-possible here.
+It merges the profession's pool with a hardcoded set of **universal** behaviors — `UNIVERSAL_ENTRIES` = `EAT_FOOD`,
+`TRADE_INITIATE`, `COURTSHIP_INITIATE`, `MANAGE_CHESTS`, `COLLECT_DEMANDED_ITEM`, `CRAFT_GOODS` — via `putIfAbsent`, so a
+profession's own weight for a key wins over the universal default. Each merged `BehaviorKey` is joined against
+`catalog.getDescriptor(key)` and paired with its pool weight into a `WeightedBehavior(descriptor, weight)`.
+
+The result is the "availability + metadata" list handed to the planner. There is no day-type filtering here — that is
+applied later as planner multipliers. (This is what solved the old per-profession `EatFood` duplication: universals are
+merged once, centrally.)
 
 ---
 
-## Adding a New Behavior
+## Stage 3 — Planning
 
-Step-by-step instructions are in [Common Tasks](common_tasks.md#add-a-new-behavior). The short version:
+**File:** `application/ai/planning/HeuristicPlanGenerator.java` (implements `IPlanGenerator`)
 
-1. Create the behavior class in `application/ai/behavior/usecases/villager/<category>/`.
-2. Create its config class in the same package.
-3. Add a `@Provides @Singleton` method for the config in `ConfigModule`.
-4. Add a `@Provides @IntoSet` method in `BehaviorModule`.
-5. Build — Dagger validates the full graph at compile time. If the config binding is missing, the build fails with a
-   clear error message pointing to the missing dependency.
+```
+DayPlan generate(PlanGenerationContext context)
+```
+
+The generator packs `context.availableBehaviors()` (the `List<WeightedBehavior>`) into an ordered `DayPlan`, using the
+descriptor metadata:
+
+- **`WorkIntensity` + `BehaviorCategory`** drive rest-day multipliers and afternoon ordering (e.g. a charisma-gated
+  social preference).
+- **`estimatedDuration`** sets each slot's length and the packer's window budget.
+- **`cooldown`** sets per-key spacing/cadence in the window packer — this is where behavior cadence is enforced
+  (**not** at runtime; see the execution note below).
+- **`OpportunityRequirement`** applies a down-weight (`0.2×`) to any key the `OpportunityForecaster` reports as lacking
+  a live opportunity, rather than hard-excluding it.
+
+### Plan data structures (`domain/ai/planning/`)
+
+- **`DayPlan`** — an ordered `List<PlanSlot>` (rigid meal anchors + greedily packed work/afternoon/rest windows), plus
+  `dayType`, `wakeAtAbsoluteTick`, a coarse `DayPlanSchedule` (ambient IDLE/WORK/MEET/REST blocks), and mutable
+  `status` / `currentSlotIndex`. Key methods: `getCurrentSlot()`, `advanceSlot()`, `isExhausted()`.
+- **`PlanSlot`** — `startTick` (0–24000, 0 = 6 AM), `BehaviorKey`, `priority`, `flexible` (flexible slots are skipped
+  when preconditions fail; rigid slots are retried), `estimatedDurationTicks`, `reason`, and a mutable
+  `PlanSlotStatus` (`PENDING → ACTIVE → COMPLETED | SKIPPED | INTERRUPTED`).
+
+### Opportunity forecasting
+
+**File:** `application/ai/planning/OpportunityForecaster.java` (`@ServerScope`)
+
+`forecastLackingOpportunity(BaseVillager, List<WeightedBehavior>)` evaluates each descriptor's `OpportunityRequirement`s
+(AND-combined) against a live probe (inventory, job-site block, decaying sensed sites via `SensedSiteReader`). It **must
+run on the server thread** (the decaying-memory read lazily expires entries), so `PlanRunner` runs it while building the
+context and passes only the plain `Set<BehaviorKey>` into planning.
+
+### Async path and storage
+
+`HeuristicAsyncPlanGenerator` (implements `IAsyncPlanGenerator`) wraps the sync generator in
+`CompletableFuture.supplyAsync(..., @PlanGenerationExecutor)` so a plan can be pre-computed off-thread before a
+villager's wake tick. There is currently **no LLM planner** — the async wrapper exists to exercise that orchestration
+path until a slower generator is introduced. The plan is stored per-villager as a NeoForge attachment
+(`VillagerDayPlanAttachment`, via `BaseVillager.getDayPlan()`/`setDayPlan()`); transient cursor state lives in
+`PlanRuntimeState` (`villager.getPlanRuntimeState()`).
+
+> For the design intent behind day planning (rest-day policy, opportunity weighting, and the planned LLM intent
+> overlay), see the day-planning working docs rather than this reference.
+
+---
+
+## Stage 4 — Execution
+
+This is what replaced the old vanilla-`Activity` consumption path. Settlements behaviors are ticked by a **custom
+executor**, not by vanilla `GateBehavior`.
+
+### Host — `PlanRunnerBehavior`
+
+**File:** `infrastructure/minecraft/behavior/planning/PlanRunnerBehavior.java`
+
+A vanilla `Behavior<Villager>` registered into the brain's **CORE** activity at priority 20, so it ticks every server
+tick regardless of the active non-core activity. It never self-terminates (`timedOut()` → `false`, `canStillUse()` →
+`true`) so it can suspend/resume the inner behavior across PANIC/RAID. Its `tick(...)`:
+
+1. If unsafe (hurt / hostile nearby) → `planRunner.forceStop(...)`, return.
+2. `if (planRunner.tickOverride(...)) return;` — reactive overrides fire **before** the plan gate.
+3. Gate on the active non-core activity: if it is not in `MANAGED_ACTIVITIES = {WORK, MEET, IDLE}` →
+   `planRunner.suspendIfActive(...)` + `ensureValidPlan(...)`, return.
+4. Otherwise `planRunner.tick(...)`.
+
+### The executor loop — `PlanRunner`
+
+**File:** `application/ai/planning/PlanRunner.java` (`@ServerScope`)
+
+`tick(level, villager)` advances the plan clock, adopts any async-pre-generated plan whose wake tick has arrived, runs a
+cascade of invalidation guards (async overrun, backward time jump, missing/exhausted/overdue plan, calendar-day
+mismatch — each may `hardReset` = force-stop + regenerate), then dispatches on the current slot's status:
+
+- **`PENDING` → `tryStartSlot`** — checks the slot window, `catalog.createBehavior(key)` for a fresh instance,
+  force-completes the instance's cooldowns (cadence was already enforced at plan-gen time), runs
+  `behavior.tickPreconditions(...)`; on success `behavior.start(...)`, records it on `PlanRuntimeState`, sets the
+  `PLAN_BEHAVIOR_ACTIVE` memory, and marks the slot `ACTIVE`. A failed flexible slot is `SKIPPED`; a rigid slot arms a
+  retry.
+- **`ACTIVE` → `tickActiveSlot`** — **calls `behavior.tick(delta, level, villager)`** — the actual per-tick drive into
+  the `VillagerStateMachineBehavior`. A run-duration ceiling (`descriptor.getMaxRunDuration()`, else a 1-minute default)
+  aborts a stuck behavior. When `behavior.getStatus() == STOPPED`, the outcome is published, the memory cleared, and
+  `plan.advanceSlot()` moves on.
+- **`COMPLETED | SKIPPED | INTERRUPTED`** → clear `PLAN_BEHAVIOR_ACTIVE`, `plan.advanceSlot()`.
+
+### Overrides and interruptibility
+
+`tickOverride(...)` runs a set of `OverridePolicy` (sorted by priority) before the plan tick — reactive behaviors like
+Investigate that can pre-empt the plan. An override may only interrupt the current behavior if its descriptor is
+`interruptible` (`canInterruptCurrentPlanBehavior`); this is where the `interruptible` metadata is enforced. A
+`ConfirmableOverride` that confirms triggers a full `hardReset`/replan; otherwise the interrupted slot is re-queued
+`PENDING`.
+
+### The `PLAN_BEHAVIOR_ACTIVE` latch
+
+Whenever a plan slot or override is active, `PlanRunner` sets the vanilla-backed `PLAN_BEHAVIOR_ACTIVE` memory. Its
+consumer is `AmbientBehaviors.gated(...)`, which wraps every vanilla ambient behavior in a `GateBehavior` requiring
+`PLAN_BEHAVIOR_ACTIVE` to be **absent**. So the memory is the mutual-exclusion latch: while a Settlements behavior runs,
+vanilla ambient life is suppressed.
+
+> **Never leave a nav step uncapped.** Because a running behavior holds `PLAN_BEHAVIOR_ACTIVE`, a behavior that stalls
+> (e.g. an unreachable navigation target) freezes not just the villager but the rest of its day plan until the
+> run-duration ceiling or a PANIC frees it. Cap `StayCloseStep`/`NavigateToTargetStep` with a timeout + fail-over
+> transition.
+
+### Activity alignment — `PlanContextSwitcher`
+
+**File:** `infrastructure/minecraft/behavior/planning/PlanContextSwitcher.java`
+
+Also a vanilla CORE `Behavior<Villager>` (priority 98). Once per second it derives the target vanilla `Activity` from
+the active slot's `BehaviorCategory` (`WORK → WORK`, `SOCIAL → MEET`) or the `DayPlanSchedule`, and calls
+`brain.setActiveActivityIfPossible(...)`. This keeps the vanilla activity aligned so the `PlanRunnerBehavior` gate opens
+and the correct ambient package is active.
+
+### The behavior contract
+
+Behaviors implement `IBehavior<BaseVillager>` (`domain/ai/behavior/contracts/IBehavior.java`): preconditions,
+continue-conditions, precondition/behavior cooldown `ITickable`s, `getStatus()`, `tickPreconditions`, `start`, `tick`,
+`stop`, `requestStop`. Concrete villager behaviors extend `application/ai/behavior/runtime/VillagerStateMachineBehavior`
+(→ `StateMachineBehavior<BaseVillager>` → `AbstractBehavior`). See
+[Common Tasks](common_tasks.md#add-a-new-behavior) for the constructor/state-machine pattern.
+
+---
+
+## Vanilla brain integration that remains
+
+`registerCustomGoals()` is gone; brain wiring now happens in `BaseVillager.registerBrainGoals(Brain<Villager>)`. What
+survives:
+
+- **CORE** (`brain.addActivity(Activity.CORE, ...)`) — `VanillaBehaviorPackages.getCorePackage(...)` (look-at, swim,
+  panic trigger, …) **plus** the two Settlements hosts: `PlanRunnerBehavior` @20 and `PlanContextSwitcher` @98 (adults
+  only).
+- **PANIC / PRE_RAID / RAID / HIDE** — fully vanilla packages.
+- **Adult ambient WORK / MEET / IDLE / REST** (`addActivityWithConditions(...)`) — vanilla *ambient* villager life
+  (strolling, gossip, look-at) from `VanillaAmbientBehaviorPackages`, each internally `AmbientBehaviors.gated(...)`
+  behind `PLAN_BEHAVIOR_ACTIVE`.
+- **Babies** — pure vanilla IDLE/PLAY/MEET/REST packages; no plan runner.
+
+So `addActivityWithConditions(Activity.WORK, ...)` still exists, but it now registers **gated vanilla ambient life**, not
+Settlements behaviors. **No Settlements behavior is ever a vanilla brain `Behavior`/`Activity` entry** — the vanilla
+brain contributes reflexes, panic/raid, and ambient filler, and provides the tick loop + activity gate that host the two
+plan behaviors. The Settlements runtime (`PlanRunner`) owns all Settlements-behavior execution.
+
+The whole runtime rides inside the vanilla brain tick: `BaseVillager.customServerAiStep()` → `super.customServerAiStep()`
+ticks the vanilla `Brain` → CORE runs `PlanRunnerBehavior` and `PlanContextSwitcher`. There is no custom AI goal and no
+separate server-tick event.
+
+---
+
+## Sensors (the read side)
+
+Sensors translate world/entity state into brain memory that behaviors and the planner read. There are **two live sensor
+frameworks** — the older doc's claim that the mod-native one is "dormant" is no longer true:
+
+- **Mod-native `AbstractSensor<BaseVillager>`** — bound as `VillagerSensorFactory` `@IntoSet` in `SensorCatalogModule`
+  and ticked every villager tick by `VillagerBrain.tick(...)` (`BaseVillager.tick()` → `settlementsBrain.tick(1)`).
+  Examples: `BlockResourceSensor`, `EntityPerceptionSensor`, `EntitySightingEmitterSensor`. This is the actively-used
+  path for new senses, and the block-resource sensor is the shared-index sensing spine (see
+  [Add a New Block Resource](common_tasks.md#add-a-new-block-resource-villager-block-sensing)).
+- **Vanilla `Sensor<Villager>`** — registered as a `SensorType` in `SensorTypeRegistry` and listed in
+  `BaseVillager.sensorTypes()` (a private static **method**, not a `SENSOR_TYPES` field), ticked by the vanilla brain.
+  Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationTotemSensor`, `WillingCourtshipPartnersSensor`,
+  `SettlementsHurtBySensor`. Used for entity and block-entity senses.
+
+For the memory side (vanilla-backed vs. decaying spatial, and the fact that neither persists across a reload), see
+[Villager Memory](common_tasks.md#villager-memory-vanilla-backed-vs-decaying).
+
+---
+
+## Behavior-status UI
+
+The real-time behavior/plan UI is the **Day Plan snapshot pipeline**, built from the persisted `DayPlan`/`PlanSlot`
+schedule (not from a live behavior instance shared with the brain):
+
+`DayPlanSnapshotAssembler` (`@ServerScope`, reads the villager's `DayPlan`) → `DayPlanSnapshot` (slots carry a
+`DayPlanSlotVisualStatus`) → `DayPlanSnapshotPublisher` → `ClientBoundDayPlanSnapshotPacket` → `DayPlanScreen`.
+
+---
+
+## Adding a new behavior
+
+The step-by-step recipe — config record, behavior class, `ConfigModule`, `BehaviorCatalogModule` entry, `BehaviorKey`,
+and the required `PoolModule` mapping — lives in [Common Tasks](common_tasks.md#add-a-new-behavior). In short:
+
+1. Create the behavior class in `application/ai/behavior/usecases/villager/<category>/`, extending
+   `VillagerStateMachineBehavior`.
+2. Create its `@BehaviorConfig` record in the same package.
+3. Add a `@Provides @Singleton` config method in `di/modules/ConfigModule.java`.
+4. Add a `@Provides @IntoSet BehaviorCatalogEntry` method in `di/modules/server/BehaviorCatalogModule.java`, and a
+   `BehaviorKey` constant.
+5. Add the `BehaviorKey` to the relevant profession pool(s) in `di/modules/server/PoolModule.java`.
+6. Build (Dagger validates the catalog + config graph) and verify in-game that the villager actually plans and runs the
+   behavior — steps 4–5's key/pool wiring is not compile-checked.

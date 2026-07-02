@@ -7,34 +7,67 @@ concepts behind these patterns, see [Dagger Guide](dagger_guide.md) and [Behavio
 
 ## Add a New Behavior
 
-**Example:** Adding a `CompostBehavior` for the Farmer profession.
+**Example:** the real `HarvestPumpkinBehavior` for the Farmer profession. A behavior touches **four** seams — config,
+behavior class, catalog entry, and profession pool (plus a `BehaviorKey` constant). The behavior class and catalog entry
+are Dagger-validated at compile time, but the pool mapping is not: miss it and the behavior compiles and registers yet
+never fires.
 
-### 1. Create the config class
+### 1. Create the config record
 
-**File:** `application/ai/behavior/usecases/villager/farming/CompostConfig.java`
+**File:** `application/ai/behavior/usecases/villager/farming/HarvestPumpkinConfig.java`
 
-Create a config record with the `@BehaviorConfig` annotation. Fields annotated with `@IntegerConfig`, `@DoubleConfig`,
-etc. are auto-registered with NeoForge's config system via `ConfigAnnotationProcessor`.
-
-### 2. Create the behavior class
-
-**File:** `application/ai/behavior/usecases/villager/farming/CompostBehavior.java`
-
-Extend `StateMachineBehavior` (for multi-step workflows) or `BaseVillagerBehavior` (for simple single-tick behaviors).
-Accept the behavior's own config and `HungerConfig` as constructor parameters — `HungerConfig` is required by
-`BaseVillagerBehavior` and controls the hunger-based cooldown multiplier applied when the behavior stops.
+Annotate a `record` with `@BehaviorConfig(name = ..., type = ConfigurationType.BEHAVIOR)` and `implements
+BehaviorTimingConfig`. Each component carries a config annotation (`@IntegerConfig`, `@DoubleConfig`, …); the
+`ConfigAnnotationProcessor` scans `@BehaviorConfig` types at startup and builds the NeoForge `ModConfigSpec` (record
+components are handled by `RecordConfigProcessor`). Reuse the standard identifiers from `BehaviorConfigConstants` for the
+four cooldown fields plus `experienceReward`.
 
 ```
-public class CompostBehavior extends StateMachineBehavior {
-    public CompostBehavior(CompostConfig config, HungerConfig hungerConfig) {
-        super(log,
-              config.createPreconditionCheckCooldownTickable(),
-              config.createBehaviorCooldownTickable(),
-              hungerConfig);
-        // ...
+@BehaviorConfig(name = "harvest_pumpkin", type = ConfigurationType.BEHAVIOR)
+public record HarvestPumpkinConfig(
+        @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER, ...) int preconditionCheckCooldownMin,
+        // ... cooldown max, behavior cooldown min/max ...
+        @IntegerConfig(type = ConfigurationType.BEHAVIOR,
+                identifier = BehaviorConfigConstants.EXPERIENCE_REWARD_IDENTIFIER, ...) int experienceReward
+) implements BehaviorTimingConfig {
+    public HarvestPumpkinConfig {
+        BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
+                behaviorCooldownMin, behaviorCooldownMax);
     }
 }
 ```
+
+`BehaviorTimingConfig` supplies the `createPreconditionCheckCooldownTickable()` / `createBehaviorCooldownTickable()`
+default methods used by the behavior's `super(...)` call.
+
+### 2. Create the behavior class
+
+**File:** `application/ai/behavior/usecases/villager/farming/HarvestPumpkinBehavior.java`
+
+Villager behaviors extend `VillagerStateMachineBehavior` (which is `StateMachineBehavior<BaseVillager>`). The
+constructor takes the behavior's own config plus a `BehaviorSupport` — **not** `HungerConfig`. `BehaviorSupport` is the
+shared collaborator bag (target resolver, hunger config, etc.); the hunger-based cooldown multiplier is applied on stop
+through `BehaviorSupport.getHungerConfig()`, you never pass `HungerConfig` in yourself.
+
+```
+public HarvestPumpkinBehavior(HarvestPumpkinConfig config, BehaviorSupport support) {
+    super(log,
+          config.createPreconditionCheckCooldownTickable(),
+          config.createBehaviorCooldownTickable(),
+          support,
+          config.experienceReward());
+    this.targetResolver = support.getBlockMemoryTargetResolver();  // pull collaborators off support
+    this.preconditions.add(KnownBlockSitesPrecondition.builder()
+            .memoryType(MemoryTypeRegistry.RIPE_PUMPKIN_SITES)
+            // ...
+            .build());
+    this.initializeStateMachine(this.createControlStep(), Stage.END);  // build the staged state machine
+}
+```
+
+(There is no `BaseVillagerBehavior` "simple single-tick" base — every villager behavior extends
+`VillagerStateMachineBehavior`.)
 
 ### 3. Register the config in ConfigModule
 
@@ -43,29 +76,69 @@ public class CompostBehavior extends StateMachineBehavior {
 ```
 @Provides
 @Singleton
-static CompostConfig compostConfig() {
-    return ConfigFactory.create(CompostConfig.class);
+static HarvestPumpkinConfig harvestPumpkinConfig() {
+    return ConfigFactory.create(HarvestPumpkinConfig.class);
 }
 ```
 
-### 4. Register the behavior in BehaviorModule
+### 4. Register a catalog entry in BehaviorCatalogModule
 
-**File:** `di/modules/server/BehaviorModule.java`
+**File:** `di/modules/server/BehaviorCatalogModule.java`
+
+The behavior is *described* here as a `@Provides @IntoSet BehaviorCatalogEntry` — its `BehaviorKey`, category +
+intensity, required channels, cooldown, and the `factory` that constructs it. **Profession is not set here.**
 
 ```
 @Provides
 @IntoSet
-static BehaviorRegistration farmerCompost(CompostConfig config, HungerConfig hungerConfig) {
-    return work(VillagerProfessionKey.FARMER, () -> new CompostBehavior(config, hungerConfig));
+static BehaviorCatalogEntry harvestPumpkin(HarvestPumpkinConfig config, BehaviorSupport support) {
+    return BehaviorCatalogEntry.builder()
+            .descriptor(BehaviorPlanningMetadata.builder()
+                    .key(BehaviorKey.HARVEST_PUMPKIN)
+                    .category(BehaviorCategory.WORK)          // WORK | SOCIAL | SELF_CARE | LEISURE | COMBAT
+                    .intensity(WorkIntensity.HEAVY)           // HEAVY | LIGHT | NONE
+                    .requiredChannel(BehaviorChannel.MOVEMENT)
+                    .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                    .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                            Set.of(MemoryTypeRegistry.RIPE_PUMPKIN_SITES)))   // for site-gated work
+                    .build())
+            .displayInfo(BehaviorDisplayMetadata.builder()...build())
+            .factory(() -> new HarvestPumpkinBehavior(config, support))
+            .build();
 }
 ```
 
-For non-WORK activities, use `registration(profession, Activity.IDLE, ...)` instead.
+There is no vanilla `Activity` here — categorization is `BehaviorCategory` + `WorkIntensity`. Use `SELF_CARE` for
+eating, `SOCIAL` for trade/courtship, and `LEISURE` + `WorkIntensity.NONE` for nitwit/idle behaviors. (A nitwit-eligible
+behavior **must** be `LEISURE`/`NONE`: a `WORK` behavior gets a zero-length work window on a nitwit and never fires.)
 
-### 5. Build and verify
+### 5. Add the BehaviorKey constant
 
-Run the Gradle build. Dagger validates the full dependency graph at compile time — if the `CompostConfig` binding is
-missing from `ConfigModule`, the build fails with a clear error pointing to the unresolved dependency.
+The `.key(BehaviorKey.HARVEST_PUMPKIN)` above must exist in `BehaviorKey` (`domain/ai/catalog/`). Add it if new.
+
+### 6. Map the behavior to a profession in PoolModule
+
+**File:** `di/modules/server/PoolModule.java`
+
+This is the seam that is *not* compile-checked — a catalog entry no pool references is dead. Add a `PoolEntry` to the
+profession's pool (`VillagerProfessionKey` is a record with static constants, not an enum):
+
+```
+static ProfessionBehaviorPool farmerPool() {
+    return ProfessionBehaviorPool.builder()
+            .profession(VillagerProfessionKey.FARMER)
+            .entry(PoolEntry.of(BehaviorKey.HARVEST_PUMPKIN))
+            // ... other farmer entries ...
+            .build();
+}
+```
+
+Universal behaviors (eat, wander, rest, trade) are merged in by `BehaviorPoolResolver` and are not listed per-profession.
+
+### 7. Build and verify
+
+Dagger validates the graph at compile time, but steps 5–6 are not checked against the catalog. Verify in-game that the
+villager actually runs the behavior.
 
 ---
 
@@ -91,100 +164,165 @@ parameter.
 
 ## Add a New Data Manager
 
-### 1. Create the data manager class
+Datapack loaders are codec-backed and extend one of the base classes in `infrastructure/minecraft/data/framework`
+— you do **not** hand-roll a `SimpleJsonResourceReloadListener`, and registration is a single `@Binds` line, not
+an edit to `CommonModEvents`. The full walkthrough (choosing a base, authoring the codec, wiring, and testing)
+lives in the [Datapack System](datapack_system.md) reference — see [Adding a new loader](datapack_system.md#adding-a-new-loader).
 
-**File:** `infrastructure/minecraft/data/<feature>/MyDataManager.java`
+In short:
 
-Extend `SimpleJsonResourceReloadListener`. Implement any domain-layer registry interface if applicable (dependency
-inversion).
-
-### 2. Register in DataManagerModule
-
-**File:** `di/modules/DataManagerModule.java`
-
-```
-@Provides
-@Singleton
-static MyDataManager myDataManager() {
-    return new MyDataManager();
-}
-```
-
-### 3. Expose from SettlementsComponent (if needed externally)
-
-**File:** `di/SettlementsComponent.java`
-
-Add an accessor method if the data manager needs to be exposed for reload listener registration or direct access:
-
-```
-MyDataManager myDataManager();
-```
-
-### 4. Register as a reload listener (if applicable)
-
-**File:** `bootstrap/event/CommonModEvents.java` — in `registerReloadListeners()`
-
-```
-event.addListener(component.myDataManager());
-```
-
-### 5. Expose via domain interface (if applicable)
-
-If the data manager implements a domain-layer registry interface, add a binding in `GenerationModule`:
-
-```
-@Provides
-@Singleton
-static MyRegistry myRegistry(MyDataManager manager) {
-    return manager;
-}
-```
+1. Pick the lowest-fitting base (`KeyedCatalogDataManager`, `ProfessionCatalogDataManager`, `WeightedYieldDataManager`,
+   or plain `CodecJsonDataManager` for a bespoke shape).
+2. Author the domain `record` + its co-located `FooCodec` (`public static final Codec<Foo> CODEC`).
+3. Write the loader; `implements` its domain registry interface.
+4. `@Provides @Singleton` the concrete loader in `di/modules/DataManagerModule.java`, and bind it to its registry
+   port in the relevant feature module.
+5. Add one `@Binds @IntoSet @DataReloadListeners` line in `di/modules/ReloadListenerModule.java`.
+6. Drop the JSON under `data/settlements/settlements/<directory>/` and test via `manager.reload(entries)`.
 
 ---
 
-## Add a New Custom Sensor
+## Add a New Block Resource (villager block sensing)
 
-**Example:** Adding a `NeedFoodSensor` that writes a custom memory when a villager is low on food.
+Villagers sense harvestable/collectable **blocks** (crops, ore, sand, gravel, full hives, …) through a shared,
+server-scoped `WorldResourceIndex`, **not** through per-sensor world scans. An off-thread scanner (`ResourceIndexRefresher`,
+on the `@WorldScanExecutor`) keeps the index fresh using palette-prefiltered section snapshots; a single stateless
+`BlockResourceSensor` queries it for every resource at once and folds the hits into each villager's decaying spatial
+memory (bounded, self-expiring — see [Villager Memory](#villager-memory-vanilla-backed-vs-decaying)).
 
-### 1. Register the memory type
+**So adding a block resource is pure registration — you write no sensor.** Three steps:
+
+### 1. Add a BlockMatcher
+
+**File:** `domain/world/blocks/BlockMatchers.java`
+
+A `BlockMatcher` is a cheap state predicate (drives the palette prefilter) plus an optional neighbor/context predicate
+(run during the section scan):
+
+```
+public static final BlockMatcher HARVESTABLE_PUMPKIN = new BlockMatcher(
+        state -> state.is(Blocks.PUMPKIN),                                    // state-only, must be cheap
+        (pos, view) -> Direction.Plane.HORIZONTAL.stream()                    // context/neighbor test
+                .anyMatch(d -> view.getBlockState(pos.relative(d)).is(Blocks.ATTACHED_PUMPKIN_STEM)));
+```
+
+Use the single-arg constructor when no neighbor test is needed (see `RIPE_SWEET_BERRY_BUSH`, `RIPE_CROP`).
+
+### 2. Add a DecayingSpatialMemoryType
 
 **File:** `domain/ai/memory/MemoryTypeRegistry.java`
 
-Add a new `MemoryType<T>` entry and register it so `BaseVillager` can include the resulting
-`MemoryModuleType<?>` in its `MEMORY_TYPES` list.
+Declare the memory slot with a retention (TTL) and `maxEntries` (the nearest-K cap), and add it to
+`decayingSpatialTypes()`:
+
+```
+public static final MemoryType.DecayingSpatialMemoryType RIPE_PUMPKIN_SITES =
+        MemoryType.decaying("ripe_pumpkin_sites", ClockTicks.minutes(40), 32);
+```
+
+Decaying types need **no** vanilla `MemoryModuleType` and are **not** added to `BaseVillager` — they live in the
+`SettlementsMemoryStore`, not the vanilla brain.
+
+### 3. Bind a BlockResource into the multibound set
+
+**File:** `di/modules/server/SensorCatalogModule.java`
+
+```
+@Provides
+@IntoSet
+static BlockResource ripePumpkin() {
+    return new BlockResource(BlockMatchers.HARVESTABLE_PUMPKIN, MemoryTypeRegistry.RIPE_PUMPKIN_SITES);
+}
+```
+
+Because `BlockResourceSensor` and `ResourceIndexRefresher` both inject `Set<BlockResource>`, the new resource is now
+scanned off-thread, indexed, capped, decayed, and written into every villager's memory automatically. To make villagers
+*act* on it, write a behavior that reads `RIPE_PUMPKIN_SITES` via `KnownBlockSitesPrecondition` +
+`BlockMemoryTargetResolver` (see [Add a New Behavior](#add-a-new-behavior)).
+
+> **Exception:** block **entities** (chests, cultivation totems) need NBT/block-entity access and cannot use the
+> section-palette scan — they use a bespoke sensor (below), not a `BlockResource`.
+
+---
+
+## Add a Custom Sensor (entity & block-entity senses)
+
+Reach for a bespoke sensor only when the sense is **not** a `BlockState` scan — i.e. entity senses (nearby pets,
+courtship partners, hurt-by) or block-entity senses (chests, cultivation totems). For harvestable blocks, add a Block
+Resource (above) instead.
+
+Two sensor bases exist in the codebase:
+
+- **Vanilla `Sensor<Villager>`** — registered as a `SensorType` and added to `BaseVillager.sensorTypes()`; ticked by the
+  vanilla brain. Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationTotemSensor`,
+  `WillingCourtshipPartnersSensor`. This is the usual path for a new entity/BE sense — the steps below cover it.
+- **Mod-native `AbstractSensor<BaseVillager>`** — bound as a `VillagerSensorFactory` `@IntoSet` in `SensorCatalogModule`
+  (cooldown-driven, off the vanilla sensor tick). Examples: `EntityPerceptionSensor`, `EntitySightingEmitterSensor`, and
+  the block-resource sensor itself. Use this when you need the mod's own sensor lifecycle rather than the vanilla brain tick.
+
+### 1. Register the memory the sensor writes
+
+**File:** `domain/ai/memory/MemoryTypeRegistry.java`
+
+Add a `MemoryType.vanillaBacked(id, MemoryModuleTypeRegistry.X)` slot, backed by a `MemoryModuleType` you also register
+in `bootstrap/registry/memory/MemoryModuleTypeRegistry.java`. (These mod memories are transient — see
+[Villager Memory](#villager-memory-vanilla-backed-vs-decaying).)
 
 ### 2. Create the sensor class
 
-**File:** `infrastructure/minecraft/ai/sensors/NeedFoodSensor.java`
+**File:** `infrastructure/minecraft/ai/sensors/MySensor.java`
 
-Implement a vanilla `Sensor<Villager>` subclass (or the concrete villager subtype used by the codebase) and keep the
-logic focused on translating world/entity state into brain memory writes. This keeps the sensor on the infrastructure
-side of the architecture boundary because it directly depends on Minecraft brain APIs.
+Extend vanilla `Sensor<Villager>` and downcast to `BaseVillager` inside `doTick`. It stays on the infrastructure side
+because it depends directly on Minecraft brain APIs.
 
 ### 3. Register the sensor type
 
 **File:** `bootstrap/registry/sensors/SensorTypeRegistry.java`
 
-Create a `DeferredRegister<SensorType<?>>`, register the sensor type, and expose a `register(IEventBus)` method so the
-mod entry point can bind it to the mod event bus.
+Add to the `DeferredRegister<SensorType<?>>` with `() -> new SensorType<>(MySensor::new)`; the class already exposes
+`register(IEventBus)`.
 
 ### 4. Wire the registry into the mod bootstrap
 
 **File:** `SettlementsMod.java`
 
-Register `SensorTypeRegistry` on the mod event bus alongside the other deferred registries.
+`SensorTypeRegistry.register(modEventBus)` is already called alongside the other deferred registries — nothing to add
+unless you introduced a new registry class.
 
 ### 5. Add the memory and sensor to BaseVillager
 
 **File:** `infrastructure/minecraft/entities/villager/BaseVillager.java`
 
-Append the custom memory module to `MEMORY_TYPES` and the registered sensor type to `SENSOR_TYPES`. If either side is
-missing, the brain will not have the full contract the sensor expects.
+`memoryTypes()` and `sensorTypes()` are **private static methods** fed to `Brain.provider(...)` — not `MEMORY_TYPES` /
+`SENSOR_TYPES` fields. Append `MemoryTypeRegistry.X.getModuleType()` to `memoryTypes()` and
+`SensorTypeRegistry.MY_SENSOR.get()` to `sensorTypes()`. If either side is missing, the brain lacks the contract the
+sensor expects.
 
 ### 6. Build and verify
 
-Run the Gradle build and then verify in-game that the target villager gains and clears the memory on the expected sense
-interval. Sensors write memories; behaviors consume them later.
+Run the Gradle build, then verify in-game that the villager gains and clears the memory on the expected sense interval.
+Sensors write memories; behaviors consume them later.
+
+---
+
+## Villager Memory: vanilla-backed vs decaying
+
+Villager memory comes in two flavors, and **neither survives a world reload** — both are rebuilt from sensors after
+load. Anything that must persist (owned wolves, genetics, inventory, day plan, settlement metadata) lives in a
+codec-serialized attachment or `SettlementSavedData`, deliberately *outside* the memory system.
+
+| | Vanilla-backed (`MemoryType.VanillaMemoryType<T>`) | Decaying (`MemoryType.DecayingSpatialMemoryType`) |
+|---|---|---|
+| Payload | any (`Boolean`, entity, `List<GlobalPos>`, …) | `List<GlobalPos>` only |
+| Storage | vanilla `Brain` map (part of villager entity NBT) | `SettlementsMemoryStore` — RAM-only entity attachment |
+| Persists reload? | **No** — all mod modules registered `new MemoryModuleType<>(Optional.empty())`, no codec, so the brain serializer skips them. (Vanilla's own `HOME`/`JOB_SITE`/etc. persist because vanilla gave *them* codecs.) | **No** — attachment built without `.serialize(...)`; store is documented "Transient: not serialized". |
+| Decay | none (uncapped) | per-entry TTL + stalest-first eviction at `maxEntries` |
+| Written via | `IBrain.setMemory` | `IBrain.updateSites` (site upsert + confirmed-absence purge); a direct `setMemory` **throws** |
+| Use for | flags/entities/lists the vanilla brain machinery reads, or sensor-written lists that don't need decay (`VILLAGE_CHESTS`, `CULTIVATION_TOTEM_SITES`) | high-cardinality block-resource sites that should self-expire and stay bounded |
+
+Both are declared in `MemoryTypeRegistry` via the `vanillaBacked(...)` / `decaying(...)` factories. Practical
+consequence: right after a restart a villager has **no** Settlements memories (no remembered crop/ore sites, no
+`PLAN_BEHAVIOR_ACTIVE`); the next sensor scan cycle reconstructs them.
 
 ---
 
@@ -194,9 +332,12 @@ interval. Sensors write memories; behaviors consume them later.
 
 **Files to edit:**
 
-1. Create the packet class in `infrastructure/network/features/ui/<feature>/packet/`.
-2. Create the handler class in `infrastructure/network/features/ui/<feature>/handler/`. Give it an `@Inject`
+1. Create the packet class in `infrastructure/network/features/<area>/<feature>/packet/`.
+2. Create the handler class in `infrastructure/network/features/<area>/<feature>/handler/`. Give it an `@Inject`
    constructor that accepts any dependencies it needs.
+
+   > The `<area>` is usually `ui` (with sub-features like `sync`, `bubble`, `dayplan`, `stats`), but not always —
+   > non-UI features sit directly under `features/` (e.g. `features/debug/`). Match an existing sibling.
 3. Register in `ServerNetworkModule`:
 
    ```
