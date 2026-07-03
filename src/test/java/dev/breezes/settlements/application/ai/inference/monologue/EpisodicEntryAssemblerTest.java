@@ -225,6 +225,19 @@ class EpisodicEntryAssemblerTest {
     }
 
     @Test
+    void assemble_emeraldsDonated_targetFieldIsResolvedName() {
+        // Arrange — EMERALDS_DONATED: relatedEntity is the donation recipient
+        this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.EMERALDS_DONATED, 2.5f));
+        String expectedTargetName = this.nameResolver.resolve(TARGET_ID);
+
+        // Act
+        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
+
+        // Assert
+        assertEquals(expectedTargetName, result.get(0).getTarget());
+    }
+
+    @Test
     void assemble_courtshipRejected_targetFieldIsResolvedName() {
         // Arrange — COURTSHIP_REJECTED: relatedEntity is the spurned presenter
         this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.COURTSHIP_REJECTED, 2.5f));

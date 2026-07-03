@@ -16,6 +16,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CraftGoodsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.donation.DonationConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CultivatePlotConfig;
@@ -135,6 +136,12 @@ public final class ConfigModule {
     @Singleton
     static CourtshipInitiateConfig courtshipInitiateConfig() {
         return ConfigFactory.create(CourtshipInitiateConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static DonationConfig donateEmeraldsConfig() {
+        return ConfigFactory.create(DonationConfig.class);
     }
 
     @Provides

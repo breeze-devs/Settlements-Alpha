@@ -34,6 +34,7 @@ public class BehaviorPoolResolver {
             PoolEntry.of(BehaviorKey.EAT_FOOD),
             PoolEntry.of(BehaviorKey.TRADE_INITIATE),
             PoolEntry.of(BehaviorKey.COURTSHIP_INITIATE),
+            PoolEntry.of(BehaviorKey.DONATE_EMERALDS),
             PoolEntry.of(BehaviorKey.MANAGE_CHESTS),
             PoolEntry.of(BehaviorKey.COLLECT_DEMANDED_ITEM),
             PoolEntry.of(BehaviorKey.CRAFT_GOODS)

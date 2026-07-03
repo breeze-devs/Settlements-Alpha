@@ -24,6 +24,7 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey TRADE_ACCEPT = new BehaviorKey("trade_accept");
     public static final BehaviorKey COURTSHIP_INITIATE = new BehaviorKey("courtship_initiate");
     public static final BehaviorKey COURTSHIP_ACCEPT = new BehaviorKey("courtship_accept");
+    public static final BehaviorKey DONATE_EMERALDS = new BehaviorKey("donate_emeralds");
 
     // Investigate (universal, triggered by planner or override lane)
     public static final BehaviorKey INVESTIGATE = new BehaviorKey("investigate");

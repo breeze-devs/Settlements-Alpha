@@ -79,6 +79,7 @@
   "ui.settlements.behavior.behavior.survey_landscape": "Survey Landscape",
   "ui.settlements.behavior.behavior.courtship_initiate": "Initiate Courtship",
   "ui.settlements.behavior.behavior.courtship_accept": "Accept Courtship",
+  "ui.settlements.behavior.behavior.donate_emeralds": "Donate Emeralds",
   "ui.settlements.stats.title": "VILLAGER STATS",
   "ui.settlements.stats.health": "Health: ",
   "ui.settlements.stats.hunger": "Hunger: ",

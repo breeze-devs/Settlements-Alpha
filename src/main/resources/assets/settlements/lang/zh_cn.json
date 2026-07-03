@@ -78,6 +78,7 @@
   "ui.settlements.behavior.behavior.survey_landscape": "探查地形",
   "ui.settlements.behavior.behavior.courtship_initiate": "发起求偶",
   "ui.settlements.behavior.behavior.courtship_accept": "接受求偶",
+  "ui.settlements.behavior.behavior.donate_emeralds": "捐赠绿宝石",
   "ui.settlements.stats.title": "村民状态",
   "ui.settlements.stats.health": "生命：",
   "ui.settlements.stats.hunger": "饥饿：",

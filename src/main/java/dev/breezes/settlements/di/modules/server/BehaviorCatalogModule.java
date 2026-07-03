@@ -35,6 +35,10 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.craftin
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CraftGoodsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.donation.DonateEmeraldsBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.donation.DonationConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.donation.DonationPresenter;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.donation.DonationScanner;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.CollectHoneyBehavior;
@@ -342,6 +346,35 @@ public final class BehaviorCatalogModule {
                         .build())
                 .factory(() -> new CourtshipAcceptBehavior(support, courtshipSessionRegistry,
                         courtshipPresenter, choreographyLibrary))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry donateEmeralds(DonationConfig config,
+                                               BehaviorSupport support,
+                                               DonationScanner scanner,
+                                               DonationPresenter presenter,
+                                               VillagerWallet wallet) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.DONATE_EMERALDS)
+                        .displayName("Donate Emeralds")
+                        .description("Seek a nearby destitute neighbor and gift them a few emeralds")
+                        .category(BehaviorCategory.SOCIAL)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .requiredChannel(BehaviorChannel.SOCIAL)
+                        .estimatedDuration(ClockTicks.seconds(10).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.DONATE_EMERALDS.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("emerald"))
+                        .build())
+                .factory(() -> new DonateEmeraldsBehavior(config, support, scanner, presenter, wallet))
                 .build();
     }
 

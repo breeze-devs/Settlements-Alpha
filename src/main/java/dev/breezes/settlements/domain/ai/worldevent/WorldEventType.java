@@ -66,6 +66,12 @@ public enum WorldEventType {
     COURTSHIP_REJECTED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 2.5F, true, true),
 
     /**
+     * A villager gifted emeralds to a destitute neighbor via the need-based donation floor.
+     * The target is the recipient.
+     */
+    EMERALDS_DONATED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 2.5F, true, true),
+
+    /**
      * This villager sent a trade invite to a target.
      * Carries the session registry id so the receiver can correlate with the registry.
      */
