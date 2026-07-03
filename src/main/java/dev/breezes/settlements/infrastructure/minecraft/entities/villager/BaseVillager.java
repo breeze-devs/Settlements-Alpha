@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackag
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VillagerBrain;
 import dev.breezes.settlements.application.ai.dialogue.Occasion;
+import dev.breezes.settlements.application.ai.naming.VillagerNameResolver;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueRuntimeState;
 import dev.breezes.settlements.application.hunger.HungerConfig;
@@ -69,6 +70,7 @@ import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
@@ -358,6 +360,18 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         return this.cachedProfessionKey;
+    }
+
+    /**
+     * Returns the deterministic, UUID-mapped name as this villager's display name.
+     */
+    @Override
+    public Component getName() {
+        return Component.literal(VillagerNameResolver.resolveName(this.getUUID()));
+    }
+
+    public Component getProfessionDisplayName() {
+        return Component.translatable(this.getType().getDescriptionId() + "." + this.getProfession().id());
     }
 
     @Nullable

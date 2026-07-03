@@ -2,7 +2,7 @@
   "mod.name": "万家烟火",
 
   "item.settlements.placeholder": "Placeholder",
-  "item.settlements.base_villager_spawn_egg": "生成万家烟火村民",
+  "item.settlements.base_villager_spawn_egg": "万家烟火村民刷怪蛋",
   "item.settlements.villager_totem": "村民图腾",
   "item.settlements.villager_totem.mode.vanilla": "MC原版",
   "item.settlements.villager_totem.mode.settlements": "万家烟火",
@@ -157,7 +157,7 @@
   "entity.settlements.base_villager.shepherd": "牧羊人",
   "entity.settlements.base_villager.toolsmith": "工具匠",
   "entity.settlements.base_villager.weaponsmith": "武器匠",
-  "entity.settlements.base_villager.nitwit": "愚者",
+  "entity.settlements.base_villager.nitwit": "傻子",
   "entity.settlements.base_villager.none": "无业",
 
   "dialogue.settlements.generic.idle.1": "今天这小风吹得，还挺舒服的",
@@ -173,9 +173,9 @@
 
   "dialogue.settlements.generic.work.1": "太阳下山前还有一堆活呢",
   "dialogue.settlements.generic.work.2": "我那颗绿宝石放哪儿去了？",
-  "dialogue.settlements.generic.work.3": "忙啊，真忙啊…",
-  "dialogue.settlements.generic.work.4": "干一天，赚一颗绿宝石",
-  "dialogue.settlements.generic.work.5": "停不下来，我正顺手呢",
+  "dialogue.settlements.generic.work.3": "熟能生巧，这活儿现在闭着眼都能干",
+  "dialogue.settlements.generic.work.4": "干一天，赚几颗绿宝石",
+  "dialogue.settlements.generic.work.5": "一鼓作气干完，等会儿再歇！",
   "dialogue.settlements.generic.work.6": "活儿总是干不完",
   "dialogue.settlements.generic.work.7": "差不多该回去干活了",
   "dialogue.settlements.generic.work.8": "这一批马上就弄完",

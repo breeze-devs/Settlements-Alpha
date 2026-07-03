@@ -13,6 +13,7 @@ import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
 import dev.breezes.settlements.application.ai.socialcue.CueStep;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueCatalogEntry;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueScript;
+import dev.breezes.settlements.application.ai.speech.SpeechRegister;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
 import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
@@ -148,7 +149,7 @@ public abstract class SocialCueCatalogModule {
                         .sampleAmbientLine(villager.getUUID(), contextAssembler.assemble(villager))
                         // Has ambient line: show it for 10s
                         .map(line -> SocialCueScript.of(List.of(
-                                new CueStep.Bubble(line, ClockTicks.seconds(10)),
+                                new CueStep.Speak(line, SpeechRegister.MONOLOGUE, ClockTicks.seconds(10)),
                                 new CueStep.Wait(ClockTicks.seconds(3))
                         )))
                         // No line: an empty script occupies no time and shows nothing
@@ -275,7 +276,7 @@ public abstract class SocialCueCatalogModule {
 
                     return SocialCueScript.of(List.of(
                             new CueStep.Gaze(gazeTarget),
-                            new CueStep.Bubble(DialogueLine.literal("psst..."), ClockTicks.seconds(3)),
+                            new CueStep.Speak(DialogueLine.literal("psst..."), SpeechRegister.AMBIENT, ClockTicks.seconds(3)),
                             new CueStep.Wait(ClockTicks.seconds(2))
                     ));
                 })
@@ -335,7 +336,7 @@ public abstract class SocialCueCatalogModule {
                 .scriptFactory(receiver -> {
                     // Mirror the initiator's lean-in cue so both villagers perform the gesture.
                     return SocialCueScript.of(List.of(
-                            new CueStep.Bubble(DialogueLine.literal("(listening)"), ClockTicks.seconds(3)),
+                            new CueStep.Speak(DialogueLine.literal("(listening)"), SpeechRegister.AMBIENT, ClockTicks.seconds(3)),
                             new CueStep.Wait(ClockTicks.seconds(2))
                     ));
                 })
@@ -451,7 +452,7 @@ public abstract class SocialCueCatalogModule {
     private static SocialCueScript buildDialogueScript(DialogueProvider dialogueProvider, UUID villagerUuid, DialogueContext context) {
         return dialogueProvider.sampleAmbientLine(villagerUuid, context)
                 .map(line -> SocialCueScript.of(List.of(
-                        new CueStep.Bubble(line, ClockTicks.seconds(10)),
+                        new CueStep.Speak(line, SpeechRegister.MONOLOGUE, ClockTicks.seconds(10)),
                         new CueStep.Wait(ClockTicks.seconds(3)))))
                 .orElseGet(() -> SocialCueScript.of(List.of()));
     }

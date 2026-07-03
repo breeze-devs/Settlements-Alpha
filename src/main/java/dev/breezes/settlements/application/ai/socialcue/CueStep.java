@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.socialcue;
 
 import dev.breezes.settlements.application.ai.dialogue.DialogueLine;
+import dev.breezes.settlements.application.ai.speech.SpeechRegister;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -17,7 +18,7 @@ import javax.annotation.Nullable;
  * SocialCue lane from silently growing into a second behavior system
  */
 public sealed interface CueStep
-        permits CueStep.Gesture, CueStep.Bubble, CueStep.Sound, CueStep.Gaze, CueStep.Wait {
+        permits CueStep.Gesture, CueStep.Speak, CueStep.Sound, CueStep.Gaze, CueStep.Wait {
 
     /**
      * Triggers a one-shot animation on the villager
@@ -26,10 +27,12 @@ public sealed interface CueStep
     }
 
     /**
-     * Pushes a short-lived ambient message onto the FLAVOR bubble channel
+     * Produces a villager utterance for the dispatching {@code VillagerSpeechService} to fan
+     * out to every speech sink.
      */
-    record Bubble(@Nonnull DialogueLine line,
-                  @Nonnull ClockTicks ttl) implements CueStep {
+    record Speak(@Nonnull DialogueLine line,
+                 @Nonnull SpeechRegister register,
+                 @Nonnull ClockTicks ttl) implements CueStep {
     }
 
     /**

@@ -48,6 +48,7 @@ import dev.breezes.settlements.di.modules.server.SensorCatalogModule;
 import dev.breezes.settlements.di.modules.server.ServerNetworkModule;
 import dev.breezes.settlements.di.modules.server.SettlementQueryModule;
 import dev.breezes.settlements.di.modules.server.SocialCueCatalogModule;
+import dev.breezes.settlements.di.modules.server.SpeechModule;
 import dev.breezes.settlements.di.modules.server.UiSyncModule;
 import dev.breezes.settlements.di.modules.server.WorldEventModule;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
@@ -79,6 +80,7 @@ import java.util.concurrent.ExecutorService;
         SensorCatalogModule.class,
         UiSyncModule.class,
         SocialCueCatalogModule.class,
+        SpeechModule.class,
         WorldEventModule.class,
         PerceptionModule.class,
         GossipModule.class,

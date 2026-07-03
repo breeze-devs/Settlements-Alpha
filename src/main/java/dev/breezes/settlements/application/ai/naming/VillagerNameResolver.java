@@ -91,6 +91,15 @@ public final class VillagerNameResolver {
      * @param uuid the villager UUID; if null, returns a safe fallback name
      */
     public String resolve(@Nullable UUID uuid) {
+        return resolveName(uuid);
+    }
+
+    /**
+     * Side-agnostic entry point for name resolution.
+     *
+     * @param uuid the villager UUID; if null, returns a safe fallback name
+     */
+    public static String resolveName(@Nullable UUID uuid) {
         if (uuid == null) {
             return "Someone";
         }

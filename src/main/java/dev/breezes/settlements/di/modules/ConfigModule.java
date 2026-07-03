@@ -49,6 +49,7 @@ import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
+import dev.breezes.settlements.application.ai.speech.SpeechMirrorConfig;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerConfig;
@@ -377,6 +378,12 @@ public final class ConfigModule {
     @Singleton
     static WorldgenVillagerReplacementConfig worldgenVillagerReplacementConfig() {
         return ConfigFactory.create(WorldgenVillagerReplacementConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static SpeechMirrorConfig speechMirrorConfig() {
+        return ConfigFactory.create(SpeechMirrorConfig.class);
     }
 
 }
