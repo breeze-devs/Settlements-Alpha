@@ -17,6 +17,7 @@ import dev.breezes.settlements.domain.animation.DefaultLocomotionAnimator;
 import dev.breezes.settlements.domain.animation.DigAnimations;
 import dev.breezes.settlements.domain.animation.EatingAnimations;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
+import dev.breezes.settlements.domain.animation.ForgeAnimations;
 import dev.breezes.settlements.domain.animation.HarvestCropAnimations;
 import dev.breezes.settlements.domain.animation.IdleLifeAnimationLibrary;
 import dev.breezes.settlements.domain.animation.IdleLifeAnimations;
@@ -72,7 +73,8 @@ public abstract class ClientAnimationModule {
                         Map.entry(AnimationKey.of(AnimationArchetype.SLEEP, ItemCategory.GENERIC), SleepingAnimations.sleeping()),
                         Map.entry(AnimationKey.of(AnimationArchetype.REPAIR_IRON_GOLEM, ItemCategory.GENERIC), RepairIronGolemAnimations.repairIronGolem()),
                         Map.entry(AnimationKey.of(AnimationArchetype.DIG, ItemCategory.SHOVEL), DigAnimations.dig()),
-                        Map.entry(AnimationKey.of(AnimationArchetype.TILL, ItemCategory.GENERIC), TillAnimations.till())))
+                        Map.entry(AnimationKey.of(AnimationArchetype.TILL, ItemCategory.GENERIC), TillAnimations.till()),
+                        Map.entry(AnimationKey.of(AnimationArchetype.FORGE, ItemCategory.GENERIC), ForgeAnimations.forge())))
                 .build();
     }
 

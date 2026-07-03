@@ -26,7 +26,6 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -110,20 +109,8 @@ public class CraftGoodsBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        this.currentRecipe = this.selectRecipe(entity, validRecipes);
+        this.currentRecipe = this.batchCalculator.selectPreferred(entity, validRecipes);
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.jobSite)));
-    }
-
-    /**
-     * Prefers the output the village most lacks (largest headroom below its overflow ceiling), breaking
-     * ties by the datapack {@code priority}.
-     */
-    private CraftRecipe selectRecipe(@Nonnull BaseVillager villager, @Nonnull List<CraftRecipe> validRecipes) {
-        return validRecipes.stream()
-                .max(Comparator
-                        .comparingInt((CraftRecipe recipe) -> this.batchCalculator.ceilingHeadroom(villager, recipe))
-                        .thenComparingInt(CraftRecipe::priority))
-                .orElseThrow();
     }
 
     @Override

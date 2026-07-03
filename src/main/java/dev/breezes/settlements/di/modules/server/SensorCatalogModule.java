@@ -115,6 +115,12 @@ public abstract class SensorCatalogModule {
         return new BlockResource(BlockMatchers.SCAVENGEABLE_FLORA, MemoryTypeRegistry.SCAVENGEABLE_FLORA_SITES);
     }
 
+    @Provides
+    @IntoSet
+    static BlockResource anvil() {
+        return new BlockResource(BlockMatchers.ANVIL, MemoryTypeRegistry.ANVIL_SITES);
+    }
+
     // Cultivation totems are discovered by the dedicated CultivationTotemSensor (block-entity scan at a
     // larger range), not the generic block-resource sensor — so there is no BlockResource entry here.
 

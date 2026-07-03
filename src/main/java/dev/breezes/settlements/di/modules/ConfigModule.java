@@ -29,6 +29,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.forge.ForgeToolConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.investigate.InvestigateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherConfig;
@@ -190,6 +191,12 @@ public final class ConfigModule {
     @Singleton
     static CraftGoodsConfig craftGoodsConfig() {
         return ConfigFactory.create(CraftGoodsConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static ForgeToolConfig forgeToolConfig() {
+        return ConfigFactory.create(ForgeToolConfig.class);
     }
 
     @Provides

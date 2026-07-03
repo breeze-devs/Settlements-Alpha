@@ -29,10 +29,10 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
     private final Map<Long, BehaviorStep<T>> keyFrames;
 
     /**
-     * Map of intervals to the behavior steps to execute periodically
+     * Map of periodic schedules (interval + phase offset) to the behavior steps to execute on that cadence
      */
     @Nonnull
-    private final Map<Integer, List<BehaviorStep<T>>> periodicSteps;
+    private final Map<PeriodicSchedule, List<BehaviorStep<T>>> periodicSteps;
 
     @Nullable
     private final BehaviorStep<T> onStart;
@@ -56,7 +56,7 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
         this.keyFrames.putAll(keyFrames);
     }
 
-    public void addPeriodicSteps(@Nonnull Map<Integer, List<BehaviorStep<T>>> periodicSteps) {
+    public void addPeriodicSteps(@Nonnull Map<PeriodicSchedule, List<BehaviorStep<T>>> periodicSteps) {
         this.periodicSteps.putAll(periodicSteps);
     }
 
@@ -90,9 +90,9 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
 
         // Execute periodic steps
         long elapsed = this.tickable.getTicksElapsedRounded();
-        for (Map.Entry<Integer, List<BehaviorStep<T>>> entry : this.periodicSteps.entrySet()) {
-            int interval = entry.getKey();
-            if (elapsed % interval == 0) {
+        for (Map.Entry<PeriodicSchedule, List<BehaviorStep<T>>> entry : this.periodicSteps.entrySet()) {
+            PeriodicSchedule schedule = entry.getKey();
+            if (elapsed % schedule.interval() == schedule.offset()) {
                 for (BehaviorStep<T> step : entry.getValue()) {
                     StepResult result = step.tick(context);
                     // Break out of the execution if any result is not NoOp
@@ -144,6 +144,22 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
         this.keyFrames.values().forEach(BehaviorStep::reset);
     }
 
+    /**
+     * A periodic cadence: fire every {@code interval} ticks, phase-shifted by {@code offset} so the beat
+     * can land on a tick other than the cycle boundary (e.g. an animation's strike peak rather than its
+     * start). {@code offset} is the tick within each cycle the step fires, constrained to {@code [0, interval)}.
+     */
+    public record PeriodicSchedule(int interval, int offset) {
+        public PeriodicSchedule {
+            if (interval <= 0) {
+                throw new IllegalArgumentException("Interval must be greater than 0");
+            }
+            if (offset < 0 || offset >= interval) {
+                throw new IllegalArgumentException("Offset must be within [0, interval)");
+            }
+        }
+    }
+
     public static <T extends ISettlementsBrainEntity> Builder<T> builder() {
         return new Builder<>();
     }
@@ -157,7 +173,7 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
         @Nonnull
         private final Map<Long, BehaviorStep<T>> keyFrames;
         @Nonnull
-        private final Map<Integer, List<BehaviorStep<T>>> periodicSteps;
+        private final Map<PeriodicSchedule, List<BehaviorStep<T>>> periodicSteps;
         @Nullable
         private BehaviorStep<T> onStart;
         @Nullable
@@ -188,12 +204,19 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
         }
 
         public Builder<T> addPeriodicStep(int interval, @Nonnull BehaviorStep<T> step) {
-            if (interval <= 0) {
-                throw new IllegalArgumentException("Interval must be greater than 0");
-            }
-            List<BehaviorStep<T>> steps = this.periodicSteps.getOrDefault(interval, new ArrayList<>());
+            return this.addPeriodicStep(interval, 0, step);
+        }
+
+        /**
+         * Fire {@code step} every {@code interval} ticks, starting {@code offset} ticks into each cycle, so a
+         * beat can align to a mid-cycle moment (e.g. an animation's strike peak) rather than the cycle
+         * boundary. {@code offset} must lie within {@code [0, interval)}.
+         */
+        public Builder<T> addPeriodicStep(int interval, int offset, @Nonnull BehaviorStep<T> step) {
+            PeriodicSchedule schedule = new PeriodicSchedule(interval, offset);
+            List<BehaviorStep<T>> steps = this.periodicSteps.getOrDefault(schedule, new ArrayList<>());
             steps.add(step);
-            this.periodicSteps.put(interval, steps);
+            this.periodicSteps.put(schedule, steps);
             return this;
         }
 

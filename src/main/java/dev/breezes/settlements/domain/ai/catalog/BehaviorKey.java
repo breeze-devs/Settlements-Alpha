@@ -86,6 +86,7 @@ public record BehaviorKey(String id) {
     // Crafting
     public static final BehaviorKey CUT_STONE = new BehaviorKey("cut_stone");
     public static final BehaviorKey CRAFT_GOODS = new BehaviorKey("craft_goods");
+    public static final BehaviorKey FORGE_TOOL = new BehaviorKey("forge_tool");
     public static final BehaviorKey HARVEST_ORE = new BehaviorKey("harvest_ore");
     public static final BehaviorKey EXCAVATE_SUBSTRATE = new BehaviorKey("excavate_substrate");
 

@@ -6,6 +6,7 @@ import dev.breezes.settlements.domain.economy.catalog.SupplyEntry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.infrastructure.minecraft.data.crafting.CraftCatalogDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.forge.ForgeCatalogDataManager;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -21,18 +22,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Boot-time coherence check for the crafting datapack: warns about any craft recipe whose output has no
- * matching {@code dump} rung in the trade catalog. Such a recipe is silently never craftable — the economic
- * gate has no overflow ceiling to work against ({@code CraftBatchCalculator} treats a ceiling-less output as
- * a future-proof placeholder) — so a missing or mistyped rung otherwise manifests as a villager that just
- * never crafts, with no diagnostic. Surfacing it here turns that into a one-line startup warning.
+ * Boot-time coherence check for the crafting datapacks: warns about any recipe whose output has no
+ * matching {@code dump} rung in the trade catalog. Such a recipe is silently never craftable.
  */
 @Singleton
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @CustomLog
-public final class CraftCatalogValidationReloadListener extends SimplePreparableReloadListener<Void> {
+public final class RecipeCatalogValidationReloadListener extends SimplePreparableReloadListener<Void> {
 
     private final CraftCatalogDataManager craftCatalog;
+    private final ForgeCatalogDataManager forgeCatalog;
     private final TradeCatalogRegistry tradeCatalog;
 
     @Override
@@ -42,22 +41,28 @@ public final class CraftCatalogValidationReloadListener extends SimplePreparable
 
     @Override
     protected void apply(Void ignored, @Nonnull ResourceManager resourceManager, @Nonnull ProfilerFiller profiler) {
+        int missing = this.validateCatalog("Craft", this.craftCatalog.loadedRecipes())
+                + this.validateCatalog("Forge", this.forgeCatalog.loadedRecipes());
+
+        if (missing > 0) {
+            log.warn("Recipe catalog validation: {} recipe output(s) lack a trade-catalog dump ceiling and ship idle", missing);
+        }
+    }
+
+    private int validateCatalog(@Nonnull String catalogLabel, @Nonnull Map<VillagerProfessionKey, List<CraftRecipe>> recipesByProfession) {
         int missing = 0;
-        for (Map.Entry<VillagerProfessionKey, List<CraftRecipe>> entry : this.craftCatalog.loadedRecipes().entrySet()) {
+        for (Map.Entry<VillagerProfessionKey, List<CraftRecipe>> entry : recipesByProfession.entrySet()) {
             VillagerProfessionKey profession = entry.getKey();
             for (CraftRecipe recipe : entry.getValue()) {
                 if (!this.hasDumpRung(profession, recipe)) {
                     missing++;
-                    log.warn("Craft recipe '{}' ({}) outputs '{}', which has no dump rung in the trade catalog"
+                    log.warn("{} recipe '{}' ({}) outputs '{}', which has no dump rung in the trade catalog"
                                     + " — it will never be craftable until a dump rung is added",
-                            recipe.id(), profession.id(), recipe.output().itemId());
+                            catalogLabel, recipe.id(), profession.id(), recipe.output().itemId());
                 }
             }
         }
-
-        if (missing > 0) {
-            log.warn("Craft catalog validation: {} recipe output(s) lack a trade-catalog dump ceiling and ship idle", missing);
-        }
+        return missing;
     }
 
     private boolean hasDumpRung(@Nonnull VillagerProfessionKey profession, @Nonnull CraftRecipe recipe) {

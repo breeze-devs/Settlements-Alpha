@@ -2,38 +2,6 @@
   "profession": "minecraft:toolsmith",
   "recipes": [
     {
-      "id": "iron_pickaxe",
-      "inputs": [
-        { "match": { "item": "minecraft:iron_ingot" }, "count": 3 },
-        { "match": { "item": "minecraft:stick" }, "count": 2 }
-      ],
-      "output": { "item": "minecraft:iron_pickaxe", "count": 1 }
-    },
-    {
-      "id": "iron_axe",
-      "inputs": [
-        { "match": { "item": "minecraft:iron_ingot" }, "count": 3 },
-        { "match": { "item": "minecraft:stick" }, "count": 2 }
-      ],
-      "output": { "item": "minecraft:iron_axe", "count": 1 }
-    },
-    {
-      "id": "iron_shovel",
-      "inputs": [
-        { "match": { "item": "minecraft:iron_ingot" }, "count": 1 },
-        { "match": { "item": "minecraft:stick" }, "count": 2 }
-      ],
-      "output": { "item": "minecraft:iron_shovel", "count": 1 }
-    },
-    {
-      "id": "iron_hoe",
-      "inputs": [
-        { "match": { "item": "minecraft:iron_ingot" }, "count": 2 },
-        { "match": { "item": "minecraft:stick" }, "count": 2 }
-      ],
-      "output": { "item": "minecraft:iron_hoe", "count": 1 }
-    },
-    {
       "id": "shears",
       "inputs": [
         { "match": { "item": "minecraft:iron_ingot" }, "count": 2 }

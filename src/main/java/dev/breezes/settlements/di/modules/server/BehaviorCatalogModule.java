@@ -63,6 +63,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSweetBerriesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.forge.ForgeToolBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.forge.ForgeToolConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
@@ -120,6 +122,7 @@ import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.planning.OpportunityRequirement;
 import dev.breezes.settlements.domain.crafting.catalog.CraftCatalogRegistry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
+import dev.breezes.settlements.domain.forge.catalog.ForgeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
@@ -1147,6 +1150,34 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("crafting_table"))
                         .build())
                 .factory(() -> new CraftGoodsBehavior(config, support, craftCatalog, tradeCatalog))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry forgeTool(ForgeToolConfig config,
+                                          BehaviorSupport support,
+                                          ForgeCatalogRegistry forgeCatalog,
+                                          TradeCatalogRegistry tradeCatalog) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.FORGE_TOOL)
+                        .displayName("Forge Tools")
+                        .description("Forge tools at the anvil or smithing table")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.HEAVY)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .requiredChannel(BehaviorChannel.COGNITION)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(false)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.FORGE_TOOL.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("anvil"))
+                        .build())
+                .factory(() -> new ForgeToolBehavior(config, support, forgeCatalog, tradeCatalog))
                 .build();
     }
 

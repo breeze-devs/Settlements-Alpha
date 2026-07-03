@@ -10,6 +10,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.Culti
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.forge.ForgeCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
@@ -106,6 +107,12 @@ public final class DataManagerModule {
     @Singleton
     static CraftCatalogDataManager craftCatalogDataManager() {
         return new CraftCatalogDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static ForgeCatalogDataManager forgeCatalogDataManager() {
+        return new ForgeCatalogDataManager();
     }
 
     @Provides

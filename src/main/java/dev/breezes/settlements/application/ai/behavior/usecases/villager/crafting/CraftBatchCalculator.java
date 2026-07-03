@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -97,6 +98,19 @@ public class CraftBatchCalculator {
         }
 
         return ceiling - villager.getSettlementsInventory().count(outputItem);
+    }
+
+    /**
+     * Selects the preferred recipe from a set already proven craftable: the output the village most
+     * lacks (largest {@link #ceilingHeadroom}), breaking ties by the datapack {@code priority}. The set
+     * must be non-empty — callers filter to craftable recipes before selecting.
+     */
+    public CraftRecipe selectPreferred(@Nonnull BaseVillager villager, @Nonnull List<CraftRecipe> craftableRecipes) {
+        return craftableRecipes.stream()
+                .max(Comparator
+                        .comparingInt((CraftRecipe recipe) -> this.ceilingHeadroom(villager, recipe))
+                        .thenComparingInt(CraftRecipe::priority))
+                .orElseThrow();
     }
 
     /**

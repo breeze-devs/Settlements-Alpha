@@ -1,7 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting;
 
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
@@ -16,7 +15,6 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -25,6 +23,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -118,33 +117,24 @@ public class CraftSequenceStep extends AbstractStep<BaseVillager> {
             return StepResult.transition(this.endStage);
         }
 
-        int liveBatch = this.batchCalculator.computeBatch(villager, recipe);
-        if (liveBatch < 1) {
-            // Inventory changed since the precondition check — end gracefully rather than crafting nothing.
-            return StepResult.transition(this.endStage);
-        }
-
-        this.outputItem = BuiltInRegistries.ITEM.get(recipe.output().itemId());
-        this.outputTotal = recipe.output().count() * liveBatch;
-
         VillagerInventory inventory = villager.getSettlementsInventory();
 
         // Capture a representative held-item stack per input before draining, so the input beats can
-        // display the actual item (including the concrete variant chosen for a tag input).
+        // display the actual item (including the concrete variant chosen for a tag input). Must happen
+        // before the commit below, which drains the inputs.
         List<ItemStack> inputVisuals = new ArrayList<>(recipe.inputs().size());
         for (CraftIngredient input : recipe.inputs()) {
             inputVisuals.add(inventory.findFirst(stack -> ItemMatches.test(input.match(), stack)).orElse(ItemStack.EMPTY));
         }
-        // Commit the economic transaction atomically: drain the inputs and bank the output in the same
-        // tick, then record the deed and reward. The beats below are cosmetic only, so an interruption
-        // mid-animation (outer timeout, panic) cannot consume inputs without producing the goods.
-        Item output = this.requireOutputItem();
-        for (CraftIngredient input : recipe.inputs()) {
-            inventory.consumeMatching(input.match(), input.count() * liveBatch);
+
+        Optional<RecipeCommit.Result> committed = RecipeCommit.commit(context, recipe, this.batchCalculator,
+                WorldEventType.GOODS_CRAFTED, this.experienceRewarder);
+        if (committed.isEmpty()) {
+            // Inventory changed since the precondition check — end gracefully rather than crafting nothing.
+            return StepResult.transition(this.endStage);
         }
-        inventory.add(new ItemStack(output, this.outputTotal));
-        this.recordCraftDeed(context, output, this.outputTotal);
-        this.experienceRewarder.accept(villager);
+        this.outputItem = committed.get().outputItem();
+        this.outputTotal = committed.get().outputTotal();
 
         this.beats = new ArrayList<>();
         for (int i = 0; i < recipe.inputs().size(); i++) {
@@ -182,14 +172,6 @@ public class CraftSequenceStep extends AbstractStep<BaseVillager> {
         // The craft was already committed in prepare(); the beats are cosmetic, so this just ends cleanly.
         context.getInitiator().getMinecraftEntity().clearHeldItem();
         return StepResult.complete();
-    }
-
-    private void recordCraftDeed(@Nonnull BehaviorContext<BaseVillager> context, @Nonnull Item output, int total) {
-        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.GOODS_CRAFTED, null);
-        outcome.putDetailField("item", BuiltInRegistries.ITEM.getKey(output).getPath());
-        outcome.putDetailField("count", Integer.toString(total));
-        outcome.markSucceeded();
-        context.declarePrimaryDeed(outcome);
     }
 
     private Item requireOutputItem() {

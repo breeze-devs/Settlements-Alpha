@@ -181,6 +181,7 @@ public final class PoolModule {
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.TOOLSMITH)
                 .entry(PoolEntry.of(BehaviorKey.REPAIR_IRON_GOLEM))
+                .entry(PoolEntry.of(BehaviorKey.FORGE_TOOL))
                 .build();
     }
 

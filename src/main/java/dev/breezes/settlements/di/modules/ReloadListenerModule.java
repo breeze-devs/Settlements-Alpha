@@ -3,8 +3,8 @@ package dev.breezes.settlements.di.modules;
 import dagger.Binds;
 import dagger.Module;
 import dagger.multibindings.IntoSet;
-import dev.breezes.settlements.bootstrap.event.CraftCatalogValidationReloadListener;
 import dev.breezes.settlements.bootstrap.event.GenerationDataValidationReloadListener;
+import dev.breezes.settlements.bootstrap.event.RecipeCatalogValidationReloadListener;
 import dev.breezes.settlements.di.DataReloadListeners;
 import dev.breezes.settlements.di.PostReloadListeners;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
@@ -15,6 +15,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.Culti
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.forge.ForgeCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
@@ -108,6 +109,11 @@ public interface ReloadListenerModule {
     @Binds
     @IntoSet
     @DataReloadListeners
+    PreparableReloadListener forgeCatalogDataManager(ForgeCatalogDataManager dataManager);
+
+    @Binds
+    @IntoSet
+    @DataReloadListeners
     PreparableReloadListener oreRegenDataManager(OreRegenDataManager dataManager);
 
     @Binds
@@ -128,6 +134,6 @@ public interface ReloadListenerModule {
     @Binds
     @IntoSet
     @PostReloadListeners
-    PreparableReloadListener craftCatalogValidationReloadListener(CraftCatalogValidationReloadListener listener);
+    PreparableReloadListener craftCatalogValidationReloadListener(RecipeCatalogValidationReloadListener listener);
 
 }

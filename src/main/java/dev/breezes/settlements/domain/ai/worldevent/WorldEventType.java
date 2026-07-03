@@ -112,6 +112,7 @@ public enum WorldEventType {
     MEAT_SMOKED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true, true),
     ORE_SMELTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true, true),
     GOODS_CRAFTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true, true),
+    TOOL_FORGED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true, true),
     FURNACE_MISFIRED(WorldEventNamespace.WORLD, ObservationType.INCIDENT, 2.0F, true, true),
     LIVESTOCK_BUTCHERED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true, true),
     ITEM_ENCHANTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.8F, true, true),

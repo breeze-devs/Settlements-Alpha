@@ -79,4 +79,7 @@ public final class BlockMatchers {
                     || state.is(Blocks.DEAD_BUSH) || state.is(BlockTags.SMALL_FLOWERS)
     );
 
+    // BlockTags.ANVIL already ANVIL + CHIPPED_ANVIL + DAMAGED_ANVIL
+    public static final BlockMatcher ANVIL = new BlockMatcher(state -> state.is(BlockTags.ANVIL));
+
 }

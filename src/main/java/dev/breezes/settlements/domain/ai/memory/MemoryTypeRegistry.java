@@ -84,10 +84,11 @@ public final class MemoryTypeRegistry {
     public static final MemoryType.DecayingSpatialMemoryType SAND_SITES = MemoryType.decaying(
             "sand_sites", ClockTicks.hours(2), 6);
 
-    // Foliage is far denser than gravel/sand/crops (nearly every surface section has some), so
-    // maxEntries is kept small to avoid crowding the decaying memory and per-villager scan budget.
     public static final MemoryType.DecayingSpatialMemoryType SCAVENGEABLE_FLORA_SITES = MemoryType.decaying(
             "scavengeable_flora_sites", ClockTicks.minutes(40), 8);
+
+    public static final MemoryType.DecayingSpatialMemoryType ANVIL_SITES = MemoryType.decaying(
+            "anvil_sites", ClockTicks.hours(2), 4);
 
     public static final MemoryType.VanillaMemoryType<List<UUID>> WILLING_COURTSHIP_PARTNERS = MemoryType.vanillaBacked(
             "willing_courtship_partners", MemoryModuleTypeRegistry.WILLING_COURTSHIP_PARTNERS);
@@ -111,7 +112,8 @@ public final class MemoryTypeRegistry {
                 ORE_SITES,
                 GRAVEL_SITES,
                 SAND_SITES,
-                SCAVENGEABLE_FLORA_SITES);
+                SCAVENGEABLE_FLORA_SITES,
+                ANVIL_SITES);
     }
 
     /**
