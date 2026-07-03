@@ -79,8 +79,6 @@ public final class PoolModule {
                 .entry(PoolEntry.of(BehaviorKey.HARVEST_SWEET_BERRIES))
                 .entry(PoolEntry.of(BehaviorKey.HARVEST_RIPE_CROPS))
                 .entry(PoolEntry.of(BehaviorKey.CULTIVATE_PLOT))
-                .entry(PoolEntry.of(BehaviorKey.MILK_COW))
-                .entry(PoolEntry.of(BehaviorKey.BREED_CHICKENS))
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))
                 .entry(PoolEntry.of(BehaviorKey.TAME_CAT))
                 .entry(PoolEntry.of(BehaviorKey.WALK_DOG))
@@ -105,6 +103,7 @@ public final class PoolModule {
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.FLETCHER)
                 .entry(PoolEntry.of(BehaviorKey.BREED_CHICKENS))
+                .entry(PoolEntry.of(BehaviorKey.SCAVENGE))
                 .build();
     }
 
@@ -147,15 +146,16 @@ public final class PoolModule {
                 .entry(PoolEntry.of(BehaviorKey.RING_BELL))
                 .entry(PoolEntry.of(BehaviorKey.THROW_EGGS))
                 .entry(PoolEntry.of(BehaviorKey.CHASE_CHICKENS))
+                .entry(PoolEntry.of(BehaviorKey.SCAVENGE, 4))
                 .build();
     }
 
     @Provides
     @IntoSet
-    static ProfessionBehaviorPool nonePool() {
-        // Unemployed villagers have no profession work behaviors.
+    static ProfessionBehaviorPool unemployedPool() {
         return ProfessionBehaviorPool.builder()
                 .profession(VillagerProfessionKey.NONE)
+                .entry(PoolEntry.of(BehaviorKey.SCAVENGE, 4))
                 .build();
     }
 
@@ -167,6 +167,7 @@ public final class PoolModule {
                 .entry(PoolEntry.of(BehaviorKey.BREED_SHEEP))
                 .entry(PoolEntry.of(BehaviorKey.SHEAR_SHEEP))
                 .entry(PoolEntry.of(BehaviorKey.DYE_SHEEP))
+                .entry(PoolEntry.of(BehaviorKey.MILK_COW))
                 .entry(PoolEntry.of(BehaviorKey.TAME_WOLF))
                 .entry(PoolEntry.of(BehaviorKey.WALK_DOG))
                 .entry(PoolEntry.of(BehaviorKey.WASH_WOLF))

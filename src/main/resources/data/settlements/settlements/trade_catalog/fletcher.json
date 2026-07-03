@@ -21,6 +21,9 @@
         "below": 32,
         "buyPricePerUnit": 2,
         "priority": 50
+      },
+      "dump": {
+        "above": 256
       }
     },
     {
@@ -32,6 +35,9 @@
         "below": 32,
         "buyPricePerUnit": 1,
         "priority": 40
+      },
+      "dump": {
+        "above": 256
       }
     },
     {
@@ -65,6 +71,132 @@
         "below": 16,
         "buyPricePerUnit": 1,
         "priority": 30
+      },
+      "dump": {
+        "above": 128
+      }
+    },
+    {
+      "id": "scavenged_bone",
+      "match": {
+        "item": "minecraft:bone"
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "scavenged_oak_sapling",
+      "match": {
+        "item": "minecraft:oak_sapling"
+      },
+      "offer": {
+        "above": 4,
+        "basePrice": 1,
+        "priceJitter": 0,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "scavenged_birch_sapling",
+      "match": {
+        "item": "minecraft:birch_sapling"
+      },
+      "offer": {
+        "above": 4,
+        "basePrice": 1,
+        "priceJitter": 0,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "scavenged_spruce_sapling",
+      "match": {
+        "item": "minecraft:spruce_sapling"
+      },
+      "offer": {
+        "above": 4,
+        "basePrice": 1,
+        "priceJitter": 0,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "scavenged_dandelion",
+      "match": {
+        "item": "minecraft:dandelion"
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "scavenged_poppy",
+      "match": {
+        "item": "minecraft:poppy"
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "scavenged_cornflower",
+      "match": {
+        "item": "minecraft:cornflower"
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "scavenged_azure_bluet",
+      "match": {
+        "item": "minecraft:azure_bluet"
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "scavenged_brown_mushroom",
+      "match": {
+        "item": "minecraft:brown_mushroom"
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "scavenged_red_mushroom",
+      "match": {
+        "item": "minecraft:red_mushroom"
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "scavenged_gunpowder",
+      "match": {
+        "item": "minecraft:gunpowder"
+      },
+      "offer": {
+        "above": 4,
+        "basePrice": 2,
+        "priceJitter": 0,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 8
       }
     },
     {

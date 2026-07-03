@@ -13,6 +13,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDa
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.scavenge.ScavengeYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
@@ -111,6 +112,12 @@ public final class DataManagerModule {
     @Singleton
     static OreRegenDataManager oreRegenDataManager() {
         return new OreRegenDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static ScavengeYieldDataManager scavengeYieldDataManager() {
+        return new ScavengeYieldDataManager();
     }
 
 }

@@ -4,24 +4,113 @@
     {
       "id": "string",
       "inputs": [
-        { "match": { "tag": "c:wools" }, "count": 4 }
+        {
+          "match": {
+            "tag": "c:wools"
+          },
+          "count": 4
+        }
       ],
-      "output": { "item": "minecraft:string", "count": 16 }
+      "output": {
+        "item": "minecraft:string",
+        "count": 16
+      }
     },
     {
       "id": "white_bed",
       "inputs": [
-        { "match": { "tag": "c:wools" }, "count": 3 },
-        { "match": { "tag": "minecraft:planks" }, "count": 3 }
+        {
+          "match": {
+            "tag": "c:wools"
+          },
+          "count": 3
+        },
+        {
+          "match": {
+            "tag": "minecraft:planks"
+          },
+          "count": 3
+        }
       ],
-      "output": { "item": "minecraft:white_bed", "count": 1 }
+      "output": {
+        "item": "minecraft:white_bed",
+        "count": 1
+      }
     },
     {
       "id": "white_carpet",
       "inputs": [
-        { "match": { "tag": "c:wools" }, "count": 2 }
+        {
+          "match": {
+            "tag": "c:wools"
+          },
+          "count": 2
+        }
       ],
-      "output": { "item": "minecraft:white_carpet", "count": 3 }
+      "output": {
+        "item": "minecraft:white_carpet",
+        "count": 3
+      }
+    },
+    {
+      "id": "dandelion_to_dye",
+      "inputs": [
+        {
+          "match": {
+            "item": "minecraft:dandelion"
+          },
+          "count": 1
+        }
+      ],
+      "output": {
+        "item": "minecraft:yellow_dye",
+        "count": 1
+      }
+    },
+    {
+      "id": "poppy_to_dye",
+      "inputs": [
+        {
+          "match": {
+            "item": "minecraft:poppy"
+          },
+          "count": 1
+        }
+      ],
+      "output": {
+        "item": "minecraft:red_dye",
+        "count": 1
+      }
+    },
+    {
+      "id": "cornflower_to_dye",
+      "inputs": [
+        {
+          "match": {
+            "item": "minecraft:cornflower"
+          },
+          "count": 1
+        }
+      ],
+      "output": {
+        "item": "minecraft:blue_dye",
+        "count": 1
+      }
+    },
+    {
+      "id": "azure_bluet_to_dye",
+      "inputs": [
+        {
+          "match": {
+            "item": "minecraft:azure_bluet"
+          },
+          "count": 1
+        }
+      ],
+      "output": {
+        "item": "minecraft:light_gray_dye",
+        "count": 1
+      }
     }
   ]
 }

@@ -72,4 +72,11 @@ public final class BlockMatchers {
             (pos, view) -> view.getBlockState(pos.above()).isAir()
     );
 
+    // Deliberately excludes crops so scavenge never treads on the farmer
+    public static final BlockMatcher SCAVENGEABLE_FLORA = new BlockMatcher(
+            state -> state.is(Blocks.SHORT_GRASS) || state.is(Blocks.TALL_GRASS)
+                    || state.is(Blocks.FERN) || state.is(Blocks.LARGE_FERN)
+                    || state.is(Blocks.DEAD_BUSH) || state.is(BlockTags.SMALL_FLOWERS)
+    );
+
 }

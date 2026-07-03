@@ -73,6 +73,9 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey THROW_EGGS = new BehaviorKey("throw_eggs");
     public static final BehaviorKey CHASE_CHICKENS = new BehaviorKey("chase_chickens");
 
+    // Foraging
+    public static final BehaviorKey SCAVENGE = new BehaviorKey("scavenge");
+
     // Surveying
     public static final BehaviorKey SURVEY_LANDSCAPE = new BehaviorKey("survey_landscape");
 

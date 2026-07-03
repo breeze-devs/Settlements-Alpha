@@ -80,6 +80,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.scavenge.ScavengeBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.scavenge.ScavengeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
@@ -119,6 +121,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.Culti
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.scavenge.ScavengeYieldDataManager;
 import dev.breezes.settlements.shared.util.ReputationUtil;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
@@ -1347,6 +1350,36 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("feather"))
                         .build())
                 .factory(() -> new ChaseChickensBehavior(config, support))
+                .build();
+    }
+
+    // Foraging
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry scavenge(ScavengeConfig config,
+                                         BehaviorSupport support,
+                                         ScavengeYieldDataManager yieldData) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.SCAVENGE)
+                        .displayName("Scavenge")
+                        .description("Rummage ground foliage for a small trickle of miscellany")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
+                                Set.of(MemoryTypeRegistry.SCAVENGEABLE_FLORA_SITES)))
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.SCAVENGE.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("short_grass"))
+                        .build())
+                .factory(() -> new ScavengeBehavior(config, support, yieldData))
                 .build();
     }
 

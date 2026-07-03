@@ -43,6 +43,64 @@
         "below": 8,
         "buyPricePerUnit": 2,
         "priority": 30
+      },
+      "dump": {
+        "above": 32
+      }
+    },
+    {
+      "id": "scavenged_dandelion",
+      "match": {
+        "item": "minecraft:dandelion"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 1,
+        "priority": 20
+      }
+    },
+    {
+      "id": "scavenged_poppy",
+      "match": {
+        "item": "minecraft:poppy"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 1,
+        "priority": 20
+      }
+    },
+    {
+      "id": "scavenged_cornflower",
+      "match": {
+        "item": "minecraft:cornflower"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 1,
+        "priority": 20
+      }
+    },
+    {
+      "id": "scavenged_azure_bluet",
+      "match": {
+        "item": "minecraft:azure_bluet"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 1,
+        "priority": 20
+      }
+    },
+    {
+      "id": "needs_bucket",
+      "match": {
+        "item": "minecraft:bucket"
+      },
+      "restock": {
+        "below": 4,
+        "buyPricePerUnit": 5,
+        "priority": 40
       }
     },
     {

@@ -225,17 +225,6 @@
       }
     },
     {
-      "id": "needs_bucket",
-      "match": {
-        "item": "minecraft:bucket"
-      },
-      "restock": {
-        "below": 4,
-        "buyPricePerUnit": 5,
-        "priority": 40
-      }
-    },
-    {
       "id": "needs_bone",
       "match": {
         "item": "minecraft:bone"

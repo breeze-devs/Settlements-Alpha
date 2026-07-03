@@ -1,0 +1,421 @@
+{
+  "block": "default",
+  "selection_weight": 1.0,
+  "expertise_pools": {
+    "novice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:stick",
+          "weight": 45.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:wheat_seeds",
+          "weight": 22.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:bone",
+          "weight": 14.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:feather",
+          "weight": 11.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:oak_sapling",
+          "weight": 8.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "apprentice": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:stick",
+          "weight": 38.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:wheat_seeds",
+          "weight": 18.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:bone",
+          "weight": 13.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:feather",
+          "weight": 10.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:oak_sapling",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:birch_sapling",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:dandelion",
+          "weight": 5.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:poppy",
+          "weight": 5.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:brown_mushroom",
+          "weight": 1.5,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:red_mushroom",
+          "weight": 1.5,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "journeyman": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:stick",
+          "weight": 33.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:wheat_seeds",
+          "weight": 8.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:melon_seeds",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:pumpkin_seeds",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:beetroot_seeds",
+          "weight": 2.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:bone",
+          "weight": 12.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:feather",
+          "weight": 9.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:oak_sapling",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:birch_sapling",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:dandelion",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:poppy",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:cornflower",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:azure_bluet",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:brown_mushroom",
+          "weight": 2.5,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:red_mushroom",
+          "weight": 2.5,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:gunpowder",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "expert": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:stick",
+          "weight": 30.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:wheat_seeds",
+          "weight": 7.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:melon_seeds",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:pumpkin_seeds",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:beetroot_seeds",
+          "weight": 2.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:bone",
+          "weight": 12.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:feather",
+          "weight": 8.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:oak_sapling",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:birch_sapling",
+          "weight": 2.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:spruce_sapling",
+          "weight": 2.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:dandelion",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:poppy",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:cornflower",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:azure_bluet",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:brown_mushroom",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:red_mushroom",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:gunpowder",
+          "weight": 6.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    },
+    "master": {
+      "rolls": 1,
+      "items": [
+        {
+          "item": "minecraft:stick",
+          "weight": 28.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:wheat_seeds",
+          "weight": 6.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:melon_seeds",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:pumpkin_seeds",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:beetroot_seeds",
+          "weight": 2.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:bone",
+          "weight": 12.0,
+          "min_count": 1,
+          "max_count": 2
+        },
+        {
+          "item": "minecraft:feather",
+          "weight": 8.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:oak_sapling",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:birch_sapling",
+          "weight": 2.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:spruce_sapling",
+          "weight": 2.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:dandelion",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:poppy",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:cornflower",
+          "weight": 4.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:azure_bluet",
+          "weight": 5.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:brown_mushroom",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:red_mushroom",
+          "weight": 3.0,
+          "min_count": 1,
+          "max_count": 1
+        },
+        {
+          "item": "minecraft:gunpowder",
+          "weight": 8.0,
+          "min_count": 1,
+          "max_count": 1
+        }
+      ]
+    }
+  }
+}

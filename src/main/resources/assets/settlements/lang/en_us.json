@@ -74,6 +74,7 @@
   "ui.settlements.behavior.behavior.throw_eggs": "Throw Eggs",
   "ui.settlements.behavior.behavior.investigate": "Investigate",
   "ui.settlements.behavior.behavior.chase_chickens": "Chase Chickens",
+  "ui.settlements.behavior.behavior.scavenge": "Scavenge",
   "ui.settlements.behavior.behavior.collect_demanded_item": "Collect Items",
   "ui.settlements.behavior.behavior.survey_landscape": "Survey Landscape",
   "ui.settlements.behavior.behavior.courtship_initiate": "Initiate Courtship",

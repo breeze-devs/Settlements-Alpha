@@ -38,6 +38,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.E
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ThrowEggsConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.scavenge.ScavengeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
@@ -278,6 +279,12 @@ public final class ConfigModule {
     @Singleton
     static ExcavateSubstrateConfig excavateSubstrateConfig() {
         return ConfigFactory.create(ExcavateSubstrateConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static ScavengeConfig scavengeConfig() {
+        return ConfigFactory.create(ScavengeConfig.class);
     }
 
     @Provides

@@ -26,6 +26,57 @@
       "dump": {
         "above": 64
       }
+    },
+    {
+      "id": "scavenged_stick",
+      "match": {
+        "item": "minecraft:stick"
+      },
+      "dump": {
+        "above": 32
+      }
+    },
+    {
+      "id": "scavenged_wheat_seeds",
+      "match": {
+        "item": "minecraft:wheat_seeds"
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "scavenged_bone",
+      "match": {
+        "item": "minecraft:bone"
+      },
+      "dump": {
+        "above": 8
+      }
+    },
+    {
+      "id": "scavenged_feather",
+      "match": {
+        "item": "minecraft:feather"
+      },
+      "dump": {
+        "above": 16
+      }
+    },
+    {
+      "id": "scavenged_oak_sapling",
+      "match": {
+        "item": "minecraft:oak_sapling"
+      },
+      "offer": {
+        "above": 4,
+        "basePrice": 1,
+        "priceJitter": 0,
+        "bundleSize": 4
+      },
+      "dump": {
+        "above": 8
+      }
     }
   ]
 }
