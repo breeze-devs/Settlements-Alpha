@@ -2,6 +2,7 @@ package dev.breezes.settlements.di.modules;
 
 import dagger.Module;
 import dagger.Provides;
+import dev.breezes.settlements.infrastructure.minecraft.data.animal.ButcherableAnimalDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.crafting.CraftCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
@@ -132,6 +133,12 @@ public final class DataManagerModule {
     @Singleton
     static BlastOreRecipeDataManager blastOreRecipeDataManager() {
         return new BlastOreRecipeDataManager();
+    }
+
+    @Provides
+    @Singleton
+    static ButcherableAnimalDataManager butcherableAnimalDataManager() {
+        return new ButcherableAnimalDataManager();
     }
 
 }

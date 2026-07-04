@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.config.constants.BehaviorConfigConsta
 import dev.breezes.settlements.application.config.validation.BehaviorCooldownValidator;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
+import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.MapConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.MapEntry;
@@ -58,6 +59,15 @@ public record ExcavateSubstrateConfig(
                         @MapEntry(key = "master", value = "4")
                 })
         Map<String, Integer> expertiseHarvestLimit,
+
+        @DoubleConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = "bare_handed_nugget_chance",
+                description = "Chance per dig of finding a single iron nugget by hand when no iron shovel is held.",
+                defaultValue = 0.5,
+                min = 0.0,
+                max = 1.0)
+        double bareHandedNuggetChance,
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,

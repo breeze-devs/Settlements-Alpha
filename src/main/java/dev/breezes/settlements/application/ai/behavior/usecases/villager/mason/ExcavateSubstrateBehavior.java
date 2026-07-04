@@ -68,6 +68,7 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
     private static final ResourceLocation GRAVEL_BLOCK_ID = ResourceLocation.withDefaultNamespace("gravel");
     private static final ResourceLocation SAND_BLOCK_ID = ResourceLocation.withDefaultNamespace("sand");
     private static final ResourceLocation IRON_SHOVEL_ID = ResourceLocation.withDefaultNamespace("iron_shovel");
+    private static final ItemMatch.ItemRef IRON_SHOVEL_MATCH = new ItemMatch.ItemRef(IRON_SHOVEL_ID);
     private static final List<ExcavatableSubstrateSource> SOURCES = List.of(
             new ExcavatableSubstrateSource("gravel", MemoryTypeRegistry.GRAVEL_SITES, BlockMatchers.LOOSE_GRAVEL, GRAVEL_BLOCK_ID),
             new ExcavatableSubstrateSource("sand", MemoryTypeRegistry.SAND_SITES, BlockMatchers.LOOSE_SAND, SAND_BLOCK_ID)
@@ -96,12 +97,11 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
         this.confirmBox = BlockScanBox.confirm();
         this.maxConfirms = BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS;
 
+        // No iron-shovel condition: a shovel-less mason still digs, just for the rare bare-handed nugget
         this.preconditions.add(AnyOfCondition.<BaseVillager>builder()
                 .conditions(SOURCES.stream().map(this::knownSitesPrecondition).toList())
                 .description("Known substrate excavation sites")
                 .build());
-        this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(IRON_SHOVEL_ID), 1, 50,
-                this.getClass().getSimpleName()));
 
         this.initializeStateMachine(this.createControlStep(), Stage.END);
     }
@@ -189,8 +189,11 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
                 .name("ExcavateStep")
                 .withTickable(ClockTicks.of(DigAnimations.DIG_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
-                    ctx.getInitiator().setHeldItem(Items.IRON_SHOVEL.getDefaultInstance());
-                    ctx.getInitiator().triggerMotion(AnimationArchetype.DIG);
+                    BaseVillager initiator = ctx.getInitiator();
+                    if (hasIronShovel(initiator)) {
+                        initiator.setHeldItem(Items.IRON_SHOVEL.getDefaultInstance());
+                    }
+                    initiator.triggerMotion(AnimationArchetype.DIG);
                     return StepResult.noOp();
                 })
                 .addKeyFrame(ClockTicks.of(DigAnimations.DIG_IMPACT_TICKS), this::spawnDrops)
@@ -222,7 +225,9 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
 
         String harvestedBlockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         String expertiseName = villager.getExpertise().getConfigName();
-        List<ItemStack> drops = this.yieldData.rollDrops(expertiseName, harvestedBlockId);
+        List<ItemStack> drops = hasIronShovel(villager)
+                ? this.yieldData.rollDrops(expertiseName, harvestedBlockId)
+                : this.rollBareHandedDrops();
         if (drops.isEmpty()) {
             return StepResult.noOp();
         }
@@ -281,6 +286,21 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
 
     private static int totalItemCount(@Nonnull List<ItemStack> drops) {
         return drops.stream().mapToInt(ItemStack::getCount).sum();
+    }
+
+    private static boolean hasIronShovel(@Nonnull BaseVillager villager) {
+        return villager.getSettlementsInventory().countMatching(IRON_SHOVEL_MATCH) > 0;
+    }
+
+    /**
+     * The bootstrap path for a settlement with no iron yet: a shovel-less mason can still turn up a
+     * single nugget by hand, at low odds.
+     */
+    private List<ItemStack> rollBareHandedDrops() {
+        if (!RandomUtil.chance(this.config.bareHandedNuggetChance())) {
+            return List.of();
+        }
+        return List.of(new ItemStack(Items.IRON_NUGGET, 1));
     }
 
     private record ExcavatableSubstrateSource(@Nonnull String name,

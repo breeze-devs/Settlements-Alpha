@@ -5,21 +5,21 @@ import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationRenderer;
+import dev.breezes.settlements.infrastructure.minecraft.entities.cats.rendering.SettlementsCatRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.client.VillagerFishingHookRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.rendering.SettlementsVillagerRenderer;
+import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.rendering.SettlementsWolfRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
 import dev.breezes.settlements.infrastructure.rendering.particles.EggSplatParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.OrbParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.StunnedStarParticle;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.entity.CatRenderer;
 import net.minecraft.client.renderer.entity.ChickenRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
-import net.minecraft.client.renderer.entity.WolfRenderer;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -49,8 +49,8 @@ public class ClientModEvents {
 
     private static void registerEntityRenderers() {
         EntityRenderers.register(EntityRegistry.BASE_VILLAGER.get(), SettlementsVillagerRenderer::new);
-        EntityRenderers.register(EntityRegistry.SETTLEMENTS_CAT.get(), CatRenderer::new);
-        EntityRenderers.register(EntityRegistry.SETTLEMENTS_WOLF.get(), WolfRenderer::new);
+        EntityRenderers.register(EntityRegistry.SETTLEMENTS_CAT.get(), SettlementsCatRenderer::new);
+        EntityRenderers.register(EntityRegistry.SETTLEMENTS_WOLF.get(), SettlementsWolfRenderer::new);
         EntityRenderers.register(EntityRegistry.CUCCO.get(), ChickenRenderer::new);
         EntityRenderers.register(EntityRegistry.VILLAGER_FISHING_HOOK.get(), VillagerFishingHookRenderer::new);
         EntityRenderers.register(EntityRegistry.SETTLEMENTS_EGG.get(), ThrownItemRenderer::new);

@@ -2,6 +2,13 @@
   "profession": "minecraft:toolsmith",
   "recipes": [
     {
+      "id": "iron_ingot_from_nuggets",
+      "inputs": [
+        { "match": { "item": "minecraft:iron_nugget" }, "count": 9 }
+      ],
+      "output": { "item": "minecraft:iron_ingot", "count": 1 }
+    },
+    {
       "id": "shears",
       "inputs": [
         { "match": { "item": "minecraft:iron_ingot" }, "count": 2 }

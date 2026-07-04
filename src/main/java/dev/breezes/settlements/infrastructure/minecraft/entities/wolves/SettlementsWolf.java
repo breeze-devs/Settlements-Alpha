@@ -10,11 +10,13 @@ import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
+import dev.breezes.settlements.domain.animal.PetSquish;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.exceptions.SpawnFailedException;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetReaction;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfSitWhenOrderedToGoal;
@@ -23,16 +25,19 @@ import dev.breezes.settlements.infrastructure.minecraft.mixins.WolfMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaBasicNavigationManager;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import dev.breezes.settlements.shared.util.RandomUtil;
+import lombok.AccessLevel;
 import lombok.CustomLog;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -61,7 +66,6 @@ import java.util.Set;
 public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     private static final String DIRTY_NBT_KEY = "Dirty";
-    private static final double BASE_MAX_HEALTH = 20;
     private static final ClockTicks UNTAMED_LIFETIME = ClockTicks.minutes(30);
     private static final ClockTicks DIRTY_ROLL_INTERVAL = ClockTicks.minutes(1);
     private static final double DIRTY_CHANCE = 0.05D;
@@ -79,6 +83,12 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     @Setter
     private boolean dirty;
+
+    @Getter(AccessLevel.NONE)
+    private final PetReaction petReaction = PetReaction.builder()
+            .cooldown(ClockTicks.seconds(1))
+            .sound(SoundEvents.WOLF_AMBIENT)
+            .build();
 
     public SettlementsWolf(EntityType<? extends Wolf> entityType, Level level) {
         super(entityType, level);
@@ -169,15 +179,19 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Wolf.createAttributes()
-                .add(Attributes.MAX_HEALTH, BASE_MAX_HEALTH)
-                .add(Attributes.ATTACK_DAMAGE, 6.0);
+                .add(Attributes.MAX_HEALTH, 20)
+                .add(Attributes.ATTACK_DAMAGE, 8.0);
     }
 
     @Override
     public InteractionResult mobInteract(@Nonnull Player player, @Nonnull InteractionHand hand) {
         // A villager-owned Settlements wolf stays village-bound — defer to vanilla, which won't let a
-        // non-owner player claim it.
+        // non-owner player claim it. Empty-handed, though, the player can pet it.
         if (this.isTame()) {
+            if (player.getItemInHand(hand).isEmpty()) {
+                this.pet(player);
+                return InteractionResult.sidedSuccess(this.level().isClientSide());
+            }
             return super.mobInteract(player, hand);
         }
 
@@ -202,6 +216,34 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
 
         // No other player interaction does anything to an untamed Settlements wolf.
         return InteractionResult.PASS;
+    }
+
+    /**
+     * Reacts to being petted with a short squish, a bark, and a couple of hearts.
+     * <p>
+     * Takes the acting {@link LivingEntity} rather than a {@link Player} so a future villager behavior can
+     * pet a wolf through this exact path — the player is just the first caller. Mirrors the cat's petting.
+     *
+     * @return whether the pet actually landed (false while on cooldown, or when called client-side)
+     */
+    public boolean pet(@Nonnull LivingEntity actor) {
+        return this.petReaction.trigger(this);
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (this.petReaction.onEntityEvent(id, this.tickCount)) {
+            return;
+        }
+        super.handleEntityEvent(id);
+    }
+
+    /**
+     * Client render hook: the per-axis squish scale for the current frame, or {@link PetSquish#IDENTITY}
+     * when no petting reaction is playing.
+     */
+    public PetSquish.Factors getPetSquishFactors(float partialTick) {
+        return this.petReaction.squishFactors(this.tickCount, partialTick);
     }
 
     /**

@@ -5,10 +5,13 @@ import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
+import dev.breezes.settlements.domain.animal.PetSquish;
 import dev.breezes.settlements.domain.exceptions.SpawnFailedException;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.goals.CatFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.goals.CatSitWhenOrderedToGoal;
+import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetReaction;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.CatMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.LevelMixin;
@@ -16,12 +19,17 @@ import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaBasicN
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
 import net.minecraft.world.entity.animal.Cat;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 
@@ -39,6 +47,12 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity {
     private final INavigationManager<SettlementsCat> navigationManager;
 
     private final Set<Class<?>> followOwnerLocks;
+
+    @Getter
+    private final PetReaction petReaction = PetReaction.builder()
+            .cooldown(ClockTicks.seconds(1))
+            .sound(SoundEvents.CAT_AMBIENT)
+            .build();
 
     public SettlementsCat(EntityType<? extends Cat> entityType, Level level) {
         super(entityType, level);
@@ -111,6 +125,47 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity {
 
     public void setCollarColor(@Nonnull DyeColor color) {
         ((CatMixin) this).invokeSetCollarColor(color);
+    }
+
+    @Override
+    public InteractionResult mobInteract(@Nonnull Player player, @Nonnull InteractionHand hand) {
+        // Empty-handed right-click is our petting gesture; everything else (food, collar dye, leash) falls
+        // through to vanilla so we don't accidentally swallow an interaction we don't own.
+        if (player.getItemInHand(hand).isEmpty()) {
+            this.pet(player);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
+        }
+
+        return super.mobInteract(player, hand);
+    }
+
+    /**
+     * Reacts to being petted with a short squish, a meow, and a couple of hearts.
+     * <p>
+     * Takes the acting {@link LivingEntity} rather than a {@link Player} so a future villager (or baby
+     * villager) behavior can pet a cat through this exact path — the player is just the first caller.
+     *
+     * @return whether the pet actually landed (false while on cooldown, or when called client-side)
+     */
+    public boolean pet(@Nonnull LivingEntity actor) {
+        return this.petReaction.trigger(this);
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (this.petReaction.onEntityEvent(id, this.tickCount)) {
+            return;
+        }
+        super.handleEntityEvent(id);
+    }
+
+    /**
+     * Client render hook: the per-axis squish scale for the current frame, or {@link PetSquish#IDENTITY}
+     * when no petting reaction is playing.
+     */
+    @Nonnull
+    public PetSquish.Factors getPetSquishFactors(float partialTick) {
+        return this.petReaction.squishFactors(this.tickCount, partialTick);
     }
 
     @Override

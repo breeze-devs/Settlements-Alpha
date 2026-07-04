@@ -125,6 +125,7 @@ import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.forge.catalog.ForgeCatalogRegistry;
 import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipeRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.infrastructure.minecraft.data.animal.ButcherableAnimalDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
@@ -467,7 +468,7 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry butcherLivestock(ButcherLivestockConfig config, BehaviorSupport support) {
+    static BehaviorCatalogEntry butcherLivestock(ButcherLivestockConfig config, ButcherableAnimalDataManager animalDataManager, BehaviorSupport support) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.BUTCHER_LIVESTOCK)
@@ -486,7 +487,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.BUTCHER_LIVESTOCK.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("iron_axe"))
                         .build())
-                .factory(() -> new ButcherLivestockBehavior(config, support))
+                .factory(() -> new ButcherLivestockBehavior(config, animalDataManager, support))
                 .build();
     }
 

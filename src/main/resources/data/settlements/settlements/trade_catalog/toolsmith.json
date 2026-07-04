@@ -21,6 +21,20 @@
         "below": 32,
         "buyPricePerUnit": 6,
         "priority": 50
+      },
+      "dump": {
+        "above": 64
+      }
+    },
+    {
+      "id": "buy_iron_nugget",
+      "match": {
+        "item": "minecraft:iron_nugget"
+      },
+      "restock": {
+        "below": 9,
+        "buyPricePerUnit": 1,
+        "priority": 45
       }
     },
     {

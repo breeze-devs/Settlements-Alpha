@@ -7,6 +7,7 @@ import dev.breezes.settlements.bootstrap.event.GenerationDataValidationReloadLis
 import dev.breezes.settlements.bootstrap.event.RecipeCatalogValidationReloadListener;
 import dev.breezes.settlements.di.DataReloadListeners;
 import dev.breezes.settlements.di.PostReloadListeners;
+import dev.breezes.settlements.infrastructure.minecraft.data.animal.ButcherableAnimalDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.crafting.CraftCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
@@ -131,6 +132,11 @@ public interface ReloadListenerModule {
     @IntoSet
     @DataReloadListeners
     PreparableReloadListener nbtTemplateResolver(NbtTemplateResolver resolver);
+
+    @Binds
+    @IntoSet
+    @DataReloadListeners
+    PreparableReloadListener butcherableAnimalDataManager(ButcherableAnimalDataManager dataManager);
 
     @Binds
     @IntoSet

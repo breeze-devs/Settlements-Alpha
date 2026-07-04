@@ -73,20 +73,6 @@ public record ButcherLivestockConfig(
 
         @MapConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "minimum_keep_count",
-                description = "Map of animal entity id to the minimum nearby count to keep before butchering surplus. Also acts as the allow-list of butcherable animal types.",
-                deserializer = "StringToInteger",
-                defaultValue = {
-                        @MapEntry(key = "minecraft:cow", value = "4"),
-                        @MapEntry(key = "minecraft:sheep", value = "6"),
-                        @MapEntry(key = "minecraft:chicken", value = "4"),
-                        @MapEntry(key = "minecraft:pig", value = "3"),
-                        @MapEntry(key = "minecraft:rabbit", value = "4")
-                })
-        Map<String, Integer> minimumKeepCount,
-
-        @MapConfig(
-                type = ConfigurationType.BEHAVIOR,
                 identifier = "expertise_butcher_limit",
                 description = "Map of villager expertise level to the maximum number of animals they can butcher in one session.",
                 deserializer = "StringToInteger",

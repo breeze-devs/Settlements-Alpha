@@ -1,0 +1,5 @@
+{
+    "entity": "minecraft:cow",
+    "minimum_keep_count": 3,
+    "species_noun": "cows"
+}

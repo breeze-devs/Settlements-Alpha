@@ -19,6 +19,7 @@ import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
+import dev.breezes.settlements.domain.animal.ButcherableAnimalEntry;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.ChopAnimations;
 import dev.breezes.settlements.domain.animation.PickUpAnimations;
@@ -27,6 +28,7 @@ import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.data.animal.ButcherableAnimalDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -62,7 +64,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
     public static final String RESERVED_FOR_VILLAGER_KEY = "settlements_reserved_for_villager";
 
     private final ButcherLivestockConfig config;
-    private final Map<EntityType<?>, Integer> minimumKeepByType;
+    private final ButcherableAnimalDataManager animalDataManager;
     private final boolean requireVillageOwnedTag;
     private int butcherCountRemaining;
 
@@ -73,19 +75,20 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
     private boolean shouldRewardExperience;
 
     public ButcherLivestockBehavior(@Nonnull ButcherLivestockConfig config,
+                                    @Nonnull ButcherableAnimalDataManager animalDataManager,
                                     @Nonnull BehaviorSupport support) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
         this.config = config;
-        this.minimumKeepByType = parseConfiguredMinimumKeep(config.minimumKeepCount());
+        this.animalDataManager = animalDataManager;
         this.requireVillageOwnedTag = config.requireVillageOwnedTag();
 
-        // Loose precondition: at least one entity of a configured type exists and is an adult.
-        // The strict minimum-keep population check happens inside onBehaviorStart.
+        // Loose precondition: at least one entity of a datapack-registered butcherable type exists
+        // and is an adult. The strict minimum-keep population check happens inside onBehaviorStart.
         this.preconditions.add(PerceivedEntityExistsCondition.<BaseVillager, LivingEntity>builder()
                 .entityType(LivingEntity.class)
-                .filter((villager, entity) -> this.minimumKeepByType.containsKey(entity.getType())
+                .filter((villager, entity) -> this.animalDataManager.findByEntityType(entity.getType()).isPresent()
                         && isAdultOrNonAgeable(entity)
                         && (!this.requireVillageOwnedTag || entity.getTags().contains(EntityTag.VILLAGE_OWNED_ANIMAL.getTag())))
                 .completionRange(1)
@@ -201,7 +204,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
         this.target = selectedTarget.get();
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
-        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.LIVESTOCK_BUTCHERED, resolveSpeciesNoun(this.selectedAnimalType)));
+        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.LIVESTOCK_BUTCHERED, this.resolveSpeciesNoun(this.selectedAnimalType)));
         log.behaviorStatus("Villager is '{}' level, maximum butcher count is {}, targeting {}",
                 expertise.toString(), limit, this.selectedAnimalType);
     }
@@ -246,7 +249,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         }
 
         List<? extends EntityType<?>> eligibleTypesByPopulation = adultCountByType.entrySet().stream()
-                .filter(entry -> entry.getValue() > this.minimumKeepByType.getOrDefault(entry.getKey(), Integer.MAX_VALUE))
+                .filter(entry -> entry.getValue() > this.minimumKeepFor(entry.getKey()))
                 .sorted(Map.Entry.<EntityType<?>, Integer>comparingByValue(Comparator.reverseOrder())
                         .thenComparing(entry -> BuiltInRegistries.ENTITY_TYPE.getKey(entry.getKey()).toString()))
                 .map(Map.Entry::getKey)
@@ -275,7 +278,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
                         && this.isButcherCandidate(entity))
                 .toList();
 
-        int minKeep = this.minimumKeepByType.getOrDefault(desiredType, Integer.MAX_VALUE);
+        int minKeep = this.minimumKeepFor(desiredType);
         if (candidates.size() <= minKeep) {
             return Optional.empty();
         }
@@ -293,7 +296,7 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         if (!entity.isAlive()) {
             return false;
         }
-        if (!this.minimumKeepByType.containsKey(entity.getType())) {
+        if (this.animalDataManager.findByEntityType(entity.getType()).isEmpty()) {
             return false;
         }
         if (!isAdultOrNonAgeable(entity)) {
@@ -303,6 +306,16 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Queried live on every call rather than cached at construction — the behavior instance is
+     * long-lived across a villager's lifetime, so caching would freeze out a datapack /reload.
+     */
+    private int minimumKeepFor(@Nonnull EntityType<?> type) {
+        return this.animalDataManager.findByEntityType(type)
+                .map(ButcherableAnimalEntry::minimumKeepCount)
+                .orElse(Integer.MAX_VALUE);
     }
 
     private void performButcher(@Nonnull LivingEntity target,
@@ -342,61 +355,20 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         return true;
     }
 
-    private static String resolveSpeciesNoun(@Nullable EntityType<?> type) {
+    /**
+     * Falls back to the vanilla description id when the catalog has no entry for the type, or the
+     * matched entry omits its display noun — a datapack author may add a butcherable type without
+     * bothering to author display text for it.
+     */
+    private String resolveSpeciesNoun(@Nullable EntityType<?> type) {
         if (type == null) {
             return "animals";
         }
-        if (type == EntityType.COW) {
-            return "cows";
-        } else if (type == EntityType.PIG) {
-            return "pigs";
-        } else if (type == EntityType.SHEEP) {
-            return "sheep";
-        } else if (type == EntityType.CHICKEN) {
-            return "chickens";
-        } else if (type == EntityType.RABBIT) {
-            return "rabbits";
-        }
-        return type.getDescriptionId();
-    }
 
-    private static Map<EntityType<?>, Integer> parseConfiguredMinimumKeep(@Nonnull Map<String, Integer> rawMap) {
-        Map<EntityType<?>, Integer> parsed = new HashMap<>();
-
-        for (Map.Entry<String, Integer> entry : rawMap.entrySet()) {
-            String rawType = entry.getKey();
-            int minimum = Math.max(0, entry.getValue());
-
-            Optional<EntityType<?>> entityType = resolveConfiguredEntityType(rawType);
-            if (entityType.isEmpty()) {
-                continue;
-            }
-            parsed.put(entityType.get(), minimum);
-        }
-
-        if (parsed.isEmpty()) {
-            throw new IllegalArgumentException("minimum_keep_count must contain at least one valid animal entity id");
-        }
-
-        return parsed;
-    }
-
-    private static Optional<EntityType<?>> resolveConfiguredEntityType(@Nonnull String rawType) {
-        if (rawType.isBlank()) {
-            return Optional.empty();
-        }
-
-        ResourceLocation entityId = ResourceLocation.tryParse(rawType);
-        if (entityId == null) {
-            entityId = ResourceLocation.withDefaultNamespace(rawType);
-        }
-
-        if (!BuiltInRegistries.ENTITY_TYPE.containsKey(entityId)) {
-            log.error("Unable to parse {} candidate as entity type {}", rawType, entityId);
-            return Optional.empty();
-        }
-
-        return Optional.of(BuiltInRegistries.ENTITY_TYPE.get(entityId));
+        return this.animalDataManager.findByEntityType(type)
+                .map(ButcherableAnimalEntry::speciesNoun)
+                .filter(noun -> !noun.isBlank())
+                .orElseGet(type::getDescriptionId);
     }
 
 }

@@ -35,6 +35,21 @@
       }
     },
     {
+      "id": "iron_nugget",
+      "match": {
+        "item": "minecraft:iron_nugget"
+      },
+      "offer": {
+        "above": 9,
+        "basePrice": 9,
+        "priceJitter": 0,
+        "bundleSize": 9
+      },
+      "dump": {
+        "above": 72
+      }
+    },
+    {
       "id": "raw_iron",
       "match": {
         "item": "minecraft:raw_iron"
