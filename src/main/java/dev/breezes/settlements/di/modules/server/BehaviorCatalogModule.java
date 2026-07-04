@@ -123,6 +123,7 @@ import dev.breezes.settlements.domain.ai.planning.OpportunityRequirement;
 import dev.breezes.settlements.domain.crafting.catalog.CraftCatalogRegistry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.forge.catalog.ForgeCatalogRegistry;
+import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipeRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
@@ -412,7 +413,7 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry blastOre(BlastOreConfig config, BehaviorSupport support) {
+    static BehaviorCatalogEntry blastOre(BlastOreConfig config, BehaviorSupport support, BlastOreRecipeRegistry recipeRegistry) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.BLAST_ORE)
@@ -425,15 +426,13 @@ public final class BehaviorCatalogModule {
                         .estimatedDuration(ClockTicks.seconds(20).asGameTicks())
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(false)
-                        .opportunity(new OpportunityRequirement.InventoryItemOpportunity(
-                                Set.of(Items.RAW_IRON, Items.RAW_GOLD, Items.RAW_COPPER)))
                         .opportunity(new OpportunityRequirement.JobSiteBlockOpportunity(Blocks.BLAST_FURNACE))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.BLAST_ORE.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("blast_furnace"))
                         .build())
-                .factory(() -> new BlastOreBehavior(config, support))
+                .factory(() -> new BlastOreBehavior(config, support, recipeRegistry))
                 .build();
     }
 

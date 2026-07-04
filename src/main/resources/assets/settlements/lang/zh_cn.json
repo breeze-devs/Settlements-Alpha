@@ -91,6 +91,8 @@
   "ui.settlements.stats.home.none": "家：未定",
   "ui.settlements.stats.work.none": "工作：无业",
   "ui.settlements.stats.unemployed": "无业",
+  "ui.settlements.stats.expertise_profession": "%1$s%2$s",
+  "ui.settlements.stats.expertise.unknown": "未知",
   "ui.settlements.stats.reputation": "声望：%s",
   "ui.settlements.stats.reputation.hostile": "敌对",
   "ui.settlements.stats.reputation.unfriendly": "不待见你",

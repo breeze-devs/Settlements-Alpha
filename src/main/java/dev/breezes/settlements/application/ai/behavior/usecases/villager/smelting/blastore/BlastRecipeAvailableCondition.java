@@ -2,8 +2,13 @@ package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelti
 
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipe;
+import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipeRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.Getter;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -15,13 +20,13 @@ import java.util.List;
  */
 public class BlastRecipeAvailableCondition implements ICondition<BaseVillager> {
 
-    private final List<BlastOreRecipe> recipes;
+    private final BlastOreRecipeRegistry recipeRegistry;
 
     @Getter
     private List<BlastOreRecipe> validRecipes;
 
-    public BlastRecipeAvailableCondition(@Nonnull List<BlastOreRecipe> recipes) {
-        this.recipes = recipes;
+    public BlastRecipeAvailableCondition(@Nonnull BlastOreRecipeRegistry recipeRegistry) {
+        this.recipeRegistry = recipeRegistry;
         this.validRecipes = List.of();
     }
 
@@ -33,8 +38,11 @@ public class BlastRecipeAvailableCondition implements ICondition<BaseVillager> {
         }
 
         VillagerInventory inventory = villager.getSettlementsInventory();
-        this.validRecipes = this.recipes.stream()
-                .filter(recipe -> inventory.count(recipe.getInput()) >= recipe.getInputCount())
+        this.validRecipes = this.recipeRegistry.allRecipes().stream()
+                .filter(recipe -> {
+                    Item item = BuiltInRegistries.ITEM.get(recipe.input());
+                    return item != Items.AIR && inventory.count(item) >= recipe.inputCount();
+                })
                 .toList();
         return !this.validRecipes.isEmpty();
     }

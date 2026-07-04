@@ -8,11 +8,12 @@ import dev.breezes.settlements.di.modules.CraftingModule;
 import dev.breezes.settlements.di.modules.DataManagerModule;
 import dev.breezes.settlements.di.modules.EconomyModule;
 import dev.breezes.settlements.di.modules.ReloadListenerModule;
+import dev.breezes.settlements.di.modules.SmeltingModule;
 import dev.breezes.settlements.di.modules.WorldGenerationModule;
 import dev.breezes.settlements.domain.generation.pipeline.GenerationPipeline;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
@@ -29,6 +30,7 @@ import java.util.Set;
         BehaviorServicesModule.class,
         EconomyModule.class,
         CraftingModule.class,
+        SmeltingModule.class,
         WorldGenerationModule.class,
         ReloadListenerModule.class,
 })

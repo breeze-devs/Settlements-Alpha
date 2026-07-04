@@ -92,6 +92,8 @@
   "ui.settlements.stats.home.none": "Home: None",
   "ui.settlements.stats.work.none": "Work: Unemployed",
   "ui.settlements.stats.unemployed": "Unemployed",
+  "ui.settlements.stats.expertise_profession": "%1$s %2$s",
+  "ui.settlements.stats.expertise.unknown": "Unknown",
   "ui.settlements.stats.reputation": "Reputation: %s",
   "ui.settlements.stats.reputation.hostile": "Hostile",
   "ui.settlements.stats.reputation.unfriendly": "Unfriendly",

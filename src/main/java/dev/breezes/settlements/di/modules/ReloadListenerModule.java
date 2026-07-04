@@ -21,6 +21,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubst
 import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scavenge.ScavengeYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.smelting.BlastOreRecipeDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
@@ -120,6 +121,11 @@ public interface ReloadListenerModule {
     @IntoSet
     @DataReloadListeners
     PreparableReloadListener scavengeYieldDataManager(ScavengeYieldDataManager dataManager);
+
+    @Binds
+    @IntoSet
+    @DataReloadListeners
+    PreparableReloadListener blastOreRecipeDataManager(BlastOreRecipeDataManager dataManager);
 
     @Binds
     @IntoSet

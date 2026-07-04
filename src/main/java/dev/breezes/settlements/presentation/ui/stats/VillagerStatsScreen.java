@@ -8,7 +8,6 @@ import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
 import dev.breezes.settlements.application.ui.stats.model.VillagerTradeCatalogSnapshot;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
-import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.BackpackEntry;
 import dev.breezes.settlements.domain.personality.OriginType;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
@@ -24,7 +23,6 @@ import dev.breezes.settlements.presentation.ui.framework.UIElement;
 import dev.breezes.settlements.presentation.ui.framework.WidgetElement;
 import dev.breezes.settlements.presentation.ui.sync.UiClientState;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
-import dev.breezes.settlements.shared.util.StringUtil;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.ChatFormatting;
@@ -85,6 +83,8 @@ public class VillagerStatsScreen extends LayoutScreen {
     private static final String ACTIVITY_KEY = "ui.settlements.stats.activity";
     private static final String CLOSE_KEY = "ui.settlements.stats.close";
     private static final String UNEMPLOYED_KEY = "ui.settlements.stats.unemployed";
+    private static final String EXPERTISE_PROFESSION_KEY = "ui.settlements.stats.expertise_profession";
+    private static final String EXPERTISE_UNKNOWN_KEY = "ui.settlements.stats.expertise.unknown";
     private static final String WALLET_KEY = "ui.settlements.stats.wallet";
     private static final String TRADES_OFFERS_KEY = "ui.settlements.stats.trades.offers";
     private static final String TRADES_DEMANDS_KEY = "ui.settlements.stats.trades.demands";
@@ -367,14 +367,11 @@ public class VillagerStatsScreen extends LayoutScreen {
             return Component.translatable(UNEMPLOYED_KEY);
         }
 
-        String expertise;
-        try {
-            expertise = Expertise.fromLevel(this.statsSnapshot.expertiseLevel()).name();
-        } catch (IllegalArgumentException e) {
-            expertise = "Unknown";
-        }
-        String profession = VillagerStatsUtil.formatProfessionName(profKey);
-        return Component.literal(StringUtil.titleCase(expertise) + " " + profession);
+        Component expertise = VillagerStatsUtil.expertiseTranslationKey(this.statsSnapshot.expertiseLevel())
+                .map(Component::translatable)
+                .orElseGet(() -> Component.translatable(EXPERTISE_UNKNOWN_KEY));
+        Component profession = Component.translatable(VillagerStatsUtil.professionTranslationKey(profKey));
+        return Component.translatable(EXPERTISE_PROFESSION_KEY, expertise, profession);
     }
 
     private UIElement buildVillagerModelArea() {

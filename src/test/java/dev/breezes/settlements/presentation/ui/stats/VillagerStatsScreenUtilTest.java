@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,18 +53,31 @@ class VillagerStatsScreenUtilTest {
     }
 
     @Test
-    void formatProfessionName_simple() {
-        assertEquals("Farmer", VillagerStatsUtil.formatProfessionName("minecraft:farmer"));
+    void professionTranslationKey_withNamespace() {
+        assertEquals("entity.settlements.base_villager.farmer", VillagerStatsUtil.professionTranslationKey("minecraft:farmer"));
     }
 
     @Test
-    void formatProfessionName_underscore() {
-        assertEquals("Stone Mason", VillagerStatsUtil.formatProfessionName("minecraft:stone_mason"));
+    void professionTranslationKey_noNamespace() {
+        assertEquals("entity.settlements.base_villager.librarian", VillagerStatsUtil.professionTranslationKey("librarian"));
     }
 
-    @Test
-    void formatProfessionName_noNamespace() {
-        assertEquals("Librarian", VillagerStatsUtil.formatProfessionName("librarian"));
+    @ParameterizedTest
+    @CsvSource({
+            "1, merchant.level.1",
+            "2, merchant.level.2",
+            "3, merchant.level.3",
+            "4, merchant.level.4",
+            "5, merchant.level.5"
+    })
+    void expertiseTranslationKey_validLevels(int level, String expectedKey) {
+        assertEquals(Optional.of(expectedKey), VillagerStatsUtil.expertiseTranslationKey(level));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0", "6", "-1"})
+    void expertiseTranslationKey_outOfRangeIsEmpty(int level) {
+        assertEquals(Optional.empty(), VillagerStatsUtil.expertiseTranslationKey(level));
     }
 
     @ParameterizedTest
