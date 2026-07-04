@@ -22,6 +22,11 @@ import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.domain.personality.OriginType;
+import dev.breezes.settlements.domain.personality.PersonalityStatus;
+import dev.breezes.settlements.domain.personality.VillagerPersonality;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
 import lombok.AccessLevel;
@@ -51,7 +56,7 @@ public final class VillagerStatsSnapshotBuilder {
 
     @Nonnull
     public VillagerStatsSnapshot buildStats(@Nonnull BaseVillager villager, long gameTime) {
-        String villagerName = villager.hasCustomName() ? villager.getName().getString() : null;
+        String villagerName = villager.getName().getString();
         String professionKey = villager.getVillagerData().getProfession().toString();
         int expertiseLevel = villager.getVillagerData().getLevel();
 
@@ -62,6 +67,15 @@ public final class VillagerStatsSnapshotBuilder {
         SchedulePhase schedulePhase = mapSchedulePhase(activity);
 
         Optional<ActiveBehaviorInfo> activeBehavior = this.findActiveBehavior(villager);
+
+        // Adjectives/characterSketch are only meaningful once the LLM-authored persona has actually
+        // landed; PENDING/FAILED personas carry empty placeholder values that the client already
+        // renders as its own "still forming" message, so we withhold them rather than surface stale data.
+        VillagerPersonality personality = VillagerPersonalityAttachment.read(villager);
+        List<String> adjectives = personality.status() == PersonalityStatus.READY ? personality.adjectives() : List.of();
+        String characterSketch = personality.status() == PersonalityStatus.READY ? personality.characterSketch() : null;
+        OriginType origin = VillagerOriginAttachment.read(villager);
+
         return VillagerStatsSnapshot.builder()
                 .gameTime(gameTime)
                 .villagerEntityId(villager.getId())
@@ -79,6 +93,9 @@ public final class VillagerStatsSnapshotBuilder {
                 .reputation(0) // TODO: wire to actual villager reputation data
                 .hunger(villager.getHunger())
                 .walletBalance(villagerWallet.getBalance(villager))
+                .adjectives(adjectives)
+                .characterSketch(characterSketch)
+                .origin(origin)
                 .build();
     }
 

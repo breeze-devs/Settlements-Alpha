@@ -4,6 +4,8 @@ import dev.breezes.settlements.application.ai.dialogue.Occasion;
 import dev.breezes.settlements.application.ai.inference.InferenceCapability;
 import dev.breezes.settlements.application.ai.inference.InferenceStreamHandle;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
+import dev.breezes.settlements.domain.genetics.GeneSignal;
+import dev.breezes.settlements.domain.genetics.GeneType;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -145,7 +147,7 @@ class HttpMonologueGatewayTest {
                         .villagerId(villagerId)
                         .persona(PersonaBundle.builder()
                                 .profession("minecraft:farmer")
-                                .traits(List.of("diligent", "sociable"))
+                                .geneSignal(new GeneSignal(GeneType.STRENGTH, 0.5))
                                 .anchors(Anchors.builder()
                                         .body(new int[]{10, 64, 20})
                                         .build())

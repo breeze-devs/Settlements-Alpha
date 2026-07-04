@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import dev.breezes.settlements.domain.personality.OriginType;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerWasCuredAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.ZombieSettlementsOriginAttachment;
@@ -85,7 +86,7 @@ public final class VillagerZombificationServerEvents {
         // VillagerConversionUtil.convertToSettlements performs the NBT round-trip:
         //   saveWithoutId → create BaseVillager → load → addFreshEntity → discard vanillaVillager
         // The round-trip carries cure-discount gossip, profession, trades, custom name, XP, and baby age.
-        BaseVillager newVillager = VillagerConversionUtil.convertToSettlements(serverLevel, vanillaVillager);
+        BaseVillager newVillager = VillagerConversionUtil.convertToSettlements(serverLevel, vanillaVillager, OriginType.ZOMBIE_CONVERTED);
         if (newVillager == null) {
             log.warn("convertToSettlements returned null for cured zombie {} — leaving as vanilla villager", zombie.getUUID());
             return;

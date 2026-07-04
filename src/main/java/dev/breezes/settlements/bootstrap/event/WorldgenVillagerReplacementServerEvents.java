@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.domain.personality.OriginType;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.PendingSettlementsReplacementAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.conversion.VillagerConversionUtil;
@@ -188,7 +189,7 @@ public final class WorldgenVillagerReplacementServerEvents {
         PendingSettlementsReplacementAttachment.clear(villager);
 
         try {
-            BaseVillager replacement = VillagerConversionUtil.convertToSettlements(level, villager);
+            BaseVillager replacement = VillagerConversionUtil.convertToSettlements(level, villager, OriginType.WORLDGEN);
             if (replacement == null) {
                 log.warn("Skipped Settlements replacement for villager {}: conversion produced no entity; left vanilla", villagerUuid);
                 return;

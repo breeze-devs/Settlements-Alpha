@@ -16,7 +16,10 @@ import dev.breezes.settlements.application.ai.inference.InferenceCapability;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueBatchRequest;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
+import dev.breezes.settlements.application.ai.inference.persona.PersonaBatchRequest;
+import dev.breezes.settlements.application.ai.inference.persona.PersonaRequestAssembler;
 import dev.breezes.settlements.application.ai.memory.SensedSiteReader;
+import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
@@ -25,10 +28,12 @@ import dev.breezes.settlements.domain.ai.memory.SensedSites;
 import dev.breezes.settlements.domain.ai.memory.SiteCoord;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
+import dev.breezes.settlements.domain.personality.PersonalityStatus;
 import dev.breezes.settlements.domain.settlement.model.SettlementMetadata;
 import dev.breezes.settlements.domain.settlement.query.BuildingContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementPositionContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementBuildingPiece;
@@ -38,6 +43,8 @@ import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -55,6 +62,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -75,7 +83,8 @@ public class TestCommand {
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("info").executes(TestCommand::settlementInfo))
                 .then(Commands.literal("memory").executes(TestCommand::dumpMemories))
-                .then(buildMonologueCommand()));
+                .then(buildMonologueCommand())
+                .then(buildPersonaCommand()));
     }
 
     private static int settlementInfo(CommandContext<CommandSourceStack> context) {
@@ -332,6 +341,72 @@ public class TestCommand {
         Path outputDir = FMLPaths.GAMEDIR.get().resolve("settlements");
         String timestamp = LocalDateTime.now().format(GENERATION_TIMESTAMP_FORMAT);
         return outputDir.resolve("monologue_payload_" + timestamp + ".json");
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> buildPersonaCommand() {
+        return Commands.literal("persona")
+                // Dumps the byte-faithful PERSONA envelope for every loaded PENDING villager, without touching any state.
+                .then(Commands.literal("dump").executes(TestCommand::dumpPersonaBatch));
+    }
+
+    private static int dumpPersonaBatch(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        List<BaseVillager> pending = collectLoadedVillagers(source.getServer()).stream()
+                .filter(villager -> VillagerPersonalityAttachment.read(villager).status() == PersonalityStatus.PENDING)
+                .toList();
+
+        if (pending.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("[persona dump] no PENDING villagers currently loaded"), false);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        ServerComponent server = SettlementsDagger.serverOrThrow();
+        PersonaRequestAssembler assembler = server.personaRequestAssembler();
+        InferenceTransport transport = server.inferenceTransport();
+
+        PersonaBatchRequest.PersonaBatchRequestBuilder batchBuilder = PersonaBatchRequest.builder();
+        for (BaseVillager villager : pending) {
+            batchBuilder.villager(assembler.assemble(villager));
+        }
+        PersonaBatchRequest batchRequest = batchBuilder.build();
+
+        // Use the configured batch deadline as a representative budget — byte-faithful to what the real sweep would send.
+        Duration deadline = Duration.ofSeconds(server.personaConfig().batchDeadlineSeconds());
+        String compactEnvelope = transport.renderEnvelope(InferenceCapability.PERSONA, batchRequest, deadline);
+        String prettyJson = prettyPrint(compactEnvelope);
+
+        Path outputPath = buildPersonaOutputPath();
+        try {
+            Files.createDirectories(outputPath.getParent());
+            Files.writeString(outputPath, prettyJson, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            context.getSource().sendFailure(Component.literal("Failed to write persona dump: " + e.getMessage()));
+            return 0;
+        }
+
+        String filename = outputPath.getFileName().toString();
+        source.sendSuccess(() -> Component.literal(
+                "[persona dump] pendingVillagers=" + pending.size() + " | file=" + filename), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * Collects all alive, loaded BaseVillagers across every server level — mirrors the enumeration
+     * {@link dev.breezes.settlements.bootstrap.event.PersonaSweepServerEvents} performs each sweep,
+     * so this dev command exercises the exact same input the production sweep would see.
+     */
+    private static List<BaseVillager> collectLoadedVillagers(MinecraftServer server) {
+        List<BaseVillager> result = new ArrayList<>();
+        for (ServerLevel level : server.getAllLevels()) {
+            result.addAll(level.getEntities(EntityRegistry.BASE_VILLAGER.get(), v -> v.isAlive() && !v.isRemoved()));
+        }
+        return result;
+    }
+
+    private static Path buildPersonaOutputPath() {
+        Path outputDir = FMLPaths.GAMEDIR.get().resolve("settlements");
+        String timestamp = LocalDateTime.now().format(GENERATION_TIMESTAMP_FORMAT);
+        return outputDir.resolve("persona_payload_" + timestamp + ".json");
     }
 
 }

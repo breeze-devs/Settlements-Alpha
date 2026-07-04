@@ -45,6 +45,7 @@ import dev.breezes.settlements.domain.entities.hunger.IVillagerHunger;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.EquipmentSlot;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.domain.personality.OriginType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
@@ -57,6 +58,8 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGene
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachment;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonaLineageAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedger;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedgerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
@@ -405,6 +408,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             child.setVillagerData(child.getVillagerData().setProfession(VillagerProfession.NITWIT));
         }
 
+        VillagerOriginAttachment.stamp(child, OriginType.BRED);
+
+        // Both parents are still alive and readable right here at breed time -- later either may
+        // unload or die, so the persona snapshot has to be captured now rather than deferred.
+        VillagerPersonaLineageAttachment.capture(child, this, otherParent instanceof BaseVillager p ? p : null);
+
         return child;
     }
 
@@ -465,7 +474,18 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         this.settlementsBrain.initialize();
 
+        this.stampOriginIfAbsent(spawnType);
+
         return finalizedSpawnData;
+    }
+
+    private void stampOriginIfAbsent(@Nonnull MobSpawnType spawnType) {
+        if (spawnType == MobSpawnType.BREEDING || VillagerOriginAttachment.isStamped(this)) {
+            return;
+        }
+
+        OriginType origin = spawnType == MobSpawnType.STRUCTURE ? OriginType.WORLDGEN : OriginType.UNKNOWN;
+        VillagerOriginAttachment.stamp(this, origin);
     }
 
     /**

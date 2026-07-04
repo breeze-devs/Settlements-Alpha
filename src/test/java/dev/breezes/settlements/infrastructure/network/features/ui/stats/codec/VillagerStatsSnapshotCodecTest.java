@@ -2,11 +2,14 @@ package dev.breezes.settlements.infrastructure.network.features.ui.stats.codec;
 
 import dev.breezes.settlements.application.ui.shared.model.SchedulePhase;
 import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
+import dev.breezes.settlements.domain.personality.OriginType;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 class VillagerStatsSnapshotCodecTest {
 
@@ -28,6 +31,9 @@ class VillagerStatsSnapshotCodecTest {
                 .schedulePhase(SchedulePhase.WORK)
                 .reputation(25)
                 .hunger(0.72F)
+                .adjectives(List.of("stoic", "curious", "meticulous"))
+                .characterSketch("A quiet giant who prefers building over talking, and never forgets a promise.")
+                .origin(OriginType.WORLDGEN)
                 .build();
 
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
@@ -50,6 +56,9 @@ class VillagerStatsSnapshotCodecTest {
         Assertions.assertEquals(input.schedulePhase(), decoded.schedulePhase());
         Assertions.assertEquals(input.reputation(), decoded.reputation());
         Assertions.assertEquals(input.hunger(), decoded.hunger(), 0.001F);
+        Assertions.assertEquals(input.adjectives(), decoded.adjectives());
+        Assertions.assertEquals(input.characterSketch(), decoded.characterSketch());
+        Assertions.assertEquals(input.origin(), decoded.origin());
     }
 
     @Test
@@ -70,6 +79,9 @@ class VillagerStatsSnapshotCodecTest {
                 .schedulePhase(SchedulePhase.IDLE)
                 .reputation(-30)
                 .hunger(1.0F)
+                .adjectives(List.of())
+                .characterSketch(null)
+                .origin(null)
                 .build();
 
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
@@ -83,6 +95,9 @@ class VillagerStatsSnapshotCodecTest {
         Assertions.assertNull(decoded.activeBehaviorNameKey());
         Assertions.assertNull(decoded.activeBehaviorIconId());
         Assertions.assertEquals(input.reputation(), decoded.reputation());
+        Assertions.assertTrue(decoded.adjectives().isEmpty());
+        Assertions.assertNull(decoded.characterSketch());
+        Assertions.assertNull(decoded.origin());
     }
 
     @Test
@@ -104,6 +119,9 @@ class VillagerStatsSnapshotCodecTest {
                 .schedulePhase(SchedulePhase.IDLE)
                 .reputation(0)
                 .hunger(0.5F)
+                .adjectives(List.of())
+                .characterSketch(null)
+                .origin(null)
                 .build();
 
         // Mutating original array should not affect snapshot (compact constructor clones)
@@ -138,6 +156,9 @@ class VillagerStatsSnapshotCodecTest {
                     .schedulePhase(phase)
                     .reputation(0)
                     .hunger(1.0F)
+                    .adjectives(List.of())
+                    .characterSketch(null)
+                    .origin(null)
                     .build();
 
             FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());

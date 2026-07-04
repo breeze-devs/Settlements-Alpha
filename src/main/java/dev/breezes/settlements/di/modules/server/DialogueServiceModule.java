@@ -12,6 +12,8 @@ import dev.breezes.settlements.application.ai.inference.HttpInferenceTransport;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.HttpMonologueGateway;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueGateway;
+import dev.breezes.settlements.application.ai.inference.persona.HttpPersonaGateway;
+import dev.breezes.settlements.application.ai.inference.persona.PersonaGateway;
 import dev.breezes.settlements.di.ServerScope;
 
 /**
@@ -49,6 +51,12 @@ public final class DialogueServiceModule {
     @Provides
     @ServerScope
     static MonologueGateway monologueGateway(HttpMonologueGateway gateway) {
+        return gateway;
+    }
+
+    @Provides
+    @ServerScope
+    static PersonaGateway personaGateway(HttpPersonaGateway gateway) {
         return gateway;
     }
 

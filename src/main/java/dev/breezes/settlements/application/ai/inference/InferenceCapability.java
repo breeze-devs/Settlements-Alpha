@@ -10,7 +10,9 @@ import lombok.Getter;
 @Getter
 public enum InferenceCapability {
 
-    MONOLOGUE("/v1/monologue");
+    MONOLOGUE("/v1/monologue"),
+    PERSONA("/v1/persona"),
+    ;
 
     private final String path;
 

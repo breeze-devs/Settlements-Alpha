@@ -2,11 +2,13 @@ package dev.breezes.settlements.application.ui.stats.model;
 
 import dev.breezes.settlements.application.ui.shared.model.SchedulePhase;
 import dev.breezes.settlements.domain.genetics.GeneType;
+import dev.breezes.settlements.domain.personality.OriginType;
 import lombok.Builder;
 import net.minecraft.core.BlockPos;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 @Builder
 public record VillagerStatsSnapshot(
@@ -25,7 +27,10 @@ public record VillagerStatsSnapshot(
         @Nonnull SchedulePhase schedulePhase,
         int reputation,
         float hunger,
-        int walletBalance
+        int walletBalance,
+        @Nonnull List<String> adjectives,
+        @Nullable String characterSketch,
+        @Nullable OriginType origin
 ) {
 
     public VillagerStatsSnapshot {
@@ -33,6 +38,9 @@ public record VillagerStatsSnapshot(
             throw new IllegalArgumentException("geneValues must have exactly " + GeneType.VALUES.length + " entries");
         }
         geneValues = geneValues.clone();
+        // Lombok's @Builder leaves unset fields null rather than applying record defaults,
+        // so an un-set adjectives list would otherwise NPE the codec's varint-length write.
+        adjectives = adjectives == null ? List.of() : List.copyOf(adjectives);
     }
 
     @Override

@@ -10,6 +10,7 @@ import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.BackpackEntry;
+import dev.breezes.settlements.domain.personality.OriginType;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundCloseUiPacket;
 import dev.breezes.settlements.presentation.ui.framework.Elements;
@@ -33,6 +34,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -44,6 +46,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @ClientSide
@@ -62,6 +65,9 @@ public class VillagerStatsScreen extends LayoutScreen {
     private static final int LEFT_PANEL_WEIGHT = 7;
     private static final int RIGHT_PANEL_WEIGHT = 13;
     private static final int MAX_HEX_CHART_HEIGHT = 100;
+
+    private static final int MAX_SKETCH_LINES = 6;
+    private static final float SKETCH_TEXT_SCALE = 0.8F;
 
     private static final String TITLE_KEY = "ui.settlements.stats.title";
     private static final String INVENTORY_KEY = "ui.settlements.stats.inventory";
@@ -85,6 +91,11 @@ public class VillagerStatsScreen extends LayoutScreen {
     private static final String LOADING_KEY = "ui.settlements.stats.loading";
     private static final String UNAVAILABLE_KEY = "ui.settlements.stats.unavailable";
     private static final String DEFAULT_VILLAGER_NAME = "Villager";
+    private static final String PERSONA_TITLE_KEY = "ui.settlements.stats.persona.title";
+    private static final String PERSONA_HEADING_KEY = "ui.settlements.stats.persona.heading";
+    private static final String PERSONA_PENDING_KEY = "ui.settlements.stats.persona.pending";
+    private static final String PERSONA_ORIGIN_KEY_PREFIX = "ui.settlements.stats.persona.origin.";
+    private static final String PERSONA_SKETCH_ELLIPSIS = "...";
 
     // Static fallback icons
     private static final ItemStack FALLBACK_ACTIVITY_ICON = new ItemStack(Items.PAPER);
@@ -487,10 +498,87 @@ public class VillagerStatsScreen extends LayoutScreen {
                 .height(SizeConstraint.FILL)
                 .padding(new Insets(6, 6, 6, 6))
                 .gap(4)
+                .child(buildPersonaCard())
                 .child(buildInventorySection())
                 .child(buildOffersSection())
                 .child(buildDemandsSection())
                 .build();
+    }
+
+    // Persona Card
+
+    private UIElement buildPersonaCard() {
+        return LinearLayout.vertical()
+                .width(SizeConstraint.FILL)
+                .height(SizeConstraint.WRAP)
+                .gap(2)
+                .child(Elements.text(this::getPersonaHeadingComponent, theme.subtleTextColor()))
+                .child(Elements.text(this::getPersonaAdjectivesComponent, theme.textColor()))
+                .child(buildPersonaSketchElement())
+                .build();
+    }
+
+    private Component getPersonaAdjectivesComponent() {
+        if (this.statsSnapshot == null || this.statsSnapshot.adjectives().isEmpty()) {
+            return Component.translatable(PERSONA_PENDING_KEY);
+        }
+        return Component.literal(String.join(", ", this.statsSnapshot.adjectives()));
+    }
+
+    private Component getPersonaHeadingComponent() {
+        // Falls back to the bare title while the snapshot is still loading or carries no origin
+        if (this.statsSnapshot == null || this.statsSnapshot.origin() == null) {
+            return Component.translatable(PERSONA_TITLE_KEY);
+        }
+
+        // Fold the origin into the card heading ("Character: Village-born")
+        OriginType origin = this.statsSnapshot.origin();
+        Component originPhrase = Component.translatable(PERSONA_ORIGIN_KEY_PREFIX + origin.name().toLowerCase(Locale.ROOT));
+        return Component.translatable(PERSONA_HEADING_KEY, originPhrase);
+    }
+
+    private UIElement buildPersonaSketchElement() {
+        // A fixed height (rather than measuring the wrapped line count) sidesteps a chicken-and-egg
+        // problem: the wrap width is only known once layout resolves this element's actual bounds,
+        // but layout needs a height contribution from this element before that point.
+        int scaledLineHeight = Math.round(this.font.lineHeight * SKETCH_TEXT_SCALE);
+        int sketchHeight = MAX_SKETCH_LINES * scaledLineHeight;
+        return Elements.custom(SizeConstraint.FILL, SizeConstraint.fixed(sketchHeight),
+                (graphics, bounds, mouseX, mouseY, partialTick) -> {
+                    if (this.statsSnapshot == null) {
+                        return;
+                    }
+                    String sketch = this.statsSnapshot.characterSketch();
+                    if (sketch == null || sketch.isBlank()) {
+                        return;
+                    }
+
+                    // Render the paragraph inside a scaled matrix: everything below is in the element's
+                    // local space (origin at bounds top-left), shrunk by SKETCH_TEXT_SCALE. Wrapping against
+                    // the un-scaled width lets each line hold proportionally more text before it wraps.
+                    graphics.pose().pushPose();
+                    graphics.pose().translate(bounds.x(), bounds.y(), 0);
+                    graphics.pose().scale(SKETCH_TEXT_SCALE, SKETCH_TEXT_SCALE, 1.0F);
+
+                    int wrapWidth = Math.round(bounds.width() / SKETCH_TEXT_SCALE);
+                    List<FormattedCharSequence> lines = this.font.split(Component.literal(sketch), wrapWidth);
+                    int maxLines = Math.max(1, bounds.height() / scaledLineHeight);
+                    int linesToDraw = Math.min(lines.size(), maxLines);
+                    boolean truncated = lines.size() > linesToDraw;
+
+                    for (int i = 0; i < linesToDraw; i++) {
+                        FormattedCharSequence line = lines.get(i);
+                        int y = this.font.lineHeight * i;
+                        graphics.drawString(this.font, line, 0, y, theme.subtleTextColor(), false);
+
+                        if (truncated && i == linesToDraw - 1) {
+                            int lineWidth = this.font.width(line);
+                            graphics.drawString(this.font, PERSONA_SKETCH_ELLIPSIS, lineWidth, y, theme.subtleTextColor(), false);
+                        }
+                    }
+
+                    graphics.pose().popPose();
+                });
     }
 
     private UIElement buildInventorySection() {

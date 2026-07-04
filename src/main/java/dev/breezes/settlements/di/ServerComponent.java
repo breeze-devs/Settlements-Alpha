@@ -6,13 +6,15 @@ import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
 import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.dialogue.DialogueProvider;
-import dev.breezes.settlements.application.ai.genetics.PersonalityDeriver;
 import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
+import dev.breezes.settlements.application.ai.inference.persona.PersonaRequestAssembler;
 import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.application.ai.memory.SensedSiteReader;
 import dev.breezes.settlements.application.ai.perception.PerceptionPipeline;
+import dev.breezes.settlements.application.ai.persona.PersonaConfig;
+import dev.breezes.settlements.application.ai.persona.PersonaGenerationService;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueArbiter;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
@@ -23,6 +25,7 @@ import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.bootstrap.event.CourtshipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.CredibilityDecayServerEvents;
 import dev.breezes.settlements.bootstrap.event.GossipSessionReaperServerEvents;
+import dev.breezes.settlements.bootstrap.event.PersonaSweepServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.RehearsedDialogueSweepServerEvents;
@@ -106,8 +109,6 @@ public interface ServerComponent {
 
     MemoryImportanceGate memoryImportanceGate();
 
-    PersonalityDeriver personalityDeriver();
-
     ServerSidePacketReceiver serverSidePacketReceiver();
 
     PlayerSettlementTracker playerSettlementTracker();
@@ -164,11 +165,19 @@ public interface ServerComponent {
 
     MonologueRequestAssembler monologueRequestAssembler();
 
+    PersonaRequestAssembler personaRequestAssembler();
+
+    PersonaConfig personaConfig();
+
+    PersonaGenerationService personaGenerationService();
+
     SensedSiteReader sensedSiteReader();
 
     EventLaneConfig eventLaneConfig();
 
     RehearsedDialogueSweepServerEvents eveningDialoguePackSweepServerEvents();
+
+    PersonaSweepServerEvents personaSweepServerEvents();
 
     VillagerZombificationServerEvents villagerZombificationServerEvents();
 

@@ -23,13 +23,16 @@ public class GeneticsProfile {
     private static final double DEFAULT_MUTATION_RATE = 0.05;
     private static final double DEFAULT_WILD_MUTATION_CHANCE = 0.01;
 
+    public static final double SEED_MEAN = 0.4;
+    public static final double SEED_STDDEV = 0.133;
+
     /**
      * Initialize this profile with random genes
      */
     public GeneticsProfile() {
         this.genes = new EnumMap<>(GeneType.class);
         for (GeneType type : GeneType.VALUES) {
-            double baseValue = Mth.clamp(RandomUtil.randomGaussian(0.4, 0.133), 0.0, 1.0);
+            double baseValue = Mth.clamp(RandomUtil.randomGaussian(SEED_MEAN, SEED_STDDEV), 0.0, 1.0);
             this.setGene(type, new Gene(baseValue));
         }
     }

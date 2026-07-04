@@ -1,6 +1,8 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.villager.conversion;
 
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.domain.personality.OriginType;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.VillagerMixin;
 import lombok.AccessLevel;
@@ -42,7 +44,8 @@ public final class VillagerConversionUtil {
 
     @Nullable
     public static BaseVillager convertToSettlements(@Nonnull ServerLevel level,
-                                                    @Nonnull Villager oldVillager) {
+                                                    @Nonnull Villager oldVillager,
+                                                    @Nonnull OriginType origin) {
         if (oldVillager instanceof BaseVillager) {
             applyVanillaState(oldVillager, false);
             return null;
@@ -57,6 +60,7 @@ public final class VillagerConversionUtil {
         newVillager.load(tag);
         copyPose(oldVillager, newVillager);
         applyVanillaState(newVillager, false);
+        VillagerOriginAttachment.stamp(newVillager, origin);
 
         level.addFreshEntity(newVillager);
 

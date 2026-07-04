@@ -5,6 +5,8 @@ import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.application.economy.demand.DemandSignalCodec;
 import dev.breezes.settlements.application.economy.demand.DemandSignalState;
 import dev.breezes.settlements.domain.ai.memory.SettlementsMemoryStore;
+import dev.breezes.settlements.domain.personality.PersonaLineageSnapshot;
+import dev.breezes.settlements.domain.personality.VillagerPersonality;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentCodec;
@@ -21,6 +23,9 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInve
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachmentState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachmentCodec;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachmentState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachmentCodec;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -102,6 +107,29 @@ public final class AttachmentRegistry {
                     .build());
 
     /**
+     * Serialized birth-provenance record for a villager: how it came into existence (e.g. bred,
+     * world-gen-replaced, cured from a zombie, or unknown/uncapturable). Stamped once at the
+     * earliest server-side genesis seam that can observe it and never re-stamped afterward.
+     */
+    public static final Supplier<AttachmentType<VillagerOriginAttachmentState>> VILLAGER_ORIGIN = REGISTRY.register(
+            "villager_origin",
+            () -> AttachmentType.builder(VillagerOriginAttachmentState::empty)
+                    .serialize(VillagerOriginAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    /**
+     * Serialized persona card for a villager: lifecycle status plus adjectives,
+     * characterSketch, and speech style once generated. Defaults to {@link VillagerPersonality#pending()} so
+     * every old save and freshly spawned villager starts at PENDING — the state a later retro-sweep
+     * wave scans for and drives generation from.
+     */
+    public static final Supplier<AttachmentType<VillagerPersonality>> VILLAGER_PERSONALITY = REGISTRY.register(
+            "villager_personality",
+            () -> AttachmentType.builder(VillagerPersonality::pending)
+                    .serialize(VillagerPersonalityAttachmentCodec.STATE_CODEC)
+                    .build());
+
+    /**
      * Serialized boolean stamped on a ZombieVillager that originated from a BaseVillager conversion.
      * Survives save/unload so the cure handler still recognizes the zombie after a server restart.
      */
@@ -163,6 +191,18 @@ public final class AttachmentRegistry {
     public static final Supplier<AttachmentType<Long>> PLAYER_GREET_COOLDOWN = REGISTRY.register(
             "greet_cooldown",
             () -> AttachmentType.builder(() -> 0L)
+                    .build());
+
+    /**
+     * Transient birth-only snapshot of both parents' persona, captured at breed time for a BRED child.
+     * <p>
+     * Not serialized: if the server stops before that sweep runs, the child simply falls back to a null lineage
+     * on its next sweep -- an accepted graceful degradation, chosen over persisting a parent snapshot forever
+     * just to cover that narrow window.
+     */
+    public static final Supplier<AttachmentType<PersonaLineageSnapshot>> VILLAGER_PERSONA_LINEAGE = REGISTRY.register(
+            "villager_persona_lineage",
+            () -> AttachmentType.builder(PersonaLineageSnapshot::empty)
                     .build());
 
     public static void register(IEventBus eventBus) {

@@ -9,6 +9,8 @@ import dev.breezes.settlements.application.ai.dialogue.Occasion;
 import dev.breezes.settlements.application.ai.inference.HttpInferenceTransport;
 import dev.breezes.settlements.application.ai.inference.InferenceCapability;
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
+import dev.breezes.settlements.domain.genetics.GeneSignal;
+import dev.breezes.settlements.domain.genetics.GeneType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -118,6 +120,35 @@ class MonologueWireShapeTest {
     }
 
     @Test
+    void persona_geneSignalsSerializeAsRawDimensionValuePairs() {
+        // Arrange — the mod ships raw gene signals, not pre-rendered adjectives; SIS owns phrasing.
+        this.transport = newTransport();
+        UUID villagerId = UUID.randomUUID();
+        PersonaBundle persona = PersonaBundle.builder()
+                .name("Aldric")
+                .profession("minecraft:farmer")
+                .geneSignal(new GeneSignal(GeneType.STRENGTH, 0.84))
+                .anchors(Anchors.builder()
+                        .body(new int[]{0, 64, 0})
+                        .build())
+                .build();
+        MonologueBatchRequest payload = batchRequestWithPersona(villagerId, persona);
+
+        // Act
+        JsonObject personaJson = firstVillager(payload).getAsJsonObject("persona");
+
+        // Assert — geneSignals is an array of {dimension, value}; no "traits", no rendered English
+        assertFalse(personaJson.has("traits"), "traits was replaced by geneSignals — SIS extra=forbid rejects it");
+        assertTrue(personaJson.has("geneSignals"), "geneSignals must be nested under persona");
+        JsonArray geneSignals = personaJson.getAsJsonArray("geneSignals");
+        assertEquals(1, geneSignals.size());
+        JsonObject signal = geneSignals.get(0).getAsJsonObject();
+        assertEquals("STRENGTH", signal.get("dimension").getAsString(), "dimension must be the GeneType enum name");
+        assertEquals(0.84, signal.get("value").getAsDouble());
+        assertFalse(signal.has("rarity"), "rarity was dropped — the raw value is the whole gene signal");
+    }
+
+    @Test
     void anchors_nullJobSiteAndHomeAreOmittedFromWire() {
         // Arrange
         this.transport = newTransport();
@@ -202,6 +233,47 @@ class MonologueWireShapeTest {
         assertEquals(20, coord.get(0).getAsInt());
         assertEquals(60, coord.get(1).getAsInt());
         assertEquals(22, coord.get(2).getAsInt());
+    }
+
+    @Test
+    void persona_characterSketchAndSpeechStyleArePresentWhenSet() {
+        // Arrange
+        this.transport = newTransport();
+        UUID villagerId = UUID.randomUUID();
+        PersonaBundle persona = PersonaBundle.builder()
+                .name("Aldric")
+                .profession("minecraft:farmer")
+                .characterSketch("A gruff blacksmith who keeps to himself.")
+                .speechStyle("gruff and terse")
+                .anchors(Anchors.builder()
+                        .body(new int[]{0, 64, 0})
+                        .build())
+                .build();
+        MonologueBatchRequest payload = batchRequestWithPersona(villagerId, persona);
+
+        // Act
+        JsonObject personaJson = firstVillager(payload).getAsJsonObject("persona");
+
+        // Assert — wire keys must be exactly "characterSketch" and "speechStyle" (SIS camelCase aliases)
+        assertTrue(personaJson.has("characterSketch"), "characterSketch must be present when set");
+        assertEquals("A gruff blacksmith who keeps to himself.", personaJson.get("characterSketch").getAsString());
+        assertTrue(personaJson.has("speechStyle"), "speechStyle must be present when set");
+        assertEquals("gruff and terse", personaJson.get("speechStyle").getAsString());
+    }
+
+    @Test
+    void persona_characterSketchAndSpeechStyleAreOmittedWhenUnset() {
+        // Arrange — minimalBatchRequest's persona never sets characterSketch/speechStyle
+        this.transport = newTransport();
+        UUID villagerId = UUID.randomUUID();
+        MonologueBatchRequest payload = minimalBatchRequest(villagerId);
+
+        // Act
+        JsonObject personaJson = firstVillager(payload).getAsJsonObject("persona");
+
+        // Assert — Gson omits null fields; SIS's "str | None" expects absence, not null
+        assertFalse(personaJson.has("characterSketch"), "characterSketch must be omitted when unset");
+        assertFalse(personaJson.has("speechStyle"), "speechStyle must be omitted when unset");
     }
 
     @Test

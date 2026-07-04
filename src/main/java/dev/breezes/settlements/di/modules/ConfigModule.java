@@ -47,6 +47,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.support
 import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
+import dev.breezes.settlements.application.ai.persona.PersonaConfig;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
 import dev.breezes.settlements.application.ai.speech.SpeechMirrorConfig;
@@ -360,6 +361,12 @@ public final class ConfigModule {
     @Singleton
     static InferenceConfig inferenceConfig() {
         return ConfigFactory.create(InferenceConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static PersonaConfig personaConfig() {
+        return ConfigFactory.create(PersonaConfig.class);
     }
 
     @Provides

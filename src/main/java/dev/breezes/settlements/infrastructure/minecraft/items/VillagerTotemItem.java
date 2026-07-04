@@ -1,6 +1,7 @@
 package dev.breezes.settlements.infrastructure.minecraft.items;
 
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
+import dev.breezes.settlements.domain.personality.OriginType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TotemTargetAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -203,7 +204,8 @@ public class VillagerTotemItem extends Item {
         if (mode.convertsToVanilla()) {
             VillagerConversionUtil.convertToVanilla(level, oldVillager, mode.keepsVanillaVillagerInStasis());
         } else {
-            VillagerConversionUtil.convertToSettlements(level, oldVillager);
+            // Treat totem conversion as world-gen origin
+            VillagerConversionUtil.convertToSettlements(level, oldVillager, OriginType.WORLDGEN);
         }
     }
 
