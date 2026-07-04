@@ -34,9 +34,6 @@ final class KnowledgeMetadataSanitizer {
             "event_meta",
             "actor_id",
             "registry_id",
-            "pos_x",
-            "pos_y",
-            "pos_z",
             "outcome",
             "reason",
             "detail"

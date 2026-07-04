@@ -26,8 +26,7 @@ public final class DayPlanAttachmentCodec {
             instance.group(
                     DAY_PLAN_ACTIVITY_CONTEXT_CODEC.fieldOf("context").forGetter(DayPlanActivityBlock::context),
                     Codec.INT.fieldOf("startTick").forGetter(DayPlanActivityBlock::startTick),
-                    Codec.INT.fieldOf("endTick").forGetter(DayPlanActivityBlock::endTick),
-                    Codec.STRING.optionalFieldOf("reason", "").forGetter(DayPlanActivityBlock::reason)
+                    Codec.INT.fieldOf("endTick").forGetter(DayPlanActivityBlock::endTick)
             ).apply(instance, DayPlanActivityBlock::new));
 
     private static final Codec<DayPlanSchedule> DAY_PLAN_SCHEDULE_CODEC = RecordCodecBuilder.create(instance ->
@@ -44,7 +43,6 @@ public final class DayPlanAttachmentCodec {
                     Codec.INT.fieldOf("priority").forGetter(PlanSlot::getPriority),
                     Codec.BOOL.fieldOf("flexible").forGetter(PlanSlot::isFlexible),
                     Codec.INT.fieldOf("estimatedDurationTicks").forGetter(PlanSlot::getEstimatedDurationTicks),
-                    Codec.STRING.optionalFieldOf("reason", "").forGetter(PlanSlot::getReason),
                     PLAN_SLOT_STATUS_CODEC.optionalFieldOf("status", PlanSlotStatus.PENDING).forGetter(PlanSlot::getStatus)
             ).apply(instance, PlanSlot::new));
 

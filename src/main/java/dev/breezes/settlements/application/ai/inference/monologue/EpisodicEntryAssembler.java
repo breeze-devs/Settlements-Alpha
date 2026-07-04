@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.ai.naming.VillagerNameResolver;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
+import dev.breezes.settlements.domain.ai.memory.PackedPos;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import lombok.AccessLevel;
@@ -96,7 +97,7 @@ public final class EpisodicEntryAssembler {
                 .outcome(entry.getMetadata().get(ObservationMetadataKeys.OUTCOME))
                 .reason(entry.getMetadata().get(ObservationMetadataKeys.REASON))
                 .detail(collectDetailMap(entry.getMetadata()))
-                .pos(parsePos(entry.getMetadata()))
+                .pos(resolvePos(entry.getPackedPos()))
                 .hop(entry.getHop())
                 .ageTicks(ageTicks)
                 .build();
@@ -126,37 +127,20 @@ public final class EpisodicEntryAssembler {
     }
 
     /**
-     * Reads the floored block position from the {@code pos_x}/{@code pos_y}/{@code pos_z} metadata.
+     * Unpacks the entry's block position, if any.
      * <p>
-     * Returns null when ANY axis is missing or unparseable so the wire never carries a partial or
-     * misleading {@code (0,0,0)} coordinate — SIS treats absent pos as "no spatial grounding". The
-     * stored values are doubles ({@code String.valueOf(double)}), so each is floored to a block int
-     * to match the snapshot's site-coord representation.
+     * Returns null when the entry carries no spatial grounding (e.g. a private courtship
+     * self-failure) so the wire never carries a misleading {@code (0,0,0)} coordinate — SIS
+     * treats absent pos as "no spatial grounding". Flooring already happened at the pack site
+     * ({@code PerceptionPipeline}), so no rounding occurs here.
      */
     @Nullable
-    static int[] parsePos(@Nonnull Map<String, String> metadata) {
-        Integer x = parseFlooredCoord(metadata.get(ObservationMetadataKeys.POS_X));
-        Integer y = parseFlooredCoord(metadata.get(ObservationMetadataKeys.POS_Y));
-        Integer z = parseFlooredCoord(metadata.get(ObservationMetadataKeys.POS_Z));
-        if (x == null || y == null || z == null) {
+    private static int[] resolvePos(@Nullable Long packedPos) {
+        if (packedPos == null) {
             return null;
         }
 
-        return new int[]{x, y, z};
-    }
-
-    @Nullable
-    private static Integer parseFlooredCoord(@Nullable String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-
-        try {
-            return (int) Math.floor(Double.parseDouble(raw));
-        } catch (NumberFormatException e) {
-            log.error("Failed to parse position coordinate: {}", raw, e);
-            return null;
-        }
+        return new int[]{PackedPos.x(packedPos), PackedPos.y(packedPos), PackedPos.z(packedPos)};
     }
 
     /**

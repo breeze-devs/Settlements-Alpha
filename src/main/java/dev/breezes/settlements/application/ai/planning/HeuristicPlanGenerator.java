@@ -82,7 +82,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                 .priority(100)
                 .flexible(false)
                 .estimatedDurationTicks(GameTicks.minutes(8).getTicksAsInt())
-                .reason("Start the day with a plentiful breakfast")
                 .build());
 
         if (context.dayType() == PlanDayType.REST_DAY || context.profession().equals(VillagerProfessionKey.NITWIT)) {
@@ -106,7 +105,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                 .priority(95)
                 .flexible(false)
                 .estimatedDurationTicks(GameTicks.minutes(10).getTicksAsInt())
-                .reason("Shared lunch timing creates a natural village-wide overlap for social availability.")
                 .build());
         this.addAfternoonSlots(slots, context, restDayPolicy, palette,
                 Math.max(workEndLinear, lunchLinear + 1_000), epoch);
@@ -116,7 +114,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                 .priority(90)
                 .flexible(false)
                 .estimatedDurationTicks(GameTicks.minutes(10).getTicksAsInt())
-                .reason("Dinner anchors the evening routine before villagers wind down.")
                 .build());
 
         return DayPlan.builder()
@@ -146,7 +143,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                         .context(DayPlanActivityContext.IDLE)
                         .startTick(fromLinear(0, wakeTick))
                         .endTick(fromLinear(meetStartLinear, wakeTick))
-                        .reason("Unstructured rest-day time keeps the villager free for low-pressure routines.")
                         .build());
             }
             if (bedtimeLinear > meetStartLinear) {
@@ -154,7 +150,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                         .context(DayPlanActivityContext.MEET)
                         .startTick(fromLinear(meetStartLinear, wakeTick))
                         .endTick(fromLinear(bedtimeLinear, wakeTick))
-                        .reason("Afternoon social context gives non-work days visible village life.")
                         .build());
             }
             return builder.build();
@@ -169,7 +164,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                     .context(DayPlanActivityContext.IDLE)
                     .startTick(fromLinear(0, wakeTick))
                     .endTick(fromLinear(workStart, wakeTick))
-                    .reason("Morning idle context bridges wake-up routines into the authored work block.")
                     .build());
         }
         if (workEnd > workStart) {
@@ -177,7 +171,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                     .context(DayPlanActivityContext.WORK)
                     .startTick(fromLinear(workStart, wakeTick))
                     .endTick(fromLinear(workEnd, wakeTick))
-                    .reason("Profession hours define the ambient work context while foreground slots execute selectively.")
                     .build());
         }
         if (bedtimeLinear > workEnd) {
@@ -185,7 +178,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                     .context(DayPlanActivityContext.MEET)
                     .startTick(fromLinear(workEnd, wakeTick))
                     .endTick(fromLinear(bedtimeLinear, wakeTick))
-                    .reason("Post-work meeting context encourages social ambient life before final bedtime.")
                     .build());
         }
         return builder.build();
@@ -207,8 +199,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         int endLinear = Math.clamp(workEndLinear, minEndLinear, maxEndLinear);
 
         this.packWindow(slots, workBehaviors, workStartLinear, endLinear, 70, epoch,
-                DEFAULT_EFFECTIVE_WEIGHT_MULTIPLIER, context,
-                "Profession work block selected by the deterministic heuristic planner.");
+                DEFAULT_EFFECTIVE_WEIGHT_MULTIPLIER, context);
     }
 
     private void addRestDaySlots(List<PlanSlot> slots, PlanGenerationContext context, RestDayPolicy policy,
@@ -219,8 +210,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
         int endLinear = toLinear(LUNCH_TICK, epoch) - 500;
 
         this.packWindow(slots, restOptions, firstOpenLinear, endLinear, 55, epoch,
-                behavior -> restDayMultiplier(behavior.descriptor(), policy), context,
-                "Rest days favor low-intensity, social, and leisure behaviors.");
+                behavior -> restDayMultiplier(behavior.descriptor(), policy), context);
     }
 
     private void addAfternoonSlots(List<PlanSlot> slots, PlanGenerationContext context, RestDayPolicy policy,
@@ -235,8 +225,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                 ? behavior -> restDayMultiplier(behavior.descriptor(), policy)
                 : DEFAULT_EFFECTIVE_WEIGHT_MULTIPLIER;
         this.packWindow(slots, candidates, afternoonStartLinear, afternoonEndLinear, 50, epoch,
-                baseMultiplier, context,
-                "Afternoon slots mix remaining duties with decompression and social time.");
+                baseMultiplier, context);
     }
 
     /**
@@ -261,7 +250,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                 .priority(75)
                 .flexible(true)
                 .estimatedDurationTicks(GameTicks.minutes(2).getTicksAsInt())
-                .reason("Unverified hearsay tip warrants an early morning scout to confirm or refute the claim.")
                 .build());
     }
 
@@ -279,8 +267,7 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                             int priority,
                             int epoch,
                             EffectiveWeightMultiplier baseMultiplier,
-                            PlanGenerationContext context,
-                            String reason) {
+                            PlanGenerationContext context) {
         if (pool.isEmpty() || endLinear <= startLinear) {
             return;
         }
@@ -308,7 +295,6 @@ public class HeuristicPlanGenerator implements IPlanGenerator {
                     .priority(packedSlot.priority())
                     .flexible(true)
                     .estimatedDurationTicks(packedSlot.durationTicks())
-                    .reason(reason)
                     .build());
         }
     }

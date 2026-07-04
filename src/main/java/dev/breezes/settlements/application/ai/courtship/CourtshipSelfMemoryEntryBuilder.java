@@ -56,10 +56,9 @@ public final class CourtshipSelfMemoryEntryBuilder {
                                        @Nonnull String reason,
                                        @Nonnull UUID originObservationId) {
         Map<String, String> metadata = buildMetadata(actorId, reason);
-        String content = buildContent(actorId, reason);
 
-        return KnowledgeEntry.fromDirectObservation(originObservationId, content, ObservationType.SOCIAL,
-                currentTick, currentTick, partnerId, metadata, SELF_FAILURE_WEIGHT);
+        return KnowledgeEntry.fromDirectObservation(originObservationId, ObservationType.SOCIAL,
+                currentTick, currentTick, partnerId, metadata, SELF_FAILURE_WEIGHT, null);
     }
 
     /**
@@ -74,14 +73,6 @@ public final class CourtshipSelfMemoryEntryBuilder {
         metadata.put(ObservationMetadataKeys.OUTCOME, EventOutcome.FAILURE.name());
         metadata.put(ObservationMetadataKeys.REASON, reason);
         return Map.copyOf(metadata);
-    }
-
-    /**
-     * Builds a plain-text content string for this entry (used for debug/logging, not seed phrasing).
-     * Seed phrasing is driven by the metadata fields, not this string.
-     */
-    public static String buildContent(@Nonnull UUID actorId, @Nonnull String reason) {
-        return "courtship completed by " + actorId + " (" + reason + ")";
     }
 
 }

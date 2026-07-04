@@ -200,13 +200,13 @@ class GossipSessionRegistryTest {
     private static KnowledgeEntry knowledgeEntry() {
         return KnowledgeEntry.fromDirectObservation(
                 UUID.randomUUID(),
-                "test fact",
                 ObservationType.RESOURCE,
                 0L,
                 0L,
                 null,
                 Map.of(),
-                1.5f);
+                1.5f,
+                null);
     }
 
 }

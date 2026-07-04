@@ -34,11 +34,6 @@ public final class KnowledgeEntry {
     private final UUID originObservationId;
 
     /**
-     * Human-readable description of the fact
-     */
-    private final String content;
-
-    /**
      * Semantic type of the original observation.
      */
     private final ObservationType type;
@@ -65,6 +60,17 @@ public final class KnowledgeEntry {
      * Free-form metadata from the originating observation, kept for downstream queries.
      */
     private final Map<String, String> metadata;
+
+    /**
+     * Packed block position of the originating observation, or null when the observation
+     * carried no spatial grounding (e.g. a private courtship self-failure).
+     * <p>
+     * Packed via {@link dev.breezes.settlements.domain.ai.memory.PackedPos#asLong} from the
+     * floored observation coordinates. Nullable because absence is a real, live case, not
+     * just a persistence-layer default.
+     */
+    @Nullable
+    private final Long packedPos;
 
     /**
      * UUID of the villager who directly shared this entry during a gossip exchange.
@@ -164,6 +170,21 @@ public final class KnowledgeEntry {
     }
 
     /**
+     * Recomputes the composite weight from stored, persisted fields — the same formula
+     * {@link #corroborate} applies incrementally, but as a pure function of the two values that
+     * are actually persisted ({@code originalWeight}, {@code corroborationCount}). Used on load
+     * so {@code weight} itself does not need to be persisted.
+     *
+     * @param originalWeight     weight assigned at construction time (persisted)
+     * @param corroborationCount number of independent corroborations applied (persisted)
+     * @param corroborationBump  absolute weight delta applied per corroboration
+     *                           ({@link VillagerKnowledgeStore#CORROBORATION_BUMP})
+     */
+    public static float recomputeWeight(float originalWeight, int corroborationCount, float corroborationBump) {
+        return Math.min(originalWeight + corroborationBump * corroborationCount, originalWeight * 2.0f);
+    }
+
+    /**
      * Whether this entry can be re-shared during a gossip exchange
      * <p>
      * Entries at or above the hop cap are retained locally but never forwarded
@@ -180,21 +201,21 @@ public final class KnowledgeEntry {
      * Builds a first-hand entry (direct observation, no hearsay provenance)
      */
     public static KnowledgeEntry fromDirectObservation(UUID originObservationId,
-                                                       String content,
                                                        ObservationType type,
                                                        long originTimestampTick,
                                                        long admittedAtTick,
                                                        @Nullable UUID relatedEntity,
                                                        Map<String, String> metadata,
-                                                       float weight) {
+                                                       float weight,
+                                                       @Nullable Long packedPos) {
         return KnowledgeEntry.builder()
                 .originObservationId(originObservationId)
-                .content(content)
                 .type(type)
                 .originTimestampTick(originTimestampTick)
                 .admittedAtTick(admittedAtTick)
                 .relatedEntity(relatedEntity)
                 .metadata(metadata)
+                .packedPos(packedPos)
                 .source(null)
                 .hop(0)
                 .weight(weight)
@@ -221,12 +242,12 @@ public final class KnowledgeEntry {
                                              float adjustedWeight) {
         return KnowledgeEntry.builder()
                 .originObservationId(sourceEntry.getOriginObservationId())
-                .content(sourceEntry.getContent())
                 .type(sourceEntry.getType())
                 .originTimestampTick(sourceEntry.getOriginTimestampTick())
                 .admittedAtTick(admittedAtTick)
                 .relatedEntity(sourceEntry.getRelatedEntity())
                 .metadata(sourceEntry.getMetadata())
+                .packedPos(sourceEntry.getPackedPos())
                 .source(sourceId)
                 .hop(sourceEntry.getHop() + 1)
                 .weight(adjustedWeight)

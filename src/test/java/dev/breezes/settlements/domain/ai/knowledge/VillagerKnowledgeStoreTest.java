@@ -32,7 +32,7 @@ class VillagerKnowledgeStoreTest {
     @Test
     void admit_acceptsNewEntry() {
         // Arrange
-        KnowledgeEntry entry = directEntry(UUID.randomUUID(), "ripe melons spotted", 2.5f);
+        KnowledgeEntry entry = directEntry(UUID.randomUUID(), 2.5f);
 
         // Act
         AdmitResult result = this.store.admit(entry);
@@ -46,8 +46,8 @@ class VillagerKnowledgeStoreTest {
     void admit_rejectsDuplicateOriginId() {
         // Arrange
         UUID originId = UUID.randomUUID();
-        KnowledgeEntry first = directEntry(originId, "ripe melons spotted", 2.5f);
-        KnowledgeEntry duplicate = directEntry(originId, "same fact via different path", 1.0f);
+        KnowledgeEntry first = directEntry(originId, 2.5f);
+        KnowledgeEntry duplicate = directEntry(originId, 1.0f);
 
         // Act
         AdmitResult firstResult = this.store.admit(first);
@@ -64,7 +64,7 @@ class VillagerKnowledgeStoreTest {
     void knows_trueAfterAdmission() {
         // Arrange
         UUID originId = UUID.randomUUID();
-        this.store.admit(directEntry(originId, "zombie sighting", 3.0f));
+        this.store.admit(directEntry(originId, 3.0f));
 
         // Act & Assert
         assertTrue(this.store.knows(originId));
@@ -109,7 +109,7 @@ class VillagerKnowledgeStoreTest {
         UUID shareable2Id = UUID.randomUUID();
         UUID cappedId = UUID.randomUUID();
 
-        this.store.admit(directEntry(shareable1Id, "first-hand fact", 3.0f));
+        this.store.admit(directEntry(shareable1Id, 3.0f));
         this.store.admit(hearsayEntry(shareable2Id, 1));        // hop 1 < cap → shareable
         this.store.admit(hearsayEntry(cappedId, KnowledgeEntry.MAX_HOP_COUNT)); // at cap → not shareable
 
@@ -125,7 +125,7 @@ class VillagerKnowledgeStoreTest {
     void findByOriginId_returnsEntryWhenPresent() {
         // Arrange
         UUID originId = UUID.randomUUID();
-        KnowledgeEntry entry = directEntry(originId, "crop harvested", 2.0f);
+        KnowledgeEntry entry = directEntry(originId, 2.0f);
         this.store.admit(entry);
 
         // Act
@@ -133,7 +133,7 @@ class VillagerKnowledgeStoreTest {
 
         // Assert
         assertTrue(found.isPresent());
-        assertEquals("crop harvested", found.get().getContent());
+        assertEquals(originId, found.get().getOriginObservationId());
     }
 
     @Test
@@ -150,11 +150,11 @@ class VillagerKnowledgeStoreTest {
         // Arrange
         UUID firstId = UUID.randomUUID();
         UUID secondId = UUID.randomUUID();
-        this.store.admit(directEntry(firstId, "first", 1.0f));
+        this.store.admit(directEntry(firstId, 1.0f));
         Collection<KnowledgeEntry> view = this.store.entriesView();
 
         // Act
-        this.store.admit(directEntry(secondId, "second", 1.0f));
+        this.store.admit(directEntry(secondId, 1.0f));
 
         // Assert
         assertEquals(2, view.size());
@@ -165,7 +165,7 @@ class VillagerKnowledgeStoreTest {
     @Test
     void entriesView_rejectsStructuralMutation() {
         // Arrange
-        KnowledgeEntry entry = directEntry(UUID.randomUUID(), "protected", 1.0f);
+        KnowledgeEntry entry = directEntry(UUID.randomUUID(), 1.0f);
         this.store.admit(entry);
         Collection<KnowledgeEntry> view = this.store.entriesView();
 
@@ -178,15 +178,15 @@ class VillagerKnowledgeStoreTest {
     void admit_evictsOldestWhenFull() {
         // Arrange – fill to capacity
         UUID firstId = UUID.randomUUID();
-        this.store.admit(directEntry(firstId, "oldest entry", 1.0f));
+        this.store.admit(directEntry(firstId, 1.0f));
         for (int i = 1; i < VillagerKnowledgeStore.MAX_ENTRIES; i++) {
-            this.store.admit(directEntry(UUID.randomUUID(), "filler " + i, 1.0f));
+            this.store.admit(directEntry(UUID.randomUUID(), 1.0f));
         }
         assertEquals(VillagerKnowledgeStore.MAX_ENTRIES, this.store.size());
 
         // Act – one more entry pushes the oldest out
         UUID newId = UUID.randomUUID();
-        AdmitResult result = this.store.admit(directEntry(newId, "newest entry", 1.0f));
+        AdmitResult result = this.store.admit(directEntry(newId, 1.0f));
 
         // Assert
         assertEquals(AdmitResult.NEW_ENTRY, result);
@@ -202,11 +202,11 @@ class VillagerKnowledgeStoreTest {
         UUID firstId = UUID.randomUUID();
         UUID secondId = UUID.randomUUID();
         UUID thirdId = UUID.randomUUID();
-        smallStore.admit(directEntry(firstId, "first", 1.0f));
-        smallStore.admit(directEntry(secondId, "second", 1.0f));
+        smallStore.admit(directEntry(firstId, 1.0f));
+        smallStore.admit(directEntry(secondId, 1.0f));
 
         // Act
-        smallStore.admit(directEntry(thirdId, "third", 1.0f));
+        smallStore.admit(directEntry(thirdId, 1.0f));
 
         // Assert
         assertEquals(2, smallStore.maxEntries());
@@ -216,20 +216,20 @@ class VillagerKnowledgeStoreTest {
         assertTrue(smallStore.knows(thirdId));
     }
 
-    private static KnowledgeEntry directEntry(UUID originId, String content, float weight) {
+    private static KnowledgeEntry directEntry(UUID originId, float weight) {
         return KnowledgeEntry.fromDirectObservation(
                 originId,
-                content,
                 ObservationType.RESOURCE,
                 100L,
                 100L,
                 null,
                 Map.of(),
-                weight);
+                weight,
+                null);
     }
 
     private static KnowledgeEntry hearsayEntry(UUID originId, int hop) {
-        KnowledgeEntry source = directEntry(originId, "original", 2.0f);
+        KnowledgeEntry source = directEntry(originId, 2.0f);
         // Build a hearsay entry by simulating fromHearsay hop-by-hop
         KnowledgeEntry current = source;
         for (int i = 0; i < hop; i++) {

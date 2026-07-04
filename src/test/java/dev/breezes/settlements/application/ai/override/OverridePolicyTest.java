@@ -216,8 +216,8 @@ class OverridePolicyTest {
 
     private static KnowledgeEntry hearsayEntry(UUID originId, UUID sourceId, float weight, long originTick) {
         KnowledgeEntry direct = KnowledgeEntry.fromDirectObservation(
-                originId, "test tip", ObservationType.RESOURCE,
-                originTick, originTick, null, Map.of(), weight);
+                originId, ObservationType.RESOURCE,
+                originTick, originTick, null, Map.of(), weight, null);
         return KnowledgeEntry.fromHearsay(direct, sourceId, originTick, weight);
     }
 

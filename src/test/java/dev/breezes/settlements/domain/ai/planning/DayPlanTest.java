@@ -171,7 +171,6 @@ class DayPlanTest {
                 .priority(1)
                 .flexible(true)
                 .estimatedDurationTicks(600)
-                .reason("test")
                 .build();
     }
 
@@ -187,7 +186,6 @@ class DayPlanTest {
                         .context(DayPlanActivityContext.IDLE)
                         .startTick(wakeTick)
                         .endTick(12_000)
-                        .reason("test")
                         .build())
                 .build();
     }

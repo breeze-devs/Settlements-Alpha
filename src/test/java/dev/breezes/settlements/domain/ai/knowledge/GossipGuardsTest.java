@@ -23,8 +23,8 @@ class GossipGuardsTest {
         // Arrange – villager A observes a fact
         UUID originId = UUID.randomUUID();
         KnowledgeEntry directFact = KnowledgeEntry.fromDirectObservation(
-                originId, "zombie near the farm", ObservationType.THREAT,
-                100L, 100L, null, Map.of(), 3.0f);
+                originId, ObservationType.THREAT,
+                100L, 100L, null, Map.of(), 3.0f, null);
 
         VillagerKnowledgeStore receiverStore = new VillagerKnowledgeStore();
 
@@ -50,8 +50,8 @@ class GossipGuardsTest {
         // Arrange – initiator shares fact with receiver
         UUID originId = UUID.randomUUID();
         KnowledgeEntry original = KnowledgeEntry.fromDirectObservation(
-                originId, "trade completed at market", ObservationType.SOCIAL,
-                50L, 50L, null, Map.of(), 2.5f);
+                originId, ObservationType.SOCIAL,
+                50L, 50L, null, Map.of(), 2.5f, null);
 
         UUID initiatorId = UUID.randomUUID();
         UUID receiverId = UUID.randomUUID();
@@ -81,8 +81,8 @@ class GossipGuardsTest {
         // Arrange
         UUID originId = UUID.randomUUID();
         KnowledgeEntry original = KnowledgeEntry.fromDirectObservation(
-                originId, "honey ready at hive", ObservationType.RESOURCE,
-                10L, 10L, null, Map.of(), 2.0f);
+                originId, ObservationType.RESOURCE,
+                10L, 10L, null, Map.of(), 2.0f, null);
 
         // Chain through MAX_HOP_COUNT hops
         KnowledgeEntry current = original;
@@ -107,8 +107,8 @@ class GossipGuardsTest {
         // Arrange – manually build an entry at hop = MAX_HOP_COUNT + 1
         UUID originId = UUID.randomUUID();
         KnowledgeEntry original = KnowledgeEntry.fromDirectObservation(
-                originId, "wool ready to shear", ObservationType.RESOURCE,
-                10L, 10L, null, Map.of(), 2.0f);
+                originId, ObservationType.RESOURCE,
+                10L, 10L, null, Map.of(), 2.0f, null);
 
         KnowledgeEntry current = original;
         for (int i = 0; i <= KnowledgeEntry.MAX_HOP_COUNT; i++) {
@@ -131,8 +131,8 @@ class GossipGuardsTest {
         // Arrange
         UUID originId = UUID.randomUUID();
         KnowledgeEntry firstHand = KnowledgeEntry.fromDirectObservation(
-                originId, "smith at the forge", ObservationType.TASK_COMPLETION,
-                10L, 10L, null, Map.of(), 1.5f);
+                originId, ObservationType.TASK_COMPLETION,
+                10L, 10L, null, Map.of(), 1.5f, null);
 
         KnowledgeEntry oneHop = KnowledgeEntry.fromHearsay(firstHand, UUID.randomUUID(), 20L, 1.0f);
 

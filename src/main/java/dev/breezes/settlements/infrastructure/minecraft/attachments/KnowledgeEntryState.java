@@ -1,7 +1,6 @@
 package dev.breezes.settlements.infrastructure.minecraft.attachments;
 
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeResolution;
-import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import lombok.Builder;
 
 import javax.annotation.Nullable;
@@ -10,20 +9,18 @@ import java.util.UUID;
 
 /**
  * Flat, serialization-friendly record mirroring the fields of {@link dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry}.
- * Used exclusively by the NBT attachment codec
+ * Used exclusively by the NBT attachment codec.
  */
-@Builder
+@Builder(toBuilder = true)
 public record KnowledgeEntryState(
         UUID originObservationId,
-        String content,
-        ObservationType type,
         long originTimestampTick,
         long admittedAtTick,
         @Nullable UUID relatedEntity,
         Map<String, String> metadata,
+        @Nullable Long packedPos,
         @Nullable UUID source,
         int hop,
-        float weight,
         float originalWeight,
         @Nullable KnowledgeResolution resolution,
         int corroborationCount,

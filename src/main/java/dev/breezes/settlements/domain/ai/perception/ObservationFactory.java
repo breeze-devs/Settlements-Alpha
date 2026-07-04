@@ -1,8 +1,10 @@
 package dev.breezes.settlements.domain.ai.perception;
 
 import dev.breezes.settlements.domain.ai.observation.Observation;
+import dev.breezes.settlements.domain.ai.observation.ObservationContentRenderer;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
+import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -82,7 +84,9 @@ public final class ObservationFactory {
         if (observation.registryId() != null) {
             metadata.put(ObservationMetadataKeys.REGISTRY_ID, observation.registryId().toString());
         }
-        if (observation.outcome() != null) {
+        // Absent outcome is already treated as SUCCESS downstream, so only persist the
+        // non-default case; the common case (SUCCESS) is not written at all.
+        if (observation.outcome() != null && observation.outcome() != EventOutcome.SUCCESS) {
             metadata.put(ObservationMetadataKeys.OUTCOME, observation.outcome().name());
         }
         if (observation.reason() != null) {
@@ -99,10 +103,6 @@ public final class ObservationFactory {
                 metadata.put(ObservationMetadataKeys.DETAIL_PREFIX + entry.getKey(), entry.getValue());
             }
         }
-
-        metadata.put(ObservationMetadataKeys.POS_X, String.valueOf(observation.posX()));
-        metadata.put(ObservationMetadataKeys.POS_Y, String.valueOf(observation.posY()));
-        metadata.put(ObservationMetadataKeys.POS_Z, String.valueOf(observation.posZ()));
 
         return Map.copyOf(metadata);
     }
@@ -125,9 +125,8 @@ public final class ObservationFactory {
     }
 
     private static String buildContent(WorldEvent event) {
-        String actorStr = event.getActorId() != null ? event.getActorId().toString() : "unknown";
-        String meta = event.getMetadata() != null ? " (" + event.getMetadata() + ")" : "";
-        return event.getType().name().toLowerCase().replace("_", " ") + " by " + actorStr + meta;
+        String actorId = event.getActorId() != null ? event.getActorId().toString() : null;
+        return ObservationContentRenderer.render(event.getType().name(), actorId, event.getMetadata());
     }
 
 }

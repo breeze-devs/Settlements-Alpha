@@ -5,6 +5,7 @@ import dev.breezes.settlements.application.ai.socialcue.SocialCueRuntimeState;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
+import dev.breezes.settlements.domain.ai.memory.PackedPos;
 import dev.breezes.settlements.domain.ai.observation.Observation;
 import dev.breezes.settlements.domain.ai.observation.ObservationBuffer;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
@@ -103,9 +104,13 @@ public final class PerceptionPipeline {
             if (forceAdmit || this.importanceGate.shouldPromote(score)) {
                 // Promote into the per-villager knowledge store. Direct observations are first-hand (hop=0, hearsay=false).
                 Map<String, String> metadata = ObservationFactory.metadataFor(observation);
-                KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(observation.id(), observation.content(),
+                long packedPos = PackedPos.asLong(
+                        (int) Math.floor(observation.posX()),
+                        (int) Math.floor(observation.posY()),
+                        (int) Math.floor(observation.posZ()));
+                KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(observation.id(),
                         observation.type(), observation.timestampTick(), observation.timestampTick(),
-                        observation.relatedEntity(), metadata, score);
+                        observation.relatedEntity(), metadata, score, packedPos);
                 knowledgeStore.admit(entry);
             }
         }

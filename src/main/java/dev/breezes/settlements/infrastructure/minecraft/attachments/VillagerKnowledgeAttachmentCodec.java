@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeResolution;
-import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 /**
  * Mojang Codec for serializing {@link VillagerKnowledgeAttachmentState} to/from NBT.
@@ -19,28 +19,52 @@ import java.util.UUID;
  * <p>
  * Nullable UUIDs (relatedEntity, source) and nullable KnowledgeResolution are encoded as absent
  * optional fields so the codec round-trips cleanly through NBT.
+ * <p>
+ * {@code content}, {@code type}, and {@code weight} are intentionally NOT persisted — they are
+ * pure derivations reconstructed by {@link VillagerKnowledgeAttachment#loadInto} from fields that
+ * ARE persisted here ({@code metadata}, {@code originalWeight}, {@code corroborationCount}).
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class VillagerKnowledgeAttachmentCodec {
 
-    private static final Codec<UUID> UUID_CODEC = Codec.STRING.xmap(UUID::fromString, UUID::toString);
-
-    private static final Codec<ObservationType> OBSERVATION_TYPE_CODEC = enumCodec(ObservationType.class);
+    /**
+     * Encodes a UUID as four ints (most-significant-bits high/low, least-significant-bits
+     * high/low) instead of a 36-character string, matching vanilla's {@code UUIDUtil.CODEC} layout.
+     */
+    private static final Codec<UUID> UUID_CODEC = Codec.INT_STREAM.comapFlatMap(
+            stream -> {
+                int[] ints = stream.toArray();
+                if (ints.length != 4) {
+                    return DataResult.error(() -> "Expected 4 ints for a UUID, got " + ints.length);
+                }
+                long mostSigBits = (long) ints[0] << 32 | (ints[1] & 0xFFFFFFFFL);
+                long leastSigBits = (long) ints[2] << 32 | (ints[3] & 0xFFFFFFFFL);
+                return DataResult.success(new UUID(mostSigBits, leastSigBits));
+            },
+            uuid -> IntStream.of(
+                    (int) (uuid.getMostSignificantBits() >> 32),
+                    (int) uuid.getMostSignificantBits(),
+                    (int) (uuid.getLeastSignificantBits() >> 32),
+                    (int) uuid.getLeastSignificantBits()));
 
     private static final Codec<KnowledgeResolution> KNOWLEDGE_RESOLUTION_CODEC = enumCodec(KnowledgeResolution.class);
 
     private static final Codec<KnowledgeEntryState> ENTRY_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     UUID_CODEC.fieldOf("originObservationId").forGetter(KnowledgeEntryState::originObservationId),
-                    Codec.STRING.fieldOf("content").forGetter(KnowledgeEntryState::content),
-                    OBSERVATION_TYPE_CODEC.fieldOf("type").forGetter(KnowledgeEntryState::type),
                     Codec.LONG.fieldOf("originTimestampTick").forGetter(KnowledgeEntryState::originTimestampTick),
-                    Codec.LONG.fieldOf("admittedAtTick").forGetter(KnowledgeEntryState::admittedAtTick),
+                    Codec.LONG.optionalFieldOf("admittedAtTick").forGetter(
+                            entry -> entry.admittedAtTick() == entry.originTimestampTick()
+                                    ? Optional.empty()
+                                    : Optional.of(entry.admittedAtTick())),
                     UUID_CODEC.optionalFieldOf("relatedEntity").forGetter(entry -> Optional.ofNullable(entry.relatedEntity())),
                     Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("metadata", Map.of()).forGetter(KnowledgeEntryState::metadata),
+                    Codec.LONG.optionalFieldOf("pos").forGetter(entry -> Optional.ofNullable(entry.packedPos())),
                     UUID_CODEC.optionalFieldOf("source").forGetter(entry -> Optional.ofNullable(entry.source())),
-                    Codec.INT.fieldOf("hop").forGetter(KnowledgeEntryState::hop),
-                    Codec.FLOAT.fieldOf("weight").forGetter(KnowledgeEntryState::weight),
+                    // Explicit Optional (not optionalFieldOf(name, default)) so encoding always omits
+                    // the default value rather than depending on codec-version write behavior.
+                    Codec.INT.optionalFieldOf("hop").forGetter(
+                            entry -> entry.hop() == 0 ? Optional.empty() : Optional.of(entry.hop())),
                     Codec.FLOAT.fieldOf("originalWeight").forGetter(KnowledgeEntryState::originalWeight),
                     KNOWLEDGE_RESOLUTION_CODEC.optionalFieldOf("resolution").forGetter(entry -> Optional.ofNullable(entry.resolution())),
                     Codec.INT.optionalFieldOf("corroborationCount", 0).forGetter(KnowledgeEntryState::corroborationCount),
@@ -70,15 +94,13 @@ public final class VillagerKnowledgeAttachmentCodec {
     }
 
     private static KnowledgeEntryState entryState(UUID originObservationId,
-                                                  String content,
-                                                  ObservationType type,
                                                   long originTimestampTick,
-                                                  long admittedAtTick,
+                                                  Optional<Long> admittedAtTick,
                                                   Optional<UUID> relatedEntity,
                                                   Map<String, String> metadata,
+                                                  Optional<Long> packedPos,
                                                   Optional<UUID> source,
-                                                  int hop,
-                                                  float weight,
+                                                  Optional<Integer> hop,
                                                   float originalWeight,
                                                   Optional<KnowledgeResolution> resolution,
                                                   int corroborationCount,
@@ -86,15 +108,13 @@ public final class VillagerKnowledgeAttachmentCodec {
                                                   long nextEligibleTick) {
         return KnowledgeEntryState.builder()
                 .originObservationId(originObservationId)
-                .content(content)
-                .type(type)
                 .originTimestampTick(originTimestampTick)
-                .admittedAtTick(admittedAtTick)
+                .admittedAtTick(admittedAtTick.orElse(originTimestampTick))
                 .relatedEntity(relatedEntity.orElse(null))
                 .metadata(KnowledgeMetadataSanitizer.sanitize(metadata))
+                .packedPos(packedPos.orElse(null))
                 .source(source.orElse(null))
-                .hop(hop)
-                .weight(weight)
+                .hop(hop.orElse(0))
                 .originalWeight(originalWeight)
                 .resolution(resolution.orElse(null))
                 .corroborationCount(corroborationCount)

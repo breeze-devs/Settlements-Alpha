@@ -39,21 +39,6 @@ public final class ObservationMetadataKeys {
     public static final String REGISTRY_ID = "registry_id";
 
     /**
-     * World X coordinate of the event origin. Always present.
-     */
-    public static final String POS_X = "pos_x";
-
-    /**
-     * World Y coordinate of the event origin. Always present.
-     */
-    public static final String POS_Y = "pos_y";
-
-    /**
-     * World Z coordinate of the event origin. Always present.
-     */
-    public static final String POS_Z = "pos_z";
-
-    /**
      * Optional free-text detail string set by a behavior to enrich seed phrasing.
      * Example value: "3 melons", "4 bread for 1 emerald".
      */

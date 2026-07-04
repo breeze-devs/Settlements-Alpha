@@ -205,8 +205,9 @@ class ObservationFactoryTest {
     }
 
     @Test
-    void metadataFor_carriesEventPosition() {
-        // Arrange
+    void metadataFor_doesNotCarryPositionKeys() {
+        // Arrange — position is no longer written into the metadata map; it is packed by the
+        // caller (PerceptionPipeline) into a typed field instead (B1).
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
@@ -221,9 +222,9 @@ class ObservationFactoryTest {
         Map<String, String> metadata = ObservationFactory.metadataFor(observation);
 
         // Assert
-        assertEquals("12.5", metadata.get("pos_x"));
-        assertEquals("64.0", metadata.get("pos_y"));
-        assertEquals("-8.25", metadata.get("pos_z"));
+        assertNull(metadata.get("pos_x"));
+        assertNull(metadata.get("pos_y"));
+        assertNull(metadata.get("pos_z"));
     }
 
     @Test
@@ -408,6 +409,27 @@ class ObservationFactoryTest {
         Map<String, String> metadata = ObservationFactory.metadataFor(observation);
 
         // Assert — key must be absent, not present with a null/empty value
+        assertNull(metadata.get(ObservationMetadataKeys.OUTCOME));
+    }
+
+    @Test
+    void metadataFor_omitsOutcomeKeyWhenSuccess() {
+        // Arrange — SUCCESS is the default interpretation downstream (B4); do not persist it
+        WorldEvent event = WorldEvent.builder()
+                .sequence(1L)
+                .gameTick(100L)
+                .type(WorldEventType.TRADE_COMPLETED)
+                .actorId(UUID.randomUUID())
+                .posX(0).posY(64).posZ(0)
+                .chunkX(0).chunkZ(0)
+                .outcome(EventOutcome.SUCCESS)
+                .build();
+        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+
+        // Act
+        Map<String, String> metadata = ObservationFactory.metadataFor(observation);
+
+        // Assert
         assertNull(metadata.get(ObservationMetadataKeys.OUTCOME));
     }
 

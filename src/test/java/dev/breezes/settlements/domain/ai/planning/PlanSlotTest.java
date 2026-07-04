@@ -17,7 +17,6 @@ class PlanSlotTest {
                 .priority(10)
                 .flexible(false)
                 .estimatedDurationTicks(1_200)
-                .reason("scheduled lunch")
                 .build();
 
         assertEquals(6_000, slot.getStartTick());
@@ -25,7 +24,6 @@ class PlanSlotTest {
         assertEquals(10, slot.getPriority());
         assertFalse(slot.isFlexible());
         assertEquals(1_200, slot.getEstimatedDurationTicks());
-        assertEquals("scheduled lunch", slot.getReason());
         assertEquals(PlanSlotStatus.PENDING, slot.getStatus());
     }
 
@@ -37,7 +35,6 @@ class PlanSlotTest {
                 .priority(1)
                 .flexible(true)
                 .estimatedDurationTicks(600)
-                .reason("morning walk")
                 .build();
 
         slot.markStatus(PlanSlotStatus.ACTIVE);
@@ -53,7 +50,6 @@ class PlanSlotTest {
                 .priority(1)
                 .flexible(true)
                 .estimatedDurationTicks(600)
-                .reason("invalid")
                 .build());
     }
 
@@ -65,7 +61,6 @@ class PlanSlotTest {
                 .priority(1)
                 .flexible(true)
                 .estimatedDurationTicks(600)
-                .reason("invalid")
                 .build());
     }
 
@@ -77,7 +72,6 @@ class PlanSlotTest {
                 .priority(-1)
                 .flexible(true)
                 .estimatedDurationTicks(600)
-                .reason("invalid")
                 .build());
     }
 

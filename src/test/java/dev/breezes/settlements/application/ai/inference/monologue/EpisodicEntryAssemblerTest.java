@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.inference.InferenceConfig;
 import dev.breezes.settlements.application.ai.naming.VillagerNameResolver;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
+import dev.breezes.settlements.domain.ai.memory.PackedPos;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
@@ -97,8 +98,8 @@ class EpisodicEntryAssemblerTest {
     void assemble_missingEventTypeMetadata_entryExcluded() {
         // Arrange — entry has no event_type key in metadata
         KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), "raw content", ObservationType.SOCIAL,
-                ADMITTED_TICK, ADMITTED_TICK, null, Map.of(), 2.0f);
+                UUID.randomUUID(), ObservationType.SOCIAL,
+                ADMITTED_TICK, ADMITTED_TICK, null, Map.of(), 2.0f, null);
         this.store.admit(entry);
 
         // Act
@@ -452,8 +453,8 @@ class EpisodicEntryAssemblerTest {
         metadata.put("detail.item", "melons");
         metadata.put("detail.count", "3");
         KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), "raw content", ObservationType.SOCIAL,
-                ADMITTED_TICK, ADMITTED_TICK, null, Map.copyOf(metadata), 2.0f);
+                UUID.randomUUID(), ObservationType.SOCIAL,
+                ADMITTED_TICK, ADMITTED_TICK, null, Map.copyOf(metadata), 2.0f, null);
         this.store.admit(entry);
 
         // Act
@@ -486,8 +487,8 @@ class EpisodicEntryAssemblerTest {
         Map<String, String> metadata = new HashMap<>(buildMetadata(ACTOR_ID, WorldEventType.PLAYER_SIGHTED));
         metadata.put(ObservationMetadataKeys.DETAIL_PREFIX + "player", "Steve");
         KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), "raw content", ObservationType.SOCIAL,
-                ADMITTED_TICK, ADMITTED_TICK, null, Map.copyOf(metadata), 2.0f);
+                UUID.randomUUID(), ObservationType.SOCIAL,
+                ADMITTED_TICK, ADMITTED_TICK, null, Map.copyOf(metadata), 2.0f, null);
         this.store.admit(entry);
 
         // Act
@@ -507,8 +508,8 @@ class EpisodicEntryAssemblerTest {
         metadata.put("detail.count", "4");
         metadata.put("detail.price", "1 emerald");
         KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), "raw content", ObservationType.SOCIAL,
-                ADMITTED_TICK, ADMITTED_TICK, TARGET_ID, Map.copyOf(metadata), 2.5f);
+                UUID.randomUUID(), ObservationType.SOCIAL,
+                ADMITTED_TICK, ADMITTED_TICK, TARGET_ID, Map.copyOf(metadata), 2.5f, null);
         this.store.admit(entry);
 
         // Act
@@ -547,22 +548,25 @@ class EpisodicEntryAssemblerTest {
     }
 
     @Test
-    void assemble_posMetadataPresent_posPopulatedAsFlooredInts() {
-        // Arrange — coords stored as doubles (String.valueOf(double)); floor, do not truncate
-        this.store.admit(directEntryWithPos(ACTOR_ID, WorldEventType.ZOMBIE_SIGHTED, "123.45", "64.0", "-5.5", 2.0f));
+    void assemble_packedPosPresent_posPopulatedAsFlooredInts() {
+        // Arrange — floor(-5.5) = -6; packing happens at the producer (PerceptionPipeline), so the
+        // test packs an already-floored coordinate directly, proving floor semantics were applied
+        // before packing rather than truncation toward zero.
+        long packedPos = PackedPos.asLong(123, 64, -6);
+        this.store.admit(directEntryWithPos(ACTOR_ID, WorldEventType.ZOMBIE_SIGHTED, packedPos, 2.0f));
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
-        // Assert — -5.5 floors to -6, proving floor semantics rather than truncation toward zero
+        // Assert
         assertEquals(1, result.size());
         int[] pos = result.get(0).getPos();
         assertArrayEquals(new int[]{123, 64, -6}, pos);
     }
 
     @Test
-    void assemble_posMetadataAbsent_posIsNull() {
-        // Arrange — directEntry helper writes no pos_* keys
+    void assemble_packedPosAbsent_posIsNull() {
+        // Arrange — directEntry helper passes a null packedPos
         this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
 
         // Act
@@ -573,63 +577,14 @@ class EpisodicEntryAssemblerTest {
         assertNull(result.get(0).getPos());
     }
 
-    @Test
-    void parsePos_allAxesPresent_returnsFlooredInts() {
-        // Arrange
-        Map<String, String> metadata = Map.of(
-                ObservationMetadataKeys.POS_X, "10.9",
-                ObservationMetadataKeys.POS_Y, "70.0",
-                ObservationMetadataKeys.POS_Z, "-0.1");
-
-        // Act
-        int[] pos = EpisodicEntryAssembler.parsePos(metadata);
-
-        // Assert — -0.1 floors to -1
-        assertArrayEquals(new int[]{10, 70, -1}, pos);
-    }
-
-    @Test
-    void parsePos_oneAxisMissing_returnsNull() {
-        // Arrange — pos_z absent; a partial coordinate must never be sent
-        Map<String, String> metadata = Map.of(
-                ObservationMetadataKeys.POS_X, "10.0",
-                ObservationMetadataKeys.POS_Y, "70.0");
-
-        // Act
-        int[] pos = EpisodicEntryAssembler.parsePos(metadata);
-
-        // Assert
-        assertNull(pos);
-    }
-
-    @Test
-    void parsePos_oneAxisUnparseable_returnsNull() {
-        // Arrange — pos_y is garbage; reject the whole coordinate rather than send (x, 0, z)
-        Map<String, String> metadata = Map.of(
-                ObservationMetadataKeys.POS_X, "10.0",
-                ObservationMetadataKeys.POS_Y, "not-a-number",
-                ObservationMetadataKeys.POS_Z, "5.0");
-
-        // Act
-        int[] pos = EpisodicEntryAssembler.parsePos(metadata);
-
-        // Assert
-        assertNull(pos);
-    }
-
     private static KnowledgeEntry directEntryWithPos(@Nullable UUID actorId,
                                                      WorldEventType eventType,
-                                                     String posX,
-                                                     String posY,
-                                                     String posZ,
+                                                     long packedPos,
                                                      float weight) {
-        Map<String, String> metadata = new HashMap<>(buildMetadata(actorId, eventType));
-        metadata.put(ObservationMetadataKeys.POS_X, posX);
-        metadata.put(ObservationMetadataKeys.POS_Y, posY);
-        metadata.put(ObservationMetadataKeys.POS_Z, posZ);
+        Map<String, String> metadata = buildMetadata(actorId, eventType);
         return KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), "raw content", ObservationType.SOCIAL,
-                ADMITTED_TICK, ADMITTED_TICK, null, Map.copyOf(metadata), weight);
+                UUID.randomUUID(), ObservationType.SOCIAL,
+                ADMITTED_TICK, ADMITTED_TICK, null, metadata, weight, packedPos);
     }
 
     private static KnowledgeEntry directEntry(@Nullable UUID actorId,
@@ -653,8 +608,8 @@ class EpisodicEntryAssemblerTest {
                                                            @Nullable UUID targetId) {
         Map<String, String> metadata = buildMetadata(actorId, eventType);
         return KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), "raw content", ObservationType.SOCIAL,
-                admitTick, admitTick, targetId, metadata, weight);
+                UUID.randomUUID(), ObservationType.SOCIAL,
+                admitTick, admitTick, targetId, metadata, weight, null);
     }
 
     private static KnowledgeEntry directEntryWithOutcomeAndReason(@Nullable UUID actorId,
@@ -669,8 +624,8 @@ class EpisodicEntryAssemblerTest {
             metadata.put(ObservationMetadataKeys.REASON, reason);
         }
         return KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), "raw content", ObservationType.SOCIAL,
-                ADMITTED_TICK, ADMITTED_TICK, targetId, Map.copyOf(metadata), weight);
+                UUID.randomUUID(), ObservationType.SOCIAL,
+                ADMITTED_TICK, ADMITTED_TICK, targetId, Map.copyOf(metadata), weight, null);
     }
 
     private static KnowledgeEntry hearsayEntry(UUID sourceId,
@@ -680,8 +635,8 @@ class EpisodicEntryAssemblerTest {
                                                float weight) {
         Map<String, String> metadata = buildMetadata(actorId, eventType);
         KnowledgeEntry base = KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), "raw content", ObservationType.SOCIAL,
-                ADMITTED_TICK, ADMITTED_TICK, targetId, metadata, weight);
+                UUID.randomUUID(), ObservationType.SOCIAL,
+                ADMITTED_TICK, ADMITTED_TICK, targetId, metadata, weight, null);
         return KnowledgeEntry.fromHearsay(base, sourceId, ADMITTED_TICK + 100L, weight * 0.8f);
     }
 
@@ -697,12 +652,12 @@ class EpisodicEntryAssemblerTest {
         Map<String, String> metadata = buildMetadata(actorId, eventType);
         return KnowledgeEntry.builder()
                 .originObservationId(originId)
-                .content("raw content")
                 .type(ObservationType.SOCIAL)
                 .originTimestampTick(ADMITTED_TICK)
                 .admittedAtTick(ADMITTED_TICK)
                 .relatedEntity(targetId)
                 .metadata(metadata)
+                .packedPos(null)
                 .source(null)
                 .hop(hop)
                 .weight(weight)
@@ -727,12 +682,12 @@ class EpisodicEntryAssemblerTest {
         Map<String, String> metadata = buildMetadata(actorId, eventType);
         return KnowledgeEntry.builder()
                 .originObservationId(originId)
-                .content("raw content")
                 .type(ObservationType.SOCIAL)
                 .originTimestampTick(ADMITTED_TICK)
                 .admittedAtTick(ADMITTED_TICK + 100L)
                 .relatedEntity(targetId)
                 .metadata(metadata)
+                .packedPos(null)
                 .source(sourceId)
                 .hop(hop)
                 .weight(weight)

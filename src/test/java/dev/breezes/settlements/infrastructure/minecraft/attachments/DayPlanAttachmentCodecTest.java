@@ -103,7 +103,6 @@ class DayPlanAttachmentCodecTest {
                 .priority(10)
                 .flexible(true)
                 .estimatedDurationTicks(600)
-                .reason("test")
                 .status(status)
                 .build();
     }
@@ -116,7 +115,6 @@ class DayPlanAttachmentCodecTest {
                         .context(DayPlanActivityContext.IDLE)
                         .startTick(wakeTick)
                         .endTick(12_000)
-                        .reason("test")
                         .build())
                 .build();
     }

@@ -12,8 +12,7 @@ public record DayPlanActivityBlock(
          * Start tick in game time (may be greater than endTick if the behavior starts pre-dawn)
          */
         int startTick,
-        int endTick,
-        @Nonnull String reason
+        int endTick
 ) {
 
     public DayPlanActivityBlock {

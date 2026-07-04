@@ -292,7 +292,6 @@ class PlanRunnerTimingTest {
                 .priority(1)
                 .flexible(flexible)
                 .estimatedDurationTicks(durationTicks)
-                .reason("test")
                 .status(status)
                 .build();
     }
@@ -309,7 +308,6 @@ class PlanRunnerTimingTest {
                         .context(DayPlanActivityContext.IDLE)
                         .startTick(wakeTick)
                         .endTick(12_000)
-                        .reason("test")
                         .build())
                 .build();
     }

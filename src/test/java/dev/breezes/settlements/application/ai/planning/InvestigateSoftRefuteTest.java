@@ -186,8 +186,8 @@ class InvestigateSoftRefuteTest {
 
     private static KnowledgeEntry hearsayEntry(UUID originId, UUID sourceId, float weight) {
         KnowledgeEntry direct = KnowledgeEntry.fromDirectObservation(
-                originId, "test tip", ObservationType.RESOURCE,
-                100L, 100L, null, Map.of(), weight);
+                originId, ObservationType.RESOURCE,
+                100L, 100L, null, Map.of(), weight, null);
         return KnowledgeEntry.fromHearsay(direct, sourceId, 200L, weight);
     }
 

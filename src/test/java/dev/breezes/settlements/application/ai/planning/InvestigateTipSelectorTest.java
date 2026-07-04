@@ -209,8 +209,8 @@ class InvestigateTipSelectorTest {
 
     private static KnowledgeEntry directEntry(UUID originId, float weight) {
         return KnowledgeEntry.fromDirectObservation(
-                originId, "direct observation", ObservationType.RESOURCE,
-                100L, 100L, null, Map.of(), weight);
+                originId, ObservationType.RESOURCE,
+                100L, 100L, null, Map.of(), weight, null);
     }
 
     /**

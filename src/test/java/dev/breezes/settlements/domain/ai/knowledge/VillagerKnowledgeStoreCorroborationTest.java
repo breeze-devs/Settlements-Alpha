@@ -144,13 +144,13 @@ class VillagerKnowledgeStoreCorroborationTest {
         // Build via fromDirectObservation + fromHearsay to avoid constructor coupling
         KnowledgeEntry base = KnowledgeEntry.fromDirectObservation(
                 originId,
-                "tip about resources",
                 ObservationType.RESOURCE,
                 100L,
                 100L,
                 null,
                 Map.of(),
-                weight);
+                weight,
+                null);
 
         // Simulate hop-by-hop to reach desired hop count
         KnowledgeEntry hearsay = base;

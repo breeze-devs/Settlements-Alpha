@@ -385,7 +385,6 @@ class PlanOverrideSlotTest {
                 .priority(1)
                 .flexible(true)
                 .estimatedDurationTicks(durationTicks)
-                .reason("test")
                 .status(status)
                 .build();
     }

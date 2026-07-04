@@ -77,7 +77,7 @@ public final class DayPlanSnapshotAssembler {
         if (metadata != null && metadata.getDescription() != null && !metadata.getDescription().isBlank()) {
             return metadata.getDescription();
         }
-        return slot.getReason();
+        return null;
     }
 
     private static DayPlanSlotVisualStatus resolveVisualStatus(@Nonnull DayPlan dayPlan,

@@ -19,7 +19,21 @@ class KnowledgeMetadataSanitizerTest {
                 "event_type", "RESOURCE_HARVESTED",
                 "event_meta", "settlements:farmer/harvest",
                 "actor_id", "00000000-0000-0000-0000-000000000001",
-                "registry_id", "minecraft:wheat",
+                "registry_id", "minecraft:wheat");
+
+        // Act
+        Map<String, String> sanitized = KnowledgeMetadataSanitizer.sanitize(metadata);
+
+        // Assert
+        assertEquals(metadata, sanitized);
+    }
+
+    @Test
+    void sanitize_dropsPositionKeys() {
+        // Arrange — pos_* was replaced by the typed packedPos field (B1); metadata no longer
+        // carries position, so any residual pos_* key must be rejected like any other unknown key
+        Map<String, String> metadata = Map.of(
+                "event_type", "RESOURCE_HARVESTED",
                 "pos_x", "10",
                 "pos_y", "64",
                 "pos_z", "-5");
@@ -28,7 +42,7 @@ class KnowledgeMetadataSanitizerTest {
         Map<String, String> sanitized = KnowledgeMetadataSanitizer.sanitize(metadata);
 
         // Assert
-        assertEquals(metadata, sanitized);
+        assertEquals(Map.of("event_type", "RESOURCE_HARVESTED"), sanitized);
     }
 
     @Test

@@ -24,7 +24,6 @@ public class PlanSlot {
     private final int priority;
     private final boolean flexible;
     private final int estimatedDurationTicks;
-    private final String reason;
 
     private PlanSlotStatus status;
 
@@ -34,7 +33,6 @@ public class PlanSlot {
                     int priority,
                     boolean flexible,
                     int estimatedDurationTicks,
-                    String reason,
                     PlanSlotStatus status) {
         if (!TimeOfDay.isValidTick(startTick)) {
             throw new IllegalArgumentException("startTick must be between 0 and 23999");
@@ -47,7 +45,6 @@ public class PlanSlot {
         this.priority = priority;
         this.flexible = flexible;
         this.estimatedDurationTicks = estimatedDurationTicks;
-        this.reason = reason;
         this.status = status == null ? PlanSlotStatus.PENDING : status;
     }
 
