@@ -35,7 +35,10 @@ displayName="${mod_name}" #mandatory
 #displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
 
 # A file name (in the root of the mod JAR) containing a logo for display
-#logoFile="examplemod.png" #optional
+logoFile="settlements_logo.png" #optional
+
+# Disable logo smoothing so the pixel-art scene renders crisp rather than blurred.
+logoBlur=false
 
 # A text field displayed in the mod UI
 #credits="" #optional

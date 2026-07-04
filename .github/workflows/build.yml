@@ -2,9 +2,15 @@ name: Build
 
 on: [ push, pull_request ]
 
+# Cancel an in-progress run when a newer commit is pushed to the same ref.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,11 +24,12 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v3
-
+      # validate-wrappers replaces the standalone wrapper-validation step,
+      # keeping the wrapper-jar security check but with one fewer external call.
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
 
       - name: Make gradlew executable
         run: chmod +x gradlew
