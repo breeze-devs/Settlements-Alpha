@@ -295,14 +295,25 @@ interrupted slot is simply re-queued when the override ends. (The runtime commen
 ### Override policies (the non-vanilla preemption set)
 
 Registered as a Dagger multibinding in `di/modules/server/OverridePolicyModule.java`
-(`@Multibinds Set<OverridePolicy>`, both policies `@IntoSet`):
+(`@Multibinds Set<OverridePolicy>`, all policies `@IntoSet`):
 
 | Policy | Priority | Fires when | Installs |
 |--------|----------|-----------|----------|
 | `UrgentInvestigateOverridePolicy` | 200 | A pending hearsay tip's urgency (`weight × freshness`, freshness half-life 6 000 ticks) exceeds `URGENCY_THRESHOLD` (2.5). Reads the villager's `VillagerKnowledgeStore` via `InvestigateTipSelector`; short-circuits when the store is empty. | `BehaviorKey.INVESTIGATE` |
 | `SocialAcceptOverridePolicy` | 100 | Another villager has sent a trade or courtship invite. Delegates to `OverrideTriggerDetector`, which polls `CourtshipSessionRegistry` / `TradeSessionRegistry` (courtship > trade). | `COURTSHIP_ACCEPT` / `TRADE_ACCEPT` |
+| `CollectDemandedItemOverridePolicy` | 50 | `DemandedGroundItemSensor` has flagged a demanded item nearby (`MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY`) **and** no plan/override behavior is currently active **and** the villager's active non-core activity is one of `WORK`/`MEET`/`IDLE`. | `BehaviorKey.COLLECT_DEMANDED_ITEM` |
 
-Both are `@ServerScope` and must be stateless/pure — `evaluate(level, villager)` returns
+Unlike the other two, `CollectDemandedItemOverridePolicy` explicitly checks `PLAN_BEHAVIOR_ACTIVE`
+itself rather than relying solely on `tryStartOverride`'s `canInterruptCurrentPlanBehavior` gate.
+That gate only blocks on a non-interruptible plan behavior — `COLLECT_DEMANDED_ITEM` (like most
+behaviors) is `interruptible(true)`, so without the explicit check this policy could preempt an
+in-progress WORK/MEET/IDLE behavior. The design intent is opportunistic idle-time top-up only,
+never a work interruption, so the policy adds its own idle-gap + managed-activity gate on top. The
+managed-activity check also matters because `tickOverride` runs before the activity gate and is
+therefore evaluated during REST too, where `PLAN_BEHAVIOR_ACTIVE` is likewise absent — restricting
+to `WORK`/`MEET`/`IDLE` is what keeps this from firing during sleep.
+
+All three are `@ServerScope` and must be stateless/pure — `evaluate(level, villager)` returns
 `Optional<OverrideRequest>` and is polled every tick.
 
 ### Confirmation → plan regeneration

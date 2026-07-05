@@ -18,8 +18,9 @@ import java.util.Optional;
 
 public class DemandedGroundItemCondition implements IEntityCondition<BaseVillager> {
 
-    private static final double SCAN_RANGE_HORIZONTAL = 12.0D;
-    private static final double SCAN_RANGE_VERTICAL = 4.0D;
+    // Narrow opportunistic-pickup radius
+    private static final double SCAN_RANGE_HORIZONTAL = 8.0D;
+    private static final double SCAN_RANGE_VERTICAL = 2.0D;
 
     private final DemandEvaluator demandEvaluator;
     private final int completionRange;

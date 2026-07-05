@@ -38,6 +38,9 @@ public final class MemoryTypeRegistry {
     public static final MemoryType.VanillaMemoryType<Boolean> PLAN_BEHAVIOR_ACTIVE = MemoryType.vanillaBacked(
             "plan_behavior_active", MemoryModuleTypeRegistry.PLAN_BEHAVIOR_ACTIVE);
 
+    public static final MemoryType.VanillaMemoryType<Boolean> DEMANDED_GROUND_ITEM_NEARBY = MemoryType.vanillaBacked(
+            "demanded_ground_item_nearby", MemoryModuleTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY);
+
     public static final MemoryType.VanillaMemoryType<Set<GlobalPos>> BARRIERS_TO_CLOSE = MemoryType.vanillaBacked(
             "barriers_to_close", MemoryModuleTypeRegistry.BARRIERS_TO_CLOSE);
 

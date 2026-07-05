@@ -7,10 +7,13 @@ import dagger.multibindings.Multibinds;
 import dev.breezes.settlements.application.ai.sensors.BlockResource;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensor;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
+import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensor;
+import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensor;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntitySightingEmitterSensor;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
+import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
@@ -47,6 +50,12 @@ public abstract class SensorCatalogModule {
     @IntoSet
     static VillagerSensorFactory entitySightingEmitterSensor(WorldEventEmitter emitter) {
         return villager -> new EntitySightingEmitterSensor(emitter, villager);
+    }
+
+    @Provides
+    @IntoSet
+    static VillagerSensorFactory demandedGroundItemSensor(DemandedGroundItemSensorConfig config, DemandEvaluator demandEvaluator) {
+        return villager -> new DemandedGroundItemSensor(config, demandEvaluator, villager);
     }
 
     @Provides

@@ -26,9 +26,11 @@ import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.infrastructure.rendering.particles.EnchantTier;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -56,6 +58,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
     private static final int MAX_BOOKSHELF_COUNT = 15;
+    private static final int ORB_EMISSION_GRANULARITY_TICKS = 2;
 
     private final EnchantItemConfig config;
     private final NearbyBlockExistsCondition<BaseVillager> nearbyEnchantingTableCondition;
@@ -65,6 +68,8 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
     private BlockPos enchantingTablePos;
     @Nullable
     private ItemStack targetRepresentative;
+    @Nullable
+    private EnchantTier enchantTier;
 
     public EnchantItemBehavior(@Nonnull EnchantItemConfig config,
                                @Nonnull BehaviorSupport support,
@@ -86,6 +91,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
 
         this.enchantingTablePos = null;
         this.targetRepresentative = null;
+        this.enchantTier = null;
 
         this.initializeStateMachine(this.createControlStep(), EnchantStage.END);
     }
@@ -100,25 +106,14 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
     }
 
     private BehaviorStep<BaseVillager> createEnchantStep() {
-        // TODO: we can make the animations more detailed (e.g. more ench particles) as villager expertise level goes up
-        // TODO: we can also make 'golden' particles/animations if rolling a max level enchants or something good
-        // TODO: to do this, we need to determine the enchantment result at the start of the behavior, so we can animate accordingly
+        // Hoisted so the orb-emission gate can read the same elapsed-tick count the step schedules on
+        ITickable actionTickable = ClockTicks.seconds(10).asTickable();
+
         TimeBasedStep<BaseVillager> actionStep = TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.seconds(10).asTickable())
-                .addPeriodicStep(ClockTicks.of(10).getTicksAsInt(), context -> {
-                    if (this.enchantingTablePos == null) {
-                        return StepResult.noOp();
-                    }
-
-                    Location targetLocation = Location.of(this.enchantingTablePos, context.getInitiator().getMinecraftEntity().level())
-                            .center(false);
-                    targetLocation.displayParticles(ParticleTypes.ENCHANT, 50, 2, 1, 2, 1);
-                    targetLocation.displayParticles(ParticleTypes.PORTAL, 3, 2, 1, 2, 1);
-                    ParticleRegistry.displayCircle(ParticleTypes.END_ROD, targetLocation.add(0, -0.2, 0, true), 1.25, 16);
-
-                    return StepResult.noOp();
-                })
-                .addKeyFrame(ClockTicks.seconds(8), this::performEnchant)
+                .withTickable(actionTickable)
+                .addPeriodicStep(ClockTicks.of(10).getTicksAsInt(), this::emitAmbianceParticles)
+                .addPeriodicStep(ORB_EMISSION_GRANULARITY_TICKS, context -> this.emitTierOrbPulse(context, actionTickable))
+                .addKeyFrame(ClockTicks.seconds(8), this::playRevealSound)
                 .onEnd(context -> StepResult.complete())
                 .build();
 
@@ -127,6 +122,36 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
                 .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 1))
                 .actionStep(actionStep)
                 .build();
+    }
+
+    private StepResult emitAmbianceParticles(@Nonnull BehaviorContext<BaseVillager> context) {
+        if (this.enchantingTablePos == null) {
+            return StepResult.noOp();
+        }
+
+        Location targetLocation = Location.of(this.enchantingTablePos, context.getInitiator().getMinecraftEntity().level())
+                .center(false);
+        targetLocation.displayParticles(ParticleTypes.ENCHANT, 50, 2, 1, 2, 1);
+        targetLocation.displayParticles(ParticleTypes.PORTAL, 3, 2, 1, 2, 1);
+        ParticleRegistry.displayCircle(ParticleTypes.END_ROD, targetLocation.add(0, -0.2, 0, true), 1.25, 16);
+        return StepResult.noOp();
+    }
+
+    /**
+     * Emits a single rising orb on the beats matching this run's tier cadence.
+     */
+    private StepResult emitTierOrbPulse(@Nonnull BehaviorContext<BaseVillager> context, @Nonnull ITickable actionTickable) {
+        if (this.enchantTier == null || this.enchantingTablePos == null) {
+            return StepResult.noOp();
+        }
+        if (actionTickable.getTicksElapsedRounded() % this.enchantTier.getEmitIntervalTicks() != 0) {
+            return StepResult.noOp();
+        }
+
+        Location targetLocation = Location.of(this.enchantingTablePos, context.getInitiator().getMinecraftEntity().level())
+                .center(false);
+        ParticleRegistry.enchantTierOrbs(targetLocation, this.enchantTier);
+        return StepResult.noOp();
     }
 
     @Override
@@ -144,6 +169,12 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         if (this.targetRepresentative == null) {
             log.behaviorError("No enchantable non-enchanted item found");
             this.requestStop("No enchantable non-enchanted item found");
+            return;
+        }
+
+        // Resolve and commit the enchant up front so the result tier is known for the entire
+        // animation, and so an interrupted session never leaves a half-enchanted state
+        if (!this.transactEnchant(world, entity, context)) {
             return;
         }
 
@@ -171,20 +202,26 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         entity.clearHeldItem();
         this.enchantingTablePos = null;
         this.targetRepresentative = null;
+        this.enchantTier = null;
     }
 
-    private StepResult performEnchant(@Nonnull BehaviorContext<BaseVillager> context) {
-        BaseVillager villager = context.getInitiator().getMinecraftEntity();
-        Level world = villager.level();
-        VillagerInventory inventory = villager.getSettlementsInventory();
-
+    /**
+     * Computes the enchant result and commits it to the inventory in a single up-front step, also
+     * caching the resulting {@link EnchantTier} for the animation. Returns {@code false} (and stops
+     * the behavior) when the target item can no longer be consumed.
+     */
+    private boolean transactEnchant(@Nonnull Level world,
+                                    @Nonnull BaseVillager entity,
+                                    @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.enchantingTablePos == null || this.targetRepresentative == null) {
             log.behaviorError("Failed to enchant item: enchanting setup or target is invalid");
-            return StepResult.noOp();
+            this.requestStop("Enchanting setup or target is invalid");
+            return false;
         }
 
-        Expertise expertise = villager.getExpertise();
-        double intelligence = villager.getGenetics().getGeneValue(GeneType.INTELLIGENCE);
+        VillagerInventory inventory = entity.getSettlementsInventory();
+        Expertise expertise = entity.getExpertise();
+        double intelligence = entity.getGenetics().getGeneValue(GeneType.INTELLIGENCE);
         int bookshelfCount = this.countNearbyBookshelves(world, this.enchantingTablePos);
         SpecializationProfile specialization = null; // TODO: implement specialization
 
@@ -192,11 +229,14 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
                 specialization, world.registryAccess());
 
         if (inventory.consume(this.targetRepresentative, 1) != 1) {
-            return StepResult.fail("Failed to enchant item because item cannot be consumed");
+            log.behaviorError("Failed to enchant item because item cannot be consumed");
+            this.requestStop("Failed to enchant item because item cannot be consumed");
+            return false;
         }
 
-        log.behaviorStatus("Enchanted item from {} to {}", this.targetRepresentative, enchantedItem);
         inventory.add(enchantedItem);
+        this.enchantTier = EnchantTier.classify(enchantedItem);
+        log.behaviorStatus("Enchanted item from {} to {} (tier {})", this.targetRepresentative, enchantedItem, this.enchantTier);
 
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEM_ENCHANTED, null);
         outcome.markSucceeded();
@@ -204,9 +244,17 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
         outcome.putDetailField("item", BuiltInRegistries.ITEM.getKey(enchantedItem.getItem()).getPath());
         context.declarePrimaryDeed(outcome);
 
-        world.playSound(null, this.enchantingTablePos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
-        this.rewardExperience(villager);
+        this.rewardExperience(entity);
+        return true;
+    }
 
+    private StepResult playRevealSound(@Nonnull BehaviorContext<BaseVillager> context) {
+        if (this.enchantingTablePos == null || this.enchantTier == null) {
+            return StepResult.noOp();
+        }
+
+        Level world = context.getInitiator().getMinecraftEntity().level();
+        world.playSound(null, this.enchantingTablePos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1.0f, 1.0f);
         return StepResult.noOp();
     }
 

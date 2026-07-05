@@ -135,9 +135,13 @@ List<WeightedBehavior> resolve(VillagerProfessionKey profession)
 ```
 
 It merges the profession's pool with a hardcoded set of **universal** behaviors — `UNIVERSAL_ENTRIES` = `EAT_FOOD`,
-`TRADE_INITIATE`, `COURTSHIP_INITIATE`, `MANAGE_CHESTS`, `COLLECT_DEMANDED_ITEM`, `CRAFT_GOODS` — via `putIfAbsent`, so a
+`TRADE_INITIATE`, `COURTSHIP_INITIATE`, `MANAGE_CHESTS`, `CRAFT_GOODS` — via `putIfAbsent`, so a
 profession's own weight for a key wins over the universal default. Each merged `BehaviorKey` is joined against
 `catalog.getDescriptor(key)` and paired with its pool weight into a `WeightedBehavior(descriptor, weight)`.
+
+`COLLECT_DEMANDED_ITEM` is deliberately **not** in this list — it is catalog-present but pool-absent, installed
+reactively by `CollectDemandedItemOverridePolicy` (see [`behavior_orchestration.md`](behavior_orchestration.md#reactive-override-lane))
+rather than scheduled as a plan slot. Same pattern as `INVESTIGATE` / `TRADE_ACCEPT`.
 
 The result is the "availability + metadata" list handed to the planner. There is no day-type filtering here — that is
 applied later as planner multipliers. (This is what solved the old per-profession `EatFood` duplication: universals are

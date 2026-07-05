@@ -198,6 +198,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .estimatedDuration(ClockTicks.seconds(15).asGameTicks())
+                        .maxRunDuration(ClockTicks.seconds(20))
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
                         .build())

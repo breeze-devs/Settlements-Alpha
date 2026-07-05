@@ -1,6 +1,9 @@
 package dev.breezes.settlements.bootstrap.registry.particles;
 
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.rendering.particles.EnchantTier;
+import dev.breezes.settlements.infrastructure.rendering.particles.OrbParticleOptions;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
@@ -76,6 +79,20 @@ public class ParticleRegistry {
             Location.of(x, center.getY(), z, center.getLevel().orElse(null))
                     .displayParticles(particleType, 1, 0, 0, 0, 0);
         }
+    }
+
+    /**
+     * Emits a single ascending, tier-colored aura orb rising straight up from {@code base}.
+     */
+    public static void enchantTierOrbs(@Nonnull Location base, @Nonnull EnchantTier tier) {
+        double horizontalSpread = 1.0;
+        double velocity = tier.getRiseVelocity();
+
+        OrbParticleOptions orb = new OrbParticleOptions(tier.getPackedRgb(), OrbParticleOptions.MotionMode.RISE);
+        double x = base.getX() + RandomUtil.randomDouble(-horizontalSpread, horizontalSpread);
+        double z = base.getZ() + RandomUtil.randomDouble(-horizontalSpread, horizontalSpread);
+        
+        Location.of(x, base.getY(), z, base.getLevel().orElse(null)).displayParticles(orb, 0, 0.0D, 1.0D, 0.0D, velocity);
     }
 
 }

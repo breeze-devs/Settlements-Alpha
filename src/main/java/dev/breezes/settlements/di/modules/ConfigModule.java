@@ -50,6 +50,7 @@ import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
 import dev.breezes.settlements.application.ai.persona.PersonaConfig;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
+import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
 import dev.breezes.settlements.application.ai.speech.SpeechMirrorConfig;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
@@ -356,6 +357,12 @@ public final class ConfigModule {
     @Singleton
     static CollectDemandedItemConfig collectDemandedItemConfig() {
         return ConfigFactory.create(CollectDemandedItemConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static DemandedGroundItemSensorConfig demandedGroundItemSensorConfig() {
+        return ConfigFactory.create(DemandedGroundItemSensorConfig.class);
     }
 
     @Provides

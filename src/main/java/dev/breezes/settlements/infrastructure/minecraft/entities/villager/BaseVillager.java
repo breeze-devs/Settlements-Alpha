@@ -1033,7 +1033,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.VILLAGE_CHESTS.getModuleType(),
                 MemoryTypeRegistry.WILLING_COURTSHIP_PARTNERS.getModuleType(),
                 MemoryTypeRegistry.NEARBY_SENSED_ENTITIES.getModuleType(),
-                MemoryTypeRegistry.CULTIVATION_TOTEM_SITES.getModuleType()
+                MemoryTypeRegistry.CULTIVATION_TOTEM_SITES.getModuleType(),
+                MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY.getModuleType()
         );
     }
 

@@ -55,6 +55,10 @@ public final class MemoryModuleTypeRegistry {
             "cultivation_totem_sites",
             () -> new MemoryModuleType<>(Optional.empty()));
 
+    public static final Supplier<MemoryModuleType<Boolean>> DEMANDED_GROUND_ITEM_NEARBY = REGISTRY.register(
+            "demanded_ground_item_nearby",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
     }
