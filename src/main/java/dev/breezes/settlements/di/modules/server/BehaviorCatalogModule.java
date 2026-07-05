@@ -21,6 +21,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.feeding.FeedWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.petting.PetAnimalBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.petting.PetAnimalConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeBehavior;
@@ -171,6 +173,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .requiredChannel(BehaviorChannel.COGNITION)
                         .estimatedDuration(ClockTicks.seconds(40).asGameTicks())
+                        .maxRunDuration(ClockTicks.seconds(150))
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
                         .build())
@@ -750,6 +753,7 @@ public final class BehaviorCatalogModule {
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .requiredChannel(BehaviorChannel.INTERACTION)
                         .estimatedDuration(ClockTicks.seconds(60).asGameTicks())
+                        .maxRunDuration(ClockTicks.seconds(180))
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
                         .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
@@ -1279,6 +1283,7 @@ public final class BehaviorCatalogModule {
                         .intensity(WorkIntensity.NONE)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
                         .estimatedDuration(ClockTicks.seconds(60).asGameTicks())
+                        .maxRunDuration(ClockTicks.seconds(150))
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
                         .build())
@@ -1287,6 +1292,31 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("lead"))
                         .build())
                 .factory(() -> new WalkDogBehavior(config, support))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry petAnimal(PetAnimalConfig config, BehaviorSupport support) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.PET_ANIMAL)
+                        .displayName("Pet Animal")
+                        .description("Walk up to a nearby wolf or cat and give it a pet")
+                        .category(BehaviorCategory.LEISURE)
+                        .intensity(WorkIntensity.NONE)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(config.petCount()).asGameTicks())
+                        .maxRunDuration(ClockTicks.seconds(20))
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.PET_ANIMAL.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("bone"))
+                        .build())
+                .factory(() -> new PetAnimalBehavior(config, support))
                 .build();
     }
 

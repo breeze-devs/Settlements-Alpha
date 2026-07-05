@@ -60,12 +60,11 @@ public class BehaviorPlanningMetadata {
      * elapsed time) rather than {@link GameTicks} (in-game time) because the ceiling is
      * anchored to wall-clock feel, not to how fast the Minecraft day advances.
      * <p>
-     * Long-running behaviors (e.g. smelting, enchanting, fishing) should override this
-     * with a generous value; the default of one minute is appropriate for navigation and
-     * interaction behaviors.
+     * Long-running behaviors should override this with a generous value.
+     * The default is appropriate for most navigation and interaction behaviors.
      */
     @Builder.Default
-    private final ClockTicks maxRunDuration = ClockTicks.minutes(1);
+    private final ClockTicks maxRunDuration = ClockTicks.minutes(2);
 
     private final String preconditionSummary;
     private final boolean interruptible;

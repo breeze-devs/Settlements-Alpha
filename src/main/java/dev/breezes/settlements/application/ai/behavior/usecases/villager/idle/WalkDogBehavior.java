@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.idle;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.BehaviorSupport;
+import dev.breezes.settlements.application.ai.behavior.runtime.StopBehaviorException;
 import dev.breezes.settlements.application.ai.behavior.runtime.VillagerStateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
@@ -131,6 +132,12 @@ public class WalkDogBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createLeashStep() {
         return context -> {
+            if (this.cachedWolf == null) {
+                // The continue-condition only re-validates after this step runs, so a wolf that
+                // goes null between ticks (unload, death) can still reach here once.
+                throw new StopBehaviorException("Cached wolf became unavailable before leashing");
+            }
+
             BaseVillager villager = context.getInitiator();
             context.getLevel().getChunkSource().broadcast(this.cachedWolf, new ClientboundSetEntityLinkPacket(this.cachedWolf, villager));
 

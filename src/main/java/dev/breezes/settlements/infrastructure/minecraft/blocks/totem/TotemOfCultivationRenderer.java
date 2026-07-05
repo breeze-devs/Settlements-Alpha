@@ -3,6 +3,7 @@ package dev.breezes.settlements.infrastructure.minecraft.blocks.totem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -66,8 +67,9 @@ public class TotemOfCultivationRenderer implements BlockEntityRenderer<TotemOfCu
         poseStack.translate(0.5D, FLOAT_HEIGHT_BLOCKS + bobOffset, 0.5D);
         poseStack.mulPose(Axis.YP.rotationDegrees(spin));
         poseStack.scale(FLOATING_TOTEM_SCALE, FLOATING_TOTEM_SCALE, FLOATING_TOTEM_SCALE);
+        // Render the floating mesh fully lit so it reads as self-illuminated regardless of ambient light
         this.itemRenderer.renderStatic(ItemRegistry.TOTEM_OF_CULTIVATION.get().getDefaultInstance(),
-                ItemDisplayContext.FIXED, packedLight, packedOverlay, poseStack, bufferSource, totem.getLevel(), 0);
+                ItemDisplayContext.FIXED, LightTexture.FULL_BRIGHT, packedOverlay, poseStack, bufferSource, totem.getLevel(), 0);
         poseStack.popPose();
     }
 

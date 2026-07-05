@@ -66,6 +66,7 @@
   "ui.settlements.behavior.behavior.trade_accept": "接受交易",
   "ui.settlements.behavior.behavior.trade_initiate": "发起交易",
   "ui.settlements.behavior.behavior.walk_dog": "遛狗",
+  "ui.settlements.behavior.behavior.pet_animal": "摸摸宠物",
   "ui.settlements.behavior.behavior.wash_wolf": "洗狗",
   "ui.settlements.behavior.behavior.wash_leather": "清洗皮革",
   "ui.settlements.behavior.behavior.dye_leather": "给皮革甲染色",

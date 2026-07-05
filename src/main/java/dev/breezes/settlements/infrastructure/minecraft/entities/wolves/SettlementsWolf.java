@@ -17,6 +17,7 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetReaction;
+import dev.breezes.settlements.infrastructure.minecraft.entities.pet.Pettable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfSitWhenOrderedToGoal;
@@ -63,7 +64,7 @@ import java.util.Set;
 
 @CustomLog
 @Getter
-public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
+public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pettable {
 
     private static final String DIRTY_NBT_KEY = "Dirty";
     private static final ClockTicks UNTAMED_LIFETIME = ClockTicks.minutes(30);
@@ -226,6 +227,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity {
      *
      * @return whether the pet actually landed (false while on cooldown, or when called client-side)
      */
+    @Override
     public boolean pet(@Nonnull LivingEntity actor) {
         return this.petReaction.trigger(this);
     }

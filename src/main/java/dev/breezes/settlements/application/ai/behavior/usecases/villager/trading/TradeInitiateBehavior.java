@@ -124,7 +124,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.TRADE_COMPLETED, null));
+        context.declarePrimaryDeed(BehaviorOutcome.silent());
         this.activeDemand = null;
         this.activeSessionId = null;
         this.tradeExecuted = false;
@@ -353,11 +353,11 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.DEAL);
-        context.primaryDeed().ifPresent(outcome -> {
-            outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
-                    EventOutcome.SUCCESS, buildTradeDetail(session), null);
-            recordTradeDetailFields(outcome, session);
-        });
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.TRADE_COMPLETED, null);
+        outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
+                EventOutcome.SUCCESS, buildTradeDetail(session), null);
+        recordTradeDetailFields(outcome, session);
+        context.declarePrimaryDeed(outcome);
         return StepResult.complete();
     }
 
@@ -373,9 +373,11 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.WALK_AWAY);
-        context.primaryDeed()
-                .ifPresent(outcome -> outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
-                        EventOutcome.FAILURE, null, "negotiations fell through"));
+        // A negotiated failure is an observable social fact
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.TRADE_COMPLETED, null);
+        outcome.recordSocialOutcome(session.getResponderId(), session.getSessionId(),
+                EventOutcome.FAILURE, null, "negotiations fell through");
+        context.declarePrimaryDeed(outcome);
         return StepResult.complete();
     }
 

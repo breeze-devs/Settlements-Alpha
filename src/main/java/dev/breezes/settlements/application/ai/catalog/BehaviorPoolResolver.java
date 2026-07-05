@@ -37,7 +37,8 @@ public class BehaviorPoolResolver {
             PoolEntry.of(BehaviorKey.DONATE_EMERALDS),
             PoolEntry.of(BehaviorKey.MANAGE_CHESTS),
             PoolEntry.of(BehaviorKey.COLLECT_DEMANDED_ITEM),
-            PoolEntry.of(BehaviorKey.CRAFT_GOODS)
+            PoolEntry.of(BehaviorKey.CRAFT_GOODS),
+            PoolEntry.of(BehaviorKey.PET_ANIMAL)
     );
 
     private final IBehaviorCatalog catalog;

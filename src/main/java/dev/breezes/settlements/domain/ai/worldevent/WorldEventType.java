@@ -123,6 +123,7 @@ public enum WorldEventType {
     WOLF_WASHED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.2F, true, true),
     WOLF_FED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.2F, true, true),
     DOG_WALKED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 1.2F, true, true),
+    ANIMAL_PETTED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 1.0F, false, true),
     GOLEM_REPAIRED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 1.8F, true, true),
     POTION_THROWN(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 1.8F, true, true),
     BELL_RUNG(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 1.5F, true, true),

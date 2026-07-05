@@ -18,9 +18,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluids;
 
 import javax.annotation.Nonnull;
@@ -275,8 +277,21 @@ public class TotemOfCultivationBlockEntity extends BlockEntity {
         this.valid = computeIsValid(level, this.getBlockPos());
         this.validityDirty = false;
         if (this.valid != wasValid) {
+            syncLitState(level);
             setChangedAndSync();
         }
+    }
+
+    /**
+     * Mirrors the freshly-computed {@code valid} flag onto the block's {@link BlockStateProperties#LIT}
+     * property so the light engine turns the totem's glow on or off.
+     */
+    private void syncLitState(@Nonnull Level level) {
+        BlockState current = getBlockState();
+        if (!current.hasProperty(BlockStateProperties.LIT) || current.getValue(BlockStateProperties.LIT) == this.valid) {
+            return;
+        }
+        level.setBlock(this.worldPosition, current.setValue(BlockStateProperties.LIT, this.valid), Block.UPDATE_ALL);
     }
 
     /**

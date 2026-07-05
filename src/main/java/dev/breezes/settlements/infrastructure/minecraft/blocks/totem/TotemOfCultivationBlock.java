@@ -29,6 +29,8 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
@@ -53,6 +55,8 @@ public class TotemOfCultivationBlock extends BaseEntityBlock {
 
     public static final MapCodec<TotemOfCultivationBlock> CODEC = simpleCodec(TotemOfCultivationBlock::new);
 
+    private static final int ACTIVE_LIGHT_LEVEL = 15;
+
     /**
      * Lily-pad hit box: a thin, nearly full-block slab at ground level
      */
@@ -64,6 +68,21 @@ public class TotemOfCultivationBlock extends BaseEntityBlock {
 
     public TotemOfCultivationBlock(@Nonnull BlockBehaviour.Properties properties) {
         super(properties);
+        // A freshly placed totem is unlit; the block entity flips LIT on once it validates its water base
+        this.registerDefaultState(this.stateDefinition.any().setValue(BlockStateProperties.LIT, Boolean.FALSE));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(BlockStateProperties.LIT);
+    }
+
+    /**
+     * The totem only radiates light while lit, i.e. while it is an active, valid farm zone.
+     * The {@link BlockStateProperties#LIT} flag is authored by the block entity's validity recompute.
+     */
+    public static int lightEmission(@Nonnull BlockState state) {
+        return state.getValue(BlockStateProperties.LIT) ? ACTIVE_LIGHT_LEVEL : 0;
     }
 
     @Override

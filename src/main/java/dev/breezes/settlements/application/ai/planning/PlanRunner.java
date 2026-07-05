@@ -70,21 +70,23 @@ public class PlanRunner {
     private static final int OVERRIDE_TICK_DELTA = 1;
 
     /**
-     * Safety-net ceiling on how long a single override may run. Overrides are reactive and
-     * short-lived by design; one that runs past this has wedged (e.g. mirroring a trade/courtship
-     * session that never closes, or navigating to a target that never becomes reachable). When the
-     * ceiling trips, the override is force-stopped and the interrupted plan slot re-queued so the
-     * villager resumes its day instead of standing frozen until a panic clears it
+     * Fallback safety-net ceiling on how long a single override may run, used when the active
+     * override's key has no catalog descriptor (see {@link #resolveOverrideMaxDurationTicks}).
+     * Overrides are reactive and short-lived by design; one that runs past its ceiling has wedged
+     * (e.g. mirroring a trade/courtship session that never closes, or navigating to a target that
+     * never becomes reachable). When the ceiling trips, the override is force-stopped and the
+     * interrupted plan slot re-queued so the villager resumes its day instead of standing frozen
+     * until a panic clears it.
      */
-    private static final int MAX_OVERRIDE_DURATION_TICKS = ClockTicks.seconds(60).getTicksAsInt();
+    private static final int MAX_OVERRIDE_DURATION_TICKS = ClockTicks.seconds(120).getTicksAsInt();
 
     /**
      * Default safety-net ceiling on how long a single plan-slot behavior may run. Matches the
-     * override ceiling by design — both are one-minute backstops. Behaviors that legitimately
-     * run longer (e.g. fishing, enchanting) should declare a higher
+     * override ceiling by design — both are two-minute backstops. Behaviors that legitimately
+     * run longer (e.g. manage-chests, cultivate-plot) should declare a higher
      * {@link BehaviorPlanningMetadata#getMaxRunDuration()} to avoid premature abort.
      */
-    private static final int DEFAULT_MAX_BEHAVIOR_RUN_TICKS = ClockTicks.minutes(1).getTicksAsInt();
+    private static final int DEFAULT_MAX_BEHAVIOR_RUN_TICKS = ClockTicks.seconds(120).getTicksAsInt();
 
     /**
      * Spacing between successive attempts to start a rigid plan slot whose preconditions are not yet satisfied.
@@ -334,7 +336,19 @@ public class PlanRunner {
             return;
         }
 
-        behavior.start(level, villager);
+        try {
+            behavior.start(level, villager);
+        } catch (RuntimeException e) {
+            // Never installed as the current behavior (assignPlanBehavior hasn't run yet), so
+            // nothing further needs stopping here; just skip the slot rather than retry a start
+            // that will likely fail again.
+            log.behaviorError("Plan behavior '{}' threw during start for villager {}; skipping slot",
+                    slot.getBehaviorKey(), villager.getUUID(), e);
+            slot.markStatus(PlanSlotStatus.SKIPPED);
+            this.clearPlanActiveMemory(villager);
+            plan.advanceSlot();
+            return;
+        }
         runtime.assignPlanBehavior(behavior, this.catalog.getDescriptor(slot.getBehaviorKey()).orElse(null));
         this.setPlanActiveMemory(villager);
         slot.markStatus(PlanSlotStatus.ACTIVE);
@@ -371,7 +385,14 @@ public class PlanRunner {
             return;
         }
 
-        behavior.tick(delta, level, villager);
+        try {
+            behavior.tick(delta, level, villager);
+        } catch (RuntimeException e) {
+            log.behaviorError("Plan behavior '{}' threw during tick for villager {}; force-stopping wedged behavior",
+                    slot.getBehaviorKey(), villager.getUUID(), e);
+            this.abortPlanBehavior(level, villager, runtime, slot, plan, behavior, "behavior threw during tick");
+            return;
+        }
 
         if (behavior.getStatus() == BehaviorStatus.STOPPED) {
             slot.markStatus(PlanSlotStatus.COMPLETED);
@@ -397,6 +418,22 @@ public class PlanRunner {
                                         @Nonnull IBehavior<BaseVillager> behavior) {
         log.behaviorWarn("Plan behavior '{}' exceeded max run duration ({} ticks) for villager {}; force-stopping wedged behavior",
                 slot.getBehaviorKey(), runtime.getCurrentBehaviorElapsedTicks(), villager.getUUID());
+        this.abortPlanBehavior(level, villager, runtime, slot, plan, behavior, "behavior ceiling exceeded");
+    }
+
+    /**
+     * Shared recovery for a plan-slot behavior that cannot continue (run-duration ceiling or an
+     * uncaught exception from tick): stop it, mark the slot SKIPPED rather than re-queue it (a
+     * wedged or throwing behavior would just repeat the same failure next attempt), and publish
+     * the failure under the caller-supplied reason.
+     */
+    private void abortPlanBehavior(@Nonnull ServerLevel level,
+                                   @Nonnull BaseVillager villager,
+                                   @Nonnull PlanRuntimeState runtime,
+                                   @Nonnull PlanSlot slot,
+                                   @Nonnull DayPlan plan,
+                                   @Nonnull IBehavior<BaseVillager> behavior,
+                                   @Nonnull String failureReason) {
         if (behavior.getStatus() != BehaviorStatus.STOPPED) {
             behavior.stop(level, villager);
         }
@@ -404,7 +441,7 @@ public class PlanRunner {
         runtime.clearCurrentBehavior();
         this.clearPlanActiveMemory(villager);
         plan.advanceSlot();
-        this.behaviorOutcomePublisher.publishFailed(villager, slot.getBehaviorKey(), "behavior ceiling exceeded");
+        this.behaviorOutcomePublisher.publishFailed(villager, slot.getBehaviorKey(), failureReason);
     }
 
     /**
@@ -424,12 +461,20 @@ public class PlanRunner {
         }
 
         runtime.incrementOverrideElapsedTicks(OVERRIDE_TICK_DELTA);
-        if (runtime.getOverrideElapsedTicks() > MAX_OVERRIDE_DURATION_TICKS) {
-            this.abortStuckOverride(level, villager, runtime, override);
+        int maxOverrideDurationTicks = this.resolveOverrideMaxDurationTicks(runtime.getOverrideBehaviorKey());
+        if (runtime.getOverrideElapsedTicks() > maxOverrideDurationTicks) {
+            this.abortStuckOverride(level, villager, runtime, override, maxOverrideDurationTicks);
             return;
         }
 
-        override.tick(OVERRIDE_TICK_DELTA, level, villager);
+        try {
+            override.tick(OVERRIDE_TICK_DELTA, level, villager);
+        } catch (RuntimeException e) {
+            log.behaviorError("Override '{}' threw during tick for villager {}; force-stopping wedged override",
+                    runtime.getOverrideBehaviorKey(), villager.getUUID(), e);
+            this.abortOverride(level, villager, runtime, override);
+            return;
+        }
 
         if (override.getStatus() == BehaviorStatus.STOPPED) {
             this.onOverrideCompleted(level, villager, runtime, runtime.getOverrideBehaviorKey(), override);
@@ -437,17 +482,49 @@ public class PlanRunner {
     }
 
     /**
-     * Force-stops an override that has exceeded {@link #MAX_OVERRIDE_DURATION_TICKS}. Unlike a normal
-     * completion this publishes no outcome — the override never finished its work — but it still
-     * discharges teardown via {@code stop()}, clears the slot and the plan-active lock, and re-queues
-     * the interrupted plan slot so the villager resumes instead of remaining frozen.
+     * Force-stops an override that has exceeded its per-behavior ceiling (see
+     * {@link #resolveOverrideMaxDurationTicks}). Unlike a normal completion this publishes no
+     * outcome — the override never finished its work — but it still discharges teardown via
+     * {@code stop()}, clears the slot and the plan-active lock, and re-queues the interrupted plan
+     * slot so the villager resumes instead of remaining frozen.
      */
     private void abortStuckOverride(@Nonnull ServerLevel level,
                                     @Nonnull BaseVillager villager,
                                     @Nonnull PlanRuntimeState runtime,
-                                    @Nonnull IBehavior<BaseVillager> override) {
+                                    @Nonnull IBehavior<BaseVillager> override,
+                                    int maxOverrideDurationTicks) {
         log.behaviorWarn("Override '{}' exceeded max duration ({} ticks) for villager {}; force-stopping wedged override",
-                runtime.getOverrideBehaviorKey(), MAX_OVERRIDE_DURATION_TICKS, villager.getUUID());
+                runtime.getOverrideBehaviorKey(), maxOverrideDurationTicks, villager.getUUID());
+        this.abortOverride(level, villager, runtime, override);
+    }
+
+    /**
+     * Resolves the active override's run-duration ceiling from its catalog descriptor — the same
+     * per-behavior mechanism {@link #tickActiveSlot} uses for plan-slot behaviors — so accept-style
+     * overrides (e.g. TRADE_ACCEPT, COURTSHIP_ACCEPT) are not clipped to the generic override
+     * fallback. Falls back to {@link #MAX_OVERRIDE_DURATION_TICKS} when the key is null or absent
+     * from the catalog (accept behaviors are pool-absent but still catalog-present, so this should
+     * only bite on a genuinely unregistered key).
+     */
+    private int resolveOverrideMaxDurationTicks(@Nullable BehaviorKey overrideBehaviorKey) {
+        if (overrideBehaviorKey == null) {
+            return MAX_OVERRIDE_DURATION_TICKS;
+        }
+        return this.catalog.getDescriptor(overrideBehaviorKey)
+                .map(BehaviorPlanningMetadata::getMaxRunDuration)
+                .map(ClockTicks::getTicksAsInt)
+                .orElse(MAX_OVERRIDE_DURATION_TICKS);
+    }
+
+    /**
+     * Shared recovery for an override that cannot continue (run-duration ceiling or an uncaught
+     * exception from tick): stop it, clear the slot, and re-queue the plan behavior it interrupted
+     * so the villager resumes its day instead of remaining frozen.
+     */
+    private void abortOverride(@Nonnull ServerLevel level,
+                               @Nonnull BaseVillager villager,
+                               @Nonnull PlanRuntimeState runtime,
+                               @Nonnull IBehavior<BaseVillager> override) {
         if (override.getStatus() != BehaviorStatus.STOPPED) {
             override.stop(level, villager);
         }
@@ -541,7 +618,16 @@ public class PlanRunner {
         this.suspendIfActive(level, villager);
         this.reAttemptInterruptedSlot(villager);
 
-        behavior.start(level, villager);
+        try {
+            behavior.start(level, villager);
+        } catch (RuntimeException e) {
+            // The interrupted plan slot was already re-queued to PENDING above, so the villager
+            // resumes its day normally next tick; never installed as the override, so nothing
+            // further needs stopping here.
+            log.behaviorError("Override behavior '{}' threw during start for villager {}; skipping override",
+                    key, villager.getUUID(), e);
+            return false;
+        }
         runtime.installOverride(behavior, key);
         this.setPlanActiveMemory(villager);
         log.behaviorStatus("Override '{}' installed for villager {}", key, villager.getUUID());
@@ -744,9 +830,11 @@ public class PlanRunner {
                                                        @Nonnull BaseVillager villager,
                                                        @Nonnull PlanRuntimeState runtime,
                                                        @Nonnull DayPlan plan) {
+        // Plan-overdue and calendar-mismatch callers reach this mid-run, with a RUNNING behavior
+        // still holding the body; forceStop discharges its teardown obligations (nav, held item,
+        // sessions) instead of just nulling the reference, and is a no-op when nothing is running.
+        this.forceStop(level, villager);
         plan.markStatus(PlanStatus.COMPLETED);
-        this.clearPlanActiveMemory(villager);
-        runtime.clearCurrentBehavior();
         if (!runtime.isPlanExhausted()) {
             runtime.markPlanExhausted();
             this.worldEventEmitter.emitPlanExhausted(villager);

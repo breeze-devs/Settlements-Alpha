@@ -167,6 +167,10 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         log.behaviorStatus("Stopping behavior");
         try {
             this.doStop(world, entity);
+        } catch (RuntimeException e) {
+            // stop() runs on the entity-removal chain (BaseVillager.remove -> brain.stopAll -> ...),
+            // so a throw here must never escape: it would abort removal itself.
+            log.behaviorError("Behavior teardown threw for entity {}: {}", entity.getUUID(), e.getMessage(), e);
         } finally {
             // Always advance to STOPPED so the behavior cannot be stuck as RUNNING
             this.behaviorCoolDown.resetWithMultiplier(this.getCooldownMultiplier(entity));

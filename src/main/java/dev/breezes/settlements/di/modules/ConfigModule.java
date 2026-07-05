@@ -10,6 +10,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.feeding.FeedWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.petting.PetAnimalConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
@@ -127,6 +128,12 @@ public final class ConfigModule {
     @Singleton
     static WalkDogConfig walkDogConfig() {
         return ConfigFactory.create(WalkDogConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static PetAnimalConfig petAnimalConfig() {
+        return ConfigFactory.create(PetAnimalConfig.class);
     }
 
     @Provides

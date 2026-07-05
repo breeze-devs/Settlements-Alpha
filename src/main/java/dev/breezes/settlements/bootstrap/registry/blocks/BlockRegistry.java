@@ -48,6 +48,7 @@ public final class BlockRegistry {
                     BlockBehaviour.Properties.of()
                             .mapColor(MapColor.PLANT)
                             .noOcclusion()
+                            .lightLevel(TotemOfCultivationBlock::lightEmission)
                             .instabreak()
                             .sound(SoundType.WET_GRASS)
                             .pushReaction(PushReaction.DESTROY)

@@ -140,14 +140,14 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                 .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
                         .navigationType(NavigationType.WALK)
                         .completionDistance(1)
-                        .unreachableTransition(Stage.PICK_CELL)
+                        .unreachableTransition(Stage.LOOP)
                         .build())
                 .actionStep(OneShotStep.<BaseVillager>builder()
                         .name("ArrivedAtCell")
                         .action(ctx -> this.onArrivedAtCell())
                         .build())
                 .timeoutTicks(APPROACH_TIMEOUT_TICKS)
-                .timeoutTransition(Stage.PICK_CELL)
+                .timeoutTransition(Stage.LOOP)
                 .build());
         stageMap.put(Stage.CULTIVATE, this.createCultivateStep());
         stageMap.put(Stage.LOOP, LoopBackStep.<BaseVillager>builder()

@@ -12,6 +12,7 @@ import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.goals.CatFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.goals.CatSitWhenOrderedToGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetReaction;
+import dev.breezes.settlements.infrastructure.minecraft.entities.pet.Pettable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.CatMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.LevelMixin;
@@ -41,7 +42,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Getter
-public class SettlementsCat extends Cat implements ISettlementsBrainEntity {
+public class SettlementsCat extends Cat implements ISettlementsBrainEntity, Pettable {
 
     private final IBrain settlementsBrain;
     private final INavigationManager<SettlementsCat> navigationManager;
@@ -147,6 +148,7 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity {
      *
      * @return whether the pet actually landed (false while on cooldown, or when called client-side)
      */
+    @Override
     public boolean pet(@Nonnull LivingEntity actor) {
         return this.petReaction.trigger(this);
     }
