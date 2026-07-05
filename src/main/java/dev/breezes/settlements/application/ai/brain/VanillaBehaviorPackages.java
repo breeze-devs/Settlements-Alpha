@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.traversal.InteractWithBarriers;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
@@ -21,7 +22,6 @@ import net.minecraft.world.entity.ai.behavior.GoToPotentialJobSite;
 import net.minecraft.world.entity.ai.behavior.GoToWantedItem;
 import net.minecraft.world.entity.ai.behavior.InsideBrownianWalk;
 import net.minecraft.world.entity.ai.behavior.InteractWith;
-import net.minecraft.world.entity.ai.behavior.InteractWithDoor;
 import net.minecraft.world.entity.ai.behavior.JumpOnBed;
 import net.minecraft.world.entity.ai.behavior.LocateHidingPlace;
 import net.minecraft.world.entity.ai.behavior.LookAndFollowTradingPlayerSink;
@@ -89,7 +89,7 @@ public final class VanillaBehaviorPackages {
         // Add default behaviors
         coreBehaviors.addAll(List.of(
                 Pair.of(0, new Swim(0.8F)),
-                Pair.of(0, InteractWithDoor.create()),
+                Pair.of(0, InteractWithBarriers.create()),
                 Pair.of(0, new LookAtTargetSink(45, 90)),
                 Pair.of(0, new VillagerPanicTrigger()),
                 Pair.of(0, WakeUp.create()),

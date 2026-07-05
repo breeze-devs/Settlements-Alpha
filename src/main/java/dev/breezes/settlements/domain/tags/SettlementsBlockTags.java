@@ -29,4 +29,13 @@ public final class SettlementsBlockTags {
     public static final TagKey<Block> TILLABLE_FOLIAGE = TagKey.create(Registries.BLOCK,
             ResourceLocationUtil.mod("tillable_foliage"));
 
+    /**
+     * Fence gates a villager may path through and operate, mirroring vanilla's own
+     * {@code MOB_INTERACTABLE_DOORS}. Raw {@code BlockTags.FENCE_GATES} also drives wall
+     * connections, so a packmaker can't exclude a gate from villager operation without breaking
+     * the block visually -- this mod-owned tag gives that escape hatch.
+     */
+    public static final TagKey<Block> MOB_INTERACTABLE_FENCE_GATES = TagKey.create(Registries.BLOCK,
+            ResourceLocationUtil.mod("mob_interactable_fence_gates"));
+
 }

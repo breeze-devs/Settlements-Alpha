@@ -31,8 +31,8 @@ public final class MemoryModuleTypeRegistry {
             "plan_behavior_active",
             () -> new MemoryModuleType<>(Optional.empty()));
 
-    public static final Supplier<MemoryModuleType<Set<GlobalPos>>> FENCE_GATES_TO_CLOSE = REGISTRY.register(
-            "fence_gates_to_close",
+    public static final Supplier<MemoryModuleType<Set<GlobalPos>>> BARRIERS_TO_CLOSE = REGISTRY.register(
+            "barriers_to_close",
             () -> new MemoryModuleType<>(Optional.empty()));
 
     public static final Supplier<MemoryModuleType<List<UUID>>> OWNED_WOLVES = REGISTRY.register(

@@ -66,6 +66,7 @@ import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanCo
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.genetics.VillagerGeneticAttributes;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.VillagerMixin;
+import dev.breezes.settlements.infrastructure.minecraft.navigation.SettlementsGroundPathNavigation;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import dev.breezes.settlements.shared.util.SyncedDataWrapper;
@@ -94,6 +95,7 @@ import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.sensing.Sensor;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -211,12 +213,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         this.knowledgeStore = new VillagerKnowledgeStore(knowledgeStoreMaxEntries);
 
-        // VillagerPathNavigation navigation = new VillagerPathNavigation(this,
-        // this.level());
-        // navigation.setCanOpenDoors(true);
-        // navigation.setCanFloat(true);
-        // this.navigation = navigation;
-
         this.bubbleManager = new BubbleManager();
         this.bubbleState = new VillagerBubbleState();
         this.hungerDrainTimer = null;
@@ -232,6 +228,16 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static EventLaneConfig eventLaneConfigOrNull() {
         ServerComponent server = SettlementsDagger.serverOrNull();
         return server == null ? null : server.eventLaneConfig();
+    }
+
+    /**
+     * Installs the Settlements custom navigation logic. Runs from the {@code Mob} super-constructor on both
+     * dist sides, before any field above is initialized -- must stay a pure construction call.
+     */
+    @Override
+    @Nonnull
+    protected PathNavigation createNavigation(@Nonnull Level level) {
+        return new SettlementsGroundPathNavigation(this, level);
     }
 
     @Override
@@ -1002,6 +1008,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryModuleType.INTERACTION_TARGET,
                 MemoryModuleType.BREED_TARGET,
                 MemoryModuleType.PATH,
+                // Retained for vanilla brain compat; no longer written -- our InteractWithBarriers
+                // behavior tracks traversed doors and gates in BARRIERS_TO_CLOSE instead.
                 MemoryModuleType.DOORS_TO_CLOSE,
                 MemoryModuleType.NEAREST_BED,
                 MemoryModuleType.HURT_BY,
@@ -1018,7 +1026,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
                 // Custom vanilla-compatible memory module types
                 // Settlements-specific memories don't need to be registered here
-                MemoryTypeRegistry.FENCE_GATES_TO_CLOSE.getModuleType(),
+                MemoryTypeRegistry.BARRIERS_TO_CLOSE.getModuleType(),
                 MemoryTypeRegistry.INTERACT_TARGET.getModuleType(),
                 MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType(),
                 MemoryTypeRegistry.OWNED_WOLVES.getModuleType(),

@@ -38,8 +38,8 @@ public final class MemoryTypeRegistry {
     public static final MemoryType.VanillaMemoryType<Boolean> PLAN_BEHAVIOR_ACTIVE = MemoryType.vanillaBacked(
             "plan_behavior_active", MemoryModuleTypeRegistry.PLAN_BEHAVIOR_ACTIVE);
 
-    public static final MemoryType.VanillaMemoryType<Set<GlobalPos>> FENCE_GATES_TO_CLOSE = MemoryType.vanillaBacked(
-            "fence_gates_to_close", MemoryModuleTypeRegistry.FENCE_GATES_TO_CLOSE);
+    public static final MemoryType.VanillaMemoryType<Set<GlobalPos>> BARRIERS_TO_CLOSE = MemoryType.vanillaBacked(
+            "barriers_to_close", MemoryModuleTypeRegistry.BARRIERS_TO_CLOSE);
 
     public static final MemoryType.VanillaMemoryType<List<UUID>> OWNED_WOLVES = MemoryType.vanillaBacked(
             "owned_wolves", MemoryModuleTypeRegistry.OWNED_WOLVES);
