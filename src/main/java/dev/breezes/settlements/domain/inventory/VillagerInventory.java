@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -91,6 +92,38 @@ public class VillagerInventory implements IVillagerEquipment {
 
     public List<BackpackEntry> entries() {
         return this.backpack.entries();
+    }
+
+    /**
+     * Empties the whole inventory and returns the removed items as a flat list of drop-ready stacks.
+     */
+    public List<ItemStack> drainAll() {
+        List<ItemStack> drained = new ArrayList<>();
+
+        for (BackpackEntry entry : this.backpack.entries()) {
+            ItemStack representative = entry.representative();
+            int maxStackSize = representative.getMaxStackSize();
+            int remaining = entry.count();
+            while (remaining > 0) {
+                int chunk = Math.min(remaining, maxStackSize);
+                drained.add(representative.copyWithCount(chunk));
+                remaining -= chunk;
+            }
+        }
+        this.backpack.clear();
+
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            ItemStack equippedStack = this.equipped.get(slot);
+            if (equippedStack != null && !equippedStack.isEmpty()) {
+                drained.add(equippedStack.copy());
+            }
+        }
+        this.equipped.clear();
+
+        if (!drained.isEmpty()) {
+            this.inventoryVersion++;
+        }
+        return drained;
     }
 
     public int totalItemCount() {

@@ -87,6 +87,11 @@ public final class SettlementsDagger {
         return clientComponent;
     }
 
+    @Nullable
+    public static ClientComponent clientOrNull() {
+        return clientComponent;
+    }
+
     @Nonnull
     public static ClientSessionComponent clientSessionOrThrow() {
         if (clientSessionComponent == null) {

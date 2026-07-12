@@ -47,11 +47,7 @@ public final class PartnerScanner {
                 .ofType(BaseVillager.class, candidate -> candidate != buyer && candidate.isTradeAvailable())
                 .toList();
 
-        log.behaviorStatus("Scanning {} trade candidates for buyer {} across {} active demands",
-                candidates.size(), buyer.getUUID(), activeDemands.size());
-
         for (ActiveDemand activeDemand : activeDemands) {
-            log.behaviorStatus("Trying to satisfy active demand '{}' for buyer {}", activeDemand.match().asDebugString(), buyer.getUUID());
             for (BaseVillager seller : candidates) {
                 Optional<TradeCandidate> candidate = this.matchCandidate(buyer, seller, activeDemand);
                 if (candidate.isPresent()) {
@@ -78,8 +74,6 @@ public final class PartnerScanner {
 
         List<OfferEntry> offers = this.tradeCatalogRegistry.findOffers(sellerProfession, activeDemand.match());
         if (offers.isEmpty()) {
-            log.behaviorTrace("Rejecting seller {} for active demand '{}': profession {} has no matching offers",
-                    seller.getUUID(), activeDemand.match().asDebugString(), sellerProfession.id());
             return Optional.empty();
         }
 
@@ -95,9 +89,6 @@ public final class PartnerScanner {
                 int sellerCount = sellerInventory.count(matchedItem);
                 int minimumStock = Math.max(offerEntry.bundleSize(), offerEntry.surplusThreshold());
                 if (sellerCount < minimumStock) {
-                    log.behaviorTrace("Rejecting seller {} for item {}: stock {} is below minimum {} (bundle={}, surplusThreshold={})",
-                            seller.getUUID(), BuiltInRegistries.ITEM.getKey(matchedItem), sellerCount,
-                            minimumStock, offerEntry.bundleSize(), offerEntry.surplusThreshold());
                     continue;
                 }
 
@@ -109,17 +100,13 @@ public final class PartnerScanner {
                         .orElse(-1);
                 int buyerOffer = Math.min(activeDemand.basePricePerUnit() * offerEntry.bundleSize(), buyerBalance);
                 if (sellerAsk <= 0) {
-                    log.behaviorTrace("Rejecting seller {} for item {}: no offer price resolved from concrete match {}",
-                            seller.getUUID(), BuiltInRegistries.ITEM.getKey(matchedItem), priceMatch.asDebugString());
                     continue;
                 }
                 if (buyerOffer <= 0) {
-                    log.behaviorTrace("Rejecting seller {} for item {}: buyer {} has no demand price or affordable offer (balance={})",
-                            seller.getUUID(), BuiltInRegistries.ITEM.getKey(matchedItem), buyer.getUUID(), buyerBalance);
                     continue;
                 }
 
-                log.behaviorStatus("Matched trade candidate: buyer={}, seller={}, item={}, want={}, sellerAsk={}, buyerOffer={}, bundleSize={}",
+                log.behaviorTrace("Matched trade candidate: buyer={}, seller={}, item={}, want={}, sellerAsk={}, buyerOffer={}, bundleSize={}",
                         buyer.getUUID(), seller.getUUID(), BuiltInRegistries.ITEM.getKey(matchedItem), activeDemand.match().asDebugString(),
                         sellerAsk, buyerOffer, offerEntry.bundleSize());
                 return Optional.of(TradeCandidate.builder()
@@ -132,9 +119,6 @@ public final class PartnerScanner {
                         .build());
             }
         }
-
-        log.behaviorStatus("Rejecting seller {} for active demand '{}': no inventory stack satisfied both demand and offer rules",
-                seller.getUUID(), activeDemand.match().asDebugString());
 
         return Optional.empty();
     }

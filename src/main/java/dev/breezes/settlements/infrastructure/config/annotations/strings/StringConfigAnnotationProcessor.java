@@ -32,7 +32,7 @@ public class StringConfigAnnotationProcessor implements ConfigAnnotationSubProce
             ConfigurationType type = annotation.type();
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
-            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath(className));
+            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath());
             builder.push(className);
             ModConfigSpec.ConfigValue<String> configValue = builder.comment(annotation.description())
                     .define(annotation.identifier(), annotation.defaultValue());

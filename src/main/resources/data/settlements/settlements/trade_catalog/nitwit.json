@@ -17,6 +17,11 @@
       "match": {
         "item": "minecraft:egg"
       },
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 2,
+        "priority": 40
+      },
       "offer": {
         "above": 16,
         "basePrice": 4,

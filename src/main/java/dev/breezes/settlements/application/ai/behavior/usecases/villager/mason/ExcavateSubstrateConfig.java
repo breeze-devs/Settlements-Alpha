@@ -64,7 +64,7 @@ public record ExcavateSubstrateConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "bare_handed_nugget_chance",
                 description = "Chance per dig of finding a single iron nugget by hand when no iron shovel is held.",
-                defaultValue = 0.5,
+                defaultValue = 0.75,
                 min = 0.0,
                 max = 1.0)
         double bareHandedNuggetChance,

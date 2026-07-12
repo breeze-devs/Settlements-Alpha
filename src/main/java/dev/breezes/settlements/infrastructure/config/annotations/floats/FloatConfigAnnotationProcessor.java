@@ -32,7 +32,7 @@ public class FloatConfigAnnotationProcessor implements ConfigAnnotationSubProces
             ConfigurationType type = annotation.type();
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
-            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath(className));
+            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath());
             builder.push(className);
             ModConfigSpec.DoubleValue configValue = builder.comment(annotation.description())
                     .defineInRange(annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());

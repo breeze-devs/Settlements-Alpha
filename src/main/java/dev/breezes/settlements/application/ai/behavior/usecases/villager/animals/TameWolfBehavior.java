@@ -168,7 +168,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                             // coat variant without discarding and re-spawning the entity.
                             alreadySettlementsWolf.setTame(true, true);
                             alreadySettlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
-                            alreadySettlementsWolf.setCollarColor(DyeColor.LIME);
+                            alreadySettlementsWolf.applyCollarColor(DyeColor.LIME);
                             settlementsWolf = alreadySettlementsWolf;
                             log.behaviorStatus("Tamed existing SettlementsWolf {} in-place", settlementsWolf.getUUID());
                         } else {
@@ -185,7 +185,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                             }
                             settlementsWolf.setTame(true, true);
                             settlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
-                            settlementsWolf.setCollarColor(DyeColor.LIME);
+                            settlementsWolf.applyCollarColor(DyeColor.LIME);
                             log.behaviorStatus("Replaced vanilla Wolf with SettlementsWolf {}", settlementsWolf.getUUID());
                         }
 

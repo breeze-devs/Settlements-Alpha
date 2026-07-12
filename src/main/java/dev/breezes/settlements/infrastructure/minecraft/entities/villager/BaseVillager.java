@@ -50,6 +50,7 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.infrastructure.minecraft.ai.dialogue.ActivityOccasionMapper;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
@@ -121,6 +122,7 @@ import java.util.Set;
 @Getter
 public class BaseVillager extends Villager implements ISettlementsVillager, IVillagerHunger, ProvidesTeardownLedger {
 
+    private static final double DEFAULT_ATTACK_DAMAGE = 2.5D;
     private static final double DEFAULT_MOVEMENT_SPEED = 0.5D;
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
     private static final int STARTING_BREAD_STACKS = 2;
@@ -178,6 +180,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private final VillagerBubbleState bubbleState;
     @Nullable
     private ITickable hungerDrainTimer;
+    /**
+     * Cosmetic client-side restock spiral state. Never persisted -- reconstructed fresh (idle) on load,
+     * which is fine since it only ever plays for the ~1 second following a live {@link #restock()} call.
+     */
+    private final RestockReaction restockReaction;
 
     private VillagerTeardownLedger teardownLedger;
     private final ITickable reconcilerCooldown;
@@ -215,6 +222,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.bubbleManager = new BubbleManager();
         this.bubbleState = new VillagerBubbleState();
         this.hungerDrainTimer = null;
+        this.restockReaction = new RestockReaction();
 
         // Start with an empty ledger; load() will replace it with the NBT-backed one.
         this.teardownLedger = new VillagerTeardownLedger(List.of());
@@ -246,6 +254,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     public static AttributeSupplier createCustomAttributes() {
         return Mob.createMobAttributes()
+                .add(Attributes.ATTACK_DAMAGE, DEFAULT_ATTACK_DAMAGE)
                 .add(Attributes.MOVEMENT_SPEED, DEFAULT_MOVEMENT_SPEED)
                 .add(Attributes.FOLLOW_RANGE, DEFAULT_FOLLOW_RANGE)
                 .build();
@@ -536,7 +545,28 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             this.tickHunger();
             this.tickSooty();
             this.bubbleService().tick(this, this.level().getGameTime());
+        } else {
+            this.restockReaction.tickClient(this);
         }
+    }
+
+    /**
+     * Vanilla player-trading restock (the daily offer refresh / trade-triggered level-up) -- distinct
+     * from the mod's own villager-to-villager emerald economy. Left to vanilla entirely; we only hang a
+     * cosmetic client reaction off it.
+     */
+    @Override
+    public void restock() {
+        super.restock();
+        this.restockReaction.trigger(this);
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (this.restockReaction.onEntityEvent(id, this.tickCount)) {
+            return;
+        }
+        super.handleEntityEvent(id);
     }
 
     private void tickSooty() {
@@ -692,6 +722,37 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         super.remove(reason);
+    }
+
+    /**
+     * Scatters the villager's entire Settlements inventory on death
+     */
+    @Override
+    protected void dropCustomDeathLoot(@Nonnull ServerLevel level, @Nonnull DamageSource damageSource, boolean recentlyHit) {
+        boolean scatterInventory = this.hasSettlementsInventory()
+                && ConfigFactory.create(DropInventoryOnDeathConfig.class).enabled();
+
+        if (scatterInventory) {
+            // The held and off-hand items are mirrored into the vanilla equipment slots, so clearing those
+            // slots here stops vanilla's chance-based equipment drop from duplicating the items we drop
+            // deterministically below.
+            this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            this.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+        }
+
+        super.dropCustomDeathLoot(level, damageSource, recentlyHit);
+
+        if (scatterInventory) {
+            for (ItemStack stack : this.getSettlementsInventory().drainAll()) {
+                ItemEntity itemEntity = new ItemEntity(level, this.getX(), this.getEyeY() - 0.3D, this.getZ(), stack);
+
+                double horizontalSpeed = this.random.nextFloat() * 0.25D;
+                double angle = this.random.nextFloat() * (Math.PI * 2.0D);
+                itemEntity.setDeltaMovement(-Math.sin(angle) * horizontalSpeed, 0.2D, Math.cos(angle) * horizontalSpeed);
+
+                level.addFreshEntity(itemEntity);
+            }
+        }
     }
 
     @Override

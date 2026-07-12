@@ -96,7 +96,6 @@ public class PetAnimalBehavior extends VillagerStateMachineBehavior {
                 .withTickable(ClockTicks.seconds(this.config.petCount()).asTickable())
                 .onStart(ctx -> {
                     ctx.getInitiator().triggerMotion(AnimationArchetype.INTERACT);
-                    this.performPet(ctx);
                     return StepResult.noOp();
                 })
                 .addPeriodicStep(PET_INTERVAL_TICKS, ctx -> {

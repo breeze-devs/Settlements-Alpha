@@ -26,7 +26,6 @@ import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
-import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
@@ -62,8 +61,6 @@ import java.util.stream.Collectors;
 @CustomLog
 public class DyeSheepBehavior extends VillagerStateMachineBehavior {
 
-    private static final double DYE_RANGE_BLOCKS = 36.0;
-    private static final double DYE_RANGE_BLOCKS_SQUARED = DYE_RANGE_BLOCKS * DYE_RANGE_BLOCKS;
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
     // Fallback when a villager's expertise level is missing from the configured limit map.
@@ -74,6 +71,10 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
     private static final double GRAY_WEIGHT = 10.0;
     // Remaining colors share the remaining slice; white/black/gray dominate to mimic natural flocks
     private static final double OTHER_COLOR_WEIGHT = 30.0 / 13.0;
+
+    // Dyeing a naturally-red sheep is a free "wololo" easter egg that always recolors it blue.
+    private static final DyeColor WOLOLO_TRIGGER_COLOR = DyeColor.RED;
+    private static final DyeColor WOLOLO_RESULT_COLOR = DyeColor.BLUE;
 
     private enum DyeStage implements StageKey {
         DYE_SHEEP,
@@ -129,7 +130,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
                     this.setHeldDyePreview(context);
 
                     this.getTargetSheep(context).ifPresent(sheep -> {
-                        if (sheep.getColor() == DyeColor.RED) {
+                        if (isWololoTrigger(sheep)) {
                             Location location = Location.fromEntity(context.getInitiator(), true);
                             SoundRegistry.WOLOLO.playGlobally(location, SoundSource.NEUTRAL);
                         }
@@ -153,9 +154,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
                 .onEnd(context -> {
                     context.getInitiator().clearHeldItem();
                     if (this.dyeCount.get() > 0) {
-                        List<Targetable> nearbySheep = this.findEligibleSheep(context.getInitiator().getMinecraftEntity()).stream()
-                                .map(Targetable::fromEntity)
-                                .toList();
+                        List<Targetable> nearbySheep = this.findEligibleSheepTargets(context.getInitiator().getMinecraftEntity());
                         if (!nearbySheep.isEmpty()) {
                             context.setState(BehaviorStateType.TARGET, TargetState.of(nearbySheep));
                             return StepResult.transition(DyeStage.DYE_SHEEP);
@@ -186,9 +185,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         this.shouldRewardExperience = false;
         log.behaviorStatus("Villager is '{}' level, maximum dye count is {}", expertise.toString(), limit);
 
-        List<Targetable> targets = this.findEligibleSheep(villager).stream()
-                .map(Targetable::fromEntity)
-                .toList();
+        List<Targetable> targets = this.findEligibleSheepTargets(villager);
         if (targets.isEmpty()) {
             this.requestStop("No eligible sheep available");
             return;
@@ -196,7 +193,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         context.setState(BehaviorStateType.TARGET, TargetState.of(targets));
 
         // Headline the deed with the run's color (wololo falls back to blue) so monologue/gossip can say "dyed N sheep blue".
-        DyeColor headlineColor = this.selectedDyeColor != null ? this.selectedDyeColor : DyeColor.BLUE;
+        DyeColor headlineColor = this.selectedDyeColor != null ? this.selectedDyeColor : WOLOLO_RESULT_COLOR;
         context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.SHEEP_DYED, "sheep", describeColor(headlineColor)));
     }
 
@@ -223,26 +220,15 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private boolean dyeSheep(@Nonnull BaseVillager villager, @Nonnull Sheep sheep) {
-        if (!isWithinDyeRange(villager, sheep)) {
-            return false;
-        }
-
-        if (sheep.getColor() == DyeColor.RED) {
-            // Wololo is an easter egg, so it stays free even when normal dyeing requires inventory.
-            sheep.setColor(DyeColor.BLUE);
-            this.emitDyeEffects(sheep, DyeColor.BLUE);
-            this.dyedSheepIds.add(sheep.getUUID());
-            return true;
-        }
-
         Optional<DyeColor> colorOptional = this.resolveDyeColor(villager, sheep);
         if (colorOptional.isEmpty()) {
             return false;
         }
 
         DyeColor color = colorOptional.get();
-        VillagerInventory inventory = villager.getSettlementsInventory();
-        if (!inventory.consumeIfRequired(DyeItem.byColor(color), 1, GeneralConfig.bypassInventoryRequirements)) {
+        // Wololo is an easter egg, so it stays free even when normal dyeing requires inventory.
+        if (!isWololoTrigger(sheep) && !villager.getSettlementsInventory()
+                .consumeIfRequired(DyeItem.byColor(color), 1, GeneralConfig.bypassInventoryRequirements)) {
             return false;
         }
 
@@ -265,6 +251,12 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
                 .filter(sheep -> this.isEligibleSheep(villager, sheep));
     }
 
+    private List<Targetable> findEligibleSheepTargets(@Nonnull BaseVillager villager) {
+        return this.findEligibleSheep(villager).stream()
+                .map(Targetable::fromEntity)
+                .toList();
+    }
+
     private List<Sheep> findEligibleSheep(@Nonnull BaseVillager villager) {
         return this.getPerceivedEntities(villager)
                 .ofType(Sheep.class, sheep -> this.isEligibleSheep(villager, sheep)
@@ -273,12 +265,17 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private boolean isEligibleSheep(@Nonnull BaseVillager villager, @Nonnull Sheep sheep) {
-        // Only recolor animals the village owns so the player's own flock is left untouched.
-        return isVillageOwned(sheep)
-                && !this.dyedSheepIds.contains(sheep.getUUID())
-                && isWithinDyeRange(villager, sheep)
+        return this.isUndyedVillageSheep(sheep)
                 && !sheep.isSheared()
-                && (sheep.getColor() == DyeColor.RED || this.canDyeWithBehaviorColor(villager, sheep));
+                && (isWololoTrigger(sheep) || this.canDyeWithBehaviorColor(villager, sheep));
+    }
+
+    /**
+     * Shared base for every eligibility check: an animal the village owns (so the player's own flock is
+     * left untouched) that this run has not already recolored.
+     */
+    private boolean isUndyedVillageSheep(@Nonnull Sheep sheep) {
+        return isVillageOwned(sheep) && !this.dyedSheepIds.contains(sheep.getUUID());
     }
 
     private boolean canDyeWithBehaviorColor(@Nonnull BaseVillager villager, @Nonnull Sheep sheep) {
@@ -294,8 +291,8 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private Optional<DyeColor> resolveDyeColor(@Nonnull BaseVillager villager, @Nonnull Sheep sheep) {
-        if (sheep.getColor() == DyeColor.RED) {
-            return Optional.of(DyeColor.BLUE);
+        if (isWololoTrigger(sheep)) {
+            return Optional.of(WOLOLO_RESULT_COLOR);
         }
 
         if (this.selectedDyeColor == null || this.selectedDyeColor == sheep.getColor()) {
@@ -338,12 +335,11 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private boolean hasEligibleSheepForColor(@Nonnull BaseVillager villager, @Nonnull DyeColor color) {
+        // Wololo sheep are excluded here: they recolor for free, so they never justify picking a run color.
         return this.getPerceivedEntities(villager)
-                .ofType(Sheep.class, sheep -> isVillageOwned(sheep)
-                        && !this.dyedSheepIds.contains(sheep.getUUID())
-                        && sheep.getColor() != DyeColor.RED
-                        && sheep.getColor() != color
-                        && isWithinDyeRange(villager, sheep))
+                .ofType(Sheep.class, sheep -> this.isUndyedVillageSheep(sheep)
+                        && !isWololoTrigger(sheep)
+                        && sheep.getColor() != color)
                 .findAny()
                 .isPresent();
     }
@@ -358,8 +354,8 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         return sheep.getTags().contains(EntityTag.VILLAGE_OWNED_ANIMAL.getTag());
     }
 
-    private static boolean isWithinDyeRange(@Nonnull BaseVillager villager, @Nonnull Sheep sheep) {
-        return villager.distanceToSqr(sheep) <= DYE_RANGE_BLOCKS_SQUARED;
+    private static boolean isWololoTrigger(@Nonnull Sheep sheep) {
+        return sheep.getColor() == WOLOLO_TRIGGER_COLOR;
     }
 
     private static String describeColor(@Nonnull DyeColor color) {

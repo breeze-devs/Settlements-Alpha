@@ -76,6 +76,11 @@
       "match": {
         "item": "minecraft:book"
       },
+      "restock": {
+        "below": 8,
+        "buyPricePerUnit": 3,
+        "priority": 40
+      },
       "offer": {
         "above": 8,
         "basePrice": 5,

@@ -161,7 +161,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                         }
                         settlementsCat.setTame(true, true);
                         settlementsCat.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
-                        settlementsCat.setCollarColor(DyeColor.LIME);
+                        settlementsCat.applyCollarColor(DyeColor.LIME);
                         this.shouldRewardExperience = true;
 
                         BehaviorOutcome tameOutcome = BehaviorOutcome.forDeed(WorldEventType.ANIMAL_TAMED, null);

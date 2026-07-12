@@ -62,6 +62,11 @@ public interface IVillagerBackpack {
     void add(ItemStack stack);
 
     /**
+     * Removes every stored kind, leaving the backpack empty.
+     */
+    void clear();
+
+    /**
      * Returns an immutable snapshot of all distinct kinds currently held.
      * Each entry's representative is a count-1 copy; counts can exceed 64 or 99.
      */

@@ -275,7 +275,7 @@ public abstract class SocialCueCatalogModule {
 
                     return SocialCueScript.of(List.of(
                             new CueStep.Gaze(gazeTarget),
-                            new CueStep.Speak(DialogueLine.literal("psst..."), SpeechRegister.AMBIENT, ClockTicks.seconds(3)),
+                            new CueStep.Speak(DialogueLine.translatable("dialogue.settlements.social_cue.gossip.psst"), SpeechRegister.AMBIENT, ClockTicks.seconds(3)),
                             new CueStep.Wait(ClockTicks.seconds(2))
                     ));
                 })
@@ -334,7 +334,7 @@ public abstract class SocialCueCatalogModule {
                 .scriptFactory(receiver -> {
                     // Mirror the initiator's lean-in cue so both villagers perform the gesture.
                     return SocialCueScript.of(List.of(
-                            new CueStep.Speak(DialogueLine.literal("(listening)"), SpeechRegister.AMBIENT, ClockTicks.seconds(3)),
+                            new CueStep.Speak(DialogueLine.translatable("dialogue.settlements.social_cue.gossip.listening"), SpeechRegister.AMBIENT, ClockTicks.seconds(3)),
                             new CueStep.Wait(ClockTicks.seconds(2))
                     ));
                 })

@@ -14,7 +14,7 @@ public record InferenceConfig(
         @StringConfig(
                 type = ConfigurationType.GENERAL,
                 identifier = "endpoint_base_url",
-                description = "Base URL of the inference service, e.g. http://localhost:12345",
+                description = "Base URL of the inference service, e.g. http://127.0.0.1:12345",
                 defaultValue = "")
         String endpointBaseUrl,
 

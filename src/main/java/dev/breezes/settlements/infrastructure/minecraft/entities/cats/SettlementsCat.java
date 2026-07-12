@@ -67,7 +67,7 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity, Pett
         if (this.getOwnerUUID() == null) {
             this.setTame(true, true);
             this.setOwnerUUID(UUID.randomUUID());
-            ((CatMixin) this).invokeSetCollarColor(DyeColor.WHITE);
+            this.applyCollarColor(DyeColor.WHITE);
         }
     }
 
@@ -124,7 +124,14 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity, Pett
                 .orElse(null);
     }
 
-    public void setCollarColor(@Nonnull DyeColor color) {
+    /**
+     * Sets the collar color via the {@link CatMixin} invoker.
+     * <p>
+     * Deliberately NOT named {@code setCollarColor}: that signature would override vanilla's virtual
+     * {@code Cat#setCollarColor}, and the invoker re-dispatches virtually (not via {@code super}), so an
+     * override would call straight back into itself — infinite recursion / {@link StackOverflowError}.
+     */
+    public void applyCollarColor(@Nonnull DyeColor color) {
         ((CatMixin) this).invokeSetCollarColor(color);
     }
 

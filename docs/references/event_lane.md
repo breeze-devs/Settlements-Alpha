@@ -70,7 +70,8 @@ Everything runs off `BaseVillager.customServerAiStep()`, in this order:
 1. seedEventCursorOnFirstTick()   ← on first tick, set the bus cursor to the current high-water mark
                                      so a freshly loaded villager never replays pre-load history
 2. super.customServerAiStep()     ← vanilla sensors + brain housekeeping
-3. settlementsBrain.tick(1)       ← brain tick; inside it PlanRunner.tickOverride reads the knowledge store
+3. settlementsBrain.tick(1)       ← brain tick; PlanRunner.tickOverride reads session registries and
+                                     sensor memories — NOT the knowledge store (verified 2026-07-14)
 4. tickSocialCue()                ← SocialCueArbiter.tick  (runs after the brain so it sees fresh channel occupancy)
 5. tickPerception()  (throttled)  ← PerceptionPipeline.tick  (drain bus → knowledge; PERCEPTION_COOLDOWN_TICKS cadence)
 6. tickReconciler()               ← unrelated: crash-orphaned teardown obligations

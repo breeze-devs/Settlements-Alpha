@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.di.ClientComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundCloseUiPacket;
@@ -20,7 +21,12 @@ public final class UiSyncClientEvents {
 
     @SubscribeEvent
     public static void onClientTick(@Nonnull ClientTickEvent.Post event) {
-        UiClientState uiClientState = SettlementsDagger.client().uiClientState();
+        ClientComponent client = SettlementsDagger.clientOrNull();
+        if (client == null) {
+            return;
+        }
+
+        UiClientState uiClientState = client.uiClientState();
         if (uiClientState.activeSessionId() <= 0) {
             return;
         }

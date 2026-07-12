@@ -35,6 +35,11 @@ public class StackLedger implements IVillagerBackpack {
     }
 
     @Override
+    public void clear() {
+        this.counts.clear();
+    }
+
+    @Override
     public int count(@Nonnull Item item) {
         int total = 0;
         for (Object2IntMap.Entry<ItemStack> entry : this.counts.object2IntEntrySet()) {

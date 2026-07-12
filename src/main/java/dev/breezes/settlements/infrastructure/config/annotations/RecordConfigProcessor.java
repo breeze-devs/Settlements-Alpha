@@ -2,7 +2,6 @@ package dev.breezes.settlements.infrastructure.config.annotations;
 
 import com.google.gson.Gson;
 import com.mojang.authlib.minecraft.client.ObjectMapper;
-import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.infrastructure.config.annotations.booleans.BooleanConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.floats.FloatConfig;
@@ -13,6 +12,7 @@ import dev.breezes.settlements.infrastructure.config.annotations.maps.MapEntry;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.deserializers.MapConfigDeserializer;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.deserializers.MapConfigDeserializers;
 import dev.breezes.settlements.infrastructure.config.annotations.strings.StringConfig;
+import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.ConfigLoadingCrashReport;
 import lombok.CustomLog;
@@ -86,7 +86,7 @@ public class RecordConfigProcessor {
 
         String configName = behaviorConfig.name();
         ConfigurationType configurationType = behaviorConfig.type();
-        String configFilePath = configurationType.getFilePath(configName);
+        String configFilePath = configurationType.getFilePath();
 
         log.info("Processing @BehaviorConfig record: {} -> {}", recordClass.getSimpleName(), configFilePath);
 
@@ -101,8 +101,6 @@ public class RecordConfigProcessor {
         for (RecordComponent component : components) {
             ComponentBinding binding = processComponent(component, builder, configName);
             bindings.add(binding);
-            log.info("  - {}: {} ({})", component.getName(), component.getType().getSimpleName(),
-                    binding.configValue.getClass().getSimpleName());
         }
 
         builder.pop();

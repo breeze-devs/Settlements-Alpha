@@ -338,7 +338,14 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
                 .orElse(null);
     }
 
-    public void setCollarColor(@Nonnull DyeColor color) {
+    /**
+     * Sets the collar color via the {@link WolfMixin} invoker.
+     * <p>
+     * Deliberately NOT named {@code setCollarColor}: that signature would override vanilla's virtual
+     * {@code Wolf#setCollarColor}, and the invoker re-dispatches virtually (not via {@code super}), so an
+     * override would call straight back into itself — infinite recursion / {@link StackOverflowError}.
+     */
+    public void applyCollarColor(@Nonnull DyeColor color) {
         ((WolfMixin) this).invokeSetCollarColor(color);
     }
 
