@@ -241,10 +241,9 @@ mismatch — each may `hardReset` = force-stop + regenerate), then dispatches on
 ### Overrides and interruptibility
 
 `tickOverride(...)` runs a set of `OverridePolicy` (sorted by priority) before the plan tick — reactive behaviors like
-Investigate that can pre-empt the plan. An override may only interrupt the current behavior if its descriptor is
-`interruptible` (`canInterruptCurrentPlanBehavior`); this is where the `interruptible` metadata is enforced. A
-`ConfirmableOverride` that confirms triggers a full `hardReset`/replan; otherwise the interrupted slot is re-queued
-`PENDING`.
+accepting a trade/courtship invite that can pre-empt the plan. An override may only interrupt the current behavior if
+its descriptor is `interruptible` (`canInterruptCurrentPlanBehavior`); this is where the `interruptible` metadata is
+enforced. On completion the interrupted slot is re-queued `PENDING`.
 
 ### The `PLAN_BEHAVIOR_ACTIVE` latch
 

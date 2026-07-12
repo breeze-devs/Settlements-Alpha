@@ -19,7 +19,7 @@ public final class WorldCalendar {
      * Adding this offset before dividing by {@link TimeOfDay#TICKS_PER_DAY} aligns the integer
      * day boundary on midnight rather than dawn.
      */
-    private static final int MIDNIGHT_OFFSET_FROM_DAWN = TimeOfDay.TICKS_PER_DAY - TimeOfDay.AT_00_00.getTick();
+    private static final int MIDNIGHT_OFFSET_FROM_DAWN = TimeOfDay.TICKS_PER_DAY - TimeOfDay.AT_00_00.getMinecraftTick();
 
     /**
      * Returns the calendar day containing the given absolute {@code dayTime}.
@@ -37,8 +37,24 @@ public final class WorldCalendar {
      * {@code calendarDay}. This is the inverse of {@link #calendarDayOf(long)}.
      */
     public static long absoluteTickFor(long calendarDay, int tickInMcDay) {
-        long mcDay = tickInMcDay >= TimeOfDay.AT_00_00.getTick() ? calendarDay - 1 : calendarDay;
+        long mcDay = tickInMcDay >= TimeOfDay.AT_00_00.getMinecraftTick() ? calendarDay - 1 : calendarDay;
         return mcDay * TimeOfDay.TICKS_PER_DAY + tickInMcDay;
+    }
+
+    /**
+     * Returns the absolute {@code dayTime} at which civil tick {@code civilTick} (0 = midnight)
+     * occurs within the given {@code calendarDay}.
+     */
+    public static long absoluteTickForCivil(long calendarDay, int civilTick) {
+        return calendarDay * TimeOfDay.TICKS_PER_DAY - MIDNIGHT_OFFSET_FROM_DAWN + civilTick;
+    }
+
+    /**
+     * Returns how far {@code dayTime} sits past {@code calendarDay}'s own midnight, DELIBERATELY
+     * left unbounded rather than {@code floorMod}-ped back into {@code [0, TICKS_PER_DAY)}.
+     */
+    public static int civilOffsetWithin(long calendarDay, long dayTime) {
+        return (int) (dayTime - absoluteTickForCivil(calendarDay, 0));
     }
 
 }

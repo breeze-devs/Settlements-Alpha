@@ -8,13 +8,16 @@ import lombok.Getter;
 /**
  * A single scheduled activity within a {@link DayPlan}.
  * <p>
- * {@code startTick} is in game time (0–24 000 ticks), where tick 0 = 06:00 AM in
- * Minecraft's clock. The plan runner uses this to skip stale slots when significant
- * time has elapsed past a slot's intended start.
+ * {@code startTick} is a civil-space tick (0–24 000 ticks). The plan runner uses this to
+ * skip stale slots when significant time has elapsed past a slot's intended start.
  * <p>
  * A {@code flexible} slot is bypassed if its behavior's preconditions fail.
  * A rigid slot (e.g. eating, sleeping) is retried until its preconditions
  * pass and is never automatically skipped.
+ * <p>
+ * A {@code pinned} slot came from a fixed-time placement (an LLM {@code at}/commitment pin, not a
+ * default meal or ordinary gap-fill) and is eligible to be carried into the successor plan when a
+ * hard reset regenerates the day — see {@code PlanRunner#collectCarriedPins}.
  */
 @Getter
 public class PlanSlot {
@@ -24,6 +27,7 @@ public class PlanSlot {
     private final int priority;
     private final boolean flexible;
     private final int estimatedDurationTicks;
+    private final boolean pinned;
 
     private PlanSlotStatus status;
 
@@ -33,6 +37,7 @@ public class PlanSlot {
                     int priority,
                     boolean flexible,
                     int estimatedDurationTicks,
+                    boolean pinned,
                     PlanSlotStatus status) {
         if (!TimeOfDay.isValidTick(startTick)) {
             throw new IllegalArgumentException("startTick must be between 0 and 23999");
@@ -45,6 +50,7 @@ public class PlanSlot {
         this.priority = priority;
         this.flexible = flexible;
         this.estimatedDurationTicks = estimatedDurationTicks;
+        this.pinned = pinned;
         this.status = status == null ? PlanSlotStatus.PENDING : status;
     }
 

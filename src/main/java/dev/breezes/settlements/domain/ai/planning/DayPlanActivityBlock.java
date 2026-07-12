@@ -5,12 +5,13 @@ import lombok.Builder;
 
 import javax.annotation.Nonnull;
 
+/**
+ * @param startTick start tick in civil time (0 = midnight). Civil time never wraps, so this is always
+ *                  strictly less than {@code endTick} within a single authored day.
+ */
 @Builder
 public record DayPlanActivityBlock(
         @Nonnull DayPlanActivityContext context,
-        /**
-         * Start tick in game time (may be greater than endTick if the behavior starts pre-dawn)
-         */
         int startTick,
         int endTick
 ) {

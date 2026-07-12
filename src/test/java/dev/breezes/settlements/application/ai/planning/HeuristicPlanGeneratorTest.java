@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HeuristicPlanGeneratorTest {
 
-    private final HeuristicPlanGenerator generator = new HeuristicPlanGenerator();
+    private final HeuristicPlanGenerator generator = new HeuristicPlanGenerator(new DayPlanComposer(DefaultMealAnchorTable.rows()));
 
     @Test
     void generate_producesValidWorkDayPlanForEveryDefaultProfession() {
@@ -125,7 +125,7 @@ class HeuristicPlanGeneratorTest {
         // Act
         List<BehaviorKey> morningFlexibleKeys = plan.getSlots().stream()
                 .filter(PlanSlot::isFlexible)
-                .filter(slot -> slot.getStartTick() < TimeOfDay.AT_12_00.getTick())
+                .filter(slot -> slot.getStartTick() < TimeOfDay.AT_12_00.getCivilTick())
                 .map(PlanSlot::getBehaviorKey)
                 .toList();
 
@@ -213,7 +213,7 @@ class HeuristicPlanGeneratorTest {
     }
 
     @Test
-    void generate_restDaySleepInWithPendingTipKeepsAllSlotsWithinDayBoundary() {
+    void generate_restDaySleepInKeepsAllSlotsWithinDayBoundary() {
         // Regression guard: a +1h sleep-in plus a positive chronotype offset can push wake PAST the
         // profession's work-start (epoch 2354 vs work-start tick 2000), which must not wrap
         // workStartLinear across the day boundary (DayPlan rejects slots crossing the day boundary).
@@ -226,14 +226,12 @@ class HeuristicPlanGeneratorTest {
                 .dayType(PlanDayType.REST_DAY)
                 .availableBehaviors(descriptorsFor(VillagerProfessionKey.MASON, allDescriptors()))
                 .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
-                .pendingInvestigateTipCount(1)
                 .build();
 
         // Act — must not throw
         DayPlan plan = this.generator.generate(context);
 
         // Assert
-        assertTrue(keys(plan).contains(BehaviorKey.INVESTIGATE), "A pending tip should still inject a scout slot.");
         assertAllSlotWindowsWithinDay(plan);
     }
 
@@ -315,10 +313,10 @@ class HeuristicPlanGeneratorTest {
     }
 
     private static void assertAllSlotWindowsWithinDay(DayPlan plan) {
-        int dayStartTick = plan.getDayStartTick();
+        // Civil ticks never wrap, so "within day" is a plain bound check against TICKS_PER_DAY —
+        // no epoch-relative re-basing needed (mirrors DayPlan's own validateSlotWindows).
         for (PlanSlot slot : plan.getSlots()) {
-            int linearStart = Math.floorMod(slot.getStartTick() - dayStartTick, TimeOfDay.TICKS_PER_DAY);
-            assertTrue(linearStart + slot.getEstimatedDurationTicks() < TimeOfDay.TICKS_PER_DAY,
+            assertTrue(slot.getStartTick() + slot.getEstimatedDurationTicks() <= TimeOfDay.TICKS_PER_DAY,
                     "Slot " + slot.getBehaviorKey() + " window crosses the plan day boundary");
         }
     }
@@ -489,10 +487,10 @@ class HeuristicPlanGeneratorTest {
         WeightedBehavior weighted = new WeightedBehavior(meta, 1);
 
         // Act
-        double factor = HeuristicPlanGenerator.opportunityMultiplier(ctx).apply(weighted);
+        double factor = PlannerPolicy.opportunityMultiplier(ctx).apply(weighted);
 
         // Assert
-        assertEquals(HeuristicPlanGenerator.LOW_OPPORTUNITY_MULTIPLIER, factor, 1e-9,
+        assertEquals(PlannerPolicy.LOW_OPPORTUNITY_MULTIPLIER, factor, 1e-9,
                 "A lacking behavior must receive exactly the low-opportunity multiplier");
     }
 
@@ -505,7 +503,7 @@ class HeuristicPlanGeneratorTest {
         WeightedBehavior weighted = new WeightedBehavior(meta, 1);
 
         // Act
-        double factor = HeuristicPlanGenerator.opportunityMultiplier(ctx).apply(weighted);
+        double factor = PlannerPolicy.opportunityMultiplier(ctx).apply(weighted);
 
         // Assert
         assertEquals(1.0, factor, 1e-9,
@@ -523,13 +521,13 @@ class HeuristicPlanGeneratorTest {
         BehaviorPlanningMetadata meta = descriptor(heavyWork, BehaviorCategory.WORK, WorkIntensity.HEAVY);
         WeightedBehavior weighted = new WeightedBehavior(meta, 1);
 
-        double expectedRestFactor = HeuristicPlanGenerator.restDayMultiplier(meta, policy);
-        double expectedProduct = expectedRestFactor * HeuristicPlanGenerator.LOW_OPPORTUNITY_MULTIPLIER;
+        double expectedRestFactor = PlannerPolicy.restDayMultiplier(meta, policy);
+        double expectedProduct = expectedRestFactor * PlannerPolicy.LOW_OPPORTUNITY_MULTIPLIER;
 
         // Act: compose rest-day multiplier with opportunity multiplier the same way the generator does
-        HeuristicPlanGenerator.EffectiveWeightMultiplier composed =
-                ((HeuristicPlanGenerator.EffectiveWeightMultiplier) b -> HeuristicPlanGenerator.restDayMultiplier(b.descriptor(), policy))
-                        .andThen(HeuristicPlanGenerator.opportunityMultiplier(ctx));
+        PlannerPolicy.EffectiveWeightMultiplier composed =
+                ((PlannerPolicy.EffectiveWeightMultiplier) b -> PlannerPolicy.restDayMultiplier(b.descriptor(), policy))
+                        .andThen(PlannerPolicy.opportunityMultiplier(ctx));
         double actual = composed.apply(weighted);
 
         // Assert

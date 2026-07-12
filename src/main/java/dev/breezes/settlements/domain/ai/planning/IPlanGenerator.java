@@ -5,6 +5,13 @@ package dev.breezes.settlements.domain.ai.planning;
  */
 public interface IPlanGenerator {
 
-    DayPlan generate(PlanGenerationContext context);
+    /**
+     * Equivalent to {@link #generate(PlanGenerationContext, PlanIntent)} with {@link PlanIntent#empty()}.
+     */
+    default DayPlan generate(PlanGenerationContext context) {
+        return this.generate(context, PlanIntent.empty());
+    }
+
+    DayPlan generate(PlanGenerationContext context, PlanIntent intent);
 
 }

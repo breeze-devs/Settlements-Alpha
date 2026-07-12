@@ -7,7 +7,6 @@ import dagger.multibindings.Multibinds;
 import dev.breezes.settlements.application.ai.override.CollectDemandedItemOverridePolicy;
 import dev.breezes.settlements.application.ai.override.OverridePolicy;
 import dev.breezes.settlements.application.ai.override.SocialAcceptOverridePolicy;
-import dev.breezes.settlements.application.ai.override.UrgentInvestigateOverridePolicy;
 
 import java.util.Set;
 
@@ -25,10 +24,6 @@ public abstract class OverridePolicyModule {
     @Binds
     @IntoSet
     abstract OverridePolicy socialAcceptPolicy(SocialAcceptOverridePolicy impl);
-
-    @Binds
-    @IntoSet
-    abstract OverridePolicy urgentInvestigatePolicy(UrgentInvestigateOverridePolicy impl);
 
     @Binds
     @IntoSet

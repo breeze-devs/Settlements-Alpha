@@ -43,6 +43,7 @@ public final class DayPlanAttachmentCodec {
                     Codec.INT.fieldOf("priority").forGetter(PlanSlot::getPriority),
                     Codec.BOOL.fieldOf("flexible").forGetter(PlanSlot::isFlexible),
                     Codec.INT.fieldOf("estimatedDurationTicks").forGetter(PlanSlot::getEstimatedDurationTicks),
+                    Codec.BOOL.fieldOf("pinned").forGetter(PlanSlot::isPinned),
                     PLAN_SLOT_STATUS_CODEC.optionalFieldOf("status", PlanSlotStatus.PENDING).forGetter(PlanSlot::getStatus)
             ).apply(instance, PlanSlot::new));
 
@@ -50,12 +51,11 @@ public final class DayPlanAttachmentCodec {
             instance.group(
                     PLAN_SLOT_CODEC.listOf().fieldOf("slots").forGetter(DayPlan::getSlots),
                     PLAN_DAY_TYPE_CODEC.fieldOf("dayType").forGetter(DayPlan::getDayType),
-                    Codec.LONG.fieldOf("wakeAtAbsoluteTick").forGetter(DayPlan::getWakeAtAbsoluteTick),
+                    Codec.LONG.fieldOf("calendarDay").forGetter(DayPlan::getCalendarDay),
                     DAY_PLAN_SCHEDULE_CODEC.fieldOf("schedule").forGetter(DayPlan::getSchedule),
                     PLAN_STATUS_CODEC.optionalFieldOf("status", PlanStatus.PENDING)
                             .forGetter(plan -> normalizePlanStatus(plan.getStatus())),
-                    Codec.INT.optionalFieldOf("currentSlotIndex", 0).forGetter(DayPlan::getCurrentSlotIndex),
-                    Codec.INT.optionalFieldOf("dayStartTick", 0).forGetter(DayPlan::getDayStartTick)
+                    Codec.INT.optionalFieldOf("currentSlotIndex", 0).forGetter(DayPlan::getCurrentSlotIndex)
             ).apply(instance, DayPlan::new));
 
     public static final Codec<DayPlanAttachmentState> STATE_CODEC = RecordCodecBuilder.create(instance ->

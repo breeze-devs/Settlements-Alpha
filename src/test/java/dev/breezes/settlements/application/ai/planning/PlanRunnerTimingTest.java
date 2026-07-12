@@ -24,7 +24,7 @@ class PlanRunnerTimingTest {
         PlanSlot slot = slot(2_000, 600, PlanSlotStatus.PENDING);
 
         // Act
-        boolean open = PlanRunner.isSlotWindowOpen(slot, 1_999, 0);
+        boolean open = PlanRunner.isSlotWindowOpen(slot, 1_999);
 
         // Assert
         assertFalse(open);
@@ -36,7 +36,7 @@ class PlanRunnerTimingTest {
         PlanSlot slot = slot(2_000, 600, PlanSlotStatus.PENDING);
 
         // Act
-        boolean open = PlanRunner.isSlotWindowOpen(slot, 2_000, 0);
+        boolean open = PlanRunner.isSlotWindowOpen(slot, 2_000);
 
         // Assert
         assertTrue(open);
@@ -48,7 +48,7 @@ class PlanRunnerTimingTest {
         PlanSlot slot = slot(2_000, 600, PlanSlotStatus.PENDING);
 
         // Act
-        boolean closed = PlanRunner.isSlotWindowClosed(slot, 2_600, 0);
+        boolean closed = PlanRunner.isSlotWindowClosed(slot, 2_600);
 
         // Assert
         assertFalse(closed);
@@ -60,7 +60,20 @@ class PlanRunnerTimingTest {
         PlanSlot slot = slot(2_000, 600, PlanSlotStatus.PENDING);
 
         // Act
-        boolean closed = PlanRunner.isSlotWindowClosed(slot, 2_601, 0);
+        boolean closed = PlanRunner.isSlotWindowClosed(slot, 2_601);
+
+        // Assert
+        assertTrue(closed);
+    }
+
+    @Test
+    void isSlotWindowClosed_extendedPostMidnightNowClosesEveryWindow() {
+        // Arrange — nowCivil >= TICKS_PER_DAY means "past this plan's entire authored day"
+        // (see WorldCalendar#civilOffsetWithin); every remaining slot window must read as closed.
+        PlanSlot slot = slot(23_000, 600, PlanSlotStatus.PENDING);
+
+        // Act
+        boolean closed = PlanRunner.isSlotWindowClosed(slot, 25_000);
 
         // Assert
         assertTrue(closed);
@@ -75,7 +88,7 @@ class PlanRunnerTimingTest {
         DayPlan plan = plan(rigidPast, flexiblePast, current);
 
         // Act
-        PlanRunner.runSeekLoop(plan, 3_000, 0);
+        PlanRunner.runSeekLoop(plan, 3_000);
 
         // Assert
         assertEquals(PlanSlotStatus.SKIPPED, rigidPast.getStatus());
@@ -92,7 +105,7 @@ class PlanRunnerTimingTest {
         DayPlan plan = plan(active, pending);
 
         // Act
-        PlanRunner.runSeekLoop(plan, 10_000, 0);
+        PlanRunner.runSeekLoop(plan, 10_000);
 
         // Assert
         assertEquals(PlanSlotStatus.ACTIVE, active.getStatus());
@@ -101,24 +114,23 @@ class PlanRunnerTimingTest {
     }
 
     @Test
-    void runSeekLoop_skipsPreWakeWrappedSlotsWhenCalledBeforeAuthoredDayStart() {
-        // Arrange
-        int authoredDayStart = 1_000;
+    void runSeekLoop_doesNotSkipPendingSlotsWhenCalledBeforeWake() {
+        // Arrange — a negative extended now (see WorldCalendar#civilOffsetWithin) means dayTime is
+        // still before this plan's own day began; nothing should be skipped, the plan just waits.
         PlanSlot firstRestDaySlot = slot(1_500, 600, PlanSlotStatus.PENDING);
         DayPlan plan = DayPlan.builder()
                 .slot(firstRestDaySlot)
                 .dayType(PlanDayType.REST_DAY)
-                .wakeAtAbsoluteTick(1L)
-                .schedule(schedule(authoredDayStart))
-                .dayStartTick(authoredDayStart)
+                .calendarDay(1L)
+                .schedule(schedule(1_000))
                 .build();
 
         // Act
-        PlanRunner.runSeekLoop(plan, 0, authoredDayStart);
+        PlanRunner.runSeekLoop(plan, -500);
 
         // Assert
-        assertEquals(PlanSlotStatus.SKIPPED, firstRestDaySlot.getStatus());
-        assertEquals(1, plan.getCurrentSlotIndex());
+        assertEquals(PlanSlotStatus.PENDING, firstRestDaySlot.getStatus());
+        assertEquals(0, plan.getCurrentSlotIndex());
     }
 
     @Test
@@ -128,13 +140,13 @@ class PlanRunnerTimingTest {
                 .slot(slot(4_000, 600, PlanSlotStatus.COMPLETED))
                 .slot(slot(9_000, 600, PlanSlotStatus.PENDING))
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
                 .currentSlotIndex(1)
                 .build();
 
         // Act
-        boolean backward = PlanRunner.detectOnLoadBackward(plan, 2_000, 0);
+        boolean backward = PlanRunner.detectOnLoadBackward(plan, 2_000);
 
         // Assert
         assertTrue(backward);
@@ -146,16 +158,36 @@ class PlanRunnerTimingTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(4_000, 600, PlanSlotStatus.PENDING))
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
                 .currentSlotIndex(0)
                 .build();
 
         // Act
-        boolean backward = PlanRunner.detectOnLoadBackward(plan, 2_000, 0);
+        boolean backward = PlanRunner.detectOnLoadBackward(plan, 2_000);
 
         // Assert
         assertFalse(backward);
+    }
+
+    @Test
+    void detectOnLoadBackward_negativeExtendedNowTriggersBackwardDetection() {
+        // Arrange — a negative extended now (dayTime is still on the PRECEDING calendar day per
+        // WorldCalendar#civilOffsetWithin) is always "before" any already-executed slot's civil tick.
+        DayPlan plan = DayPlan.builder()
+                .slot(slot(1_000, 600, PlanSlotStatus.COMPLETED))
+                .slot(slot(9_000, 600, PlanSlotStatus.PENDING))
+                .dayType(PlanDayType.WORK_DAY)
+                .calendarDay(1L)
+                .schedule(schedule())
+                .currentSlotIndex(1)
+                .build();
+
+        // Act
+        boolean backward = PlanRunner.detectOnLoadBackward(plan, -1);
+
+        // Assert
+        assertTrue(backward);
     }
 
     @Test
@@ -164,9 +196,8 @@ class PlanRunnerTimingTest {
         assertThrows(IllegalArgumentException.class, () -> DayPlan.builder()
                 .slot(slot(23_700, 500, PlanSlotStatus.PENDING))
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
-                .dayStartTick(0)
                 .build());
     }
 
@@ -175,12 +206,12 @@ class PlanRunnerTimingTest {
         // Arrange
         DayPlan pendingPlan = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(84_325L)
+                .calendarDay(4L)
                 .schedule(schedule())
                 .build();
 
         // Act
-        boolean shouldWait = PlanRunner.shouldWaitForPendingPlan(pendingPlan, 83_490L);
+        boolean shouldWait = PlanRunner.shouldWaitForPendingPlan(pendingPlan, pendingPlan.getWakeAtAbsoluteTick() - 835L);
 
         // Assert
         assertTrue(shouldWait);
@@ -191,12 +222,12 @@ class PlanRunnerTimingTest {
         // Arrange
         DayPlan pendingPlan = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(84_325L)
+                .calendarDay(4L)
                 .schedule(schedule())
                 .build();
 
         // Act
-        boolean shouldWait = PlanRunner.shouldWaitForPendingPlan(pendingPlan, 84_325L);
+        boolean shouldWait = PlanRunner.shouldWaitForPendingPlan(pendingPlan, pendingPlan.getWakeAtAbsoluteTick());
 
         // Assert
         assertFalse(shouldWait);
@@ -218,10 +249,10 @@ class PlanRunnerTimingTest {
         // Arrange
         DayPlan plan = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(TimeOfDay.AT_04_30.getTick())
-                .schedule(schedule())
+                .calendarDay(1L)
+                .schedule(schedule(TimeOfDay.AT_04_30.getCivilTick()))
                 .build();
-        long currentDayTime = TimeOfDay.TICKS_PER_DAY + TimeOfDay.AT_06_30.getTick();
+        long currentDayTime = TimeOfDay.TICKS_PER_DAY + TimeOfDay.AT_06_30.getMinecraftTick();
 
         // Act
         boolean mismatch = PlanRunner.hasCalendarDayMismatch(plan, currentDayTime);
@@ -238,10 +269,10 @@ class PlanRunnerTimingTest {
         // Arrange
         DayPlan plan = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(0L)
-                .schedule(schedule())
+                .calendarDay(0L)
+                .schedule(schedule(TimeOfDay.AT_04_30.getCivilTick()))
                 .build();
-        long dayTimeOnNextCalendarDay = TimeOfDay.TICKS_PER_DAY + TimeOfDay.AT_06_30.getTick();
+        long dayTimeOnNextCalendarDay = TimeOfDay.TICKS_PER_DAY + TimeOfDay.AT_06_30.getMinecraftTick();
 
         // Act
         boolean mismatch = PlanRunner.hasCalendarDayMismatch(plan, dayTimeOnNextCalendarDay);
@@ -258,8 +289,8 @@ class PlanRunnerTimingTest {
         // Arrange
         DayPlan plan = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(TimeOfDay.AT_07_00.getTick())
-                .schedule(schedule())
+                .calendarDay(0L)
+                .schedule(schedule(TimeOfDay.AT_07_00.getCivilTick()))
                 .build();
         long dawnOfNextCalendarDay = TimeOfDay.TICKS_PER_DAY;
 
@@ -270,10 +301,43 @@ class PlanRunnerTimingTest {
         assertTrue(mismatch);
     }
 
+    @Test
+    void hasActiveCurrentSlot_returnsTrueWhenCurrentSlotActive() {
+        // Arrange
+        DayPlan plan = plan(slot(1_000, 600, PlanSlotStatus.ACTIVE));
+
+        // Act
+        boolean active = PlanRunner.hasActiveCurrentSlot(plan);
+
+        // Assert
+        assertTrue(active);
+    }
+
+    @Test
+    void hasActiveCurrentSlot_returnsFalseWhenCurrentSlotPending() {
+        // Arrange
+        DayPlan plan = plan(slot(1_000, 600, PlanSlotStatus.PENDING));
+
+        // Act
+        boolean active = PlanRunner.hasActiveCurrentSlot(plan);
+
+        // Assert
+        assertFalse(active);
+    }
+
+    @Test
+    void hasActiveCurrentSlot_returnsFalseWhenPlanNull() {
+        // Arrange, Act
+        boolean active = PlanRunner.hasActiveCurrentSlot(null);
+
+        // Assert
+        assertFalse(active);
+    }
+
     private static DayPlan plan(PlanSlot... slots) {
         DayPlan.DayPlanBuilder builder = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule());
         for (PlanSlot slot : slots) {
             builder.slot(slot);

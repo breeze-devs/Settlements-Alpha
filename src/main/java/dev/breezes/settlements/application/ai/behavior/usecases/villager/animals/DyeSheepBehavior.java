@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 @CustomLog
 public class DyeSheepBehavior extends VillagerStateMachineBehavior {
 
-    private static final double DYE_RANGE_BLOCKS = 16.0;
+    private static final double DYE_RANGE_BLOCKS = 36.0;
     private static final double DYE_RANGE_BLOCKS_SQUARED = DYE_RANGE_BLOCKS * DYE_RANGE_BLOCKS;
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
 
@@ -277,6 +277,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         return isVillageOwned(sheep)
                 && !this.dyedSheepIds.contains(sheep.getUUID())
                 && isWithinDyeRange(villager, sheep)
+                && !sheep.isSheared()
                 && (sheep.getColor() == DyeColor.RED || this.canDyeWithBehaviorColor(villager, sheep));
     }
 

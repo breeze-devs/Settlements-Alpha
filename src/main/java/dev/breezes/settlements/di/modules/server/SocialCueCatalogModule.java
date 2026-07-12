@@ -15,7 +15,6 @@ import dev.breezes.settlements.application.ai.socialcue.SocialCueCatalogEntry;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueScript;
 import dev.breezes.settlements.application.ai.speech.SpeechRegister;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
-import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.domain.ai.knowledge.GossipWeightCalculator;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
@@ -187,7 +186,7 @@ public abstract class SocialCueCatalogModule {
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("morning", Occasion.MORNING,
                 villager -> dialogueProvider.isEnabled()
-                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_07_00.getTick(), WINDOW_JITTER.getTicksAsInt()),
+                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_07_00.getMinecraftTick(), WINDOW_JITTER.getTicksAsInt()),
                 dialogueProvider, contextAssembler, SITUATIONAL_DIALOGUE_FIRE_CHANCE);
     }
 
@@ -197,7 +196,7 @@ public abstract class SocialCueCatalogModule {
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("evening", Occasion.EVENING,
                 villager -> dialogueProvider.isEnabled()
-                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_18_00.getTick(), WINDOW_JITTER.getTicksAsInt()),
+                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_18_00.getMinecraftTick(), WINDOW_JITTER.getTicksAsInt()),
                 dialogueProvider, contextAssembler, SITUATIONAL_DIALOGUE_FIRE_CHANCE);
     }
 
@@ -207,7 +206,7 @@ public abstract class SocialCueCatalogModule {
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("rest_day", Occasion.REST_DAY,
                 villager -> dialogueProvider.isEnabled() && isRestDay(villager)
-                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_10_00.getTick(), WINDOW_JITTER.getTicksAsInt()),
+                        && isCurrentDayTickInWindowJittered(villager, TimeOfDay.AT_10_00.getMinecraftTick(), WINDOW_JITTER.getTicksAsInt()),
                 dialogueProvider, contextAssembler, SITUATIONAL_DIALOGUE_FIRE_CHANCE);
     }
 
@@ -303,7 +302,6 @@ public abstract class SocialCueCatalogModule {
     @Provides
     @IntoSet
     static SocialCueCatalogEntry gossipAccept(GossipSessionRegistry gossipSessionRegistry,
-                                              ReputationQuery reputationQuery,
                                               EventLaneConfig eventLaneConfig) {
         return SocialCueCatalogEntry.builder()
                 .key("gossip_accept")
@@ -356,18 +354,11 @@ public abstract class SocialCueCatalogModule {
                                 receiver.getGenetics(),
                                 incomingHop);
 
-                        // Apply the sender's credibility multiplier at admission time so that
-                        // tips from less-trusted sources carry less weight in the receiver's
-                        // planning. Unknown senders default to 1.0 (no penalty).
-                        float credibilityMultiplier = reputationQuery.getCredibilityMultiplier(
-                                receiver.getUUID(), session.getInitiatorId());
-                        float adjustedWeight = baseWeight * credibilityMultiplier;
-
                         KnowledgeEntry hearsayEntry = KnowledgeEntry.fromHearsay(
                                 sourceEntry,
                                 session.getInitiatorId(),
                                 currentTick,
-                                adjustedWeight);
+                                baseWeight);
 
                         // Knowledge copy: write to receiver's store if not already known.
                         // admit() now applies corroboration logic on the dedupe branch so a

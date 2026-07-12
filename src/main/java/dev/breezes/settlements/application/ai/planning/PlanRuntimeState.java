@@ -4,6 +4,7 @@ import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
+import dev.breezes.settlements.domain.ai.planning.PlanArrival;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.Getter;
 import lombok.Setter;
@@ -58,9 +59,13 @@ public class PlanRuntimeState {
      */
     private int slotStartRetryDelayTicks;
 
-    @Setter
+    /**
+     * The staged next {@link PlanArrival} awaiting its wake gate, retained whole (plan + author +
+     * target day) so author-priority arbitration in {@code PlanRunner#drainPendingArrivals} can
+     * compare a newly polled arrival against the one already staged.
+     */
     @Nullable
-    private DayPlan pendingNextPlan;
+    private PlanArrival pendingArrival;
 
     private boolean planExhausted;
 
@@ -68,7 +73,7 @@ public class PlanRuntimeState {
     @Nullable
     private CompletableFuture<DayPlan> pendingFuture;
 
-    private final ConcurrentLinkedQueue<DayPlan> pendingArrivals;
+    private final ConcurrentLinkedQueue<PlanArrival> pendingArrivals;
 
     @Setter
     private long pendingFutureSubmittedAtDayTime;
@@ -92,7 +97,7 @@ public class PlanRuntimeState {
         this.currentBehaviorElapsedTicks = 0;
         this.slotStartRetryDelayTicks = 0;
         this.clearPendingGeneration();
-        this.pendingNextPlan = null;
+        this.pendingArrival = null;
         this.planExhausted = false;
         this.previousPlanTickDayTime = -1L;
     }
@@ -100,6 +105,20 @@ public class PlanRuntimeState {
     public void reset(long dayTime) {
         this.reset();
         this.previousPlanTickDayTime = dayTime;
+    }
+
+    public void setPendingArrival(@Nullable PlanArrival pendingArrival) {
+        this.pendingArrival = pendingArrival;
+    }
+
+    /**
+     * The plan of the staged {@link #pendingArrival}, or null when nothing is staged. Derived so
+     * readers that only need the plan (wake gate, adoption, fallback guards) are unaffected by the
+     * arbitration layer now staging the full arrival rather than a bare {@link DayPlan}.
+     */
+    @Nullable
+    public DayPlan getPendingNextPlan() {
+        return this.pendingArrival == null ? null : this.pendingArrival.plan();
     }
 
     public void clearCurrentBehavior() {

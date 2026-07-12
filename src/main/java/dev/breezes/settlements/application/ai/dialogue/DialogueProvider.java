@@ -43,6 +43,18 @@ public interface DialogueProvider {
     void runEveningPackSweep(Collection<BaseVillager> villagers);
 
     /**
+     * Cancels any inference exchange this provider currently has in flight on the shared transport.
+     * <p>
+     * Called during server shutdown before the transport is closed: {@code InferenceTransport#close}
+     * blocks until in-flight exchanges finish, and an evening sweep can legitimately stream for up to
+     * {@link DialogueConfig#packSweepDeadlineSeconds}, so an uncancelled sweep would stall the stop.
+     * No-op for providers that never dispatch async inference (e.g. SCRIPTED).
+     */
+    default void cancelInflightSweep() {
+        // No in-flight inference to cancel by default.
+    }
+
+    /**
      * Returns {@code true} if this provider is effectively enabled — i.e. will ever produce
      * non-empty results. Callers can skip building the context object when the provider is
      * disabled, avoiding any wasted work.

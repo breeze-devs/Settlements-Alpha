@@ -12,6 +12,7 @@ public enum InferenceCapability {
 
     MONOLOGUE("/v1/monologue"),
     PERSONA("/v1/persona"),
+    PLAN("/v1/plan"),
     ;
 
     private final String path;

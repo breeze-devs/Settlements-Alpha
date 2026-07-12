@@ -1,9 +1,10 @@
 package dev.breezes.settlements.domain.ai.catalog;
 
 import dev.breezes.settlements.domain.time.ClockTicks;
-import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.util.Random;
 
 /**
  * Immutable value object representing a behavior's cooldown range in server ticks.
@@ -11,9 +12,9 @@ import lombok.Getter;
  * Stored as {@link ClockTicks} because behavior cooldowns are anchored to real elapsed time,
  * not the Minecraft in-game clock — the same cadence regardless of day-cycle speed.
  * <p>
- * The {@link #drawTicks()} method is the single call-site for sampling a concrete cooldown
+ * The {@link #drawTicks(Random)} method is the single call-site for sampling a concrete cooldown
  * value, keeping the random draw testable and encapsulated rather than scattered across
- * the generator.
+ * the generator. The caller supplies the {@link Random}.
  */
 @Builder
 @Getter
@@ -45,8 +46,10 @@ public final class CooldownRange {
      * <p>
      * Short-circuits to {@code min} when the range is degenerate (min == max) to avoid
      * unnecessary RNG invocation in the common zero-range case.
+     *
+     * @param random the caller's RNG instance
      */
-    public int drawTicks() {
+    public int drawTicks(Random random) {
         int minTicks = this.min.getTicksAsInt();
         int maxTicks = this.max.getTicksAsInt();
 
@@ -54,7 +57,7 @@ public final class CooldownRange {
             return minTicks;
         }
 
-        return RandomUtil.randomInt(minTicks, maxTicks, true);
+        return random.nextInt(minTicks, maxTicks + 1);
     }
 
 }

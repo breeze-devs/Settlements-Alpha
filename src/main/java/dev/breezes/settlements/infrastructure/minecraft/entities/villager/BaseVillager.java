@@ -52,7 +52,6 @@ import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.ai.dialogue.ActivityOccasionMapper;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerCredibilityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
@@ -506,9 +505,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         VillagerBrainAttachment.saveFrom(this);
         VillagerTeardownLedgerAttachment.saveFrom(this, this.teardownLedger);
         VillagerKnowledgeAttachment.saveFrom(this, this.knowledgeStore);
-
-        ServerComponent server = SettlementsDagger.serverOrThrow();
-        VillagerCredibilityAttachment.saveFrom(this, server.reputationUtil());
     }
 
     @Override
@@ -528,12 +524,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             this.addStartingFood(this.settlementsInventory);
         }
 
-        // Restore episodic knowledge so investigation history and tip cooldowns survive restarts.
+        // Restore episodic knowledge so gossip re-sharing and memory grounding survive restarts.
         VillagerKnowledgeAttachment.loadInto(this, this.knowledgeStore);
-
-        // Restore credibility state into ReputationUtil so trust relationships survive log-in/out cycles.
-        ServerComponent server = SettlementsDagger.serverOrThrow();
-        VillagerCredibilityAttachment.loadInto(this, server.reputationUtil());
     }
 
     @Override
@@ -696,7 +688,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         // Prune cache
         if (!this.level().isClientSide() && shouldEvictServerScopeCaches(reason)) {
             ServerComponent server = SettlementsDagger.serverOrThrow();
-            server.reputationUtil().removeObserver(this.getUUID());
             server.dialogueProvider().evict(this.getUUID());
         }
 

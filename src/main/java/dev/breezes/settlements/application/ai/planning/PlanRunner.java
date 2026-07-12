@@ -1,35 +1,27 @@
 package dev.breezes.settlements.application.ai.planning;
 
 import dev.breezes.settlements.application.ai.behavior.publication.BehaviorOutcomePublisher;
-import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
 import dev.breezes.settlements.application.ai.override.OverridePolicy;
 import dev.breezes.settlements.application.ai.override.OverrideRequest;
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.ai.behavior.contracts.ConfirmableOverride;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
-import dev.breezes.settlements.domain.ai.catalog.WeightedBehavior;
-import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
-import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
-import dev.breezes.settlements.domain.ai.knowledge.KnowledgeResolution;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.IAsyncPlanGenerator;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
-import dev.breezes.settlements.domain.ai.planning.IWakeTickResolver;
+import dev.breezes.settlements.domain.ai.planning.PinnedSelection;
+import dev.breezes.settlements.domain.ai.planning.PlanArrival;
+import dev.breezes.settlements.domain.ai.planning.PlanAuthor;
 import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
+import dev.breezes.settlements.domain.ai.planning.PlanIntent;
 import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.planning.PlanSlotStatus;
 import dev.breezes.settlements.domain.ai.planning.PlanStatus;
-import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
-import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
-import dev.breezes.settlements.domain.ai.schedule.RestDayPolicy;
-import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
-import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -49,8 +41,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
-
 /**
  * Application-layer entry point for executing villager day plans.
  */
@@ -65,7 +55,6 @@ public class PlanRunner {
     private static final String RESET_REASON_BACKWARD_JUMP = "backward dayTime jump";
     private static final String RESET_REASON_BACKWARD_WHILE_UNLOADED = "backward dayTime jump while unloaded";
     private static final String RESET_REASON_CALENDAR_DAY_MISMATCH = "calendar day mismatch";
-    private static final String RESET_REASON_INVESTIGATE_CONFIRMED = "investigate confirmed tip";
 
     private static final int OVERRIDE_TICK_DELTA = 1;
 
@@ -99,16 +88,15 @@ public class PlanRunner {
             .thenComparing(policy -> policy.getClass().getName());
 
     private final IBehaviorCatalog catalog;
-    private final BehaviorPoolResolver behaviorPoolResolver;
+    private final PlanGenerationContextFactory planGenerationContextFactory;
     private final IPlanGenerator planGenerator;
     private final IAsyncPlanGenerator asyncPlanGenerator;
-    private final IWeekCycleProvider weekCycleProvider;
-    private final IWakeTickResolver wakeTickResolver;
+    private final VillagerWakeScheduler wakeScheduler;
+    private final MinimalPlanFactory minimalPlanFactory;
     private final Set<OverridePolicy> overridePolicies;
     private final BehaviorOutcomePublisher behaviorOutcomePublisher;
     private final WorldEventEmitter worldEventEmitter;
-    private final ReputationQuery reputationQuery;
-    private final OpportunityForecaster opportunityForecaster;
+    private final PlanRequestService planRequestService;
 
     /**
      * TODO:CONFIRM -- would this also be useful for player injecting an override? e.g. test/debug command to tell
@@ -135,11 +123,10 @@ public class PlanRunner {
     public void tick(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
         PlanRuntimeState runtime = villager.getPlanRuntimeState();
         long dayTime = level.getDayTime();
-        int dayTick = currentDayTick(dayTime);
         DeltaResult delta = runtime.advanceClock(dayTime);
 
-        this.drainPendingArrivals(runtime, villager);
-        DayPlan adopted = this.adoptPendingIfReady(villager, runtime, dayTime);
+        this.drainPendingArrivals(runtime, villager, dayTime);
+        DayPlan adopted = this.adoptPendingIfReady(level, villager, runtime, dayTime);
         DayPlan plan = adopted != null ? adopted : villager.getDayPlan();
 
         if (this.shouldFallbackFromAsyncOverrun(runtime, dayTime)) {
@@ -166,7 +153,7 @@ public class PlanRunner {
                     villager.getUUID(), plan.getCalendarDay(), WorldCalendar.calendarDayOf(dayTime), dayTime);
             this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
             return;
-        } else if (delta.firstTick() && detectOnLoadBackward(plan, dayTick, plan.getDayStartTick())) {
+        } else if (delta.firstTick() && detectOnLoadBackward(plan, nowCivilFor(plan, dayTime))) {
             // Runtime clocks are transient across reloads; persisted slot order is the only reliable signal for unloaded time travel.
             plan = this.hardReset(level, villager, runtime, dayTime, RESET_REASON_BACKWARD_WHILE_UNLOADED, delta);
         } else if (delta.deltaTicks() == 0) {
@@ -174,7 +161,7 @@ public class PlanRunner {
             return;
         } else {
             // Forward jumps should catch up pending schedule windows without interrupting an active behavior mid-execution.
-            runSeekLoop(plan, dayTick, plan.getDayStartTick());
+            runSeekLoop(plan, nowCivilFor(plan, dayTime));
         }
 
         if (plan.isExhausted() || plan.getCurrentSlot().isEmpty()) {
@@ -183,14 +170,14 @@ public class PlanRunner {
         }
 
         this.tickSlot(level, villager, plan, plan.getCurrentSlot().get(), runtime,
-                delta.deltaTicks(), dayTick, plan.getDayStartTick());
+                delta.deltaTicks(), nowCivilFor(plan, dayTime));
     }
 
     public void ensureValidPlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
         PlanRuntimeState runtime = villager.getPlanRuntimeState();
         long dayTime = level.getDayTime();
-        this.drainPendingArrivals(runtime, villager);
-        DayPlan plan = this.adoptPendingIfReady(villager, runtime, dayTime);
+        this.drainPendingArrivals(runtime, villager, dayTime);
+        DayPlan plan = this.adoptPendingIfReady(level, villager, runtime, dayTime);
         if (plan == null) {
             plan = villager.getDayPlan();
         }
@@ -206,7 +193,7 @@ public class PlanRunner {
         }
 
         if (plan != null && pendingNextPlan == null) {
-            long nextWakeAtAbsoluteTick = this.nextWakeAtAbsoluteTick(villager, dayTime, plan.getWakeAtAbsoluteTick());
+            long nextWakeAtAbsoluteTick = this.wakeScheduler.nextWakeAtAbsoluteTick(villager, dayTime, plan.getWakeAtAbsoluteTick());
             if (dayTime < nextWakeAtAbsoluteTick) {
                 this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
                 return;
@@ -270,10 +257,9 @@ public class PlanRunner {
                           @Nonnull PlanSlot slot,
                           @Nonnull PlanRuntimeState runtime,
                           int delta,
-                          int dayTick,
-                          int planEpoch) {
+                          int nowCivil) {
         switch (slot.getStatus()) {
-            case PENDING -> this.tryStartSlot(level, villager, plan, slot, runtime, delta, dayTick, planEpoch);
+            case PENDING -> this.tryStartSlot(level, villager, plan, slot, runtime, delta, nowCivil);
             case ACTIVE -> this.tickActiveSlot(level, villager, plan, slot, runtime, delta);
             case COMPLETED, SKIPPED, INTERRUPTED -> {
                 this.clearPlanActiveMemory(villager);
@@ -288,15 +274,14 @@ public class PlanRunner {
                               @Nonnull PlanSlot slot,
                               @Nonnull PlanRuntimeState runtime,
                               int delta,
-                              int dayTick,
-                              int planEpoch) {
+                              int nowCivil) {
         // Throttle retries
         if (runtime.getSlotStartRetryDelayTicks() > 0) {
             runtime.decaySlotStartRetryDelay(delta);
             return;
         }
 
-        if (!isSlotWindowOpen(slot, dayTick, planEpoch)) {
+        if (!isSlotWindowOpen(slot, nowCivil)) {
             this.clearPlanActiveMemory(villager);
             return;
         }
@@ -477,7 +462,7 @@ public class PlanRunner {
         }
 
         if (override.getStatus() == BehaviorStatus.STOPPED) {
-            this.onOverrideCompleted(level, villager, runtime, runtime.getOverrideBehaviorKey(), override);
+            this.onOverrideCompleted(villager, runtime, runtime.getOverrideBehaviorKey(), override);
         }
     }
 
@@ -534,36 +519,19 @@ public class PlanRunner {
     }
 
     /**
-     * TODO:CONFIRM -- if we used llm-based plan gen here, which takes some period of time to complete, this could be bad
-     * Handles override completion. A confirmed Investigate override regenerates the day
-     * plan so the freshly verified resource can be acted on — the interrupted plan was authored
-     * before the tip was known, so blindly resuming it would ignore the discovery (the roadmap's
-     * "onConfirm follow-up"). Every other override — and a refuted or unreachable Investigate —
-     * simply re-queues the interrupted slot, which is the existing Phase 2 resume behavior.
+     * Handles override completion: publishes the completion outcome and re-queues the interrupted
+     * plan slot so the villager resumes its day where the override pre-empted it.
      */
-    private void onOverrideCompleted(@Nonnull ServerLevel level,
-                                     @Nonnull BaseVillager villager,
+    private void onOverrideCompleted(@Nonnull BaseVillager villager,
                                      @Nonnull PlanRuntimeState runtime,
                                      @Nullable BehaviorKey completedKey,
                                      @Nonnull IBehavior<BaseVillager> completed) {
-        // Behaviors that implement ConfirmableOverride signal when their outcome warrants
-        // a plan regeneration. Any confirmed resource discovery should update the plan so
-        // the freshly verified fact can influence what happens next.
-        boolean shouldRegeneratePlan = completed instanceof ConfirmableOverride confirmable
-                && confirmable.didConfirm();
         if (completedKey != null) {
             this.behaviorOutcomePublisher.publishCompleted(villager, completedKey, completed);
         } else {
             log.behaviorWarn("Override completed without behavior key for villager {}", villager.getUUID());
         }
         runtime.clearOverride();
-
-        if (shouldRegeneratePlan) {
-            log.behaviorStatus("Override '{}' confirmed for villager {}; regenerating plan", completedKey, villager.getUUID());
-            this.hardReset(level, villager, runtime, level.getDayTime(),
-                    RESET_REASON_INVESTIGATE_CONFIRMED, singleTickDelta(runtime));
-            return;
-        }
 
         log.behaviorStatus("Override '{}' completed for villager {}; re-queuing interrupted plan slot", completedKey, villager.getUUID());
         this.reAttemptInterruptedSlot(villager);
@@ -676,45 +644,32 @@ public class PlanRunner {
                 .build();
     }
 
-    private DayPlan generatePlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, long wakeAtAbsoluteTick) {
-        return this.planGenerator.generate(this.createGenerationContext(villager, wakeAtAbsoluteTick));
+    private DayPlan generatePlan(@Nonnull ServerLevel level,
+                                 @Nonnull BaseVillager villager,
+                                 long wakeAtAbsoluteTick,
+                                 @Nonnull PlanIntent intent) {
+        return this.planGenerator.generate(this.createGenerationContext(villager, wakeAtAbsoluteTick), intent);
     }
 
     private PlanGenerationContext createGenerationContext(@Nonnull BaseVillager villager, long wakeAtAbsoluteTick) {
-        VillagerProfessionKey professionKey = villager.getProfession();
-        PlanDayType dayType = this.weekCycleProvider.getDayType(WorldCalendar.calendarDayOf(wakeAtAbsoluteTick));
-
-        // Count unverified hearsay tips so the planner can inject Investigate scout slots.
-        int pendingTipCount = 0;
-        for (KnowledgeEntry entry : villager.getKnowledgeStore().entriesView()) {
-            if (entry.isHearsay() && entry.getResolution() == KnowledgeResolution.UNRESOLVED) {
-                pendingTipCount++;
-            }
-        }
-
-        // Resolve the pool before the context so the forecaster can evaluate it on this server thread.
-        // DecayingSpatialMemory reads (lazy expiry) are not safe off-thread; the async generator
-        // receives only the plain Set<BehaviorKey> verdict, never the villager or its brain.
-        List<WeightedBehavior> pool = this.behaviorPoolResolver.resolve(professionKey);
-        Set<BehaviorKey> lacking = this.opportunityForecaster.forecastLackingOpportunity(villager, pool);
-
-        return PlanGenerationContext.builder()
-                .profession(professionKey)
-                .genetics(villager.getGenetics().copy())
-                .scheduleProfile(ScheduleProfile.defaultFor(professionKey))
-                .restDayPolicy(RestDayPolicy.defaultFor(professionKey))
-                .dayType(dayType)
-                .availableBehaviors(pool)
-                .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
-                .chronotypeSeed(chronotypeSeedFor(villager))
-                .pendingInvestigateTipCount(pendingTipCount)
-                .behaviorsLackingOpportunity(lacking)
-                .build();
+        return this.planGenerationContextFactory.create(villager, wakeAtAbsoluteTick);
     }
 
-    private DayPlan regeneratePlan(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, long dayTime) {
+    private DayPlan regeneratePlan(@Nonnull ServerLevel level,
+                                   @Nonnull BaseVillager villager,
+                                   long dayTime,
+                                   @Nonnull PlanIntent intent) {
         long wakeAtAbsoluteTick = currentWakeAtOrBefore(villager, dayTime);
-        DayPlan newPlan = this.generatePlan(level, villager, wakeAtAbsoluteTick);
+        DayPlan newPlan;
+        try {
+            newPlan = this.generatePlan(level, villager, wakeAtAbsoluteTick, intent);
+        } catch (Exception exception) {
+            // A hard reset must yield a plan THIS tick — the caller immediately seeks and ticks it.
+            // The floor does not accept an intent, so carried pins are acceptably lost on this path.
+            newPlan = this.minimalPlanFactory.create(villager, wakeAtAbsoluteTick);
+            log.behaviorError("Plan regeneration failed for villager {}; installed minimal plan floor: dayTime={}",
+                    villager.getUUID(), dayTime, exception);
+        }
         villager.setDayPlan(newPlan);
         return newPlan;
     }
@@ -732,10 +687,19 @@ public class PlanRunner {
                     .ifPresent(slot -> slot.markStatus(PlanSlotStatus.INTERRUPTED));
         }
 
+        // Carry forward the old plan's still-future pinned placements before it is discarded, so a
+        // reset never silently wipes a fixed-time commitment.
+        List<PinnedSelection> carriedPins = oldPlan == null
+                ? List.of()
+                : collectCarriedPins(oldPlan, nowCivilFor(oldPlan, dayTime));
+        PlanIntent intent = carriedPins.isEmpty() ? PlanIntent.empty() : PlanIntent.ofCarriedPins(carriedPins);
+
         this.forceStop(level, villager);
         runtime.reset(dayTime);
-        DayPlan newPlan = this.regeneratePlan(level, villager, dayTime);
-        runSeekLoop(newPlan, currentDayTick(dayTime), newPlan.getDayStartTick());
+        DayPlan newPlan = this.regeneratePlan(level, villager, dayTime, intent);
+        // Recompute against the NEW plan's own calendar day — it can differ from the plan that was
+        // just replaced (e.g. a hard reset regenerating into the next authored day).
+        runSeekLoop(newPlan, nowCivilFor(newPlan, dayTime));
 
         this.worldEventEmitter.emitDayPlanInvalidated(villager);
 
@@ -743,13 +707,28 @@ public class PlanRunner {
         return newPlan;
     }
 
+    /**
+     * Pure projection of a hard reset's carry-forward set: every {@code oldPlan} slot that is both
+     * pinned and still in the future relative to {@code nowCivil}.
+     */
+    @VisibleForTesting
+    static List<PinnedSelection> collectCarriedPins(@Nullable DayPlan oldPlan, int nowCivil) {
+        if (oldPlan == null) {
+            return List.of();
+        }
+        return oldPlan.getSlots().stream()
+                .filter(PlanSlot::isPinned)
+                .filter(slot -> slot.getStartTick() > nowCivil)
+                .map(slot -> new PinnedSelection(slot.getBehaviorKey(), slot.getStartTick(), false))
+                .toList();
+    }
+
     private void logHardReset(@Nonnull BaseVillager villager,
                               long dayTime,
                               @Nonnull String reason,
                               @Nonnull DeltaResult delta) {
         if (RESET_REASON_MISSING_PLAN.equals(reason)
-                || RESET_REASON_MISSING_SUCCESSOR.equals(reason)
-                || RESET_REASON_INVESTIGATE_CONFIRMED.equals(reason)) {
+                || RESET_REASON_MISSING_SUCCESSOR.equals(reason)) {
             log.behaviorStatus("Plan hard reset for villager {}: reason={}, dayTime={}, previousDayTime={}, rawDelta={}",
                     villager.getUUID(), reason, dayTime, delta.previousDayTime(), delta.rawDelta());
             return;
@@ -759,10 +738,11 @@ public class PlanRunner {
                 villager.getUUID(), reason, dayTime, delta.previousDayTime(), delta.rawDelta());
     }
 
-    private void drainPendingArrivals(@Nonnull PlanRuntimeState runtime, @Nonnull BaseVillager villager) {
-        DayPlan arrived;
+    private void drainPendingArrivals(@Nonnull PlanRuntimeState runtime, @Nonnull BaseVillager villager, long dayTime) {
+        long currentCalendarDay = WorldCalendar.calendarDayOf(dayTime);
+        PlanArrival arrived;
         while ((arrived = runtime.getPendingArrivals().poll()) != null) {
-            runtime.setPendingNextPlan(arrived);
+            runtime.setPendingArrival(arbitrate(runtime.getPendingArrival(), arrived, currentCalendarDay));
             runtime.clearPendingFuture();
         }
 
@@ -772,12 +752,14 @@ public class PlanRunner {
             long wakeAtAbsoluteTick = runtime.getPendingFutureWakeAtAbsoluteTick();
             try {
                 DayPlan fallback = this.planGenerator.generate(this.createGenerationContext(villager, wakeAtAbsoluteTick));
-                runtime.setPendingNextPlan(fallback);
+                runtime.setPendingArrival(new PlanArrival(fallback, PlanAuthor.HEURISTIC));
                 log.behaviorWarn("Async plan generation failed for villager {}; sync fallback installed",
                         villager.getUUID());
             } catch (Exception exception) {
-                // Swallowing degrades the villager to "no next plan yet" instead of crashing the server
-                log.behaviorError("Sync fallback plan generation failed for villager {}; leaving without a next plan",
+                // Upon exception, build minimal plan
+                DayPlan minimalPlan = this.minimalPlanFactory.create(villager, wakeAtAbsoluteTick);
+                runtime.setPendingArrival(new PlanArrival(minimalPlan, PlanAuthor.HEURISTIC));
+                log.behaviorError("Sync fallback plan generation failed for villager {}; installed minimal plan floor",
                         villager.getUUID(), exception);
             } finally {
                 // Clear the failed future either way so this branch does not re-run every tick.
@@ -786,18 +768,64 @@ public class PlanRunner {
         }
     }
 
+    /**
+     * Chooses which of two competing arrivals should be staged, keying on target calendar day then author.
+     */
+    @VisibleForTesting
     @Nullable
-    private DayPlan adoptPendingIfReady(@Nonnull BaseVillager villager, @Nonnull PlanRuntimeState runtime, long dayTime) {
+    static PlanArrival arbitrate(@Nullable PlanArrival staged, @Nonnull PlanArrival incoming, long currentCalendarDay) {
+        if (incoming.targetDay() < currentCalendarDay) {
+            return staged;
+        }
+        if (staged == null) {
+            return incoming;
+        }
+        if (incoming.targetDay() > staged.targetDay()) {
+            return incoming;
+        }
+        if (incoming.targetDay() < staged.targetDay()) {
+            return staged;
+        }
+        // Same target day: a heuristic arrival must never displace an already-staged LLM overlay.
+        if (incoming.author() == PlanAuthor.HEURISTIC && staged.author() == PlanAuthor.LLM) {
+            return staged;
+        }
+        return incoming;
+    }
+
+    @Nullable
+    private DayPlan adoptPendingIfReady(@Nonnull ServerLevel level,
+                                        @Nonnull BaseVillager villager,
+                                        @Nonnull PlanRuntimeState runtime,
+                                        long dayTime) {
         DayPlan pending = runtime.getPendingNextPlan();
         if (pending == null || dayTime < pending.getWakeAtAbsoluteTick()) {
             return null;
         }
+
+        // Never swap mid-slot
+        if (hasActiveCurrentSlot(villager.getDayPlan())) {
+            return null;
+        }
+
+        // forceStop discharges any lingering teardown obligations
+        this.forceStop(level, villager);
 
         villager.setDayPlan(pending);
         runtime.reset(dayTime);
         log.behaviorStatus("Plan adopted pre-generated plan at scheduled wake for villager {}: wakeAtAbsoluteTick={}",
                 villager.getUUID(), pending.getWakeAtAbsoluteTick());
         return pending;
+    }
+
+    @VisibleForTesting
+    static boolean hasActiveCurrentSlot(@Nullable DayPlan plan) {
+        if (plan == null) {
+            return false;
+        }
+        return plan.getCurrentSlot()
+                .filter(slot -> slot.getStatus() == PlanSlotStatus.ACTIVE)
+                .isPresent();
     }
 
     private void submitNextPlanAsync(@Nonnull ServerLevel level,
@@ -809,7 +837,7 @@ public class PlanRunner {
         }
 
         long dayTime = level.getDayTime();
-        long nextWakeAtAbsoluteTick = this.nextWakeAtAbsoluteTick(villager, dayTime, currentPlan.getWakeAtAbsoluteTick());
+        long nextWakeAtAbsoluteTick = this.wakeScheduler.nextWakeAtAbsoluteTick(villager, dayTime, currentPlan.getWakeAtAbsoluteTick());
         PlanGenerationContext context = this.createGenerationContext(villager, nextWakeAtAbsoluteTick);
         CompletableFuture<DayPlan> future = this.asyncPlanGenerator.generateAsync(context);
         runtime.setPendingFuture(future);
@@ -820,10 +848,18 @@ public class PlanRunner {
                 log.behaviorWarn("Async plan generation failed for villager {}: {}", villager.getUUID(), error.toString());
                 return;
             }
-            runtime.getPendingArrivals().offer(plan);
+            runtime.getPendingArrivals().offer(new PlanArrival(plan, PlanAuthor.HEURISTIC));
         });
         log.debug("Submitted async next-plan generation for villager {}: wakeAtAbsoluteTick={}",
                 villager.getUUID(), nextWakeAtAbsoluteTick);
+
+        // Forward time-jumps (player sleep, /time set) also reach this method via the
+        // calendar-mismatch/overdue branches in tick(), so this single hook covers both normal
+        // day-end and time-jumps without a separate catch-up path. A reset/first-spawn villager is
+        // deliberately NOT covered here (hardReset/regeneratePlan never calls this method) — it
+        // runs the heuristic plan for its current partial day and only picks up an LLM overlay at
+        // its next natural exhaustion, avoiding a request storm when a village first loads.
+        this.planRequestService.enqueueForOverlay(villager, dayTime, nextWakeAtAbsoluteTick);
     }
 
     private void completeExpiredPlanAndSubmitSuccessor(@Nonnull ServerLevel level,
@@ -869,47 +905,18 @@ public class PlanRunner {
 
     private long currentWakeAtOrBefore(@Nonnull BaseVillager villager, long dayTime) {
         long currentCalendarDay = WorldCalendar.calendarDayOf(dayTime);
-        long todayWake = this.wakeAbsoluteTickFor(villager, currentCalendarDay);
+        long todayWake = this.wakeScheduler.wakeAbsoluteTickFor(villager, currentCalendarDay);
         if (todayWake > dayTime) {
             // Today's wake event hasn't happened yet (e.g. world-start before a librarian's 8am, or
             // mid-pre-dawn of a farmer whose 4:30am wake is still upcoming).
-            long yesterdayWake = this.wakeAbsoluteTickFor(villager, currentCalendarDay - 1);
+            long yesterdayWake = this.wakeScheduler.wakeAbsoluteTickFor(villager, currentCalendarDay - 1);
             return Math.max(0L, yesterdayWake);
         }
         return Math.max(0L, todayWake);
     }
 
-    private long nextWakeAtAbsoluteTick(@Nonnull BaseVillager villager, long dayTime, long currentWakeAtAbsoluteTick) {
-        long currentCalendarDay = WorldCalendar.calendarDayOf(dayTime);
-        long todayWake = this.wakeAbsoluteTickFor(villager, currentCalendarDay);
-        if (todayWake > currentWakeAtAbsoluteTick) {
-            return todayWake;
-        }
-        return this.wakeAbsoluteTickFor(villager, currentCalendarDay + 1);
-    }
-
-    private long wakeAbsoluteTickFor(@Nonnull BaseVillager villager, long calendarDay) {
-        int wakeTickInMcDay = this.wakeTickFor(villager, calendarDay);
-        return WorldCalendar.absoluteTickFor(calendarDay, wakeTickInMcDay);
-    }
-
-    private int wakeTickFor(@Nonnull BaseVillager villager, long calendarDay) {
-        VillagerProfessionKey professionKey = villager.getProfession();
-        ScheduleProfile scheduleProfile = ScheduleProfile.defaultFor(professionKey);
-        PlanDayType dayType = this.weekCycleProvider.getDayType(calendarDay);
-        return this.wakeTickResolver.resolveWakeTick(scheduleProfile, dayType, chronotypeSeedFor(villager));
-    }
-
-    /**
-     * Derives a stable, per-villager seed from the UUID so chronotype offsets are reproducible across
-     * all call sites that need the same wake tick (scheduling and plan adoption must agree).
-     */
-    private static long chronotypeSeedFor(@Nonnull BaseVillager villager) {
-        return villager.getUUID().getMostSignificantBits() ^ villager.getUUID().getLeastSignificantBits();
-    }
-
     @VisibleForTesting
-    static void runSeekLoop(@Nonnull DayPlan plan, int dayTick, int planEpoch) {
+    static void runSeekLoop(@Nonnull DayPlan plan, int nowCivil) {
         while (!plan.isExhausted()) {
             Optional<PlanSlot> maybeSlot = plan.getCurrentSlot();
             if (maybeSlot.isEmpty()) {
@@ -922,7 +929,7 @@ public class PlanRunner {
                     return;
                 }
                 case PENDING -> {
-                    if (!isSlotWindowClosed(slot, dayTick, planEpoch)) {
+                    if (!isSlotWindowClosed(slot, nowCivil)) {
                         return;
                     }
                     slot.markStatus(PlanSlotStatus.SKIPPED);
@@ -934,30 +941,24 @@ public class PlanRunner {
     }
 
     @VisibleForTesting
-    static boolean detectOnLoadBackward(@Nonnull DayPlan plan, int dayTick, int planEpoch) {
+    static boolean detectOnLoadBackward(@Nonnull DayPlan plan, int nowCivil) {
         int previousSlotIndex = plan.getCurrentSlotIndex() - 1;
         if (previousSlotIndex < 0 || previousSlotIndex >= plan.getSlots().size()) {
             return false;
         }
 
         PlanSlot lastExecuted = plan.getSlots().get(previousSlotIndex);
-        int linearLast = Math.floorMod(lastExecuted.getStartTick() - planEpoch, TICKS_PER_DAY);
-        int linearNow = Math.floorMod(dayTick - planEpoch, TICKS_PER_DAY);
-        return linearLast > linearNow;
+        return lastExecuted.getStartTick() > nowCivil;
     }
 
     @VisibleForTesting
-    static boolean isSlotWindowClosed(@Nonnull PlanSlot slot, int dayTick, int planEpoch) {
-        int linearNow = Math.floorMod(dayTick - planEpoch, TICKS_PER_DAY);
-        int linearEnd = Math.floorMod(slot.getStartTick() + slot.getEstimatedDurationTicks() - planEpoch, TICKS_PER_DAY);
-        return linearNow > linearEnd;
+    static boolean isSlotWindowClosed(@Nonnull PlanSlot slot, int nowCivil) {
+        return nowCivil > slot.getStartTick() + slot.getEstimatedDurationTicks();
     }
 
     @VisibleForTesting
-    static boolean isSlotWindowOpen(@Nonnull PlanSlot slot, int dayTick, int planEpoch) {
-        int linearNow = Math.floorMod(dayTick - planEpoch, TICKS_PER_DAY);
-        int linearSlot = Math.floorMod(slot.getStartTick() - planEpoch, TICKS_PER_DAY);
-        return linearNow >= linearSlot;
+    static boolean isSlotWindowOpen(@Nonnull PlanSlot slot, int nowCivil) {
+        return nowCivil >= slot.getStartTick();
     }
 
     private void setPlanActiveMemory(@Nonnull BaseVillager villager) {
@@ -968,9 +969,14 @@ public class PlanRunner {
         villager.getBrain().eraseMemory(MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE.getModuleType());
     }
 
-    @VisibleForTesting
-    static int currentDayTick(long dayTime) {
-        return Math.floorMod(dayTime, TICKS_PER_DAY);
+    /**
+     * The plan's "extended now": how far {@code dayTime} sits past THIS plan's own calendar-day
+     * midnight, deliberately unbounded (see {@link WorldCalendar#civilOffsetWithin}) rather than
+     * folded back into {@code [0, TICKS_PER_DAY)} — a value past bedtime must read as "after
+     * everything" (closing every remaining slot window), not wrap around to look like early morning.
+     */
+    private static int nowCivilFor(@Nonnull DayPlan plan, long dayTime) {
+        return WorldCalendar.civilOffsetWithin(plan.getCalendarDay(), dayTime);
     }
 
 }

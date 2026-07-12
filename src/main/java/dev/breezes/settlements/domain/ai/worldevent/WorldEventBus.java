@@ -136,19 +136,15 @@ public final class WorldEventBus {
      */
     public void evict(long currentGameTick) {
         long threshold = currentGameTick - this.ttlTicks;
-        int before = this.eventLog.size();
 
         int firstRetained = 0;
         while (firstRetained < this.eventLog.size()
                 && this.eventLog.get(firstRetained).getGameTick() < threshold) {
             firstRetained++;
         }
+
         if (firstRetained > 0) {
             this.eventLog.subList(0, firstRetained).clear();
-        }
-        int removed = before - this.eventLog.size();
-        if (removed > 0) {
-            log.debug("WorldEventBus: evicted {} events (log size now {})", removed, this.eventLog.size());
         }
     }
 

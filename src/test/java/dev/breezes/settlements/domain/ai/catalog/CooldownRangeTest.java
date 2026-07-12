@@ -3,6 +3,8 @@ package dev.breezes.settlements.domain.ai.catalog;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import org.junit.jupiter.api.Test;
 
+import java.util.Random;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,7 +42,7 @@ class CooldownRangeTest {
         int expected = ClockTicks.seconds(60).getTicksAsInt();
 
         // Act
-        int result = range.drawTicks();
+        int result = range.drawTicks(new Random());
 
         // Assert
         assertEquals(expected, result);
@@ -56,10 +58,11 @@ class CooldownRangeTest {
         CooldownRange range = CooldownRange.ofSeconds(minSeconds, maxSeconds);
         int minTicks = ClockTicks.seconds(minSeconds).getTicksAsInt();
         int maxTicks = ClockTicks.seconds(maxSeconds).getTicksAsInt();
+        Random random = new Random();
 
         // Act / Assert
         for (int i = 0; i < 500; i++) {
-            int drawn = range.drawTicks();
+            int drawn = range.drawTicks(random);
             assertTrue(drawn >= minTicks,
                     () -> "drawTicks() returned " + drawn + " which is below min " + minTicks);
             assertTrue(drawn <= maxTicks,
@@ -77,7 +80,7 @@ class CooldownRangeTest {
                 .build();
 
         // Act
-        int result = range.drawTicks();
+        int result = range.drawTicks(new Random());
 
         // Assert
         assertEquals(1, result);

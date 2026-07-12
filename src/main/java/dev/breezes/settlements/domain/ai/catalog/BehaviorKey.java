@@ -26,9 +26,6 @@ public record BehaviorKey(String id) {
     public static final BehaviorKey COURTSHIP_ACCEPT = new BehaviorKey("courtship_accept");
     public static final BehaviorKey DONATE_EMERALDS = new BehaviorKey("donate_emeralds");
 
-    // Investigate (universal, triggered by planner or override lane)
-    public static final BehaviorKey INVESTIGATE = new BehaviorKey("investigate");
-
     // Support / Village
     public static final BehaviorKey REPAIR_IRON_GOLEM = new BehaviorKey("repair_iron_golem");
 

@@ -33,7 +33,7 @@ public final class RehearsedDialogueSweepServerEvents {
      * The check runs across a short window so a time jump cannot skip the trigger tick;
      * {@link #lastSweptDay} guarantees it still fires only once per evening.
      */
-    private static final int SWEEP_START_TICK = TimeOfDay.AT_20_00.getTick();
+    private static final int SWEEP_START_TICK = TimeOfDay.AT_20_00.getMinecraftTick();
     private static final int SWEEP_WINDOW_TICKS = 20;
 
     private final DialogueProvider dialogueProvider;

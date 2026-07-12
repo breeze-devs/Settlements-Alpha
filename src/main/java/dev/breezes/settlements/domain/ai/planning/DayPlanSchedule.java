@@ -6,8 +6,6 @@ import lombok.Singular;
 
 import java.util.List;
 
-import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
-
 @Builder
 public record DayPlanSchedule(
         int wakeTick,
@@ -22,10 +20,14 @@ public record DayPlanSchedule(
         if (!TimeOfDay.isValidTick(bedtimeTick)) {
             throw new IllegalArgumentException("bedtimeTick must be between 0 and 23999");
         }
+        // Civil time never wraps across midnight, so a legally-authored day is always a plain forward interval
+        if (bedtimeTick <= wakeTick) {
+            throw new IllegalArgumentException("bedtimeTick must be after wakeTick in civil space");
+        }
     }
 
     public int authoredDayDurationTicks() {
-        return Math.floorMod(this.bedtimeTick - this.wakeTick, TICKS_PER_DAY);
+        return this.bedtimeTick - this.wakeTick;
     }
 
 }

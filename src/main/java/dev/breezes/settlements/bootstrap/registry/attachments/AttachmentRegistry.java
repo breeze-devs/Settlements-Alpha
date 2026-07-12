@@ -14,8 +14,6 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedg
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TotemTargetAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentState;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerCredibilityAttachmentCodec;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerCredibilityAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentState;
@@ -90,12 +88,6 @@ public final class AttachmentRegistry {
             "villager_knowledge",
             () -> AttachmentType.builder(VillagerKnowledgeAttachmentState::empty)
                     .serialize(VillagerKnowledgeAttachmentCodec.STATE_CODEC)
-                    .build());
-
-    public static final Supplier<AttachmentType<VillagerCredibilityAttachmentState>> VILLAGER_CREDIBILITY = REGISTRY.register(
-            "villager_credibility",
-            () -> AttachmentType.builder(VillagerCredibilityAttachmentState::empty)
-                    .serialize(VillagerCredibilityAttachmentCodec.STATE_CODEC)
                     .build());
 
     /**

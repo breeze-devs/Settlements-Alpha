@@ -47,6 +47,16 @@ public class RandomUtil {
     }
 
     public static <T> T weightedChoice(@Nonnull Map<T, Double> weightMap) {
+        return weightedChoice(weightMap, RANDOM);
+    }
+
+    /**
+     * Same cumulative-weight walk as {@link #weightedChoice(Map)}, but drawing from a
+     * caller-supplied {@link Random} instead of the shared static one — the entry point callers
+     * on a seeded plan-generation path (e.g. {@code WeightedRandomSelectionStrategy}) use so their
+     * draw participates in that caller's own reproducible sequence rather than the live shared RNG.
+     */
+    public static <T> T weightedChoice(@Nonnull Map<T, Double> weightMap, @Nonnull Random random) {
         if (weightMap.isEmpty()) {
             throw new IllegalArgumentException("weightMap must not be empty");
         }
@@ -55,7 +65,7 @@ public class RandomUtil {
                 .mapToDouble(Double::doubleValue)
                 .sum();
 
-        double targetWeight = randomDouble(0, totalWeight);
+        double targetWeight = random.nextDouble(0, totalWeight);
         double currentWeight = 0;
         T last = null;
         for (Map.Entry<T, Double> entry : weightMap.entrySet()) {

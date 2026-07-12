@@ -329,6 +329,46 @@ class RehearsedDialogueProviderTest {
     }
 
     @Test
+    void cancelInflightSweep_cancelsInflightHandle() {
+        // Arrange — register a handle as the current in-flight sweep
+        InferenceStreamHandle inflight = mock(InferenceStreamHandle.class);
+        provider.rotateSweepHandle(inflight); // inflight becomes the registered handle
+
+        // Act — shutdown-time cancel
+        provider.cancelInflightSweep();
+
+        // Assert — the in-flight exchange was aborted so close() has nothing to await
+        verify(inflight).cancel();
+    }
+
+    @Test
+    void cancelInflightSweep_advancesEpochDroppingStraggler() {
+        // Arrange — capture the epoch a result was dispatched under, then cancel the sweep
+        InferenceStreamHandle inflight = mock(InferenceStreamHandle.class);
+        long dispatchEpoch = provider.rotateSweepHandle(inflight);
+
+        UUID uuid = UUID.randomUUID();
+        VillagerPack straggler = VillagerPack.builder()
+                .villagerId(uuid)
+                .linesByOccasion(Occasion.IDLE, List.of("Straggler line"))
+                .build();
+
+        DialogueLine fallbackLine = DialogueLine.translatable("dialogue.test.fallback");
+        DialogueContext ctx = DialogueContext.builder().occasion(Occasion.IDLE).build();
+        when(fallback.sampleAmbientLine(eq(uuid), any())).thenReturn(Optional.of(fallbackLine));
+
+        // Act — cancel advances the epoch, then a result from the cancelled sweep tries to land
+        provider.cancelInflightSweep();
+        provider.installOnePack(dispatchEpoch, straggler);
+
+        // Assert — the straggler is dropped by the epoch guard; fallback is served
+        Optional<DialogueLine> line = provider.sampleAmbientLine(uuid, ctx);
+        assertTrue(line.isPresent());
+        assertTrue(line.get() instanceof DialogueLine.Translatable,
+                "A result from a cancelled sweep must be dropped, not installed");
+    }
+
+    @Test
     void installOnePack_multiplePacksAtCurrentEpoch_eachInstalledIndependently() {
         // Arrange
         InferenceStreamHandle handle = mock(InferenceStreamHandle.class);

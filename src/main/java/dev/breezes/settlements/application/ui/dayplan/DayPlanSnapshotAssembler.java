@@ -10,7 +10,8 @@ import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.planning.PlanSlotStatus;
-import dev.breezes.settlements.domain.time.TimeOfDay;
+import dev.breezes.settlements.domain.time.CivilTime;
+import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -33,15 +34,18 @@ public final class DayPlanSnapshotAssembler {
     public DayPlanSnapshot assemble(@Nonnull DayPlan dayPlan,
                                     @Nonnull BaseVillager villager,
                                     long dayTime) {
-        int currentDayTick = Math.floorMod(dayTime, TimeOfDay.TICKS_PER_DAY);
+        // Extended (unbounded) now, relative to THIS plan's own calendar day — see
+        // WorldCalendar#civilOffsetWithin. Shared across every slot so "upcoming vs completed" is
+        // judged consistently against the same instant.
+        int nowCivil = WorldCalendar.civilOffsetWithin(dayPlan.getCalendarDay(), dayTime);
         List<DayPlanSlotSnapshot> slots = dayPlan.getSlots().stream()
-                .map(slot -> this.assembleSlot(dayPlan, slot, currentDayTick))
+                .map(slot -> this.assembleSlot(slot, nowCivil))
                 .toList();
 
         return DayPlanSnapshot.builder()
                 .dayNumber(dayPlan.getCalendarDay())
                 .dayType(dayPlan.getDayType())
-                .currentTime(formatTime(currentDayTick))
+                .currentTime(formatTime(CivilTime.civilFromDayTime(dayTime)))
                 .planStatus(dayPlan.getStatus())
                 .villagerEntityId(villager.getId())
                 .villagerName(villager.getName().getString())
@@ -49,7 +53,7 @@ public final class DayPlanSnapshotAssembler {
                 .build();
     }
 
-    private DayPlanSlotSnapshot assembleSlot(@Nonnull DayPlan dayPlan, @Nonnull PlanSlot slot, int currentDayTick) {
+    private DayPlanSlotSnapshot assembleSlot(@Nonnull PlanSlot slot, int nowCivil) {
         BehaviorDisplayMetadata displayInfo = resolveDisplayInfo(slot);
 
         return DayPlanSlotSnapshot.builder()
@@ -57,7 +61,7 @@ public final class DayPlanSnapshotAssembler {
                 .displayNameKey(displayInfo.displayNameKey())
                 .formattedTime(formatTime(slot.getStartTick()))
                 .iconItemId(displayInfo.iconItemId())
-                .status(resolveVisualStatus(dayPlan, slot, currentDayTick))
+                .status(resolveVisualStatus(slot, nowCivil))
                 .description(resolveDescription(slot))
                 .flexible(slot.isFlexible())
                 .build();
@@ -80,9 +84,7 @@ public final class DayPlanSnapshotAssembler {
         return null;
     }
 
-    private static DayPlanSlotVisualStatus resolveVisualStatus(@Nonnull DayPlan dayPlan,
-                                                               @Nonnull PlanSlot slot,
-                                                               int currentDayTick) {
+    private static DayPlanSlotVisualStatus resolveVisualStatus(@Nonnull PlanSlot slot, int nowCivil) {
         if (slot.getStatus() == PlanSlotStatus.ACTIVE) {
             return DayPlanSlotVisualStatus.ACTIVE;
         }
@@ -96,15 +98,15 @@ public final class DayPlanSnapshotAssembler {
             return DayPlanSlotVisualStatus.INTERRUPTED;
         }
 
-        int slotOffset = Math.floorMod(slot.getStartTick() - dayPlan.getDayStartTick(), TimeOfDay.TICKS_PER_DAY);
-        int nowOffset = Math.floorMod(currentDayTick - dayPlan.getDayStartTick(), TimeOfDay.TICKS_PER_DAY);
-        return slotOffset < nowOffset ? DayPlanSlotVisualStatus.COMPLETED : DayPlanSlotVisualStatus.UPCOMING;
+        // nowCivil is deliberately unbounded (see WorldCalendar#civilOffsetWithin), so a moment past
+        // the plan's own bedtime correctly reads every remaining PENDING slot as COMPLETED.
+        return slot.getStartTick() < nowCivil ? DayPlanSlotVisualStatus.COMPLETED : DayPlanSlotVisualStatus.UPCOMING;
     }
 
-    private static String formatTime(int dayTick) {
-        int minecraftHour = Math.floorMod(dayTick / 1000 + 6, 24);
-        int minute = Math.floorMod(dayTick, 1000) * 60 / 1000;
-        return String.format(Locale.ROOT, "%02d:%02d", minecraftHour, minute);
+    private static String formatTime(int civilTick) {
+        int hour = civilTick / 1000;
+        int minute = (civilTick % 1000) * 60 / 1000;
+        return String.format(Locale.ROOT, "%02d:%02d", hour, minute);
     }
 
 }

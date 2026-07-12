@@ -15,6 +15,7 @@ import dev.breezes.settlements.application.ai.memory.SensedSiteReader;
 import dev.breezes.settlements.application.ai.perception.PerceptionPipeline;
 import dev.breezes.settlements.application.ai.persona.PersonaConfig;
 import dev.breezes.settlements.application.ai.persona.PersonaGenerationService;
+import dev.breezes.settlements.application.ai.planning.PlanRequestService;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueArbiter;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
@@ -23,9 +24,9 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.settlement.persistence.SettlementMetadataQueueService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.bootstrap.event.CourtshipSessionReaperServerEvents;
-import dev.breezes.settlements.bootstrap.event.CredibilityDecayServerEvents;
 import dev.breezes.settlements.bootstrap.event.GossipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.PersonaSweepServerEvents;
+import dev.breezes.settlements.bootstrap.event.PlanOverlayPumpServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
 import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.RehearsedDialogueSweepServerEvents;
@@ -40,11 +41,11 @@ import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementServer
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
 import dev.breezes.settlements.di.modules.server.ConcurrencyModule;
-import dev.breezes.settlements.di.modules.server.CredibilityModule;
 import dev.breezes.settlements.di.modules.server.DialogueServiceModule;
 import dev.breezes.settlements.di.modules.server.GossipModule;
 import dev.breezes.settlements.di.modules.server.OverridePolicyModule;
 import dev.breezes.settlements.di.modules.server.PerceptionModule;
+import dev.breezes.settlements.di.modules.server.PlanInferenceModule;
 import dev.breezes.settlements.di.modules.server.PlanningModule;
 import dev.breezes.settlements.di.modules.server.PoolModule;
 import dev.breezes.settlements.di.modules.server.SensorCatalogModule;
@@ -66,7 +67,6 @@ import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDa
 import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketReceiver;
-import dev.breezes.settlements.shared.util.ReputationUtil;
 
 import javax.inject.Provider;
 import java.util.Set;
@@ -78,6 +78,7 @@ import java.util.concurrent.ExecutorService;
         BehaviorCatalogModule.class,
         PoolModule.class,
         PlanningModule.class,
+        PlanInferenceModule.class,
         ConcurrencyModule.class,
         SettlementQueryModule.class,
         SensorCatalogModule.class,
@@ -87,7 +88,6 @@ import java.util.concurrent.ExecutorService;
         WorldEventModule.class,
         PerceptionModule.class,
         GossipModule.class,
-        CredibilityModule.class,
         DialogueServiceModule.class,
         OverridePolicyModule.class,
 })
@@ -153,10 +153,6 @@ public interface ServerComponent {
 
     TradeSessionReaperServerEvents tradeSessionReaperServerEvents();
 
-    ReputationUtil reputationUtil();
-
-    CredibilityDecayServerEvents credibilityDecayServerEvents();
-
     DialogueProvider dialogueProvider();
 
     DialogueConfig dialogueConfig();
@@ -176,6 +172,10 @@ public interface ServerComponent {
     EventLaneConfig eventLaneConfig();
 
     RehearsedDialogueSweepServerEvents eveningDialoguePackSweepServerEvents();
+
+    PlanOverlayPumpServerEvents planOverlayPumpServerEvents();
+
+    PlanRequestService planRequestService();
 
     PersonaSweepServerEvents personaSweepServerEvents();
 

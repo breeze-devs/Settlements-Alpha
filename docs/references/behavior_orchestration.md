@@ -19,8 +19,8 @@ post-brain ticks driven directly from `BaseVillager.customServerAiStep()`:
    `PlanSlot` entries. It owns what the villager is *doing* at any given moment.
 2. **Reactive override** — a preemption slot that rides *inside* `PlanRunnerBehavior`. Pluggable
    `OverridePolicy` strategies can interrupt the running plan slot (independently of vanilla
-   PANIC/RAID/HIDE) when a fresh, high-priority stimulus arrives — an urgent hearsay tip to
-   investigate, or a trade/courtship invite to accept.
+   PANIC/RAID/HIDE) when a fresh, high-priority stimulus arrives — a trade/courtship invite to
+   accept, or a demanded item spotted nearby.
 3. **Background (activity-ambient)** — contextual vanilla behaviors registered under the active
    activity fill the villager's time when the foreground is not occupying a resource channel. They
    own what the villager *feels like* during that time (strolling near the job site during work
@@ -299,11 +299,10 @@ Registered as a Dagger multibinding in `di/modules/server/OverridePolicyModule.j
 
 | Policy | Priority | Fires when | Installs |
 |--------|----------|-----------|----------|
-| `UrgentInvestigateOverridePolicy` | 200 | A pending hearsay tip's urgency (`weight × freshness`, freshness half-life 6 000 ticks) exceeds `URGENCY_THRESHOLD` (2.5). Reads the villager's `VillagerKnowledgeStore` via `InvestigateTipSelector`; short-circuits when the store is empty. | `BehaviorKey.INVESTIGATE` |
 | `SocialAcceptOverridePolicy` | 100 | Another villager has sent a trade or courtship invite. Delegates to `OverrideTriggerDetector`, which polls `CourtshipSessionRegistry` / `TradeSessionRegistry` (courtship > trade). | `COURTSHIP_ACCEPT` / `TRADE_ACCEPT` |
 | `CollectDemandedItemOverridePolicy` | 50 | `DemandedGroundItemSensor` has flagged a demanded item nearby (`MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY`) **and** no plan/override behavior is currently active **and** the villager's active non-core activity is one of `WORK`/`MEET`/`IDLE`. | `BehaviorKey.COLLECT_DEMANDED_ITEM` |
 
-Unlike the other two, `CollectDemandedItemOverridePolicy` explicitly checks `PLAN_BEHAVIOR_ACTIVE`
+Unlike `SocialAcceptOverridePolicy`, `CollectDemandedItemOverridePolicy` explicitly checks `PLAN_BEHAVIOR_ACTIVE`
 itself rather than relying solely on `tryStartOverride`'s `canInterruptCurrentPlanBehavior` gate.
 That gate only blocks on a non-interruptible plan behavior — `COLLECT_DEMANDED_ITEM` (like most
 behaviors) is `interruptible(true)`, so without the explicit check this policy could preempt an
@@ -313,25 +312,17 @@ managed-activity check also matters because `tickOverride` runs before the activ
 therefore evaluated during REST too, where `PLAN_BEHAVIOR_ACTIVE` is likewise absent — restricting
 to `WORK`/`MEET`/`IDLE` is what keeps this from firing during sleep.
 
-All three are `@ServerScope` and must be stateless/pure — `evaluate(level, villager)` returns
+Both are `@ServerScope` and must be stateless/pure — `evaluate(level, villager)` returns
 `Optional<OverrideRequest>` and is polled every tick.
 
-### Confirmation → plan regeneration
-
-`onOverrideCompleted` publishes the behavior outcome and re-queues the interrupted slot — *unless*
-the completed behavior implements `ConfirmableOverride` (`domain/ai/behavior/contracts/`) and
-`didConfirm()` returns `true`. In that case the plan is hard-reset/regenerated, because the
-interrupted plan was authored before the tip was known and blindly resuming it would ignore the
-discovery. `InvestigateBehavior` (`application/.../villager/investigate/InvestigateBehavior.java`)
-is the current implementer: a confirmed sighting regenerates the day plan so the freshly verified
-resource can be acted on; a refuted or unreachable investigation just resumes the interrupted slot.
+On completion, `onOverrideCompleted` publishes the behavior outcome and re-queues the interrupted
+slot so the villager resumes its day where the override pre-empted it.
 
 ### Where the stimuli come from
 
-`UrgentInvestigateOverridePolicy` reads the per-villager knowledge store, which is populated by the
-perception pipeline draining the world-event bus; `SocialAcceptOverridePolicy` reads the session
-registries fed by trade/courtship invite emissions. That upstream machinery is the **event lane** —
-see [`event_lane.md`](event_lane.md).
+`SocialAcceptOverridePolicy` reads the session registries fed by trade/courtship invite emissions;
+`CollectDemandedItemOverridePolicy` reads the demanded-item sensor memory. The invite upstream is the
+**event lane** — see [`event_lane.md`](event_lane.md).
 
 ---
 
@@ -386,9 +377,8 @@ slower generator. The heuristic remains the source of truth.
 |----------|--------|-----------|
 | `PlanRunnerBehavior` location | `Activity.CORE` | Must survive activity transitions without stop/start; CORE always ticks regardless of active activity. Placing it in each activity would restart it on every transition, interrupting mid-slot execution. |
 | Reactive override rides inside `PlanRunnerBehavior` | Not a new activity, not a vanilla brain override | Only `PlanRunner` knows whether a plan behavior is running and interruptible; the override must be able to fire under any managed activity and must hand the body over cleanly (suspend → install → resume). A brain-priority behavior could not coordinate that. |
-| Override precedence is policy-level | `OverridePolicy.priority()` | Cross-policy ordering (Investigate 200 > SocialAccept 100) is independent of brain priority; the plan runner evaluates the multibound set in one place. |
+| Override precedence is policy-level | `OverridePolicy.priority()` | Cross-policy ordering (SocialAccept 100 > CollectDemandedItem 50) is independent of brain priority; the plan runner evaluates the multibound set in one place. |
 | Override has a 60 s ceiling | `MAX_OVERRIDE_DURATION_TICKS` | Overrides are reactive and short-lived; a wedged one (e.g. mirroring a session that never closes) must not freeze the villager. On trip, force-stop and re-queue the interrupted slot. |
-| Confirmed investigation regenerates the plan | `ConfirmableOverride.didConfirm()` | The interrupted plan predates the discovery; resuming it verbatim would ignore a freshly verified resource. Every other override just resumes the interrupted slot. |
 | Opportunity requirements down-weight, not filter | `0.2×` multiplier | Keeps starved behaviors in the pool so plans stay resilient; the packer prunes only zero-weight entries. Forecast is computed on the server thread before the async handoff (decaying-memory reads aren't thread-safe). |
 | Activity transitions | Dynamic (`PlanContextSwitcher`) | Per-villager schedules vary by profession and authored plan blocks. A static `Schedule` cannot represent this. |
 | Vanilla activities reused | `Activity.WORK`, `MEET`, `IDLE`, `REST` | No new activity registration required. Vanilla brain priority already handles PANIC/RAID/HIDE override for free via existing CORE behaviors. |
@@ -417,12 +407,11 @@ slower generator. The heuristic remains the source of truth.
 
 1. Implement `OverridePolicy` (`@ServerScope`, stateless): `priority()` for cross-policy precedence
    and `evaluate(level, villager)` returning the `OverrideRequest` (the `BehaviorKey` to install).
-   Keep it cheap — it is polled every tick — and short-circuit early (as `UrgentInvestigateOverridePolicy`
-   does when the knowledge store is empty).
+   Keep it cheap — it is polled every tick — and short-circuit early (as `SocialAcceptOverridePolicy`
+   does when no invite is pending).
 2. Bind it `@IntoSet` in `OverridePolicyModule`.
 3. Ensure the target behavior exists in the catalog and declares `isInterruptible()` appropriately
-   on the behaviors it may interrupt. If the override should reshape the rest of the day on success,
-   implement `ConfirmableOverride`.
+   on the behaviors it may interrupt.
 4. If the trigger depends on a new stimulus, emit it onto the `WorldEventBus` — see
    [`event_lane.md`](event_lane.md).
 5. Update this document.

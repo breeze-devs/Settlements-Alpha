@@ -32,7 +32,6 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.forge.ForgeToolConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.investigate.InvestigateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
@@ -48,6 +47,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.support
 import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
+import dev.breezes.settlements.application.ai.inference.plan.PlanInferenceConfig;
 import dev.breezes.settlements.application.ai.persona.PersonaConfig;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensorConfig;
@@ -153,12 +153,6 @@ public final class ConfigModule {
     @Singleton
     static DonationConfig donateEmeraldsConfig() {
         return ConfigFactory.create(DonationConfig.class);
-    }
-
-    @Provides
-    @Singleton
-    static InvestigateConfig investigateConfig() {
-        return ConfigFactory.create(InvestigateConfig.class);
     }
 
     @Provides
@@ -387,6 +381,12 @@ public final class ConfigModule {
     @Singleton
     static EventLaneConfig eventLaneConfig() {
         return ConfigFactory.create(EventLaneConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static PlanInferenceConfig planInferenceConfig() {
+        return ConfigFactory.create(PlanInferenceConfig.class);
     }
 
     @Provides

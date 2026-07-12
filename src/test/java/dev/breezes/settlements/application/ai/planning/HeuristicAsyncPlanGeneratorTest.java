@@ -22,13 +22,13 @@ class HeuristicAsyncPlanGeneratorTest {
         // Arrange
         DayPlan expectedPlan = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(24_000L)
+                .calendarDay(1L)
                 .schedule(DayPlanSchedule.builder()
                         .wakeTick(0)
                         .bedtimeTick(12_000)
                         .build())
                 .build();
-        IPlanGenerator syncGenerator = context -> expectedPlan;
+        IPlanGenerator syncGenerator = (context, intent) -> expectedPlan;
         ExecutorService executor = Executors.newSingleThreadExecutor();
         HeuristicAsyncPlanGenerator asyncGenerator = new HeuristicAsyncPlanGenerator(syncGenerator, executor);
         PlanGenerationContext context = PlanGenerationContext.builder()

@@ -70,8 +70,6 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.forge.F
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.investigate.InvestigateBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.investigate.InvestigateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherBehavior;
@@ -119,7 +117,6 @@ import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.CooldownRange;
 import dev.breezes.settlements.domain.ai.catalog.WorkIntensity;
-import dev.breezes.settlements.domain.ai.credibility.ReputationQuery;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.planning.OpportunityRequirement;
 import dev.breezes.settlements.domain.crafting.catalog.CraftCatalogRegistry;
@@ -133,7 +130,6 @@ import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.Collec
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scavenge.ScavengeYieldDataManager;
-import dev.breezes.settlements.shared.util.ReputationUtil;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.EntityType;
@@ -1475,44 +1471,6 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("short_grass"))
                         .build())
                 .factory(() -> new ScavengeBehavior(config, support, yieldData))
-                .build();
-    }
-
-    // Investigate
-
-    /**
-     * Investigate: navigate to a hearsay tip location, force a sensor scan, evaluate the
-     * claim predicate, and resolve the entry CONFIRMED or REFUTED.
-     * <p>
-     * The behavior is registered as a normal catalog entry so the planner and override lane
-     * can retrieve it via {@code IBehaviorCatalog.createBehavior(BehaviorKey.INVESTIGATE)}.
-     * The behavior self-selects its tip via InvestigateTipSelector inside its precondition check,
-     * so no external configure() call is needed before tickPreconditions().
-     */
-    @Provides
-    @IntoSet
-    static BehaviorCatalogEntry investigate(InvestigateConfig config,
-                                            BehaviorSupport support,
-                                            ReputationUtil reputationUtil,
-                                            ReputationQuery reputationQuery) {
-        return BehaviorCatalogEntry.builder()
-                .descriptor(BehaviorPlanningMetadata.builder()
-                        .key(BehaviorKey.INVESTIGATE)
-                        .displayName("Investigate Tip")
-                        .description("Travel to a hearsay tip location and verify the claim")
-                        .category(BehaviorCategory.WORK)
-                        .intensity(WorkIntensity.LIGHT)
-                        .requiredChannel(BehaviorChannel.MOVEMENT)
-                        .requiredChannel(BehaviorChannel.COGNITION)
-                        .estimatedDuration(ClockTicks.seconds(45).asGameTicks())
-                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
-                        .interruptible(true)
-                        .build())
-                .displayInfo(BehaviorDisplayMetadata.builder()
-                        .displayNameKey(BehaviorKey.INVESTIGATE.displayNameKey())
-                        .iconItemId(ResourceLocation.withDefaultNamespace("compass"))
-                        .build())
-                .factory(() -> new InvestigateBehavior(config, support, reputationUtil, reputationQuery))
                 .build();
     }
 

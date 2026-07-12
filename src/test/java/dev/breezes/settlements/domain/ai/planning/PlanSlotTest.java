@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PlanSlotTest {
 
@@ -25,6 +26,21 @@ class PlanSlotTest {
         assertFalse(slot.isFlexible());
         assertEquals(1_200, slot.getEstimatedDurationTicks());
         assertEquals(PlanSlotStatus.PENDING, slot.getStatus());
+        assertFalse(slot.isPinned());
+    }
+
+    @Test
+    void builder_pinnedTrueIsReflectedByGetter() {
+        PlanSlot slot = PlanSlot.builder()
+                .startTick(6_000)
+                .behaviorKey(BehaviorKey.EAT_FOOD)
+                .priority(10)
+                .flexible(false)
+                .estimatedDurationTicks(1_200)
+                .pinned(true)
+                .build();
+
+        assertTrue(slot.isPinned());
     }
 
     @Test

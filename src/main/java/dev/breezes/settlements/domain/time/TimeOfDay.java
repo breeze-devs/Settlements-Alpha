@@ -1,7 +1,6 @@
 package dev.breezes.settlements.domain.time;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 /**
  * Specific moments in a Minecraft game day, expressed as game-tick offsets.
@@ -12,9 +11,13 @@ import lombok.Getter;
  * <p>
  * Times from 00:00 to 05:30 have tick values above 18 000 because the Minecraft
  * day resets at 06:00 (tick 0), not at midnight.
+ * <p>
+ * Each constant exposes two accessors: {@link #getMinecraftTick()} returns the stored,
+ * dawn-anchored value used throughout the engine-facing code, while {@link #getCivilTick()}
+ * returns the same moment re-anchored to midnight via {@link CivilTime}. The stored literals
+ * below stay in Minecraft space — only the accessor is duplicated, not the data.
  */
 @AllArgsConstructor
-@Getter
 public enum TimeOfDay {
 
     /**
@@ -81,6 +84,25 @@ public enum TimeOfDay {
     public static final int TICKS_PER_DAY = 24_000;
 
     private final int tick;
+
+    /**
+     * The Minecraft-space tick (0 = dawn), as stored on the enum constant.
+     * <p>
+     * Named explicitly rather than left as a Lombok-generated {@code getTick()} so call sites
+     * state which clock they mean; see {@link #getCivilTick()} for the midnight-anchored twin.
+     */
+    public int getMinecraftTick() {
+        return this.tick;
+    }
+
+    /**
+     * The same moment re-anchored to midnight (0 = 00:00), via {@link CivilTime}. Delegates
+     * rather than duplicating the conversion so there is exactly one place that knows the
+     * dawn/midnight offset.
+     */
+    public int getCivilTick() {
+        return CivilTime.civilFromMcTick(this.tick);
+    }
 
     public static boolean isValidTick(int tick) {
         return tick >= 0 && tick < TICKS_PER_DAY;

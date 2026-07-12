@@ -3,6 +3,8 @@ package dev.breezes.settlements.application.ai.planning;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.DayPlanSchedule;
+import dev.breezes.settlements.domain.ai.planning.PlanArrival;
+import dev.breezes.settlements.domain.ai.planning.PlanAuthor;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import org.junit.jupiter.api.Test;
@@ -92,12 +94,12 @@ class PlanRuntimeStateTest {
         PlanRuntimeState runtime = new PlanRuntimeState();
         DayPlan pendingPlan = plan(24_000L);
         CompletableFuture<DayPlan> future = new CompletableFuture<>();
-        runtime.setPendingNextPlan(pendingPlan);
+        runtime.setPendingArrival(new PlanArrival(pendingPlan, PlanAuthor.HEURISTIC));
         runtime.markPlanExhausted();
         runtime.setPendingFuture(future);
         runtime.setPendingFutureSubmittedAtDayTime(12_000L);
         runtime.setPendingFutureWakeAtAbsoluteTick(24_000L);
-        runtime.getPendingArrivals().offer(pendingPlan);
+        runtime.getPendingArrivals().offer(new PlanArrival(pendingPlan, PlanAuthor.HEURISTIC));
 
         // Act
         runtime.reset(13_000L);
@@ -168,7 +170,7 @@ class PlanRuntimeStateTest {
         // Arrange
         PlanRuntimeState runtime = new PlanRuntimeState();
         DayPlan pendingPlan = plan(24_000L);
-        runtime.setPendingNextPlan(pendingPlan);
+        runtime.setPendingArrival(new PlanArrival(pendingPlan, PlanAuthor.HEURISTIC));
         runtime.markPlanExhausted();
 
         // Act
@@ -184,10 +186,10 @@ class PlanRuntimeStateTest {
         return mock(IBehavior.class);
     }
 
-    private static DayPlan plan(long wakeAtAbsoluteTick) {
+    private static DayPlan plan(long calendarDay) {
         return DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(wakeAtAbsoluteTick)
+                .calendarDay(calendarDay)
                 .schedule(DayPlanSchedule.builder()
                         .wakeTick(0)
                         .bedtimeTick(12_000)

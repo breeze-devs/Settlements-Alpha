@@ -19,6 +19,7 @@ import dev.breezes.settlements.application.ai.inference.monologue.MonologueReque
 import dev.breezes.settlements.application.ai.inference.persona.PersonaBatchRequest;
 import dev.breezes.settlements.application.ai.inference.persona.PersonaRequestAssembler;
 import dev.breezes.settlements.application.ai.memory.SensedSiteReader;
+import dev.breezes.settlements.application.ai.planning.PlanRequestService;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
@@ -26,6 +27,7 @@ import dev.breezes.settlements.domain.ai.memory.MemoryType;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.memory.SensedSites;
 import dev.breezes.settlements.domain.ai.memory.SiteCoord;
+import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.personality.PersonalityStatus;
@@ -84,7 +86,8 @@ public class TestCommand {
                 .then(Commands.literal("info").executes(TestCommand::settlementInfo))
                 .then(Commands.literal("memory").executes(TestCommand::dumpMemories))
                 .then(buildMonologueCommand())
-                .then(buildPersonaCommand()));
+                .then(buildPersonaCommand())
+                .then(buildPlanCommand()));
     }
 
     private static int settlementInfo(CommandContext<CommandSourceStack> context) {
@@ -387,6 +390,46 @@ public class TestCommand {
         String filename = outputPath.getFileName().toString();
         source.sendSuccess(() -> Component.literal(
                 "[persona dump] pendingVillagers=" + pending.size() + " | file=" + filename), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> buildPlanCommand() {
+        return Commands.literal("plan")
+                // Force-enqueues an LLM day-plan overlay for every loaded villager's in-progress day,
+                // restoring the "trigger everyone now" button lost when the overnight sweep was removed.
+                .then(Commands.literal("overlay").executes(TestCommand::forcePlanOverlay));
+    }
+
+    private static int forcePlanOverlay(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        List<BaseVillager> villagers = collectLoadedVillagers(source.getServer()).stream()
+                .filter(villager -> !villager.isBaby())
+                .filter(villager -> villager.getDayPlan() != null)
+                .toList();
+
+        if (villagers.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("[plan overlay] no eligible loaded villagers (adult with a current plan)"), false);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        PlanRequestService planRequestService = SettlementsDagger.serverOrThrow().planRequestService();
+        long dayTime = source.getServer().overworld().getDayTime();
+        for (BaseVillager villager : villagers) {
+            DayPlan currentPlan = villager.getDayPlan();
+            if (currentPlan == null) {
+                continue;
+            }
+            // Target the current plan's own wake tick so the overlay is authored for the in-progress
+            // day and adopts at the next slot boundary — the same in-progress-day targeting the old
+            // catch-up sweep used, without needing the wake scheduler here. The configurable overlay
+            // cutoff still applies (via enqueueForOverlay): once the day is past it the request is
+            // skipped, so /time set to the morning to force one for the whole in-progress day.
+            planRequestService.enqueueForOverlay(villager, dayTime, currentPlan.getWakeAtAbsoluteTick());
+        }
+
+        int count = villagers.size();
+        source.sendSuccess(() -> Component.literal(
+                "[plan overlay] requested overlay for " + count + " villager(s) — no-op unless plan_inference.mode=LLM; villagers past today's overlay cutoff or already in flight are skipped"), false);
         return Command.SINGLE_SUCCESS;
     }
 

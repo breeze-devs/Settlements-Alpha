@@ -22,10 +22,10 @@ import java.util.Set;
  *
  * @param chronotypeSeed              Stable per-villager seed for deterministic chronotype offsets.
  *                                    Consumed by the generator to jitter sleep and meal anchors per villager.
- * @param pendingInvestigateTipCount  Number of unverified hearsay tips in the villager's knowledge store
- *                                    at plan-generation time. A value &gt; 0 causes the planner to inject
- *                                    an Investigate scout slot into the morning work block.
- *                                    Defaults to 0 when not supplied by the caller.
+ * @param planSeed                    Seeds the single {@link java.util.Random} the generator constructs to
+ *                                    drive every plan-path draw. Scoped to (villager, calendar day) so
+ *                                    regenerating the same villager's plan on the same day reproduces the
+ *                                    identical draw sequence, while different villagers or different days diverge.
  * @param behaviorsLackingOpportunity Behavior keys whose declared opportunity requirements are not currently
  *                                    satisfied. The heuristic planner down-weights these by
  *                                    {@code LOW_OPPORTUNITY_MULTIPLIER} rather than removing them entirely,
@@ -42,7 +42,7 @@ public record PlanGenerationContext(
         List<WeightedBehavior> availableBehaviors,
         long wakeAtAbsoluteTick,
         long chronotypeSeed,
-        int pendingInvestigateTipCount,
+        long planSeed,
         Set<BehaviorKey> behaviorsLackingOpportunity
 ) {
 

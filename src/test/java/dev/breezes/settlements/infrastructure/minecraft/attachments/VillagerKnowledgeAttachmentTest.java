@@ -63,10 +63,7 @@ class VillagerKnowledgeAttachmentTest {
                 .source(preSave.getSource())
                 .hop(preSave.getHop())
                 .originalWeight(preSave.getOriginalWeight())
-                .resolution(preSave.getResolution())
                 .corroborationCount(preSave.getCorroborationCount())
-                .investigationAttempts(preSave.getInvestigationAttempts())
-                .nextEligibleTick(preSave.getNextEligibleTick())
                 .build();
 
         // Act — reconstruct exactly as VillagerKnowledgeAttachment.loadInto does
@@ -92,8 +89,6 @@ class VillagerKnowledgeAttachmentTest {
                 .hop(0)
                 .originalWeight(1.0f)
                 .corroborationCount(0)
-                .investigationAttempts(0)
-                .nextEligibleTick(0L)
                 .build();
 
         // Act, Assert
@@ -112,8 +107,6 @@ class VillagerKnowledgeAttachmentTest {
                 .hop(0)
                 .originalWeight(1.0f)
                 .corroborationCount(0)
-                .investigationAttempts(0)
-                .nextEligibleTick(0L)
                 .build();
 
         // Act, Assert

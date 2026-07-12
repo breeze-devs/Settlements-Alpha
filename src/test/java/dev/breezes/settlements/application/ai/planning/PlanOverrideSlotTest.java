@@ -234,11 +234,11 @@ class PlanOverrideSlotTest {
     @Test
     void windowClosed_slotIsSkipped_notRetriedForever() {
         // Arrange — slot started at tick 2_000, duration 500 ticks, now at tick 5_000.
-        // With epoch 0, linearEnd = 2_500; linearNow = 5_000 → window is closed.
+        // windowEnd = 2_500; now = 5_000 → window is closed.
         PlanSlot slot = planSlot(2_000, 500, BehaviorKey.HARVEST_MELON, PlanSlotStatus.PENDING);
 
         // Act
-        boolean closed = PlanRunner.isSlotWindowClosed(slot, 5_000, 0);
+        boolean closed = PlanRunner.isSlotWindowClosed(slot, 5_000);
 
         // Assert — window-closed gate in the seek loop would skip this slot.
         assertTrue(closed);
@@ -250,7 +250,7 @@ class PlanOverrideSlotTest {
         PlanSlot slot = planSlot(5_000, 600, BehaviorKey.HARVEST_MELON, PlanSlotStatus.PENDING);
 
         // Act
-        boolean open = PlanRunner.isSlotWindowOpen(slot, 4_500, 0);
+        boolean open = PlanRunner.isSlotWindowOpen(slot, 4_500);
 
         // Assert
         assertFalse(open);
@@ -262,7 +262,7 @@ class PlanOverrideSlotTest {
         PlanSlot slot = planSlot(5_000, 600, BehaviorKey.HARVEST_MELON, PlanSlotStatus.PENDING);
 
         // Act
-        boolean open = PlanRunner.isSlotWindowOpen(slot, 5_000, 0);
+        boolean open = PlanRunner.isSlotWindowOpen(slot, 5_000);
 
         // Assert
         assertTrue(open);
@@ -275,7 +275,7 @@ class PlanOverrideSlotTest {
         PlanSlot slot = planSlot(2_000, 500, BehaviorKey.HARVEST_MELON, PlanSlotStatus.PENDING);
 
         // Act — re-attempt would reach here and the seek loop evaluates isSlotWindowClosed.
-        boolean closed = PlanRunner.isSlotWindowClosed(slot, 3_500, 0);
+        boolean closed = PlanRunner.isSlotWindowClosed(slot, 3_500);
 
         // Assert — slot is skipped gracefully; no infinite retry.
         assertTrue(closed);
@@ -287,7 +287,7 @@ class PlanOverrideSlotTest {
         PlanSlot slot = planSlot(2_000, 500, BehaviorKey.HARVEST_MELON, PlanSlotStatus.PENDING);
 
         // Act
-        boolean closed = PlanRunner.isSlotWindowClosed(slot, 2_050, 0);
+        boolean closed = PlanRunner.isSlotWindowClosed(slot, 2_050);
 
         // Assert — plan runner retries the slot.
         assertFalse(closed);
@@ -392,7 +392,7 @@ class PlanOverrideSlotTest {
     private static DayPlan planWith(PlanSlot slot) {
         return DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(0L)
+                .calendarDay(0L)
                 .schedule(DayPlanSchedule.builder()
                         .wakeTick(0)
                         .bedtimeTick(12_000)

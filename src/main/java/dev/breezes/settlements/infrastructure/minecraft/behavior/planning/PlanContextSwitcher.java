@@ -10,8 +10,10 @@ import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.planning.PlanSlotStatus;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.domain.time.CivilTime;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
+import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.Behavior;
@@ -22,8 +24,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Optional;
-
-import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
 
 public class PlanContextSwitcher extends Behavior<Villager> {
 
@@ -72,21 +72,22 @@ public class PlanContextSwitcher extends Behavior<Villager> {
     }
 
     private Activity deriveActivity(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
-        int dayTick = Math.floorMod(level.getDayTime(), TICKS_PER_DAY);
         Optional<DayPlan> currentPlan = this.currentPlan(level, villager);
         if (currentPlan.isEmpty()) {
             // Missing or stale plans should still give villagers vanilla-shaped ambient life instead of freezing activity transitions.
-            return this.fallbackActivity(villager.getProfession(), dayTick);
+            return this.fallbackActivity(villager.getProfession(), level.getDayTime());
         }
 
-        DayPlanSchedule schedule = currentPlan.get().getSchedule();
-        if (this.isOutsideAuthoredDay(schedule, dayTick)) {
+        DayPlan plan = currentPlan.get();
+        DayPlanSchedule schedule = plan.getSchedule();
+        int nowCivil = WorldCalendar.civilOffsetWithin(plan.getCalendarDay(), level.getDayTime());
+        if (this.isOutsideAuthoredDay(schedule, nowCivil)) {
             // Final bedtime owns the boundary so stale foreground slots cannot keep the villager out of REST overnight.
             return Activity.REST;
         }
 
-        Optional<Activity> activeSlotActivity = this.activeSlotActivity(currentPlan.get(), villager.getPlanRuntimeState());
-        return activeSlotActivity.orElseGet(() -> this.blockActivity(schedule, dayTick)
+        Optional<Activity> activeSlotActivity = this.activeSlotActivity(plan, villager.getPlanRuntimeState());
+        return activeSlotActivity.orElseGet(() -> this.blockActivity(schedule, nowCivil)
                 .orElse(Activity.IDLE));
     }
 
@@ -113,25 +114,24 @@ public class PlanContextSwitcher extends Behavior<Villager> {
         };
     }
 
-    private Optional<Activity> blockActivity(@Nonnull DayPlanSchedule schedule, int dayTick) {
-        int linearNow = this.toLinear(dayTick, schedule.wakeTick());
+    private Optional<Activity> blockActivity(@Nonnull DayPlanSchedule schedule, int nowCivil) {
         // Heuristic schedules are intentionally tiny; switch to binary search if authored schedules grow into many granular blocks.
         return schedule.activityBlocks().stream()
-                .filter(block -> this.contains(block, schedule.wakeTick(), linearNow))
+                .filter(block -> this.contains(block, nowCivil))
                 .findFirst()
                 .map(block -> this.toMinecraftActivity(block.context()));
     }
 
-    private boolean contains(@Nonnull DayPlanActivityBlock block, int wakeTick, int linearNow) {
-        int linearStart = this.toLinear(block.startTick(), wakeTick);
-        int linearEnd = this.toLinear(block.endTick(), wakeTick);
-        return linearNow >= linearStart && linearNow < linearEnd;
+    private boolean contains(@Nonnull DayPlanActivityBlock block, int nowCivil) {
+        return nowCivil >= block.startTick() && nowCivil < block.endTick();
     }
 
-    private boolean isOutsideAuthoredDay(@Nonnull DayPlanSchedule schedule, int dayTick) {
-        int linearNow = this.toLinear(dayTick, schedule.wakeTick());
-        int linearBedtime = this.toLinear(schedule.bedtimeTick(), schedule.wakeTick());
-        return linearNow >= linearBedtime;
+    private boolean isOutsideAuthoredDay(@Nonnull DayPlanSchedule schedule, int nowCivil) {
+        // The < wake arm matters for a freshly (re)generated plan ticked in the sliver before its
+        // own wake civil tick (e.g. right after a hard reset): the OLD wake-relative "linear" check
+        // folded a pre-wake "now" forward past bedtime via wraparound, landing on REST; this arm
+        // reaches the same REST outcome directly, without relying on any wrap.
+        return nowCivil >= schedule.bedtimeTick() || nowCivil < schedule.wakeTick();
     }
 
     private Activity toMinecraftActivity(@Nonnull DayPlanActivityContext context) {
@@ -143,36 +143,34 @@ public class PlanContextSwitcher extends Behavior<Villager> {
         };
     }
 
-    private Activity fallbackActivity(@Nonnull VillagerProfessionKey profession, int dayTick) {
+    private Activity fallbackActivity(@Nonnull VillagerProfessionKey profession, long dayTime) {
         ScheduleProfile profile = ScheduleProfile.defaultFor(profession);
-        // Fallback is computed directly in linear time to avoid constructing wraparound blocks for early-bird professions.
-        int bedtimeLinear = this.toLinear(profile.defaultSleepTick(), profile.defaultWakeTick());
-        int nowLinear = this.toLinear(dayTick, profile.defaultWakeTick());
-        if (nowLinear >= bedtimeLinear) {
+        // ScheduleProfile ticks are authored in MC space; re-anchor each onto civil time so the
+        // comparisons below need no wake-relative wrap math.
+        int wakeCivil = CivilTime.civilFromMcTick(profile.defaultWakeTick());
+        int bedtimeCivil = CivilTime.civilFromMcTick(profile.defaultSleepTick());
+        int nowCivil = CivilTime.civilFromDayTime(dayTime);
+
+        if (nowCivil < wakeCivil || nowCivil >= bedtimeCivil) {
             return Activity.REST;
         }
 
-        int workStartLinear = this.toLinear(profile.workStartTick(), profile.defaultWakeTick());
-        int workEndLinear = this.toLinear(profile.workEndTick(), profile.defaultWakeTick());
-        if (workStartLinear == workEndLinear) {
+        int workStartCivil = CivilTime.civilFromMcTick(profile.workStartTick());
+        int workEndCivil = CivilTime.civilFromMcTick(profile.workEndTick());
+        if (workStartCivil == workEndCivil) {
             // Professions with no work interval, currently Nitwit, should not receive a synthetic work or meet context.
             return Activity.IDLE;
         }
 
-        int workStart = Math.min(workStartLinear, bedtimeLinear);
-        int workEnd = Math.clamp(workEndLinear, workStart, bedtimeLinear);
-        if (nowLinear < workStart) {
+        int workStart = Math.min(workStartCivil, bedtimeCivil);
+        int workEnd = Math.clamp(workEndCivil, workStart, bedtimeCivil);
+        if (nowCivil < workStart) {
             return Activity.IDLE;
         }
-        if (nowLinear < workEnd) {
+        if (nowCivil < workEnd) {
             return Activity.WORK;
         }
         return Activity.MEET;
-    }
-
-    private int toLinear(int tick, int epoch) {
-        // Authored days can start before vanilla tick zero, so comparisons must use wake-relative monotonic time.
-        return Math.floorMod(tick - epoch, TICKS_PER_DAY);
     }
 
 }

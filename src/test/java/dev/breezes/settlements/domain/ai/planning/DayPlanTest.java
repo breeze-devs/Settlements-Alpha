@@ -8,6 +8,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DayPlanTest {
@@ -19,31 +20,42 @@ class DayPlanTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot)
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(49_000L)
-                .schedule(schedule())
+                .calendarDay(2L)
+                .schedule(schedule(4_500))
                 .build();
 
         assertEquals(List.of(slot), plan.getSlots());
         assertEquals(PlanStatus.PENDING, plan.getStatus());
         assertEquals(PlanDayType.WORK_DAY, plan.getDayType());
-        assertEquals(49_000L, plan.getWakeAtAbsoluteTick());
         assertEquals(2L, plan.getCalendarDay());
+        // Derived from calendarDay + the schedule's civil wake tick: 2*24000 - 6000 + 4500 = 46500.
+        assertEquals(46_500L, plan.getWakeAtAbsoluteTick());
         assertEquals(0, plan.getCurrentSlotIndex());
     }
 
     @Test
-    void schedule_returnsAuthoredDayDurationAcrossMidnight() {
-        // Arrange
+    void schedule_authoredDayDurationTicksIsPlainDifference() {
+        // Arrange — civil space never wraps, so duration is a plain subtraction.
         DayPlanSchedule schedule = DayPlanSchedule.builder()
-                .wakeTick(23_000)
-                .bedtimeTick(12_000)
+                .wakeTick(4_500)
+                .bedtimeTick(18_209)
                 .build();
 
         // Act
         int duration = schedule.authoredDayDurationTicks();
 
         // Assert
-        assertEquals(13_000, duration);
+        assertEquals(13_709, duration);
+    }
+
+    @Test
+    void schedule_rejectsBedtimeAtOrBeforeWakeTick() {
+        // Arrange, Act, Assert — a schedule crossing (or exactly touching) midnight is illegal in
+        // civil space; every real profile wakes and sleeps within the same civil day.
+        assertThrows(IllegalArgumentException.class, () -> DayPlanSchedule.builder()
+                .wakeTick(12_000)
+                .bedtimeTick(6_000)
+                .build());
     }
 
     @Test
@@ -57,7 +69,7 @@ class DayPlanTest {
                 .slot(early)
                 .slot(middle)
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
                 .build();
 
@@ -66,26 +78,24 @@ class DayPlanTest {
     }
 
     @Test
-    void builder_ordersSlotsChronologicallyAcrossDayBoundary() {
-        // Farmer epoch: tick 23 000 = 5am. Slots span the 6am (tick 0) boundary.
-        int epoch = 23_000;
-        PlanSlot preDawn = slot(BehaviorKey.EAT_FOOD, 23_500);    // 5:30am — before tick 0
-        PlanSlot postDawn = slot(BehaviorKey.TRADE_INITIATE, 500); // 6:30am — after tick 0
-        PlanSlot midDay = slot(BehaviorKey.TRADE_ACCEPT, 6_000);   // 12pm
+    void builder_ordersSlotsChronologicallyByPlainCivilTick() {
+        // Civil ticks never wrap, so pre-dawn slots are simply small ints that sort naturally —
+        // no epoch-relative wrap math needed, unlike the old Minecraft-tick representation.
+        PlanSlot earlyMorning = slot(BehaviorKey.EAT_FOOD, 4_167);      // ~04:10 civil
+        PlanSlot postDawn = slot(BehaviorKey.TRADE_INITIATE, 6_500);    // 06:30 civil
+        PlanSlot midDay = slot(BehaviorKey.TRADE_ACCEPT, 12_000);       // 12:00 civil
 
         DayPlan plan = DayPlan.builder()
                 .slot(midDay)
                 .slot(postDawn)
-                .slot(preDawn)
+                .slot(earlyMorning)
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
-                .schedule(schedule(epoch))
-                .dayStartTick(epoch)
+                .calendarDay(1L)
+                .schedule(schedule(4_000))
                 .build();
 
-        // Chronological order: preDawn (5:30am) → postDawn (6:30am) → midDay (12pm)
-        assertEquals(List.of(preDawn, postDawn, midDay), plan.getSlots());
-        assertEquals(preDawn, plan.getCurrentSlot().orElseThrow());
+        assertEquals(List.of(earlyMorning, postDawn, midDay), plan.getSlots());
+        assertEquals(earlyMorning, plan.getCurrentSlot().orElseThrow());
     }
 
     @Test
@@ -95,7 +105,7 @@ class DayPlanTest {
                 .slot(first)
                 .slot(slot(BehaviorKey.TRADE_INITIATE, 2_000))
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
                 .build();
 
@@ -107,7 +117,7 @@ class DayPlanTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(BehaviorKey.EAT_FOOD, 1_000))
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
                 .build();
 
@@ -121,7 +131,7 @@ class DayPlanTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(BehaviorKey.EAT_FOOD, 1_000))
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
                 .build();
 
@@ -135,7 +145,7 @@ class DayPlanTest {
         DayPlan plan = DayPlan.builder()
                 .slot(slot(BehaviorKey.EAT_FOOD, 1_000))
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
                 .build();
 
@@ -155,7 +165,7 @@ class DayPlanTest {
                 .slot(second)
                 .slot(third)
                 .dayType(PlanDayType.WORK_DAY)
-                .wakeAtAbsoluteTick(1L)
+                .calendarDay(1L)
                 .schedule(schedule())
                 .build();
 

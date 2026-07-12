@@ -3,13 +3,13 @@
 This document describes the **event-lane subsystem** — the perception → knowledge → reaction
 machinery that lets Settlements villagers notice things happening around them and act on them. It is
 the upstream half of the reactive override lane: it produces the stimuli (sightings, harvests,
-trade/courtship invites, confirmed/refuted tips) that the override policies in
+trade/courtship invites) that the override policies in
 [`behavior_orchestration.md`](behavior_orchestration.md) consume.
 
 This doc is scoped to the **orchestration-relevant** architecture: the world-event bus, the
 per-villager perception pipeline, the knowledge store, and the SocialCue lane. The deeper
-social-cognition subsystems that hang off it — gossip exchange, credibility/reputation, and LLM
-dialogue — are represented here as named seams with pointers, not expanded in full (see
+social-cognition subsystems that hang off it — gossip exchange and LLM dialogue — are represented
+here as named seams with pointers, not expanded in full (see
 [Out of scope](#out-of-scope-for-this-doc)).
 
 ---
@@ -53,7 +53,6 @@ Producers (behaviors, presenters, PlanRunner)
 │  first-hand + hearsay         │
 └───────────────────────────────┘
       │
-      ├──► UrgentInvestigateOverridePolicy   (reactive override lane — see behavior_orchestration.md)
       ├──► gossip exchange                    (villager-to-villager hearsay propagation)
       └──► SocialCue triggers                 (some cues scan knowledge / perceived entities)
 ```
@@ -82,7 +81,7 @@ delta rather than dropping events. The SocialCue admission scan is likewise thro
 active-cue dispatch runs every tick.
 
 Eviction is a separate server-tick job: `WorldEventBusReaperServerEvents` trims the bus roughly every
-20 ticks by overworld time; `CredibilityDecayServerEvents` decays reputation in 20-tick batches.
+20 ticks by overworld time.
 
 ---
 
@@ -119,7 +118,7 @@ for events emitted in the Nether/End). All methods are no-ops if the bus is abse
 `emitTradeInviteSent`, `emitCourtshipInviteSent`, `emitSighting`, `emitDayPlanInvalidated`,
 `emitPlanExhausted`. (`emitSighting` dedupes co-witness re-announcements of the same sighting.)
 
-**Event catalog:** `domain/ai/worldevent/WorldEventType.java` — 46 typed constants, each the single
+**Event catalog:** `domain/ai/worldevent/WorldEventType.java` — the typed constants, each the single
 source of truth for its own classification so perception/inference/memory never drift as constants
 are added. Every constant carries:
 
@@ -128,13 +127,13 @@ are added. Every constant carries:
 | `namespace` (`WorldEventNamespace`) | `WORLD` = observable world fact (can pass the perception gate); `SYSTEM` = infrastructure signal (e.g. `DayPlanInvalidated`, `PlanExhausted`) that is never perceivable. |
 | `observationType` (`ObservationType`) | Category for scoring/compaction: `RESOURCE`, `SOCIAL`, `ENVIRONMENT`, `TASK_COMPLETION`, `TASK_FAILURE`, … |
 | base importance (`float`) | Starting salience before the importance gate applies profession/genetics/context. |
-| `forceRemember` (`boolean`) | Bypass the importance gate — always admit to knowledge (e.g. sightings, trades, tip confirm/refute). |
+| `forceRemember` (`boolean`) | Bypass the importance gate — always admit to knowledge (e.g. sightings, trades). |
 | `seedWorthy` (`boolean`) | Eligible to seed downstream generation (e.g. dialogue). Decoupled from `forceRemember` on purpose. |
 | `selfWitnessed` (`boolean`) | Events with no single doer — every perceiver is an equal first-hand witness (the sightings). Defaults false; only sighting constants opt in. |
 
 Representative constants: `BEHAVIOR_STARTED/COMPLETED/FAILED`, `SHEEP_SHEARED`, `SHEEP_DYED`,
 `RESOURCE_HARVESTED`, `FARMLAND_CULTIVATED`, `TRADE_COMPLETED`, `COURTSHIP_COMPLETED`,
-`COURTSHIP_REJECTED`, `TRADE_INVITE_SENT`, `COURTSHIP_INVITE_SENT`, `TIP_CONFIRMED`, `TIP_REFUTED`,
+`COURTSHIP_REJECTED`, `TRADE_INVITE_SENT`, `COURTSHIP_INVITE_SENT`,
 plus the `*_SIGHTED` sighting family (e.g. `ZOMBIE_SIGHTED`, `PLAYER_SIGHTED`) and `BELL_RUNG`.
 
 ## Consumer — PerceptionPipeline
@@ -169,8 +168,8 @@ setting (`EventLaneConfig.knowledgeStoreMaxEntries`, default 200) with insertion
 — knowledge decays naturally as new facts arrive. Independent corroboration of an existing fact
 bumps its weight modestly (`CORROBORATION_BUMP`) rather than duplicating the entry.
 
-This store is exactly what `UrgentInvestigateOverridePolicy` reads (via `InvestigateTipSelector`) to
-decide whether a hearsay tip is fresh and heavy enough to preempt the plan.
+Downstream, the store is read by the gossip lane (shareable entries are re-propagated to nearby
+villagers) and by the LLM grounding path (episodic entries seed monologue and plan requests).
 
 ---
 
@@ -209,7 +208,6 @@ The event lane is the producer side of the override lane documented in
 
 | Override policy | Reads from the event lane |
 |-----------------|---------------------------|
-| `UrgentInvestigateOverridePolicy` | the villager's `VillagerKnowledgeStore` (populated by `PerceptionPipeline` draining the bus, and by gossip). A high-urgency tip → `INVESTIGATE`. A confirmed investigation emits `TIP_CONFIRMED` back onto the bus and regenerates the plan (`ConfirmableOverride`). |
 | `SocialAcceptOverridePolicy` | the `TradeSessionRegistry` / `CourtshipSessionRegistry`, populated when a presenter emits `TRADE_INVITE_SENT` / `COURTSHIP_INVITE_SENT`. An open invite → `TRADE_ACCEPT` / `COURTSHIP_ACCEPT`. |
 
 ---
@@ -218,7 +216,7 @@ The event lane is the producer side of the override lane documented in
 
 **File:** `domain/ai/eventlane/EventLaneConfig.java` (`@BehaviorConfig(name = "event_lane")`)
 
-Operator-tunable knobs for the whole subsystem (bus, knowledge, gossip, social cues, credibility):
+Operator-tunable knobs for the whole subsystem (bus, knowledge, gossip, social cues):
 
 | Knob | Default | Governs |
 |------|---------|---------|
@@ -231,7 +229,6 @@ Operator-tunable knobs for the whole subsystem (bus, knowledge, gossip, social c
 | `socialCueLowCharismaCooldownMultiplier` / `...High...` | 4.0 / 0.5 | Cue cooldown multipliers at CHA=0.0 / CHA=1.0. |
 | `socialCueCooldownJitterFraction` | 0.25 | Per-cue cooldown jitter half-width. |
 | `socialCueCharismaCooldownScaling` | `exponential` | How CHA maps between the low/high multipliers (`linear` \| `exponential`). |
-| `credibilityDecayPerTick` | ~9.63e-6 | Fraction of the reputation deviation that decays toward neutral per tick (3-day half-life). |
 
 Because the entity constructor path is not Dagger-created, per-villager stores read these values
 through the current server component with constant fallbacks during early bootstrap.
@@ -264,9 +261,6 @@ boundary is explicit; expand into dedicated docs as they stabilize.
   `GossipPhase`, `GossipInvite`) and `domain/ai/knowledge/` (`GossipWeightCalculator`,
   `KnowledgeEntry` corroboration). The villager-to-villager hearsay path that carries knowledge
   beyond direct perception range. Cadence knobs live in `EventLaneConfig`.
-- **Credibility / reputation** — `domain/ai/credibility/` (`CredibilityStore`, `ReputationQuery`,
-  `ClaimPredicate`). Weighs how much a villager trusts a source; read by tip selection and decayed
-  by `CredibilityDecayServerEvents`.
 - **LLM dialogue & monologue** — `application/ai/dialogue/` (`DialogueProvider` and the
   packs/live/off providers, `DialogueRequestQueue`, `PromptAssembler`) and the monologue path into
   the **Settlements Inference Service**. `seedWorthy` events feed generation. This is the newest and

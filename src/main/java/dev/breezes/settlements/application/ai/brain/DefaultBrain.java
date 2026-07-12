@@ -6,7 +6,6 @@ import dev.breezes.settlements.domain.ai.memory.SensedSiteReport;
 import dev.breezes.settlements.domain.ai.schedule.IScheduleProvider;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.Builder;
-import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -28,11 +27,6 @@ public class DefaultBrain implements IBrain {
     @Override
     public void tick(int delta) {
 
-    }
-
-    @Override
-    public void forceSensorScan(@Nonnull Level world) {
-        // Placeholder: DefaultBrain has no sensors to scan
     }
 
     @Override

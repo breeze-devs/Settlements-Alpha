@@ -147,6 +147,19 @@ public final class RehearsedDialogueProvider implements DialogueProvider {
     }
 
     /**
+     * Cancels the in-flight evening sweep, if any, so the transport's HTTP client has nothing
+     * long-running left to await when it is closed at server shutdown. Aborting the exchange also
+     * lets the backend free its GPU resources. Any straggling result that loses the cancel race is
+     * dropped by the epoch guard in {@link #installOnePack}.
+     */
+    @Override
+    public void cancelInflightSweep() {
+        // Reuse the supersede path: advancing the epoch (and swapping in the no-op handle) is what
+        // makes the straggler guard below real rather than merely harmless.
+        this.rotateSweepHandle(InferenceStreamHandle.noOp());
+    }
+
+    /**
      * Drops this villager's rehearsed packs when it leaves the loaded set
      */
     @Override

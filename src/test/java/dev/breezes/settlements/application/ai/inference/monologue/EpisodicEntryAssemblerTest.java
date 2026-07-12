@@ -662,10 +662,7 @@ class EpisodicEntryAssemblerTest {
                 .hop(hop)
                 .weight(weight)
                 .originalWeight(weight)
-                .resolution(null)
                 .corroborationCount(0)
-                .investigationAttempts(0)
-                .nextEligibleTick(0L)
                 .build();
     }
 
@@ -692,10 +689,7 @@ class EpisodicEntryAssemblerTest {
                 .hop(hop)
                 .weight(weight)
                 .originalWeight(weight)
-                .resolution(null)
                 .corroborationCount(0)
-                .investigationAttempts(0)
-                .nextEligibleTick(0L)
                 .build();
     }
 

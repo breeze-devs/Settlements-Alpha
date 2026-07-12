@@ -1,6 +1,5 @@
 package dev.breezes.settlements.infrastructure.minecraft.attachments;
 
-import dev.breezes.settlements.domain.ai.knowledge.KnowledgeResolution;
 import lombok.Builder;
 
 import javax.annotation.Nullable;
@@ -22,10 +21,7 @@ public record KnowledgeEntryState(
         @Nullable UUID source,
         int hop,
         float originalWeight,
-        @Nullable KnowledgeResolution resolution,
-        int corroborationCount,
-        int investigationAttempts,
-        long nextEligibleTick
+        int corroborationCount
 ) {
 
 }

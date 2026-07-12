@@ -84,18 +84,6 @@ public enum WorldEventType {
     COURTSHIP_INVITE_SENT(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 2.0F, false, false),
 
     /**
-     * An Investigate behavior confirmed the hearsay claim: the claimed condition was found
-     * to be true at the tip location. The actor is the investigating villager.
-     */
-    TIP_CONFIRMED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 2.0F, true, true),
-
-    /**
-     * An Investigate behavior refuted the hearsay claim: the claimed condition was not found
-     * at the tip location. The actor is the investigating villager.
-     */
-    TIP_REFUTED(WorldEventNamespace.WORLD, ObservationType.RESOURCE, 1.5F, true, true),
-
-    /**
      * The villager's current day plan was invalidated and will be regenerated.
      */
     DAY_PLAN_INVALIDATED(WorldEventNamespace.SYSTEM, ObservationType.ENVIRONMENT, 0.1F, false, false),

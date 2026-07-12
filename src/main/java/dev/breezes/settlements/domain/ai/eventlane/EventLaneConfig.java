@@ -3,14 +3,13 @@ package dev.breezes.settlements.domain.ai.eventlane;
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfig;
-import dev.breezes.settlements.infrastructure.config.annotations.floats.FloatConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.strings.StringConfig;
 
 /**
  * TODO: maybe we can refactor the gossip or social ones into another config?
  * Tuning knobs for the event-lane subsystem: WorldEventBus TTL, observation buffer capacity,
- * knowledge store capacity, gossip/social-cue cadence, and credibility decay rate.
+ * knowledge store capacity, and gossip/social-cue cadence.
  * <p>
  * Defaults intentionally favor quieter gossip while leaving ambient chatter close to its
  * current cadence; the CHA multiplier range gives unsociable villagers much longer waits.
@@ -125,17 +124,7 @@ public record EventLaneConfig(
                 identifier = "social_cue_charisma_cooldown_scaling",
                 description = "How CHARISMA maps between low/high cooldown multipliers. Supported values: linear, exponential",
                 defaultValue = "exponential")
-        String socialCueCharismaCooldownScaling,
-
-        @FloatConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "credibility_decay_per_tick",
-                description = "Per-tick fraction of the (score - neutral) deviation that decays toward neutral, " +
-                        "applied in 20-tick batches at 1 Hz. Default ~9.627e-6 gives a 3-day (72000-tick) half-life.",
-                defaultValue = 9.627044E-6f,
-                min = 0.0f,
-                max = 0.5f)
-        float credibilityDecayPerTick
+        String socialCueCharismaCooldownScaling
 
 ) {
 

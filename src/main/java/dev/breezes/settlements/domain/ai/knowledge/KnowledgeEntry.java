@@ -4,7 +4,6 @@ import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import lombok.Builder;
 import lombok.Getter;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
@@ -13,8 +12,8 @@ import java.util.UUID;
  * A single promoted fact in a villager's episodic knowledge store
  * <p>
  * Every entry carries both the core observation data and full provenance so the
- * {@link VillagerKnowledgeStore} can deduplicate, weight, and eventually resolve
- * hearsay entries to CONFIRMED or REFUTED without losing the chain of custody.
+ * {@link VillagerKnowledgeStore} can deduplicate and weight hearsay entries without
+ * losing the chain of custody.
  */
 @Builder
 @Getter
@@ -101,13 +100,6 @@ public final class KnowledgeEntry {
     private final float originalWeight;
 
     /**
-     * Lifecycle resolution state. Only meaningful for hearsay entries awaiting Investigation.
-     * Null means no verification is required (first-hand) or not yet attempted.
-     */
-    @Nullable
-    private KnowledgeResolution resolution;
-
-    /**
      * Number of independent sources that have corroborated this fact
      * <p>
      * Starts at 0; incremented each time a different independent source shares the same
@@ -115,43 +107,6 @@ public final class KnowledgeEntry {
      */
     private int corroborationCount;
 
-    /**
-     * How many times Investigate attempted to navigate to this tip but timed out without
-     * reaching the location.
-     * Persisted so the cap survives server restarts and the same tip cannot be retried
-     * indefinitely across sessions.
-     */
-    private int investigationAttempts;
-
-    /**
-     * Game-tick before which this tip is ineligible for selection by
-     * {@link dev.breezes.settlements.application.ai.planning.InvestigateTipSelector}.
-     * Set to {@code now + cooldown} after each nav-timeout so the villager backs off
-     * before retrying. 0 means "always eligible".
-     */
-    private long nextEligibleTick;
-
-
-    /**
-     * Advances the resolution state once investigation confirms or refutes the tip
-     */
-    public void resolve(@Nonnull KnowledgeResolution newResolution) {
-        this.resolution = newResolution;
-    }
-
-    /**
-     * Records a failed navigation attempt and imposes a cooldown before the next retry.
-     * <p>
-     * The nav timeout means the location was unreachable at this tick; backing off prevents
-     * the planner from burning an Investigate scout slot on the same dead-end every morning.
-     *
-     * @param nowTick       current game tick
-     * @param cooldownTicks how many ticks to wait before this tip becomes eligible again
-     */
-    public void recordNavigationTimeout(long nowTick, long cooldownTicks) {
-        this.investigationAttempts++;
-        this.nextEligibleTick = nowTick + cooldownTicks;
-    }
 
     /**
      * Records that an independent source corroborated this fact and adjusts its weight upward
@@ -220,10 +175,7 @@ public final class KnowledgeEntry {
                 .hop(0)
                 .weight(weight)
                 .originalWeight(weight)
-                .resolution(null)
                 .corroborationCount(0)
-                .investigationAttempts(0)
-                .nextEligibleTick(0L)
                 .build();
     }
 
@@ -252,10 +204,7 @@ public final class KnowledgeEntry {
                 .hop(sourceEntry.getHop() + 1)
                 .weight(adjustedWeight)
                 .originalWeight(adjustedWeight)
-                .resolution(KnowledgeResolution.UNRESOLVED)
                 .corroborationCount(0)
-                .investigationAttempts(0)
-                .nextEligibleTick(0L)
                 .build();
     }
 

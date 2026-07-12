@@ -30,16 +30,17 @@ public class DayPlan {
     private final List<PlanSlot> slots;
 
     private final PlanDayType dayType;
-    private final long wakeAtAbsoluteTick;
-    private final DayPlanSchedule schedule;
 
     /**
-     * The real game tick at which this plan's chronological day begins (typically the wake tick).
-     * Used to sort slots correctly when the plan spans the Minecraft day boundary — e.g. a farmer
-     * waking at 5am (tick 23 000) has slots before tick 0 (6am) that must sort first.
-     * Defaults to 0 (6am) for standard-hours villagers where no wrapping occurs.
+     * The midnight-aligned calendar day this plan was authored for — the plan's identity.
+     * <p>
+     * All slot and schedule ticks are civil-space offsets INTO this one day, so no wrap arithmetic
+     * is needed anywhere in this class; see {@link #getWakeAtAbsoluteTick()} for the absolute-tick view
+     * PlanRunner's long-space spine still needs.
      */
-    private final int dayStartTick;
+    private final long calendarDay;
+
+    private final DayPlanSchedule schedule;
 
     private PlanStatus status;
 
@@ -48,30 +49,28 @@ public class DayPlan {
     @Builder
     public DayPlan(@Nonnull @Singular List<PlanSlot> slots,
                    PlanDayType dayType,
-                   long wakeAtAbsoluteTick,
+                   long calendarDay,
                    @Nonnull DayPlanSchedule schedule,
                    @Nullable PlanStatus status,
-                   int currentSlotIndex,
-                   int dayStartTick) {
-        this.dayStartTick = dayStartTick;
+                   int currentSlotIndex) {
         this.schedule = schedule;
         validateSchedule(schedule);
-        validateSlotWindows(slots, dayStartTick);
+        validateSlotWindows(slots);
         this.slots = slots.stream()
-                .sorted(Comparator.comparingInt(s -> Math.floorMod(s.getStartTick() - dayStartTick, TICKS_PER_DAY)))
+                .sorted(Comparator.comparingInt(PlanSlot::getStartTick))
                 .toList();
         this.dayType = dayType;
-        this.wakeAtAbsoluteTick = wakeAtAbsoluteTick;
+        this.calendarDay = calendarDay;
         this.status = status == null ? PlanStatus.PENDING : status;
         this.currentSlotIndex = currentSlotIndex;
     }
 
     /**
-     * Midnight-aligned calendar day this plan was authored for. Derived from
-     * {@link #wakeAtAbsoluteTick} so the two cannot drift apart.
+     * Derives the absolute Minecraft {@code dayTime} this plan's wake tick occurs at, from the
+     * stored {@link #calendarDay} and the schedule's civil wake tick.
      */
-    public long getCalendarDay() {
-        return WorldCalendar.calendarDayOf(this.wakeAtAbsoluteTick);
+    public long getWakeAtAbsoluteTick() {
+        return WorldCalendar.absoluteTickForCivil(this.calendarDay, this.schedule.wakeTick());
     }
 
     public Optional<PlanSlot> getCurrentSlot() {
@@ -107,37 +106,28 @@ public class DayPlan {
         this.status = status;
     }
 
-    private static void validateSlotWindows(List<PlanSlot> slots, int dayStartTick) {
+    private static void validateSlotWindows(List<PlanSlot> slots) {
         for (PlanSlot slot : slots) {
-            int linearStart = Math.floorMod(slot.getStartTick() - dayStartTick, TICKS_PER_DAY);
-            if (linearStart + slot.getEstimatedDurationTicks() >= TICKS_PER_DAY) {
-                throw new IllegalArgumentException("slot window must not cross the plan day boundary");
+            if (slot.getStartTick() + slot.getEstimatedDurationTicks() > TICKS_PER_DAY) {
+                throw new IllegalArgumentException("slot must end within its civil day");
             }
         }
     }
 
     private static void validateSchedule(DayPlanSchedule schedule) {
-        int bedtimeLinear = schedule.authoredDayDurationTicks();
-        if (bedtimeLinear == 0) {
-            throw new IllegalArgumentException("bedtimeTick must be after wakeTick in authored-day space");
-        }
-
         List<DayPlanActivityBlock> sortedBlocks = schedule.activityBlocks().stream()
-                .sorted(Comparator.comparingInt(block -> Math.floorMod(block.startTick() - schedule.wakeTick(), TICKS_PER_DAY)))
+                .sorted(Comparator.comparingInt(DayPlanActivityBlock::startTick))
                 .toList();
 
-        int previousEndLinear = 0;
+        int previousEnd = Integer.MIN_VALUE;
         for (DayPlanActivityBlock block : sortedBlocks) {
-            int startLinear = Math.floorMod(block.startTick() - schedule.wakeTick(), TICKS_PER_DAY);
-            int endLinear = Math.floorMod(block.endTick() - schedule.wakeTick(), TICKS_PER_DAY);
-
-            if (endLinear <= startLinear) {
-                throw new IllegalArgumentException("activity block endTick must be after startTick in authored-day space");
+            if (block.endTick() <= block.startTick()) {
+                throw new IllegalArgumentException("activity block endTick must be after startTick");
             }
-            if (startLinear < previousEndLinear) {
+            if (previousEnd != Integer.MIN_VALUE && block.startTick() < previousEnd) {
                 throw new IllegalArgumentException("activity blocks must not overlap");
             }
-            previousEndLinear = endLinear;
+            previousEnd = block.endTick();
         }
     }
 

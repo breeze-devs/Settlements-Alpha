@@ -19,7 +19,7 @@ public final class ScheduleRegistry {
     public static final Supplier<Schedule> SETTLEMENTS_SCHEDULE = REGISTRY.register(
             "settlements_schedule",
             () -> new ScheduleBuilder(new Schedule())
-                    .changeActivityAt(TimeOfDay.AT_12_00.getTick(), Activity.IDLE)
+                    .changeActivityAt(TimeOfDay.AT_12_00.getMinecraftTick(), Activity.IDLE)
                     .build());
 
     public static void register(IEventBus eventBus) {

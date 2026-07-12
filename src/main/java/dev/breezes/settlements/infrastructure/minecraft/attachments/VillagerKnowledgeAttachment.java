@@ -45,10 +45,7 @@ public final class VillagerKnowledgeAttachment {
                     .source(entry.getSource())
                     .hop(entry.getHop())
                     .originalWeight(entry.getOriginalWeight())
-                    .resolution(entry.getResolution())
                     .corroborationCount(entry.getCorroborationCount())
-                    .investigationAttempts(entry.getInvestigationAttempts())
-                    .nextEligibleTick(entry.getNextEligibleTick())
                     .build());
         }
         villager.setData(AttachmentRegistry.VILLAGER_KNOWLEDGE, VillagerKnowledgeAttachmentState.of(states));
@@ -93,10 +90,7 @@ public final class VillagerKnowledgeAttachment {
                     .hop(entryState.hop())
                     .weight(weight)
                     .originalWeight(entryState.originalWeight())
-                    .resolution(entryState.resolution())
                     .corroborationCount(entryState.corroborationCount())
-                    .investigationAttempts(entryState.investigationAttempts())
-                    .nextEligibleTick(entryState.nextEligibleTick())
                     .build();
             store.admit(entry);
         }

@@ -34,8 +34,8 @@ public final class ServerLifecycleEvents {
         NeoForge.EVENT_BUS.register(serverComponent.resourceIndexRefresherServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.tradeSessionReaperServerEvents());
-        NeoForge.EVENT_BUS.register(serverComponent.credibilityDecayServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.eveningDialoguePackSweepServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.planOverlayPumpServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.personaSweepServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.villagerZombificationServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.villageAnimalSpawnerServerEvents());
@@ -48,8 +48,16 @@ public final class ServerLifecycleEvents {
         ServerComponent serverComponent = SettlementsDagger.serverOrNull();
         if (serverComponent != null) {
             serverComponent.managedExecutors().forEach(ServerLifecycleEvents::shutdownExecutor);
-            closeInferenceTransport(serverComponent.inferenceTransport());
+
+            // Cancel every in-flight inference exchange BEFORE closing the transport. The HTTP client
+            // owns a private executor that managedExecutors() does not cover, and InferenceTransport#close
+            // blocks until all in-flight exchanges finish — a PLAN overlay stream alone can legitimately
+            // run for minutes (overlay_deadline_seconds). Cancelling every producer first leaves close()
+            // with nothing to await, so a server stop never stalls on a live inference request.
+            serverComponent.planRequestService().cancelAll();
             serverComponent.personaGenerationService().shutdown();
+            serverComponent.dialogueProvider().cancelInflightSweep();
+            closeInferenceTransport(serverComponent.inferenceTransport());
 
             // Because they are @ServerScoped, Dagger returns the exact instances we registered earlier
             NeoForge.EVENT_BUS.unregister(serverComponent.playerSettlementTracker());
@@ -61,8 +69,8 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.resourceIndexRefresherServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.tradeSessionReaperServerEvents());
-            NeoForge.EVENT_BUS.unregister(serverComponent.credibilityDecayServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.eveningDialoguePackSweepServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.planOverlayPumpServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.personaSweepServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.villagerZombificationServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.villageAnimalSpawnerServerEvents());
