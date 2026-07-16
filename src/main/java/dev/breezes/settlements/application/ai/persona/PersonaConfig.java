@@ -11,11 +11,11 @@ import dev.breezes.settlements.infrastructure.config.annotations.integers.Intege
  * more generous than the dialogue sweep's — a slow SIS round trip simply delays when a villager's
  * characterSketch becomes {@code READY}, it never blocks gameplay.
  */
-@BehaviorConfig(name = "persona", type = ConfigurationType.GENERAL)
+@BehaviorConfig(name = "persona", type = ConfigurationType.INFERENCE)
 public record PersonaConfig(
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "sweep_interval_ticks",
                 description = "How often (in ticks) the pipeline scans loaded villagers for a PENDING persona and dispatches a batch.",
                 defaultValue = 1200,
@@ -24,7 +24,7 @@ public record PersonaConfig(
         int sweepIntervalTicks,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "batch_deadline_seconds",
                 description = "Wall-clock budget in seconds for one persona generation batch. Generous by design -- generation is offline and non-interactive.",
                 defaultValue = 120,
@@ -33,7 +33,7 @@ public record PersonaConfig(
         int batchDeadlineSeconds,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "max_batch_size",
                 description = "Maximum number of villagers assembled into a single persona generation batch.",
                 defaultValue = 32,
@@ -42,7 +42,7 @@ public record PersonaConfig(
         int maxBatchSize,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "backoff_floor_ticks",
                 description = "Cooldown (in ticks) applied after the first batch that returns zero results, before the pipeline will dispatch another.",
                 defaultValue = 200,
@@ -51,7 +51,7 @@ public record PersonaConfig(
         int backoffFloorTicks,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "backoff_ceiling_ticks",
                 description = "Upper bound (in ticks) the exponential backoff cooldown may reach after repeated zero-result batches.",
                 defaultValue = 12000,

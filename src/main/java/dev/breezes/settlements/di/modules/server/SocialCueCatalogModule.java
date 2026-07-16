@@ -10,10 +10,15 @@ import dev.breezes.settlements.application.ai.dialogue.DialogueLine;
 import dev.breezes.settlements.application.ai.dialogue.DialogueProvider;
 import dev.breezes.settlements.application.ai.dialogue.Occasion;
 import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
+import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.socialcue.CueStep;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueCatalogEntry;
+import dev.breezes.settlements.application.ai.socialcue.SocialCueConfig;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueScript;
 import dev.breezes.settlements.application.ai.speech.SpeechRegister;
+import dev.breezes.settlements.di.BaseLane;
+import dev.breezes.settlements.di.CognitionScoped;
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.domain.ai.knowledge.GossipWeightCalculator;
@@ -36,6 +41,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -65,8 +71,42 @@ public abstract class SocialCueCatalogModule {
      */
     private static final ClockTicks WINDOW_JITTER = ClockTicks.minutes(2);
 
+    /**
+     * Cues that fire regardless of the SIS kill-switch.
+     */
     @Multibinds
-    abstract Set<SocialCueCatalogEntry> socialCueCatalogEntries();
+    @BaseLane
+    abstract Set<SocialCueCatalogEntry> baseSocialCueCatalogEntries();
+
+    /**
+     * Cues that only make sense with the SIS cognition lane on.
+     */
+    @Multibinds
+    @CognitionScoped
+    abstract Set<SocialCueCatalogEntry> cognitionSocialCueCatalogEntries();
+
+    /**
+     * The effective cue catalog {@link dev.breezes.settlements.application.ai.socialcue.SocialCueArbiter}
+     * iterates — always the base lane, plus the cognition lane only when {@link InferenceGate} is on.
+     * This is the sole unqualified {@code Set<SocialCueCatalogEntry>} binding; the arbiter injects it
+     * directly and never sees the {@link BaseLane}/{@link CognitionScoped} split.
+     * <p>
+     * The gate is a load-time snapshot (restart-only application), so this merge is computed once per
+     * server session.
+     */
+    @Provides
+    @ServerScope
+    static Set<SocialCueCatalogEntry> socialCueCatalogEntries(@BaseLane Set<SocialCueCatalogEntry> baseCues,
+                                                              @CognitionScoped Set<SocialCueCatalogEntry> cognitionCues,
+                                                              InferenceGate inferenceGate) {
+        if (!inferenceGate.isEnabled()) {
+            return baseCues;
+        }
+
+        Set<SocialCueCatalogEntry> merged = new HashSet<>(baseCues);
+        merged.addAll(cognitionCues);
+        return Set.copyOf(merged);
+    }
 
     /**
      * Greet-player cue: wave + FLAVOR bubble when a player is nearby and not recently greeted.
@@ -74,6 +114,7 @@ public abstract class SocialCueCatalogModule {
      */
     @Provides
     @IntoSet
+    @BaseLane
     static SocialCueCatalogEntry greetPlayer() {
         return SocialCueCatalogEntry.builder()
                 .key("greet_player")
@@ -129,14 +170,15 @@ public abstract class SocialCueCatalogModule {
      */
     @Provides
     @IntoSet
+    @BaseLane
     static SocialCueCatalogEntry villagerChatter(DialogueProvider dialogueProvider,
-                                                 EventLaneConfig eventLaneConfig,
+                                                 SocialCueConfig socialCueConfig,
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return SocialCueCatalogEntry.builder()
                 .key("villager_chatter")
                 .channel(BehaviorChannel.SOCIAL)
                 .channel(BehaviorChannel.INTERACTION)
-                .cooldown(ClockTicks.seconds(eventLaneConfig.villagerChatterCooldownSeconds()))
+                .cooldown(ClockTicks.seconds(socialCueConfig.villagerChatterCooldownSeconds()))
                 .perTargetCooldown(ClockTicks.ZERO)
                 .trigger(villager -> {
                     if (!dialogueProvider.isEnabled()) {
@@ -158,6 +200,7 @@ public abstract class SocialCueCatalogModule {
 
     @Provides
     @IntoSet
+    @BaseLane
     static SocialCueCatalogEntry zombieSighted(DialogueProvider dialogueProvider,
                                                AmbientDialogueContextAssembler contextAssembler) {
         return SocialCueCatalogEntry.builder()
@@ -182,6 +225,7 @@ public abstract class SocialCueCatalogModule {
 
     @Provides
     @IntoSet
+    @BaseLane
     static SocialCueCatalogEntry morningDialogue(DialogueProvider dialogueProvider,
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("morning", Occasion.MORNING,
@@ -192,6 +236,7 @@ public abstract class SocialCueCatalogModule {
 
     @Provides
     @IntoSet
+    @BaseLane
     static SocialCueCatalogEntry eveningDialogue(DialogueProvider dialogueProvider,
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("evening", Occasion.EVENING,
@@ -202,6 +247,7 @@ public abstract class SocialCueCatalogModule {
 
     @Provides
     @IntoSet
+    @BaseLane
     static SocialCueCatalogEntry restDayDialogue(DialogueProvider dialogueProvider,
                                                  AmbientDialogueContextAssembler contextAssembler) {
         return fixedOccasionCue("rest_day", Occasion.REST_DAY,
@@ -222,6 +268,7 @@ public abstract class SocialCueCatalogModule {
      */
     @Provides
     @IntoSet
+    @CognitionScoped
     static SocialCueCatalogEntry gossipInitiate(GossipSessionRegistry gossipSessionRegistry,
                                                 EventLaneConfig eventLaneConfig) {
         int gossipMaxDistanceSquared = eventLaneConfig.gossipMaxDistanceSquared();
@@ -301,6 +348,7 @@ public abstract class SocialCueCatalogModule {
      */
     @Provides
     @IntoSet
+    @CognitionScoped
     static SocialCueCatalogEntry gossipAccept(GossipSessionRegistry gossipSessionRegistry,
                                               EventLaneConfig eventLaneConfig) {
         return SocialCueCatalogEntry.builder()

@@ -54,7 +54,7 @@ public final class PersonaSweepServerEvents {
         }
 
         if (this.sweepTickable.tickCheckAndReset(1)) {
-            this.service.sweep(this.collectLoadedVillagers(server));
+            this.service.sweep(() -> this.collectLoadedVillagers(server));
         }
     }
 

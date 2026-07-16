@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * Coordinates the async persona-generation pipeline: sweeps loaded villagers for a {@code PENDING} persona,
@@ -108,12 +109,16 @@ public final class PersonaGenerationService {
      * Early-outs (no endpoint configured, a batch already in flight, or still cooling down after a
      * zero-result batch) all leave every villager exactly as {@code PENDING} as before -- there is
      * nothing to undo.
+     * <p>
+     * The loaded-villager set is passed as a supplier so the whole-world entity scan is only paid for
+     * once the early-outs pass — an endpoint-less or backed-off server never walks every level.
      */
-    public void sweep(@Nonnull Collection<BaseVillager> villagers) {
+    public void sweep(@Nonnull Supplier<? extends Collection<BaseVillager>> villagerSupplier) {
         if (!this.inferenceConfig.hasEndpoint() || this.batchInFlight.get() || this.isInBackoffCooldown()) {
             return;
         }
 
+        Collection<BaseVillager> villagers = villagerSupplier.get();
         List<BaseVillager> due = new ArrayList<>();
         for (BaseVillager villager : villagers) {
             if (due.size() >= this.config.maxBatchSize()) {

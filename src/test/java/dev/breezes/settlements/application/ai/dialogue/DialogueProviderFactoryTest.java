@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.dialogue;
 
+import dagger.Lazy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -20,11 +21,8 @@ class DialogueProviderFactoryTest {
 
     @Test
     void create_scriptedMode_returnsScriptedProvider() {
-        // Arrange
-        DialogueConfig config = config("SCRIPTED", true);
-
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex(), monologueRequestService);
+        DialogueProvider provider = createProvider("SCRIPTED", true);
 
         // Assert
         assertInstanceOf(ScriptedDialogueProvider.class, provider);
@@ -33,11 +31,8 @@ class DialogueProviderFactoryTest {
 
     @Test
     void create_rehearsedMode_returnsRehearsedProvider() {
-        // Arrange
-        DialogueConfig config = config("REHEARSED", true);
-
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex(), monologueRequestService);
+        DialogueProvider provider = createProvider("REHEARSED", true);
 
         // Assert — REHEARSED now returns the real rehearsed provider with a scripted fallback rung
         assertInstanceOf(RehearsedDialogueProvider.class, provider);
@@ -46,11 +41,8 @@ class DialogueProviderFactoryTest {
 
     @Test
     void create_rehearsedMode_providerSupportsSweep() {
-        // Arrange
-        DialogueConfig config = config("REHEARSED", true);
-
         // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex(), monologueRequestService);
+        DialogueProvider provider = createProvider("REHEARSED", true);
 
         // Assert — sweep must be enabled for the evening event to dispatch
         assertTrue(provider.supportsRehearsedDialogSweep());
@@ -58,25 +50,28 @@ class DialogueProviderFactoryTest {
 
     @Test
     void create_unknownModeString_defaultsToScripted() {
-        // Arrange — a typo'd mode must not crash; resolvedMode() falls back to SCRIPTED
-        DialogueConfig config = config("garbage", true);
-
-        // Act
-        DialogueProvider provider = DialogueProviderFactory.create(config, new DialogueLineIndex(), monologueRequestService);
+        // Act — a typo'd mode must not crash; resolvedMode() falls back to SCRIPTED
+        DialogueProvider provider = createProvider("garbage", true);
 
         // Assert
         assertInstanceOf(ScriptedDialogueProvider.class, provider);
         assertTrue(provider.isEnabled());
     }
 
-    private static DialogueConfig config(String mode, boolean scriptedChatter) {
-        return new DialogueConfig(
-                mode,
-                scriptedChatter,
-                120,    // bubbleCharCap
-                12,     // packLinesPerVillager
-                30      // packSweepDeadlineSeconds
-        );
+    @Test
+    void create_inferenceDisabled_forcesScriptedEvenWhenModeIsRehearsed() {
+        // Act — the central kill-switch subsumes the configured mode
+        DialogueProvider provider = createProvider("REHEARSED", false);
+
+        // Assert — REHEARSED is ignored; the scripted floor is used and never touches the monologue Lazy
+        assertInstanceOf(ScriptedDialogueProvider.class, provider);
+    }
+
+    private DialogueProvider createProvider(String mode, boolean inferenceEnabled) {
+        DialogueConfig dialogueConfig = new DialogueConfig(true, 120);
+        RehearsedDialogueConfig rehearsedConfig = new RehearsedDialogueConfig(mode, 12, 30);
+        Lazy<MonologueRequestService> lazyMonologue = () -> monologueRequestService;
+        return DialogueProviderFactory.create(dialogueConfig, rehearsedConfig, new DialogueLineIndex(), lazyMonologue, inferenceEnabled);
     }
 
 }

@@ -1,7 +1,9 @@
 package dev.breezes.settlements.application.ai.planning;
 
+import dagger.Lazy;
 import dev.breezes.settlements.application.ai.dialogue.MonologueRequestService;
 import dev.breezes.settlements.application.ai.dialogue.RehearsedDialogueProvider;
+import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.inference.InferenceStreamHandle;
 import dev.breezes.settlements.application.ai.inference.plan.PlanBatchRequest;
 import dev.breezes.settlements.application.ai.inference.plan.PlanGateway;
@@ -77,22 +79,27 @@ public final class PlanRequestService {
     private final PlanRequestAssembler assembler;
     private final PlanGenerationContextFactory contextFactory;
     private final LlmOverlayPlanGenerator overlayGenerator;
-    private final PlanGateway gateway;
+    private final Lazy<PlanGateway> gateway;
     private final PlanInferenceConfig config;
+    private final InferenceGate inferenceGate;
 
     // Constructor is hand-rolled (rather than @AllArgsConstructor) so the mutable runtime state below
     // can carry inline initializers without being pulled into the injected constructor signature.
+    // The gateway is injected as a Lazy so the HttpPlanGateway -> InferenceTransport -> HttpClient chain
+    // is only constructed on the first real flush (never in dumb mode, where enqueueForOverlay no-ops).
     @Inject
     PlanRequestService(PlanRequestAssembler assembler,
                        PlanGenerationContextFactory contextFactory,
                        LlmOverlayPlanGenerator overlayGenerator,
-                       PlanGateway gateway,
-                       PlanInferenceConfig config) {
+                       Lazy<PlanGateway> gateway,
+                       PlanInferenceConfig config,
+                       InferenceGate inferenceGate) {
         this.assembler = assembler;
         this.contextFactory = contextFactory;
         this.overlayGenerator = overlayGenerator;
         this.gateway = gateway;
         this.config = config;
+        this.inferenceGate = inferenceGate;
     }
 
     /**
@@ -179,8 +186,9 @@ public final class PlanRequestService {
      * successor is submitted, so this is the sole trigger for the overlay — there is no periodic
      * sweep.
      * <p>
-     * No-ops when the mode is not {@link PlanInferenceMode#LLM} (the gate lives here so callers
-     * don't need the config); when a forward time-jump has left {@code dayTime} already past
+     * No-ops entirely when the SIS kill-switch is off ({@link InferenceGate}), which subsumes the
+     * mode gate below; when the mode is not {@link PlanInferenceMode#LLM} (the gate lives here so
+     * callers don't need the config); when a forward time-jump has left {@code dayTime} already past
      * {@link PlanInferenceConfig#overlayCutoffCivilTick()} within the target plan's own day
      * ({@link #isTargetDayPastCutoff}) — the day is too far along to be worth an LLM plan, so the
      * heuristic floor stands and the villager picks up an overlay at its next natural exhaustion; or
@@ -189,6 +197,13 @@ public final class PlanRequestService {
      * same villager.
      */
     public void enqueueForOverlay(@Nonnull BaseVillager villager, long dayTime, long wakeAtAbsoluteTick) {
+        // Master kill-switch subsumes plan_inference.mode. With SIS off the overlay pump is never
+        // registered, so the dedupe (populated only on the pump's flush path) never clears and anything
+        // staged here accumulates forever, pinning BaseVillager refs. Gate at the producer so a
+        // dumb-mode or mis-set (enabled=false, mode=LLM) server stages nothing.
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         if (this.config.resolvedMode() != PlanInferenceMode.LLM) {
             return;
         }
@@ -305,7 +320,7 @@ public final class PlanRequestService {
 
         PlanBatchRequest request = this.assembler.assemble(batch);
         Duration deadline = Duration.ofSeconds(this.config.overlayDeadlineSeconds());
-        InferenceStreamHandle handle = this.gateway.generate(request, deadline, result -> this.onVillager(epoch, result));
+        InferenceStreamHandle handle = this.gateway.get().generate(request, deadline, result -> this.onVillager(epoch, result));
         this.registerInflightHandle(handle, ownedCaptures);
 
         log.debug("PLAN overlay sub-batch flushed (epoch {}): {} villager(s)", epoch, batch.size());

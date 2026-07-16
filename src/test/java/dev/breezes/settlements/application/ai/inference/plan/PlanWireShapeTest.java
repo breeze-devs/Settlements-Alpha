@@ -452,7 +452,7 @@ class PlanWireShapeTest {
     }
 
     private static HttpInferenceTransport newTransport() {
-        InferenceConfig config = new InferenceConfig("http://localhost:9999", "", "en_us", 50);
+        InferenceConfig config = new InferenceConfig(true, "http://localhost:9999", "", "en_us", 50);
         return new HttpInferenceTransport(config);
     }
 

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.di.modules.server;
 
+import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
 import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
@@ -8,7 +9,9 @@ import dev.breezes.settlements.application.ai.dialogue.DialogueProvider;
 import dev.breezes.settlements.application.ai.dialogue.DialogueProviderFactory;
 import dev.breezes.settlements.application.ai.dialogue.MonologueRequestService;
 import dev.breezes.settlements.application.ai.dialogue.OccasionSetResolver;
+import dev.breezes.settlements.application.ai.dialogue.RehearsedDialogueConfig;
 import dev.breezes.settlements.application.ai.inference.HttpInferenceTransport;
+import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.HttpMonologueGateway;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueGateway;
@@ -37,9 +40,11 @@ public final class DialogueServiceModule {
     @Provides
     @ServerScope
     static DialogueProvider dialogueProvider(DialogueConfig config,
+                                             RehearsedDialogueConfig rehearsedDialogueConfig,
                                              DialogueLineIndex lineIndex,
-                                             MonologueRequestService monologueRequestService) {
-        return DialogueProviderFactory.create(config, lineIndex, monologueRequestService);
+                                             Lazy<MonologueRequestService> monologueRequestService,
+                                             InferenceGate inferenceGate) {
+        return DialogueProviderFactory.create(config, rehearsedDialogueConfig, lineIndex, monologueRequestService, inferenceGate.isEnabled());
     }
 
     @Provides

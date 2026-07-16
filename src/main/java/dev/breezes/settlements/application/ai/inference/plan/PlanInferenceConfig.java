@@ -10,21 +10,22 @@ import dev.breezes.settlements.infrastructure.config.annotations.strings.StringC
  * <p>
  * {@link PlanInferenceMode#HEURISTIC} is the default — HeuristicPlanGenerator remains the sole
  * source of day plans and no PLAN request is ever sent, even if an inference endpoint is
- * configured. The master kill-switch is still {@code InferenceConfig.endpointBaseUrl == ""};
- * this config only adds the mode gate and the overlay's own per-batch deadline on top of that.
+ * configured. The central kill-switch is {@code InferenceConfig.enabled} (see
+ * {@link dev.breezes.settlements.application.ai.inference.InferenceGate}); this config only adds
+ * the mode gate and the overlay's own per-batch deadline on top of that.
  */
-@BehaviorConfig(name = "plan_inference", type = ConfigurationType.GENERAL)
+@BehaviorConfig(name = "plan_inference", type = ConfigurationType.INFERENCE)
 public record PlanInferenceConfig(
 
         @StringConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "mode",
                 description = "Plan mode: HEURISTIC (default) or LLM (an always-on per-villager overlay may replace the heuristic plan).",
                 defaultValue = "HEURISTIC")
         String mode,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "overlay_deadline_seconds",
                 description = "Total time budget in seconds for one PLAN overlay sub-batch's streaming request.",
                 defaultValue = 300,
@@ -33,7 +34,7 @@ public record PlanInferenceConfig(
         int overlayDeadlineSeconds,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "sub_batch_size",
                 description = "Max villagers coalesced into one streaming PLAN POST. Purely bounds HTTP payload size and per-connection failure blast radius — the backend (SIS + vLLM continuous batching) owns actual LLM concurrency, so this is not a throughput knob.",
                 defaultValue = 20,
@@ -42,7 +43,7 @@ public record PlanInferenceConfig(
         int subBatchSize,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "sub_batch_window_seconds",
                 description = "Max real seconds a partial sub-batch is held before being sent. A sub-batch flushes when it reaches sub_batch_size villagers OR this window elapses since its first buffered villager, whichever comes first.",
                 defaultValue = 3,
@@ -51,7 +52,7 @@ public record PlanInferenceConfig(
         int subBatchWindowSeconds,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "overlay_cutoff_civil_tick",
                 description = "Latest point in a plan's own day (civil ticks; 0 = 00:00, 24000 = next midnight; default 11_000 = 11:00) at which an LLM PLAN overlay is still worth requesting.",
                 defaultValue = 11_000,

@@ -97,7 +97,7 @@ class InferenceTransportSerializeSeamTest {
     }
 
     private HttpInferenceTransport newTransport(String endpoint, String apiKey) {
-        InferenceConfig config = new InferenceConfig(endpoint, apiKey, "en_us", 50);
+        InferenceConfig config = new InferenceConfig(true, endpoint, apiKey, "en_us", 50);
         return new HttpInferenceTransport(config);
     }
 

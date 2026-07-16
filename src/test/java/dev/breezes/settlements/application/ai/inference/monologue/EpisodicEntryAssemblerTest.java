@@ -56,7 +56,7 @@ class EpisodicEntryAssemblerTest {
     }
 
     private static InferenceConfig inferenceConfigWithCap(int maxEpisodicEntries) {
-        return new InferenceConfig("http://localhost:9999", "", "en_us", maxEpisodicEntries);
+        return new InferenceConfig(true, "http://localhost:9999", "", "en_us", maxEpisodicEntries);
     }
 
     @Test

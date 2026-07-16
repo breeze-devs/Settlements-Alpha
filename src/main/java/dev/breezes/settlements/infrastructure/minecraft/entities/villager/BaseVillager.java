@@ -586,17 +586,27 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     protected void customServerAiStep() {
         ServerComponent server = SettlementsDagger.serverOrThrow();
 
-        // Seed the event bus cursor before the brain tick so the override detector
-        // (called inside the brain tick via PlanRunner.tickOverride) never drains
-        // pre-load history on a freshly loaded villager. The cursor is transient and
-        // is not persisted; the seed is a one-time skip-history operation.
-        this.seedEventCursorOnFirstTick(server);
+        // The whole perception lane — cursor seed + drain — is cognition-lane work. With SIS off the
+        // bus never receives events, so the seed-to-high-water-mark step can never complete (seq stays
+        // 0) and would otherwise resolve the bus and re-read currentSeq() every tick forever, forcing an
+        // otherwise-unused bus into existence. Gate the seed with the same switch as the drain.
+        boolean cognitionEnabled = server.inferenceGate().isEnabled();
+        if (cognitionEnabled) {
+            // Seed before the brain tick so the override detector (PlanRunner.tickOverride, run inside
+            // the brain tick) never drains pre-load history on a freshly loaded villager. The cursor is
+            // transient (not persisted); this is a one-time skip-history operation.
+            this.seedEventCursorOnFirstTick(server);
+        }
 
         super.customServerAiStep();
 
         this.settlementsBrain.tick(1);
         this.tickSocialCue(server);
-        this.tickPerception(server);
+
+        if (cognitionEnabled) {
+            this.tickPerception(server);
+        }
+
         this.tickReconciler();
     }
 

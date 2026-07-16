@@ -258,7 +258,7 @@ class HttpInferenceTransportTest {
     }
 
     private static InferenceConfig config(String endpointBaseUrl, String apiKey) {
-        return new InferenceConfig(endpointBaseUrl, apiKey, "en_us", 50);
+        return new InferenceConfig(true, endpointBaseUrl, apiKey, "en_us", 50);
     }
 
     private CapturedRequest startServer(int statusCode, String responseBody) throws IOException {

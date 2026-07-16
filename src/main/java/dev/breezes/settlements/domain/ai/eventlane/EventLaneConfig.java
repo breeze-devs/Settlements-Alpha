@@ -2,26 +2,22 @@ package dev.breezes.settlements.domain.ai.eventlane;
 
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
-import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.infrastructure.config.annotations.strings.StringConfig;
 
 /**
- * TODO: maybe we can refactor the gossip or social ones into another config?
- * Tuning knobs for the event-lane subsystem: WorldEventBus TTL, observation buffer capacity,
- * knowledge store capacity, and gossip/social-cue cadence.
+ * Tuning knobs for the event-lane subsystem: {@code WorldEventBus} TTL, observation buffer
+ * capacity, knowledge store capacity, and gossip cadence.
  * <p>
- * Defaults intentionally favor quieter gossip while leaving ambient chatter close to its
- * current cadence; the CHA multiplier range gives unsociable villagers much longer waits.
+ * Every knob here only matters while the SIS kill-switch is on.
  * <p>
  * The Minecraft entity constructor path is not Dagger-created, so per-villager stores read
  * these values through the current server component with constant fallbacks during early bootstrap.
  */
-@BehaviorConfig(name = "event_lane", type = ConfigurationType.GENERAL)
+@BehaviorConfig(name = "event_lane", type = ConfigurationType.INFERENCE)
 public record EventLaneConfig(
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "world_event_ttl_ticks",
                 description = "How many ticks a world event remains in the bus before being evicted (~5 s at 20 tps = 100 ticks)",
                 defaultValue = 100,
@@ -30,7 +26,7 @@ public record EventLaneConfig(
         int worldEventTtlTicks,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "observation_buffer_capacity",
                 description = "Maximum observations buffered per villager per tick before older ones are dropped",
                 defaultValue = 50,
@@ -39,7 +35,7 @@ public record EventLaneConfig(
         int observationBufferCapacity,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "knowledge_store_max_entries",
                 description = "Maximum episodic knowledge entries a villager retains (oldest evicted when full)",
                 defaultValue = 200,
@@ -48,7 +44,7 @@ public record EventLaneConfig(
         int knowledgeStoreMaxEntries,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "gossip_max_distance_squared",
                 description = "Maximum squared block distance between two villagers for gossip to be possible",
                 defaultValue = 25,
@@ -57,16 +53,7 @@ public record EventLaneConfig(
         int gossipMaxDistanceSquared,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "villager_chatter_cooldown_seconds",
-                description = "Base cooldown, before charisma and jitter, between ambient villager chatter bubbles",
-                defaultValue = 120,
-                min = 5,
-                max = 86_400)
-        int villagerChatterCooldownSeconds,
-
-        @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "gossip_initiate_cooldown_seconds",
                 description = "Base cooldown, before charisma and jitter, between attempts by one villager to initiate gossip",
                 defaultValue = 120,
@@ -75,7 +62,7 @@ public record EventLaneConfig(
         int gossipInitiateCooldownSeconds,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "gossip_accept_cooldown_seconds",
                 description = "Base cooldown, before charisma and jitter, between gossip accept cues for one villager",
                 defaultValue = 10,
@@ -84,47 +71,13 @@ public record EventLaneConfig(
         int gossipAcceptCooldownSeconds,
 
         @IntegerConfig(
-                type = ConfigurationType.GENERAL,
+                type = ConfigurationType.INFERENCE,
                 identifier = "gossip_target_cooldown_seconds",
                 description = "Exact per-receiver cooldown after one villager initiates gossip with another villager",
                 defaultValue = 300,
                 min = 5,
                 max = 86_400)
-        int gossipTargetCooldownSeconds,
-
-        @DoubleConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "social_cue_low_charisma_cooldown_multiplier",
-                description = "Cooldown multiplier applied at CHARISMA=0.0 before jitter; larger values make low-CHA villagers quieter",
-                defaultValue = 4.0,
-                min = 0.01,
-                max = 100.0)
-        double socialCueLowCharismaCooldownMultiplier,
-
-        @DoubleConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "social_cue_high_charisma_cooldown_multiplier",
-                description = "Cooldown multiplier applied at CHARISMA=1.0 before jitter; smaller values make high-CHA villagers more talkative",
-                defaultValue = 0.5,
-                min = 0.01,
-                max = 100.0)
-        double socialCueHighCharismaCooldownMultiplier,
-
-        @DoubleConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "social_cue_cooldown_jitter_fraction",
-                description = "Random per-cue cooldown jitter half-width; 0.25 means each completed cue varies by +/-25% after charisma scaling",
-                defaultValue = 0.25,
-                min = 0.0,
-                max = 1.0)
-        double socialCueCooldownJitterFraction,
-
-        @StringConfig(
-                type = ConfigurationType.GENERAL,
-                identifier = "social_cue_charisma_cooldown_scaling",
-                description = "How CHARISMA maps between low/high cooldown multipliers. Supported values: linear, exponential",
-                defaultValue = "exponential")
-        String socialCueCharismaCooldownScaling
+        int gossipTargetCooldownSeconds
 
 ) {
 

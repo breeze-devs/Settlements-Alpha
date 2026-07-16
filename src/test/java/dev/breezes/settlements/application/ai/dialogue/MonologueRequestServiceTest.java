@@ -42,8 +42,9 @@ class MonologueRequestServiceTest {
     @BeforeEach
     void setUp() {
         OccasionSetResolver occasionSetResolver = new OccasionSetResolver();
-        DialogueConfig config = new DialogueConfig("REHEARSED", true, 120, 12, 30);
-        this.service = new MonologueRequestService(assembler, gateway, occasionSetResolver, config);
+        DialogueConfig config = new DialogueConfig(true, 120);
+        RehearsedDialogueConfig rehearsedConfig = new RehearsedDialogueConfig("REHEARSED", 12, 30);
+        this.service = new MonologueRequestService(assembler, gateway, occasionSetResolver, config, rehearsedConfig);
     }
 
     @Test

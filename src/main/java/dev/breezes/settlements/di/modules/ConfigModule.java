@@ -46,12 +46,14 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.support
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.wolf.walkdog.WolfWalkConfig;
 import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
+import dev.breezes.settlements.application.ai.dialogue.RehearsedDialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
 import dev.breezes.settlements.application.ai.inference.plan.PlanInferenceConfig;
 import dev.breezes.settlements.application.ai.persona.PersonaConfig;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
+import dev.breezes.settlements.application.ai.socialcue.SocialCueConfig;
 import dev.breezes.settlements.application.ai.speech.SpeechMirrorConfig;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
@@ -363,6 +365,18 @@ public final class ConfigModule {
     @Singleton
     static DialogueConfig dialogueConfig() {
         return ConfigFactory.create(DialogueConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static RehearsedDialogueConfig rehearsedDialogueConfig() {
+        return ConfigFactory.create(RehearsedDialogueConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static SocialCueConfig socialCueConfig() {
+        return ConfigFactory.create(SocialCueConfig.class);
     }
 
     @Provides

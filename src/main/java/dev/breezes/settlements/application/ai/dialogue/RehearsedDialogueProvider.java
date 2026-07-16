@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * inference backend once per evening. Packs are stored here and sampled during the next day —
  * zero inference calls during normal gameplay.
  * <p>
- * The sweep runs within a configurable wall-clock budget ({@link DialogueConfig#packSweepDeadlineSeconds}).
+ * The sweep runs within a configurable wall-clock budget ({@link RehearsedDialogueConfig#packSweepDeadlineSeconds}).
  * Packs arrive progressively (one per villager as the backend streams) and are installed as they
  * arrive, so a slow villager never delays the rest. A sweep superseded by a new one (e.g.
  * the player advances the clock multiple times) is canceled at the transport level so the backend

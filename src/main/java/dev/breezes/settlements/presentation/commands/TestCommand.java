@@ -273,7 +273,7 @@ public class TestCommand {
 
         // Use the sweep deadline as a representative budget — it is what a real overnight sweep
         // would send, so the dump fixture is byte-faithful to production behaviour.
-        Duration deadline = Duration.ofSeconds(server.dialogueConfig().packSweepDeadlineSeconds());
+        Duration deadline = Duration.ofSeconds(server.rehearsedDialogueConfig().packSweepDeadlineSeconds());
         String compactEnvelope = transport.renderEnvelope(InferenceCapability.MONOLOGUE, batchRequest, deadline);
 
         // Wire body stays compact; only the on-disk fixture is pretty-printed for human inspection.

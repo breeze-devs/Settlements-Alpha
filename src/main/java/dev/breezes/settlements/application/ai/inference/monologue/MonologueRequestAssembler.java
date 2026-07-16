@@ -1,7 +1,7 @@
 package dev.breezes.settlements.application.ai.inference.monologue;
 
-import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.dialogue.Occasion;
+import dev.breezes.settlements.application.ai.dialogue.RehearsedDialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -33,7 +33,7 @@ public final class MonologueRequestAssembler {
     private final PersonaBundleAssembler personaBundleAssembler;
     private final SnapshotAssembler snapshotAssembler;
     private final InferenceConfig inferenceConfig;
-    private final DialogueConfig dialogueConfig;
+    private final RehearsedDialogueConfig rehearsedDialogueConfig;
     private final EpisodicEntryAssembler episodicEntryAssembler;
 
     /**
@@ -71,7 +71,7 @@ public final class MonologueRequestAssembler {
         List<OccasionBucketSpec> buckets = occasions.stream()
                 .map(occasion -> OccasionBucketSpec.builder()
                         .occasion(occasion)
-                        .lineCount(this.dialogueConfig.packLinesPerVillager())
+                        .lineCount(this.rehearsedDialogueConfig.packLinesPerVillager())
                         .build())
                 .toList();
 

@@ -10,6 +10,7 @@ class InferenceConfigTest {
     void normalizedBaseUrl_stripsTrailingWhitespaceAndSlashes() {
         // Arrange
         InferenceConfig config = new InferenceConfig(
+                true,
                 "http://localhost:12345//   ",
                 "",
                 "en_us",
@@ -25,7 +26,7 @@ class InferenceConfigTest {
     @Test
     void normalizedBaseUrl_returnsEmptyWhenEndpointIsNull() {
         // Arrange
-        InferenceConfig config = new InferenceConfig(null, "", "en_us", 50);
+        InferenceConfig config = new InferenceConfig(true, null, "", "en_us", 50);
 
         // Act
         String normalizedBaseUrl = config.normalizedBaseUrl();

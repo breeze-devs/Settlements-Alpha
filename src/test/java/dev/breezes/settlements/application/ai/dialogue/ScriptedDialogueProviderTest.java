@@ -67,12 +67,7 @@ class ScriptedDialogueProviderTest {
     }
 
     private static DialogueConfig config(boolean scriptedChatter) {
-        return new DialogueConfig(
-                "SCRIPTED",
-                scriptedChatter,
-                120,
-                12,
-                30);
+        return new DialogueConfig(scriptedChatter, 120);
     }
 
 }

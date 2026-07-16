@@ -144,10 +144,10 @@ runtimeState, gameTime)` call per throttled perception pass:
 
 1. **Drain** the bus delta from the villager's `lastSeenSeq` cursor via `visitDelta`.
 2. **Gate** each event through `PerceptionGate.admits(...)` — the anti-telepathy predicate:
-   - Reject `SYSTEM`-namespace events outright.
-   - Reject events whose chunk origin is farther than `MAX_PERCEPTION_CHUNK_RADIUS` (4 chunks / 64
-     blocks) in chunk-Manhattan distance. Chunk coords come from the event envelope, so this is O(1)
-     and needs no world lookup. (Line-of-sight/falloff is intentionally not yet modeled.)
+    - Reject `SYSTEM`-namespace events outright.
+    - Reject events whose chunk origin is farther than `MAX_PERCEPTION_CHUNK_RADIUS` (4 chunks / 64
+      blocks) in chunk-Manhattan distance. Chunk coords come from the event envelope, so this is O(1)
+      and needs no world lookup. (Line-of-sight/falloff is intentionally not yet modeled.)
 3. **Convert** admitted events to `Observation`s via `ObservationFactory.fromEvent` and buffer them
    in the per-villager `ObservationBuffer`.
 4. **Advance the cursor even if everything was filtered**, so rejected events are never re-read.
@@ -213,20 +213,30 @@ The event lane is the producer side of the override lane documented in
 
 ---
 
-## Tuning — EventLaneConfig
+## Tuning
 
-**File:** `domain/ai/eventlane/EventLaneConfig.java` (`@BehaviorConfig(name = "event_lane")`)
+Since the Stage 0 SIS kill-switch, the event-lane knobs are split across two files by whether they
+still matter when the switch is off.
 
-Operator-tunable knobs for the whole subsystem (bus, knowledge, gossip, social cues):
+### `inference.toml` — EventLaneConfig (cognition lane; only meaningful when the kill-switch is on)
+
+**File:** `domain/ai/eventlane/EventLaneConfig.java` (`@BehaviorConfig(name = "event_lane", type = INFERENCE)`)
 
 | Knob | Default | Governs |
-|------|---------|---------|
+|---|---|---|
 | `worldEventTtlTicks` | 100 | Bus retention before eviction (~5 s). |
 | `observationBufferCapacity` | 50 | Max observations buffered per villager per pass. |
 | `knowledgeStoreMaxEntries` | 200 | Episodic knowledge entries retained before FIFO eviction. |
 | `gossipMaxDistanceSquared` | 25 | Max squared block distance for gossip to be possible. |
-| `villagerChatterCooldownSeconds` | 120 | Base ambient chatter cooldown (before CHA + jitter). |
 | `gossipInitiateCooldownSeconds` / `gossipAcceptCooldownSeconds` / `gossipTargetCooldownSeconds` | 120 / 10 / 300 | Gossip initiation, accept, and per-receiver cooldowns. |
+
+### `general.toml` — SocialCueConfig (always-on scripted cues; unaffected by the kill-switch)
+
+**File:** `application/ai/socialcue/SocialCueConfig.java` (`@BehaviorConfig(name = "social_cue", type = GENERAL)`)
+
+| Knob | Default | Governs |
+|---|---|---|
+| `villagerChatterCooldownSeconds` | 120 | Base ambient chatter cooldown (before CHA + jitter). |
 | `socialCueLowCharismaCooldownMultiplier` / `...High...` | 4.0 / 0.5 | Cue cooldown multipliers at CHA=0.0 / CHA=1.0. |
 | `socialCueCooldownJitterFraction` | 0.25 | Per-cue cooldown jitter half-width. |
 | `socialCueCharismaCooldownScaling` | `exponential` | How CHA maps between the low/high multipliers (`linear` \| `exponential`). |
@@ -234,12 +244,23 @@ Operator-tunable knobs for the whole subsystem (bus, knowledge, gossip, social c
 Because the entity constructor path is not Dagger-created, per-villager stores read these values
 through the current server component with constant fallbacks during early bootstrap.
 
+### Kill-switch gating
+
+The whole event lane is cognition-lane work, gated by `InferenceGate.isEnabled()` (`inference.toml`
+`enabled`, default `false`). When off, the lane is inert: `WorldEventEmitter` no-ops every emit,
+`BaseVillager.tickPerception` early-returns before draining the bus, the sighting sensor and the two
+gossip cues drop out of their multibindings (they live in `@CognitionScoped` sets that are merged into
+the effective set only when the gate is on), and the bus reaper is left unregistered. Knowledge and
+observation state is still constructed and its NBT still round-trips, so a world toggled off keeps its
+data inert and resumes cleanly when toggled back on. The scripted social layer (`SocialCueConfig`) is
+untouched — chatter, greets, and zombie-reaction cues keep firing.
+
 ---
 
 ## Explicit design decisions
 
 | Decision | Choice | Rationale |
-|----------|--------|-----------|
+|---|---|---|
 | Bus is fire-and-forget | Producers never block on consumers; `PlanRunner` works if the bus is never drained | Keeps emission cheap and the subsystem optional/additive; nothing in the core loop depends on a consumer existing. |
 | Bus is transient, not memory | ~5 s TTL, head-trimmed | The bus is a reaction surface. Durable facts are promoted into per-villager knowledge stores before eviction; the log never grows unbounded. |
 | Per-consumer cursors | `lastSeenSeq` per villager | Each villager reads only its own delta; no shared read position, no re-scan of the whole log. |

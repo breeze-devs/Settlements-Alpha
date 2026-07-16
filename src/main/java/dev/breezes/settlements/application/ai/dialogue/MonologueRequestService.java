@@ -42,6 +42,7 @@ public final class MonologueRequestService {
     private final MonologueGateway gateway;
     private final OccasionSetResolver occasionSetResolver;
     private final DialogueConfig config;
+    private final RehearsedDialogueConfig rehearsedDialogueConfig;
 
     /**
      * Dispatches a streaming monologue request for the given villagers and invokes
@@ -69,7 +70,7 @@ public final class MonologueRequestService {
         }
 
         MonologueBatchRequest batch = this.assembler.assembleForVillagers(villagersWithOccasions);
-        Duration deadline = Duration.ofSeconds(this.config.packSweepDeadlineSeconds());
+        Duration deadline = Duration.ofSeconds(this.rehearsedDialogueConfig.packSweepDeadlineSeconds());
 
         return this.gateway.generate(batch, deadline,
                 result -> this.toPack(result).ifPresent(onPack));

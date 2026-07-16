@@ -14,6 +14,7 @@ public enum ConfigurationType {
     BEHAVIOR("behaviors"),
     SENSOR("sensors"),
     FEATURE("features"),
+    INFERENCE("inference"),
     ;
 
     private final String filePath;

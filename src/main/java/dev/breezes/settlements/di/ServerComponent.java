@@ -6,7 +6,9 @@ import dev.breezes.settlements.application.ai.catalog.BehaviorPoolResolver;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
 import dev.breezes.settlements.application.ai.dialogue.DialogueConfig;
 import dev.breezes.settlements.application.ai.dialogue.DialogueProvider;
+import dev.breezes.settlements.application.ai.dialogue.RehearsedDialogueConfig;
 import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
+import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
 import dev.breezes.settlements.application.ai.inference.persona.PersonaRequestAssembler;
@@ -156,6 +158,10 @@ public interface ServerComponent {
     DialogueProvider dialogueProvider();
 
     DialogueConfig dialogueConfig();
+
+    RehearsedDialogueConfig rehearsedDialogueConfig();
+
+    InferenceGate inferenceGate();
 
     InferenceTransport inferenceTransport();
 

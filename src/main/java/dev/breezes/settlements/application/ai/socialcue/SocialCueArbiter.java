@@ -5,7 +5,6 @@ import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
-import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.genetics.GeneType;
@@ -64,7 +63,7 @@ public final class SocialCueArbiter {
 
     private final Set<SocialCueCatalogEntry> catalog;
     private final SocialCuePresenter presenter;
-    private final EventLaneConfig eventLaneConfig;
+    private final SocialCueConfig socialCueConfig;
 
     /**
      * Should be called from AI step
@@ -131,11 +130,11 @@ public final class SocialCueArbiter {
 
             long cooldownTicks = SocialCueCadencePolicy.cooldownTicks(cue.getCooldown().getTicks(),
                     villager.getGenetics().getGeneValue(GeneType.CHARISMA),
-                    this.eventLaneConfig.socialCueLowCharismaCooldownMultiplier(),
-                    this.eventLaneConfig.socialCueHighCharismaCooldownMultiplier(),
-                    SocialCueCooldownScaling.fromConfig(this.eventLaneConfig.socialCueCharismaCooldownScaling()),
+                    this.socialCueConfig.socialCueLowCharismaCooldownMultiplier(),
+                    this.socialCueConfig.socialCueHighCharismaCooldownMultiplier(),
+                    SocialCueCooldownScaling.fromConfig(this.socialCueConfig.socialCueCharismaCooldownScaling()),
                     OccasionCadenceProfile.factorFor(resolveCooldownOccasion(villager)),
-                    this.eventLaneConfig.socialCueCooldownJitterFraction(),
+                    this.socialCueConfig.socialCueCooldownJitterFraction(),
                     villager.getRandom().nextDouble());
             runtimeState.finish(gameTime, cooldownTicks);
             // Set cooldown

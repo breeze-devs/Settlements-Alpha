@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.ai.worldevent;
 
+import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -22,7 +23,11 @@ import java.util.UUID;
  * Behaviors and presenters should call this rather than touching the bus directly,
  * so emission details (chunk coords, game-tick capture) are centralized.
  * <p>
- * All methods are no-ops if the bus has not been injected.
+ * Every emit method is a no-op when the SIS cognition lane is off ({@link InferenceGate}). This is
+ * the single gated choke point for the whole event lane: producer call sites throughout the codebase
+ * (behaviors today, lifecycle/combat emits in later stages) stay unconditional forever, and no event
+ * ever reaches the bus in dumb mode — which is what keeps the (un-reaped) bus from growing unbounded
+ * once its reaper is left unregistered.
  */
 @ServerScope
 @CustomLog
@@ -30,6 +35,7 @@ import java.util.UUID;
 public final class WorldEventEmitter {
 
     private final WorldEventBus bus;
+    private final InferenceGate inferenceGate;
 
     /**
      * dedupeKey → game tick after which a co-witness may re-announce the same sighting
@@ -52,6 +58,9 @@ public final class WorldEventEmitter {
     }
 
     public void emitBehaviorStarted(BaseVillager villager, BehaviorKey key) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(villager);
         this.bus.emit(
                 WorldEvent.fromPos(villager.getX(), villager.getY(), villager.getZ())
@@ -62,6 +71,9 @@ public final class WorldEventEmitter {
     }
 
     public void emitBehaviorCompleted(BaseVillager villager, BehaviorKey key) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(villager);
         this.bus.emit(
                 WorldEvent.fromPos(villager.getX(), villager.getY(), villager.getZ())
@@ -72,6 +84,9 @@ public final class WorldEventEmitter {
     }
 
     public void emitBehaviorFailed(BaseVillager villager, BehaviorKey key, @Nullable String reason) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(villager);
         this.bus.emit(
                 WorldEvent.fromPos(villager.getX(), villager.getY(), villager.getZ())
@@ -92,6 +107,9 @@ public final class WorldEventEmitter {
                                           @Nullable String detail,
                                           @Nullable String reason,
                                           @Nullable Map<String, String> detailFields) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(actor);
         this.bus.emit(
                 WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
@@ -115,6 +133,9 @@ public final class WorldEventEmitter {
      * @param sessionId the registry id of the backing TradeSession
      */
     public void emitTradeInviteSent(BaseVillager actor, UUID targetId, UUID sessionId) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(actor);
         this.bus.emit(
                 WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
@@ -133,6 +154,9 @@ public final class WorldEventEmitter {
      * @param sessionId the registry id of the backing CourtshipSession
      */
     public void emitCourtshipInviteSent(BaseVillager actor, UUID targetId, UUID sessionId) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(actor);
         this.bus.emit(
                 WorldEvent.fromPos(actor.getX(), actor.getY(), actor.getZ())
@@ -166,6 +190,9 @@ public final class WorldEventEmitter {
                              @Nonnull String entityTypeId,
                              @Nonnull WorldEventType type,
                              @Nonnull UUID dedupeKey) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(witness);
 
         // Cross-witness fan-out suppression: while this sighting is still live on the bus, every
@@ -203,6 +230,9 @@ public final class WorldEventEmitter {
     }
 
     public void emitDayPlanInvalidated(BaseVillager villager) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(villager);
         this.bus.emit(
                 WorldEvent.fromPos(villager.getX(), villager.getY(), villager.getZ())
@@ -212,6 +242,9 @@ public final class WorldEventEmitter {
     }
 
     public void emitPlanExhausted(BaseVillager villager) {
+        if (!this.inferenceGate.isEnabled()) {
+            return;
+        }
         long gameTick = overworldTime(villager);
         this.bus.emit(
                 WorldEvent.fromPos(villager.getX(), villager.getY(), villager.getZ())

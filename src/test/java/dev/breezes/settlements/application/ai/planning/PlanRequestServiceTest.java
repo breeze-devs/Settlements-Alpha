@@ -1,5 +1,7 @@
 package dev.breezes.settlements.application.ai.planning;
 
+import dagger.Lazy;
+import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.inference.InferenceStreamHandle;
 import dev.breezes.settlements.application.ai.inference.plan.PlanGateway;
 import dev.breezes.settlements.application.ai.inference.plan.PlanInferenceConfig;
@@ -74,6 +76,8 @@ class PlanRequestServiceTest {
     private PlanGenerationContextFactory contextFactory;
     @Mock
     private PlanGateway gateway;
+    @Mock
+    private InferenceGate inferenceGate;
 
     private LlmOverlayPlanGenerator overlayGenerator;
     private PlanRequestService service;
@@ -83,7 +87,8 @@ class PlanRequestServiceTest {
         DayPlanComposer composer = new DayPlanComposer(DefaultMealAnchorTable.rows());
         this.overlayGenerator = new LlmOverlayPlanGenerator(composer);
         PlanInferenceConfig config = new PlanInferenceConfig("LLM", 300, 20, 3, 11_000);
-        this.service = new PlanRequestService(assembler, contextFactory, overlayGenerator, gateway, config);
+        Lazy<PlanGateway> lazyGateway = () -> gateway;
+        this.service = new PlanRequestService(assembler, contextFactory, overlayGenerator, lazyGateway, config, inferenceGate);
     }
 
     @Test

@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
@@ -24,22 +25,29 @@ public final class ServerLifecycleEvents {
         ServerComponent serverComponent = SettlementsDagger.component().serverComponentFactory().create();
         SettlementsDagger.initializeServer(serverComponent);
 
+        InferenceGate inferenceGate = serverComponent.inferenceGate();
+        logInferenceState(inferenceGate);
+
         log.info("Registering events");
         NeoForge.EVENT_BUS.register(serverComponent.playerSettlementTracker());
         NeoForge.EVENT_BUS.register(serverComponent.regionSubtitleHandler());
         NeoForge.EVENT_BUS.register(serverComponent.settlementMetadataPersistenceServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.uiSyncServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.courtshipSessionReaperServerEvents());
-        NeoForge.EVENT_BUS.register(serverComponent.worldEventBusReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.resourceIndexRefresherServerEvents());
-        NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.tradeSessionReaperServerEvents());
-        NeoForge.EVENT_BUS.register(serverComponent.eveningDialoguePackSweepServerEvents());
-        NeoForge.EVENT_BUS.register(serverComponent.planOverlayPumpServerEvents());
-        NeoForge.EVENT_BUS.register(serverComponent.personaSweepServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.villagerZombificationServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.villageAnimalSpawnerServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.worldgenVillagerReplacementServerEvents());
+
+        // SIS/cognition graph: construct + register only when the kill-switch is on
+        if (inferenceGate.isEnabled()) {
+            NeoForge.EVENT_BUS.register(serverComponent.worldEventBusReaperServerEvents());
+            NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
+            NeoForge.EVENT_BUS.register(serverComponent.eveningDialoguePackSweepServerEvents());
+            NeoForge.EVENT_BUS.register(serverComponent.planOverlayPumpServerEvents());
+            NeoForge.EVENT_BUS.register(serverComponent.personaSweepServerEvents());
+        }
     }
 
     @SubscribeEvent
@@ -47,17 +55,17 @@ public final class ServerLifecycleEvents {
         log.info("De-registering events");
         ServerComponent serverComponent = SettlementsDagger.serverOrNull();
         if (serverComponent != null) {
+            boolean inferenceEnabled = serverComponent.inferenceGate().isEnabled();
+
             serverComponent.managedExecutors().forEach(ServerLifecycleEvents::shutdownExecutor);
 
-            // Cancel every in-flight inference exchange BEFORE closing the transport. The HTTP client
-            // owns a private executor that managedExecutors() does not cover, and InferenceTransport#close
-            // blocks until all in-flight exchanges finish — a PLAN overlay stream alone can legitimately
-            // run for minutes (overlay_deadline_seconds). Cancelling every producer first leaves close()
-            // with nothing to await, so a server stop never stalls on a live inference request.
-            serverComponent.planRequestService().cancelAll();
-            serverComponent.personaGenerationService().shutdown();
-            serverComponent.dialogueProvider().cancelInflightSweep();
-            closeInferenceTransport(serverComponent.inferenceTransport());
+            if (inferenceEnabled) {
+                // Cancel every in-flight inference exchange BEFORE closing the transport
+                serverComponent.planRequestService().cancelAll();
+                serverComponent.personaGenerationService().shutdown();
+                serverComponent.dialogueProvider().cancelInflightSweep();
+                closeInferenceTransport(serverComponent.inferenceTransport());
+            }
 
             // Because they are @ServerScoped, Dagger returns the exact instances we registered earlier
             NeoForge.EVENT_BUS.unregister(serverComponent.playerSettlementTracker());
@@ -65,20 +73,36 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.settlementMetadataPersistenceServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.uiSyncServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.courtshipSessionReaperServerEvents());
-            NeoForge.EVENT_BUS.unregister(serverComponent.worldEventBusReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.resourceIndexRefresherServerEvents());
-            NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.tradeSessionReaperServerEvents());
-            NeoForge.EVENT_BUS.unregister(serverComponent.eveningDialoguePackSweepServerEvents());
-            NeoForge.EVENT_BUS.unregister(serverComponent.planOverlayPumpServerEvents());
-            NeoForge.EVENT_BUS.unregister(serverComponent.personaSweepServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.villagerZombificationServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.villageAnimalSpawnerServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.worldgenVillagerReplacementServerEvents());
+
+            if (inferenceEnabled) {
+                NeoForge.EVENT_BUS.unregister(serverComponent.worldEventBusReaperServerEvents());
+                NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
+                NeoForge.EVENT_BUS.unregister(serverComponent.eveningDialoguePackSweepServerEvents());
+                NeoForge.EVENT_BUS.unregister(serverComponent.planOverlayPumpServerEvents());
+                NeoForge.EVENT_BUS.unregister(serverComponent.personaSweepServerEvents());
+            }
         }
 
         log.info("Clearing server subcomponent");
         SettlementsDagger.clearServer();
+    }
+
+    /**
+     * Logs the resolved kill-switch state once at startup. The misconfigured case — opted in but no
+     * endpoint — is surfaced as a warning because it silently behaves as OFF, which is easy to miss.
+     */
+    private static void logInferenceState(InferenceGate inferenceGate) {
+        if (inferenceGate.isMisconfigured()) {
+            log.warn("Settlements Inference Service is enabled but no endpoint is configured — staying OFF. "
+                    + "Set endpoint_base_url in inference.toml, or set enabled=false to silence this warning.");
+            return;
+        }
+        log.info("Settlements Inference Service: {}", inferenceGate.isEnabled() ? "ON" : "OFF");
     }
 
     private static void shutdownExecutor(ExecutorService executor) {
