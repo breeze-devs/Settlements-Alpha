@@ -7,6 +7,7 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundUiUnavailablePacket;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 import lombok.NoArgsConstructor;
 import net.minecraft.server.MinecraftServer;
@@ -15,7 +16,6 @@ import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

@@ -2,6 +2,7 @@ package dev.breezes.settlements.application.ai.courtship;
 
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -11,7 +12,6 @@ import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.level.pathfinder.Path;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Optional;
 
 @ServerScope

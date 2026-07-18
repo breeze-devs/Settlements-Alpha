@@ -8,6 +8,7 @@ import dev.breezes.settlements.domain.settlement.query.SettlementContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementPositionContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.infrastructure.minecraft.persistence.SettlementSavedData;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
@@ -18,7 +19,6 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;

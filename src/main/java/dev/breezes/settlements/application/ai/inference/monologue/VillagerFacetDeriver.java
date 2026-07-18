@@ -4,11 +4,11 @@ import dev.breezes.settlements.application.ai.dialogue.DialogueFacet;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerWasCuredAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -4,12 +4,12 @@ import com.google.gson.Gson;
 import dev.breezes.settlements.application.ai.inference.InferenceCapability;
 import dev.breezes.settlements.application.ai.inference.InferenceStreamHandle;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.time.Duration;
 import java.util.function.Consumer;
 

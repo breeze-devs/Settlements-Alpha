@@ -3,11 +3,11 @@ package dev.breezes.settlements.application.ai.dialogue;
 import dev.breezes.settlements.application.ai.inference.monologue.VillagerFacetDeriver;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 /**
  * Assembles the server-owned context for ambient and situational dialogue cues.

@@ -1,10 +1,10 @@
 package dev.breezes.settlements.application.ai.speech;
 
 import dev.breezes.settlements.di.ServerScope;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
-import javax.inject.Inject;
 import java.util.Set;
 
 /**

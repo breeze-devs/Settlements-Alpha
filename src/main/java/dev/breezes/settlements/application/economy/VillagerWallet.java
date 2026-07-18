@@ -3,11 +3,11 @@ package dev.breezes.settlements.application.economy;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 @ServerScope
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)

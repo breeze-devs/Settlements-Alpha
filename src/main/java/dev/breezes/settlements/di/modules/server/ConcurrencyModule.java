@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Central home for every server-scoped {@link ExecutorService} pool.
  * <p>
- * Each pool carries a distinct {@link javax.inject.Qualifier}; there is intentionally no
+ * Each pool carries a distinct {@link jakarta.inject.Qualifier}; there is intentionally no
  * unqualified {@code ExecutorService} binding, so a mis-wired injection (e.g. a Lombok field
  * whose qualifier was not copied to the constructor parameter) fails to compile rather than
  * silently resolving to whichever pool happens to be unqualified.

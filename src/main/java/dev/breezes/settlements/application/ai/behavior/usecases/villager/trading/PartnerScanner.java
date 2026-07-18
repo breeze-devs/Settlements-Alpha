@@ -14,6 +14,7 @@ import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.inventory.BackpackEntry;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 

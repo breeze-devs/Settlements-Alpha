@@ -7,11 +7,10 @@ import dev.breezes.settlements.application.economy.supply.SupplyEvaluator;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import javax.inject.Inject;
 
 /**
  * Bundles the cross-cutting and broadly-shared dependencies that many behaviors share

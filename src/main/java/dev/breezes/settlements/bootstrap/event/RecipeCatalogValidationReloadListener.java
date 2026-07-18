@@ -7,6 +7,8 @@ import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.infrastructure.minecraft.data.crafting.CraftCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.forge.ForgeCatalogDataManager;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -16,8 +18,6 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 

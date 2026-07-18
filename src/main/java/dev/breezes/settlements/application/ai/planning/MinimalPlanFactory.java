@@ -17,11 +17,11 @@ import dev.breezes.settlements.domain.time.TimeOfDay;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 

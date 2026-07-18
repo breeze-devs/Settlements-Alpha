@@ -14,7 +14,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorer
 import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Exposes world-generation registries through domain interfaces so callers can

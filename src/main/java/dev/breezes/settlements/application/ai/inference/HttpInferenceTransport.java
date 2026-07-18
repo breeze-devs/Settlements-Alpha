@@ -1,10 +1,10 @@
 package dev.breezes.settlements.application.ai.inference;
 
 import com.google.gson.Gson;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;

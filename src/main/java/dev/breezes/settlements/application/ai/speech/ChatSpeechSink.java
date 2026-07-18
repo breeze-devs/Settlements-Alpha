@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.speech;
 import dev.breezes.settlements.application.ai.dialogue.DialogueLine;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.ChatFormatting;
@@ -11,7 +12,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 
-import javax.inject.Inject;
 import java.util.EnumMap;
 import java.util.LinkedHashSet;
 import java.util.Map;

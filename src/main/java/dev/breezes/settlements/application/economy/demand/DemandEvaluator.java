@@ -6,11 +6,11 @@ import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;

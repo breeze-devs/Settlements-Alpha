@@ -4,13 +4,12 @@ import dev.breezes.settlements.application.ai.inference.plan.PlanInferenceConfig
 import dev.breezes.settlements.application.ai.inference.plan.PlanInferenceMode;
 import dev.breezes.settlements.application.ai.planning.PlanRequestService;
 import dev.breezes.settlements.di.ServerScope;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-
-import javax.inject.Inject;
 
 /**
  * Pumps the LLM PLAN overlay's chunked context assembly every server tick.

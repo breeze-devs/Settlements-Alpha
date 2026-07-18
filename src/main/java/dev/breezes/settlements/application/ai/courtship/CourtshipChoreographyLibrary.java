@@ -2,12 +2,11 @@ package dev.breezes.settlements.application.ai.courtship;
 
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import jakarta.inject.Inject;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 
 import javax.annotation.Nonnull;
-
-import javax.inject.Inject;
 import java.util.List;
 
 /**

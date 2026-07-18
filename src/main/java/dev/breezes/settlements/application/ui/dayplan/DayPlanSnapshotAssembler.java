@@ -13,13 +13,13 @@ import dev.breezes.settlements.domain.ai.planning.PlanSlotStatus;
 import dev.breezes.settlements.domain.time.CivilTime;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Locale;
 

@@ -1,7 +1,36 @@
+import dev.breezes.gradle.EnsureJarManifest
+
 plugins {
     id 'java-library'
     id 'maven-publish'
     id 'net.neoforged.moddev' version '1.0.21'
+}
+
+// Repairs jarJar'd artifacts that ship without a MANIFEST.MF, which ModDevGradle 1.0.21 NPEs on --
+// see EnsureJarManifest in buildSrc for the upstream bug and why the class cannot live here.
+// Producer jars are tagged `false` and the configuration requests `true`, which is what makes
+// Gradle route them through the transform.
+def jarManifestRepaired = Attribute.of('dev.breezes.jarManifestRepaired', Boolean)
+
+dependencies {
+    attributesSchema {
+        attribute(jarManifestRepaired)
+    }
+    artifactTypes.getByName(ArtifactTypeDefinition.JAR_TYPE) {
+        attributes.attribute(jarManifestRepaired, false)
+    }
+    registerTransform(EnsureJarManifest) {
+        from.attribute(jarManifestRepaired, false)
+                .attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
+        to.attribute(jarManifestRepaired, true)
+                .attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
+    }
+}
+
+configurations.named('jarJar') {
+    attributes {
+        attribute(jarManifestRepaired, true)
+    }
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -143,22 +172,38 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
 
     // Dagger 2
-    jarJar(implementation('com.google.dagger:dagger:2.51.1')) {
+    jarJar(implementation('com.google.dagger:dagger:2.60.1')) {
         version {
-            prefer '2.51.1'
+            prefer '2.60.1'
         }
     }
-    // Injection
-    jarJar(implementation('jakarta.inject:jakarta.inject-api:1.0.5')) {
+
+    // Both inject jars below are runtime-mandatory, and NOT merely because the sources are annotated.
+    // dagger.internal.Provider -- the supertype of every generated factory -- is declared
+    // `extends javax.inject.Provider<T>, jakarta.inject.Provider<T>`, so both packages must resolve
+    // to link that interface. Dropping either is a NoClassDefFoundError at class-load time, not the
+    // silent no-op that a merely-absent annotation package would be.
+    jarJar(implementation('jakarta.inject:jakarta.inject-api:2.0.1')) {
         version {
-            prefer '1.0.5'
+            prefer '2.0.1'
         }
     }
+    // Shipped under its canonical coordinate so NeoForge JarJar dedups it against the copy embedded
+    // by any other mod
+    jarJar(implementation('javax.inject:javax.inject:1')) {
+        version {
+            prefer '1'
+        }
+    }
+    // jspecify annotations decorate Dagger 2.60.1's class files; needed to compile against them, not shipped.
+    compileOnly 'org.jspecify:jspecify:1.0.0'
+
     // Dagger runtime must be explicitly on the dev runtime classpath (required for MC < 1.21.9)
-    additionalRuntimeClasspath 'com.google.dagger:dagger:2.51.1'
-    additionalRuntimeClasspath 'jakarta.inject:jakarta.inject-api:1.0.5'
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.51.1'
-    testAnnotationProcessor 'com.google.dagger:dagger-compiler:2.51.1'
+    additionalRuntimeClasspath 'com.google.dagger:dagger:2.60.1'
+    additionalRuntimeClasspath 'jakarta.inject:jakarta.inject-api:2.0.1'
+    additionalRuntimeClasspath 'javax.inject:javax.inject:1'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.60.1'
+    testAnnotationProcessor 'com.google.dagger:dagger-compiler:2.60.1'
 
     testImplementation sourceSets.main.output
     testImplementation files(sourceSets.main.compileClasspath)

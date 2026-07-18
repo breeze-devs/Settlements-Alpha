@@ -8,6 +8,7 @@ import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import dev.breezes.settlements.shared.util.RandomUtil;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -26,7 +27,6 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

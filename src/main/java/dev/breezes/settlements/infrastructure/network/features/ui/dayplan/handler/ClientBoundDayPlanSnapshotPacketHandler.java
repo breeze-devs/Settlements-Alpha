@@ -4,6 +4,7 @@ import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandl
 import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.packet.ClientBoundDayPlanSnapshotPacket;
 import dev.breezes.settlements.presentation.ui.dayplan.DayPlanScreen;
 import dev.breezes.settlements.presentation.ui.sync.UiClientState;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
@@ -12,7 +13,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 @CustomLog
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)

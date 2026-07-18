@@ -5,9 +5,9 @@ import dev.breezes.settlements.domain.generation.model.profile.TraitDefinitionCo
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.trait.TraitRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.KeyedCatalogDataManager;
+import jakarta.inject.Inject;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.Set;
 

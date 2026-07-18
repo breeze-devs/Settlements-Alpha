@@ -2,9 +2,9 @@ package dev.breezes.settlements.domain.ai.worldevent;
 
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;

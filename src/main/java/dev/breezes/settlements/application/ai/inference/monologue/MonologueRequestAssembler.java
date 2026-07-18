@@ -5,11 +5,11 @@ import dev.breezes.settlements.application.ai.dialogue.RehearsedDialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

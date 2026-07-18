@@ -3,6 +3,7 @@ package dev.breezes.settlements.bootstrap.event;
 import dev.breezes.settlements.application.ai.sensors.ResourceIndexRefresher;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.di.ServerScope;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.server.level.ServerLevel;
@@ -11,8 +12,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-
-import javax.inject.Inject;
 
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)

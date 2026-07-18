@@ -70,7 +70,8 @@ import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenData
 import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketReceiver;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
+
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 

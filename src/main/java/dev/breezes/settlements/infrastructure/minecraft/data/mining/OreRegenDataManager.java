@@ -5,6 +5,7 @@ import dev.breezes.settlements.domain.mining.OreRegenEntryCodec;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.DormantOreBlock;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.CodecJsonDataManager;
 import dev.breezes.settlements.shared.util.RandomUtil;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -14,7 +15,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;

@@ -1,6 +1,7 @@
 package dev.breezes.settlements.infrastructure.minecraft.query;
 
 import dev.breezes.settlements.SettlementsMod;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.minecraft.core.BlockPos;
@@ -11,7 +12,6 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Optional;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)

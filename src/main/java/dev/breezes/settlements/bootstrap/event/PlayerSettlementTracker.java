@@ -12,6 +12,7 @@ import dev.breezes.settlements.infrastructure.minecraft.event.settlement.Buildin
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.PlayerRegionState;
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.SettlementEnterEvent;
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.SettlementExitEvent;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,6 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;

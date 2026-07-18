@@ -11,6 +11,7 @@ import dev.breezes.settlements.domain.personality.PersonalityStatus;
 import dev.breezes.settlements.domain.personality.VillagerPersonality;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -18,7 +19,6 @@ import net.minecraft.world.entity.Entity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;

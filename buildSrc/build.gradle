@@ -1,0 +1,14 @@
+plugins {
+    id 'java-library'
+}
+
+// Matches the root project's toolchain so the build logic compiles against the same JDK the mod does.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation gradleApi()
+}

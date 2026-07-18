@@ -9,6 +9,7 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.ZombieSettle
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.conversion.VillagerConversionUtil;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.genetics.VillagerGeneticAttributes;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
@@ -18,8 +19,6 @@ import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
-
-import javax.inject.Inject;
 
 /**
  * Handles the two-phase villager ↔ ZombieVillager conversion loop so that a cured zombie that

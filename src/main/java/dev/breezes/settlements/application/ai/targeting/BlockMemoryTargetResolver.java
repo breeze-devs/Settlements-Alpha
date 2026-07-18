@@ -12,13 +12,13 @@ import dev.breezes.settlements.domain.world.blocks.LiveBlockSiteMatcher;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;

@@ -5,11 +5,10 @@ import dev.breezes.settlements.application.ai.speech.VillagerUtterance;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.sounds.SoundSource;
-
-import javax.inject.Inject;
 
 /**
  * Dispatches a single {@link CueStep} onto the entity: triggers animations,

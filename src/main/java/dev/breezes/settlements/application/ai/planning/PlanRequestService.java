@@ -18,10 +18,10 @@ import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;

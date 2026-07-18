@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.sensors;
 import dev.breezes.settlements.di.ServerScope;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
+import jakarta.inject.Inject;
 import lombok.NoArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -10,7 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;

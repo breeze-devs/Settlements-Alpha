@@ -21,13 +21,13 @@ import dev.breezes.settlements.domain.time.CivilTime;
 import dev.breezes.settlements.domain.time.GameTicks;
 import dev.breezes.settlements.domain.time.TimeOfDay;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.CustomLog;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;

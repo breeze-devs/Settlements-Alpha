@@ -6,12 +6,12 @@ import dev.breezes.settlements.domain.ai.memory.MemoryType;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.memory.SensedSites;
 import dev.breezes.settlements.domain.ai.memory.SiteCoord;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

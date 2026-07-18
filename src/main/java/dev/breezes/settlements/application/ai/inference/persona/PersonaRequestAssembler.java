@@ -6,11 +6,11 @@ import dev.breezes.settlements.domain.genetics.GeneSignal;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonaLineageAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 /**
  * Converts live villager state into a {@link PersonaVillagerRequest} for SIS.

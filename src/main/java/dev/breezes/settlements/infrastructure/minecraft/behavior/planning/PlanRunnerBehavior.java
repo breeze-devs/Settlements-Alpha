@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.minecraft.behavior.planning;
 
 import dev.breezes.settlements.application.ai.planning.PlanRunner;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.Brain;
@@ -11,7 +12,6 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.schedule.Activity;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;

@@ -7,10 +7,10 @@ import dev.breezes.settlements.domain.generation.scoring.TraitScorerConfig;
 import dev.breezes.settlements.domain.generation.scoring.TraitScorerConfigCodec;
 import dev.breezes.settlements.domain.generation.scoring.TraitScorerRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.CodecJsonDataManager;
+import jakarta.inject.Inject;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

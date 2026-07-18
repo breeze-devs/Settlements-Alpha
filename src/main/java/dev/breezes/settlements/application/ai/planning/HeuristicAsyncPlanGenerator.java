@@ -5,11 +5,11 @@ import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.IAsyncPlanGenerator;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
 import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 

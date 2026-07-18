@@ -9,6 +9,7 @@ import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.ChatFormatting;
@@ -19,7 +20,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.Items;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.List;
 
 /**

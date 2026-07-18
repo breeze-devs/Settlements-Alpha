@@ -9,11 +9,11 @@ import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
 import dev.breezes.settlements.domain.ai.planning.PlanIntent;
 import dev.breezes.settlements.domain.time.TimeOfDay;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

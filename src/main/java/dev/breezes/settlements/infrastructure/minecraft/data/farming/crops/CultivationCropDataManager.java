@@ -4,12 +4,12 @@ import dev.breezes.settlements.domain.farming.CultivationCropDefinition;
 import dev.breezes.settlements.domain.farming.CultivationCropDefinitionCodec;
 import dev.breezes.settlements.domain.farming.CultivationCropRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.CodecJsonDataManager;
+import jakarta.inject.Inject;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;

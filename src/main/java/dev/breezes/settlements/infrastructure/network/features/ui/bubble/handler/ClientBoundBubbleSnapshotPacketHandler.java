@@ -3,13 +3,13 @@ package dev.breezes.settlements.infrastructure.network.features.ui.bubble.handle
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.shared.util.EntityUtil;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Optional;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)

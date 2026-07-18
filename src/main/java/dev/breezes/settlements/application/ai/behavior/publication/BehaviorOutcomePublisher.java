@@ -11,12 +11,12 @@ import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 

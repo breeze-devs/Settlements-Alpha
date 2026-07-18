@@ -10,11 +10,11 @@ import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 
-import javax.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Optional;

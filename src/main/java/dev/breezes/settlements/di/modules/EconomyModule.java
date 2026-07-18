@@ -6,7 +6,7 @@ import dev.breezes.settlements.application.ai.trading.NegotiationEngine;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Exposes economy domain interfaces through their infrastructure implementations so callers

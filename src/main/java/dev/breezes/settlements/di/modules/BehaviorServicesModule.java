@@ -5,7 +5,7 @@ import dagger.Provides;
 import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
 import dev.breezes.settlements.infrastructure.minecraft.data.enchanting.EnchantmentCostDataManager;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Module
 public final class BehaviorServicesModule {

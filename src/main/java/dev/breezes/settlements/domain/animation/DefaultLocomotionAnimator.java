@@ -1,11 +1,11 @@
 package dev.breezes.settlements.domain.animation;
 
 import dev.breezes.settlements.domain.presentation.ArmConfiguration;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Optional;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)

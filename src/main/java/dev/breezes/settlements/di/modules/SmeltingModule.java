@@ -5,7 +5,7 @@ import dagger.Provides;
 import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipeRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.smelting.BlastOreRecipeDataManager;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Exposes the blast-furnace ore catalog domain interface through its infrastructure implementation so

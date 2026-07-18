@@ -5,9 +5,9 @@ import dev.breezes.settlements.domain.crafting.catalog.CraftRecipeCodec;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.forge.catalog.ForgeCatalogRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.ProfessionCatalogDataManager;
+import jakarta.inject.Inject;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 

@@ -3,7 +3,7 @@ package dev.breezes.settlements.application.ai.planning;
 import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Default village-wide work rhythm: two work days followed by one rest day.

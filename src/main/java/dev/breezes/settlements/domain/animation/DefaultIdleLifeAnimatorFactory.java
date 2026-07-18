@@ -1,10 +1,8 @@
 package dev.breezes.settlements.domain.animation;
 
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-
-import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class DefaultIdleLifeAnimatorFactory implements IdleLifeAnimatorFactory {

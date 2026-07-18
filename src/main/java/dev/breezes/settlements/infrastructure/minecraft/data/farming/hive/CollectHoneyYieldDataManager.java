@@ -2,7 +2,7 @@ package dev.breezes.settlements.infrastructure.minecraft.data.farming.hive;
 
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.WeightedYieldDataManager;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class CollectHoneyYieldDataManager extends WeightedYieldDataManager {
 

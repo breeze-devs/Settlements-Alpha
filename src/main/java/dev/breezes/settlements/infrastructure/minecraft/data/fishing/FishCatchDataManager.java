@@ -4,11 +4,11 @@ import dev.breezes.settlements.domain.fishing.FishCatchEntry;
 import dev.breezes.settlements.domain.fishing.FishCatchEntryCodec;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.CodecJsonDataManager;
 import dev.breezes.settlements.shared.util.RandomUtil;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;

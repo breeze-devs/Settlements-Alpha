@@ -5,10 +5,10 @@ import dev.breezes.settlements.domain.generation.model.building.BuildingDefiniti
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinitionCodec;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.CodecJsonDataManager;
+import jakarta.inject.Inject;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;

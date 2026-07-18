@@ -4,10 +4,9 @@ import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
 import dev.breezes.settlements.domain.ai.planning.PlanGenerationContext;
 import dev.breezes.settlements.domain.ai.planning.PlanIntent;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-
-import javax.inject.Inject;
 
 /**
  * Produces a villager's daily plan using deterministic heuristics.

@@ -11,7 +11,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyD
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.validation.GenerationDataValidator;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 @Component(modules = {

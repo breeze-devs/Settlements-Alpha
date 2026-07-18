@@ -3,9 +3,9 @@ package dev.breezes.settlements.infrastructure.minecraft.data.enchanting;
 import dev.breezes.settlements.domain.enchanting.EnchantmentCostData;
 import dev.breezes.settlements.domain.enchanting.EnchantmentCostDataCodec;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.KeyedCatalogDataManager;
+import jakarta.inject.Inject;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Optional;
 

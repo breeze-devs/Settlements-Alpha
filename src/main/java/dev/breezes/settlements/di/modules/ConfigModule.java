@@ -62,7 +62,7 @@ import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementConfig
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Exposes immutable startup config snapshots to the Dagger graph.

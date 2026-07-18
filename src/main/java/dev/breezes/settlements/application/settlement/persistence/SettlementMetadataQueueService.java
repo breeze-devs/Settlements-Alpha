@@ -3,11 +3,11 @@ package dev.breezes.settlements.application.settlement.persistence;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.settlement.model.SettlementMetadata;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;

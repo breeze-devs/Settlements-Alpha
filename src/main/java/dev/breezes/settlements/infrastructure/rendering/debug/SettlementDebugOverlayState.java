@@ -3,13 +3,13 @@ package dev.breezes.settlements.infrastructure.rendering.debug;
 import dev.breezes.settlements.di.ClientScope;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.minecraft.client.Minecraft;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.Optional;
 
 @ClientSide

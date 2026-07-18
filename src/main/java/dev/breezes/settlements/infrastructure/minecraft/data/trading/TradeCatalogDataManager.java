@@ -9,9 +9,9 @@ import dev.breezes.settlements.domain.economy.catalog.SupplyEntry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.ProfessionCatalogDataManager;
+import jakarta.inject.Inject;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

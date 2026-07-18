@@ -8,13 +8,13 @@ import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.PackedPos;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;

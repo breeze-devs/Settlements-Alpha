@@ -8,11 +8,11 @@ import dev.breezes.settlements.domain.inventory.IVillagerEquipment;
 import dev.breezes.settlements.domain.presentation.ItemCategory;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.EquipmentLookup;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 

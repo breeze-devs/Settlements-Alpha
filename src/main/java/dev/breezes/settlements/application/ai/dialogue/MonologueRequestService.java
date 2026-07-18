@@ -7,11 +7,11 @@ import dev.breezes.settlements.application.ai.inference.monologue.MonologueReque
 import dev.breezes.settlements.application.ai.inference.monologue.VillagerMonologueResult;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 
-import javax.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;

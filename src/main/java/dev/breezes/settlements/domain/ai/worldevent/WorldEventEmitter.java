@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
@@ -12,7 +13,6 @@ import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;

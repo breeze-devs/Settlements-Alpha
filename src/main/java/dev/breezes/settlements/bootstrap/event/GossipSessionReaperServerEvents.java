@@ -2,13 +2,12 @@ package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.application.ai.gossip.GossipSessionRegistry;
 import dev.breezes.settlements.di.ServerScope;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-
-import javax.inject.Inject;
 
 /**
  * Evicts timed-out gossip invites once per second.

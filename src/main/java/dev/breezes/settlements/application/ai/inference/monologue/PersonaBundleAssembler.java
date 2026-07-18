@@ -8,6 +8,7 @@ import dev.breezes.settlements.domain.personality.PersonalityStatus;
 import dev.breezes.settlements.domain.personality.VillagerPersonality;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
@@ -15,7 +16,6 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.List;
 
 /**

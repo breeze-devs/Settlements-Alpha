@@ -2,10 +2,10 @@ package dev.breezes.settlements.application.ui.dayplan;
 
 import dev.breezes.settlements.application.ui.sync.UiSessionValidator;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.NoArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Optional;
 
 @NoArgsConstructor(onConstructor_ = @Inject)

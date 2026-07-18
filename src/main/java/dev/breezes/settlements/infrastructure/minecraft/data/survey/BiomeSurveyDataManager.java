@@ -6,9 +6,9 @@ import dev.breezes.settlements.domain.generation.survey.BiomeSurveyDefinition;
 import dev.breezes.settlements.domain.generation.survey.BiomeSurveyDefinitionCodec;
 import dev.breezes.settlements.domain.generation.survey.BiomeSurveyLookup;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.KeyedCatalogDataManager;
+import jakarta.inject.Inject;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 public class BiomeSurveyDataManager extends KeyedCatalogDataManager<BiomeId, BiomeSurveyDefinition> implements BiomeSurveyLookup {
 

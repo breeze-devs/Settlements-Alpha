@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.network.core;
 
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.MissingPacketHandlerCrashReport;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
@@ -9,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Map;
 
 @CustomLog

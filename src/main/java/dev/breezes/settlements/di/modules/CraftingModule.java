@@ -7,7 +7,7 @@ import dev.breezes.settlements.domain.forge.catalog.ForgeCatalogRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.crafting.CraftCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.forge.ForgeCatalogDataManager;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Exposes the crafting domain interfaces through their infrastructure implementations so callers depend

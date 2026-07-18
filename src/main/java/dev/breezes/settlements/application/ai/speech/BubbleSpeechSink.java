@@ -8,11 +8,11 @@ import dev.breezes.settlements.application.ui.bubble.BubbleSegment;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.ChatFormatting;
 
-import javax.inject.Inject;
 import java.util.List;
 
 /**

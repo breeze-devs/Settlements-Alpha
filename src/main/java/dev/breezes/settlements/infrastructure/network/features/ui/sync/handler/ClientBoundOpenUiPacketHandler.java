@@ -5,13 +5,13 @@ import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandl
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ClientBoundOpenUiPacket;
 import dev.breezes.settlements.presentation.ui.sync.UiClientState;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Map;
 
 @CustomLog

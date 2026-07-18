@@ -4,13 +4,13 @@ import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.schedule.Activity;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.Set;
 

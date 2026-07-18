@@ -2,13 +2,12 @@ package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.di.ServerScope;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-
-import javax.inject.Inject;
 
 /**
  * Evicts timed-out trade invites and closes overdue trade sessions once per second.

@@ -4,9 +4,9 @@ import dev.breezes.settlements.domain.generation.history.HistoryEventDefinition;
 import dev.breezes.settlements.domain.generation.history.HistoryEventDefinitionCodec;
 import dev.breezes.settlements.domain.generation.history.HistoryEventRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.KeyedCatalogDataManager;
+import jakarta.inject.Inject;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.List;
 
 public class HistoryEventDataManager extends KeyedCatalogDataManager<String, HistoryEventDefinition> implements HistoryEventRegistry {

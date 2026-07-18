@@ -4,11 +4,11 @@ import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.UUID;
 
 /**

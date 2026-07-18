@@ -4,10 +4,10 @@ import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipe;
 import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipeCodec;
 import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipeRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.KeyedCatalogDataManager;
+import jakarta.inject.Inject;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 

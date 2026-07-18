@@ -5,9 +5,9 @@ import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Locale;
 

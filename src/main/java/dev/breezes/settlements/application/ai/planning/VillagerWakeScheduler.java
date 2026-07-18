@@ -8,11 +8,11 @@ import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 /**
  * Resolves a villager's wake tick from its profession schedule, the target day's

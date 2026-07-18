@@ -18,9 +18,9 @@ import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.Harves
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.NbtTemplateResolver;
+import jakarta.inject.Singleton;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 
-import javax.inject.Singleton;
 import java.util.Set;
 
 @Singleton

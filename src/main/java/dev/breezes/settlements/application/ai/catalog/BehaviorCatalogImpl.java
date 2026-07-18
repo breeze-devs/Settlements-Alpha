@@ -10,10 +10,10 @@ import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.GameTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

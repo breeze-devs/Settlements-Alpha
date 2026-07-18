@@ -17,7 +17,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyD
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.validation.GenerationDataValidator;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Provides a small real-object test graph for generation and data-validation.

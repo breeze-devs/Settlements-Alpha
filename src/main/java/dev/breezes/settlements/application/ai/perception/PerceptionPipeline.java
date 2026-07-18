@@ -15,11 +15,11 @@ import dev.breezes.settlements.domain.ai.worldevent.WorldEventBus;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.SectionPos;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 

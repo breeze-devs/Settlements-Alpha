@@ -8,7 +8,8 @@ import dev.breezes.settlements.domain.ai.catalog.ProfessionBehaviorPool;
 import dev.breezes.settlements.domain.ai.catalog.WeightedBehavior;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

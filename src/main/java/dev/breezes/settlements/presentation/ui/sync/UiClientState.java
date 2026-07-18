@@ -5,12 +5,12 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundHeartbeatUiPacket;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
+import jakarta.inject.Inject;
 import lombok.NoArgsConstructor;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.Optional;
 
 @ClientSide

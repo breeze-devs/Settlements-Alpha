@@ -2,12 +2,12 @@ package dev.breezes.settlements.infrastructure.network.features.ui.stats.handler
 
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerDemandSnapshotPacket;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public class ClientBoundVillagerDemandSnapshotPacketHandler implements ClientSidePacketHandler<ClientBoundVillagerDemandSnapshotPacket> {

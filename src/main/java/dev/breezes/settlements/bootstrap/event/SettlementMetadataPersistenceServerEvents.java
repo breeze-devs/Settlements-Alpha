@@ -4,13 +4,13 @@ import dev.breezes.settlements.application.settlement.persistence.SettlementMeta
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.settlement.model.SettlementMetadata;
 import dev.breezes.settlements.infrastructure.minecraft.persistence.SettlementSavedData;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
-import javax.inject.Inject;
 import java.util.List;
 
 @ServerScope

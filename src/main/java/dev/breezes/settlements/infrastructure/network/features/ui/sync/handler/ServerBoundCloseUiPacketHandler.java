@@ -5,12 +5,12 @@ import dev.breezes.settlements.application.ui.sync.session.UiSessionRegistry;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundCloseUiPacket;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.UUID;
 

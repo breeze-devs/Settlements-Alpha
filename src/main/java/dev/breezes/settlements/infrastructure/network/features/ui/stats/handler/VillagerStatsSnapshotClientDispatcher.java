@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.network.features.ui.stats.handler
 
 import dev.breezes.settlements.presentation.ui.stats.VillagerStatsScreen;
 import dev.breezes.settlements.presentation.ui.sync.UiClientState;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
@@ -9,7 +10,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.function.Consumer;
 
 @CustomLog

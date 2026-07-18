@@ -3,12 +3,12 @@ package dev.breezes.settlements.infrastructure.minecraft.data.animal;
 import dev.breezes.settlements.domain.animal.ButcherableAnimalEntry;
 import dev.breezes.settlements.domain.animal.ButcherableAnimalEntryCodec;
 import dev.breezes.settlements.infrastructure.minecraft.data.framework.KeyedCatalogDataManager;
+import jakarta.inject.Inject;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Optional;
 

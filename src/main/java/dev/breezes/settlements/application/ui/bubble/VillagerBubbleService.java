@@ -5,9 +5,9 @@ import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import jakarta.inject.Inject;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;

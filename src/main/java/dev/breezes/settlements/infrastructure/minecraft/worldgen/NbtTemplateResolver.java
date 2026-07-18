@@ -8,6 +8,8 @@ import dev.breezes.settlements.domain.generation.model.building.BuildingDefiniti
 import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.building.ResolvedTemplate;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.CustomLog;
 import lombok.NoArgsConstructor;
@@ -23,8 +25,6 @@ import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.util.ArrayList;

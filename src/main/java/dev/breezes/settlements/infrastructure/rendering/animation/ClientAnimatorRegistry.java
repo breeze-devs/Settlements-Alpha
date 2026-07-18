@@ -6,10 +6,10 @@ import dev.breezes.settlements.domain.animation.IdleLifeAnimatorFactory;
 import dev.breezes.settlements.domain.animation.LocomotionAnimator;
 import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntPredicate;

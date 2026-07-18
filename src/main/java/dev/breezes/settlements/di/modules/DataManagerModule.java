@@ -22,7 +22,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.survey.BiomeSurveyD
 import dev.breezes.settlements.infrastructure.minecraft.data.trading.TradeCatalogDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Module
 public final class DataManagerModule {

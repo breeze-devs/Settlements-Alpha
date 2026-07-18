@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.SettlementEnterEvent;
+import jakarta.inject.Inject;
 import lombok.NoArgsConstructor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -10,7 +11,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 /**
  * Surfaces region transitions to players using vanilla title packets.

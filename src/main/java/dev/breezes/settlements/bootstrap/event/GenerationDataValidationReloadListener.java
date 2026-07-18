@@ -4,6 +4,8 @@ import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDe
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.traits.TraitDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.validation.GenerationDataValidator;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -11,8 +13,6 @@ import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @RequiredArgsConstructor(onConstructor_ = @Inject)

@@ -5,11 +5,11 @@ import dev.breezes.settlements.domain.ai.planning.IWakeTickResolver;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.ai.schedule.ScheduleProfile;
 import dev.breezes.settlements.domain.time.GameTicks;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 import static dev.breezes.settlements.domain.time.TimeOfDay.TICKS_PER_DAY;
 

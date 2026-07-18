@@ -29,6 +29,7 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOrig
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
@@ -37,7 +38,6 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.schedule.Activity;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

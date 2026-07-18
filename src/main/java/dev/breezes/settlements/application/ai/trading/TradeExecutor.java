@@ -4,13 +4,13 @@ import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 @ServerScope
 @CustomLog

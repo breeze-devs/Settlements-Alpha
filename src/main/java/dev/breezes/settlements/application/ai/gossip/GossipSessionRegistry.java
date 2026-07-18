@@ -3,10 +3,10 @@ package dev.breezes.settlements.application.ai.gossip;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

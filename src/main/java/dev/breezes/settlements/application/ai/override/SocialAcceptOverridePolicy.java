@@ -3,12 +3,12 @@ package dev.breezes.settlements.application.ai.override;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.server.level.ServerLevel;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.Optional;
 
 /**

@@ -1,10 +1,9 @@
 package dev.breezes.settlements.application.ai.inference;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 /**
  * Single source of truth for whether the Settlements Inference Service (SIS) cognition lane is

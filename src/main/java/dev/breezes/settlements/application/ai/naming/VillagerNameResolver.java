@@ -1,10 +1,10 @@
 package dev.breezes.settlements.application.ai.naming;
 
 import dev.breezes.settlements.di.ServerScope;
+import jakarta.inject.Inject;
 import lombok.NoArgsConstructor;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.UUID;
 

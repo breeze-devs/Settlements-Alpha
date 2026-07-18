@@ -3,11 +3,11 @@ package dev.breezes.settlements.application.ai.courtship;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
