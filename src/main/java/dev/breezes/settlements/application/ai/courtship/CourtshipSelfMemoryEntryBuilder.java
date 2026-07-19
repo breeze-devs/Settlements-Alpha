@@ -31,11 +31,6 @@ public final class CourtshipSelfMemoryEntryBuilder {
 
     /**
      * Weight assigned to a self-recorded private courtship failure.
-     * <p>
-     * Matches the base importance that {@link dev.breezes.settlements.domain.ai.perception.ObservationFactory}
-     * assigns to {@link WorldEventType#COURTSHIP_COMPLETED} events on the bus (2.5F), so the villager
-     * weights its own first-hand memory of the failed attempt as seriously as it would weight a
-     * witnessed courtship event. Staleness and corroboration mechanics apply normally thereafter.
      */
     public static final float SELF_FAILURE_WEIGHT = 2.5F;
 
@@ -68,7 +63,7 @@ public final class CourtshipSelfMemoryEntryBuilder {
      */
     public static Map<String, String> buildMetadata(@Nonnull UUID actorId, @Nonnull String reason) {
         Map<String, String> metadata = new HashMap<>(4);
-        metadata.put(ObservationMetadataKeys.EVENT_TYPE, WorldEventType.COURTSHIP_COMPLETED.name());
+        metadata.put(ObservationMetadataKeys.EVENT_TYPE, WorldEventType.COURTSHIP_DATE_COMPLETED.name());
         metadata.put(ObservationMetadataKeys.ACTOR_ID, actorId.toString());
         metadata.put(ObservationMetadataKeys.OUTCOME, EventOutcome.FAILURE.name());
         metadata.put(ObservationMetadataKeys.REASON, reason);

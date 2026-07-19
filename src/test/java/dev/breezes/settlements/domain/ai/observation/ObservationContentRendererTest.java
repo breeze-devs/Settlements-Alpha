@@ -66,10 +66,10 @@ class ObservationContentRendererTest {
     @Test
     void render_parentheticalPresent_wrapsInParentheses() {
         // Arrange, Act
-        String content = ObservationContentRenderer.render("COURTSHIP_COMPLETED", "actor-id", "no one answered");
+        String content = ObservationContentRenderer.render("COURTSHIP_CHILD_BIRTH", "actor-id", "no one answered");
 
         // Assert
-        assertEquals("courtship completed by actor-id (no one answered)", content);
+        assertEquals("courtship child birth by actor-id (no one answered)", content);
     }
 
 }

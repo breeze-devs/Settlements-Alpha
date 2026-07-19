@@ -35,9 +35,9 @@ class ObservationFactoryTest {
     }
 
     @Test
-    void fromEvent_mapsCourtshipCompletedToSocialObservationType() {
+    void fromEvent_mapsCourtshipChildBirthToSocialObservationType() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.COURTSHIP_COMPLETED);
+        WorldEvent event = worldEvent(WorldEventType.COURTSHIP_CHILD_BIRTH);
 
         // Act
         Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
@@ -310,7 +310,7 @@ class ObservationFactoryTest {
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.COURTSHIP_COMPLETED)
+                .type(WorldEventType.COURTSHIP_CHILD_BIRTH)
                 .actorId(UUID.randomUUID())
                 .posX(0).posY(64).posZ(0)
                 .chunkX(0).chunkZ(0)
@@ -330,7 +330,7 @@ class ObservationFactoryTest {
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.COURTSHIP_COMPLETED)
+                .type(WorldEventType.COURTSHIP_CHILD_BIRTH)
                 .actorId(UUID.randomUUID())
                 .posX(0).posY(64).posZ(0)
                 .chunkX(0).chunkZ(0)
@@ -439,7 +439,7 @@ class ObservationFactoryTest {
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.COURTSHIP_COMPLETED)
+                .type(WorldEventType.COURTSHIP_CHILD_BIRTH)
                 .actorId(UUID.randomUUID())
                 .posX(0).posY(64).posZ(0)
                 .chunkX(0).chunkZ(0)
@@ -457,7 +457,7 @@ class ObservationFactoryTest {
     @Test
     void metadataFor_omitsReasonKeyWhenAbsent() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.COURTSHIP_COMPLETED);
+        WorldEvent event = worldEvent(WorldEventType.COURTSHIP_CHILD_BIRTH);
         Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
 
         // Act

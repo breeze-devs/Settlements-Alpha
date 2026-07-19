@@ -94,7 +94,6 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        // Stay silent unless a successful birth declares the COURTSHIP_COMPLETED deed
         context.declarePrimaryDeed(BehaviorOutcome.silent());
         this.activeSessionId = null;
     }
@@ -306,7 +305,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
             return StepResult.complete();
         }
 
-        if (session.isBirthCompleted()) {
+        if (session.isResolved()) {
             return StepResult.complete();
         }
 
@@ -317,6 +316,12 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         BaseVillager partner = resolveParticipant(serverLevel, session.getReceiverId()).orElse(null);
         if (partner == null) {
             return doAbort(self, session, CourtshipCloseReason.ABORTED_PARTNER_GONE);
+        }
+
+        // Roll conception before touching bed reservations
+        boolean conceived = self.getRandom().nextFloat() < config.conceptionChancePercent() / 100.0F;
+        if (!conceived) {
+            return resolveChildlessDate(context, session, self, partner);
         }
 
         BlockPos primaryBed = this.bedReservationService.tryClaimVacantHome(serverLevel, self).orElse(null);
@@ -357,18 +362,47 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
             // If secondary spawn failed, secondaryHandle stays tracked and teardown releases the unused bed.
         }
 
-        self.setAge(CourtshipConstants.BREED_COOLDOWN_TICKS);
-        partner.setAge(CourtshipConstants.BREED_COOLDOWN_TICKS);
+        applyBreedCooldown(self, partner);
 
-        session.markBirthCompleted();
+        session.markResolved();
         this.courtshipPresenter.presentBirth(session, self, partner);
         this.sessionRegistry.closeSession(session.getSessionId(), CourtshipCloseReason.COMPLETED);
 
-        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COURTSHIP_COMPLETED, null);
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COURTSHIP_CHILD_BIRTH, null);
         outcome.recordSocialOutcome(session.getReceiverId(), session.getSessionId(), EventOutcome.SUCCESS, null, null);
         context.declarePrimaryDeed(outcome);
 
         return StepResult.complete();
+    }
+
+    /**
+     * Childless-date resolution: the conception roll failed, but the courtship dance itself still
+     * succeeded, so it closes as a completed session rather than an abort.
+     * <p>
+     * Both parents still go on breed cooldown — without this, a pair would immediately re-court
+     * every cycle and the conception-chance knob would have no effect on breeding frequency.
+     */
+    private StepResult resolveChildlessDate(@Nonnull BehaviorContext<BaseVillager> context,
+                                            @Nonnull CourtshipSession session,
+                                            @Nonnull BaseVillager self,
+                                            @Nonnull BaseVillager partner) {
+        applyBreedCooldown(self, partner);
+
+        session.markResolved();
+        this.courtshipPresenter.presentDate(session, self, partner);
+        this.sessionRegistry.closeSession(session.getSessionId(), CourtshipCloseReason.COMPLETED);
+
+        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.COURTSHIP_DATE_COMPLETED, null);
+        outcome.recordSocialOutcome(session.getReceiverId(), session.getSessionId(), EventOutcome.SUCCESS, null, null);
+        context.declarePrimaryDeed(outcome);
+
+        return StepResult.complete();
+    }
+
+    private void applyBreedCooldown(@Nonnull BaseVillager self, @Nonnull BaseVillager partner) {
+        int breedCooldownTicks = ClockTicks.seconds(config.breedCooldownSeconds()).getTicksAsInt();
+        self.setAge(breedCooldownTicks);
+        partner.setAge(breedCooldownTicks);
     }
 
     @Nullable

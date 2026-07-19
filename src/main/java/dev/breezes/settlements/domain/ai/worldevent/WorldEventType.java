@@ -52,11 +52,25 @@ public enum WorldEventType {
     TRADE_COMPLETED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 2.5F, true, true),
 
     /**
-     * A courtship event was completed.
+     * A courtship dance completed and the conception roll succeeded: a child was born.
      * Carries the session registry id in the {@link WorldEvent#getRegistryId()} field.
      * First-accept-wins resolution goes through {@code CourtshipSessionRegistry}, not the bus.
      */
-    COURTSHIP_COMPLETED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 2.5F, true, true),
+    COURTSHIP_CHILD_BIRTH(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 2.5F, true, true),
+
+    /**
+     * A courtship dance completed but the conception roll failed: the pair still had a
+     * successful date and both go on breed cooldown, but no child was born. Distinct from
+     * {@link #COURTSHIP_CHILD_BIRTH} because "X dated Y" is semantically different from
+     * "X had a baby with Y". Carries the session registry id in the same manner.
+     * <p>
+     * Ranked below the 2.5F salient-social tier and left out of forceRemember on purpose: this is
+     * now the majority courtship outcome, so force-admitting it would let routine dates crowd the
+     * bounded knowledge store and displace the events worth remembering. It stays seedWorthy —
+     * a date is better monologue material than a harvest — but it has to earn its place through
+     * the importance gate like any other ordinary deed.
+     */
+    COURTSHIP_DATE_COMPLETED(WorldEventNamespace.WORLD, ObservationType.SOCIAL, 2.0F, false, true),
 
     /**
      * A courtship advance was turned down. The actor is the receiver who declined;

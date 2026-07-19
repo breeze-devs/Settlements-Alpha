@@ -3,9 +3,11 @@ package dev.breezes.settlements.infrastructure.minecraft.behavior.traversal;
 import com.google.common.collect.Sets;
 import com.mojang.datafixers.kinds.OptionalBox;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.world.blocks.TraversableBarrier;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
@@ -114,6 +116,7 @@ public final class InteractWithBarriers {
 
         if (!barrier.isOpen(state)) {
             barrier.setOpen(entity, level, state, pos, true);
+            playInteractGesture(entity);
         }
 
         // Remember barriers unconditionally, open or closed
@@ -187,11 +190,32 @@ public final class InteractWithBarriers {
 
             // Nobody's coming through -- close it
             barrier.setOpen(entity, level, state, pos, false);
+            playInteractGesture(entity);
             iterator.remove();
             anyClosed = true;
         }
 
         return anyClosed;
+    }
+
+    /**
+     * Plays the one-shot reach-out gesture accompanying a barrier toggle.
+     * <p>
+     * Gated on the villager being animation-idle: the client keeps a single action layer on a
+     * last-writer-wins basis, so hijacking it mid-task would evict a behavior's sustained clip, and
+     * that behavior never re-asserts its archetype once this gesture expires.
+     */
+    private static void playInteractGesture(LivingEntity entity) {
+        if (!(entity instanceof BaseVillager villager)) {
+            return;
+        }
+
+        AnimationArchetype motion = villager.getMotion();
+        if (motion != AnimationArchetype.IDLE && motion != AnimationArchetype.INTERACT) {
+            return;
+        }
+
+        villager.triggerMotion(AnimationArchetype.INTERACT);
     }
 
     private static boolean isTooFarAway(ServerLevel level, LivingEntity entity, GlobalPos pos) {

@@ -39,6 +39,7 @@ public final class CourtshipPresenter {
     private static final ClockTicks APPROACH_BUBBLE_TTL = ClockTicks.seconds(10);
     private static final ClockTicks BEAT_BUBBLE_TTL = ClockTicks.seconds(4);
     private static final ClockTicks BIRTH_BUBBLE_TTL = ClockTicks.seconds(3);
+    private static final ClockTicks DATE_BUBBLE_TTL = ClockTicks.seconds(3);
     private static final ClockTicks FAILURE_BUBBLE_TTL = ClockTicks.seconds(4);
     private static final String COURTSHIP_SOURCE = "courtship";
 
@@ -102,6 +103,10 @@ public final class CourtshipPresenter {
     /**
      * Culmination: heart burst at midpoint, happy particles at each parent, celebrate sound, love puff event.
      * Called once by CourtshipInitiateBehavior immediately before spawning children.
+     * <p>
+     * Uses the result owner key for the same reason {@link #presentAbort} does: the birth ends the
+     * behavior in the same tick, so a bubble on the in-progress key would be wiped by the
+     * {@link #presentEnd} cleanup before it ever rendered.
      */
     public void presentBirth(@Nonnull CourtshipSession session,
                              @Nonnull BaseVillager presenter,
@@ -112,15 +117,41 @@ public final class CourtshipPresenter {
         midpoint.displayParticles(ParticleTypes.HAPPY_VILLAGER, 8, 0.5, 0.5, 0.5, 0.01);
         midpoint.playSound(SoundEvents.VILLAGER_CELEBRATE, 1.0f, 1.0f, SoundSource.NEUTRAL);
 
-        upsert(presenter, session, BubbleMessage.builder()
+        upsertResult(presenter, session, BubbleMessage.builder()
                 .priority(15)
                 .ttl(BIRTH_BUBBLE_TTL)
                 .sourceType(COURTSHIP_SOURCE)
                 .segments(List.of(POPPY_ICON))
                 .build());
-        upsert(receiver, session, BubbleMessage.builder()
+        upsertResult(receiver, session, BubbleMessage.builder()
                 .priority(15)
                 .ttl(BIRTH_BUBBLE_TTL)
+                .sourceType(COURTSHIP_SOURCE)
+                .segments(List.of(POPPY_ICON))
+                .build());
+    }
+
+    /**
+     * Childless-date culmination: a warm, understated farewell for a courtship whose conception
+     * roll failed. Deliberately gentler than {@link #presentBirth} and warm rather than negative.
+     */
+    public void presentDate(@Nonnull CourtshipSession session,
+                            @Nonnull BaseVillager presenter,
+                            @Nonnull BaseVillager receiver) {
+        Location midpoint = Location.of((presenter.getX() + receiver.getX()) / 2.0, (presenter.getEyeY() + receiver.getEyeY()) / 2.0,
+                (presenter.getZ() + receiver.getZ()) / 2.0, presenter.level());
+        midpoint.displayParticles(ParticleTypes.HEART, 5, 0.5, 0.5, 0.5, 0.02);
+        midpoint.playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f, SoundSource.NEUTRAL);
+
+        upsertResult(presenter, session, BubbleMessage.builder()
+                .priority(15)
+                .ttl(DATE_BUBBLE_TTL)
+                .sourceType(COURTSHIP_SOURCE)
+                .segments(List.of(POPPY_ICON))
+                .build());
+        upsertResult(receiver, session, BubbleMessage.builder()
+                .priority(15)
+                .ttl(DATE_BUBBLE_TTL)
                 .sourceType(COURTSHIP_SOURCE)
                 .segments(List.of(POPPY_ICON))
                 .build());

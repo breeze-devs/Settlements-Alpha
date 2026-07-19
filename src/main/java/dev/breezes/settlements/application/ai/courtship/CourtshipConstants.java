@@ -22,9 +22,4 @@ public final class CourtshipConstants {
      */
     public static final long RECEIVER_REACTION_DELAY_TICKS = 8L;
 
-    /**
-     * Breed cooldown applied to both parents after a successful birth (6000 ticks = 5 minutes).
-     */
-    public static final int BREED_COOLDOWN_TICKS = 6000;
-
 }

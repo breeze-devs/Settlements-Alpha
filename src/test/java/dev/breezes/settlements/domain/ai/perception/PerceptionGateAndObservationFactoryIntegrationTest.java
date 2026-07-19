@@ -129,7 +129,7 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
     @Test
     void importanceGate_highCharismaVillagerPromotesSocialObservations() {
         // Arrange
-        WorldEvent event = emitEvent(WorldEventType.COURTSHIP_COMPLETED, 10, 10);
+        WorldEvent event = emitEvent(WorldEventType.COURTSHIP_CHILD_BIRTH, 10, 10);
         Observation observation = ObservationFactory.fromEvent(event, GAME_TICK);
 
         MemoryImportanceGate gate = new MemoryImportanceGate();

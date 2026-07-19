@@ -28,12 +28,16 @@ class WorldEventTypeTest {
     /**
      * All constants defined before the sighting types must keep forceRemember == seedWorthy,
      * so existing consumers of the single flag are unaffected.
+     * <p>
+     * This is a backwards-compatibility guard for constants that predate the flag split, not a
+     * general rule — constants added afterwards are free to decouple and are covered by their
+     * own tests instead of being enrolled here.
      */
     @ParameterizedTest
     @EnumSource(value = WorldEventType.class, names = {
             "BEHAVIOR_STARTED", "BEHAVIOR_COMPLETED", "BEHAVIOR_FAILED",
             "SHEEP_SHEARED", "SHEEP_DYED", "RESOURCE_HARVESTED", "FARMLAND_CULTIVATED",
-            "TRADE_COMPLETED", "COURTSHIP_COMPLETED", "COURTSHIP_REJECTED",
+            "TRADE_COMPLETED", "COURTSHIP_CHILD_BIRTH", "COURTSHIP_REJECTED",
             "TRADE_INVITE_SENT", "COURTSHIP_INVITE_SENT",
             "DAY_PLAN_INVALIDATED", "PLAN_EXHAUSTED",
             "COW_MILKED", "FISH_CAUGHT", "STONE_CUT", "RESOURCE_EXCAVATED",
@@ -74,6 +78,28 @@ class WorldEventTypeTest {
         // Act & Assert
         assertTrue(type.isSelfRememberableTerminalEvent(), "TRADE_COMPLETED must force-remember (salient deed)");
         assertTrue(type.isSeedWorthy(), "TRADE_COMPLETED must seed monologue");
+    }
+
+    @Test
+    void courtshipDateCompleted_seedsMonologueWithoutForceRemembering() {
+        // Arrange
+        WorldEventType type = WorldEventType.COURTSHIP_DATE_COMPLETED;
+
+        // Act & Assert — the majority courtship outcome must not bypass the importance gate,
+        // or routine dates would crowd the bounded knowledge store
+        assertFalse(type.isSelfRememberableTerminalEvent(), "COURTSHIP_DATE_COMPLETED must not force-remember (routine outcome)");
+        assertTrue(type.isSeedWorthy(), "COURTSHIP_DATE_COMPLETED must seed monologue (better material than a harvest)");
+    }
+
+    @Test
+    void courtshipDateCompleted_ranksBelowChildBirth() {
+        // Arrange, Act
+        float dateImportance = WorldEventType.COURTSHIP_DATE_COMPLETED.getBaseImportance();
+        float birthImportance = WorldEventType.COURTSHIP_CHILD_BIRTH.getBaseImportance();
+
+        // Assert — a childless date is deliberately less notable than a birth
+        assertTrue(dateImportance < birthImportance,
+                "COURTSHIP_DATE_COMPLETED must rank below COURTSHIP_CHILD_BIRTH");
     }
 
     @Test

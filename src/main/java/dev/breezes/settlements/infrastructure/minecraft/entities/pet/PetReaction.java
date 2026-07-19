@@ -7,6 +7,8 @@ import lombok.Builder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
@@ -14,7 +16,7 @@ import javax.annotation.Nonnull;
 
 /**
  * Reusable "petting" reaction shared by Settlements animals: a transient squash-and-stretch, a species
- * sound, and a few hearts, rate-limited so click-spam will be throttled.
+ * sound, a few hearts, and a short regeneration buff, rate-limited so click-spam will be throttled.
  */
 public class PetReaction {
 
@@ -32,6 +34,9 @@ public class PetReaction {
     private static final int HEART_COUNT = 3;
     private static final float SOUND_VOLUME = 0.6F;
     private static final float SOUND_PITCH = 1.0F;
+
+    private static final ClockTicks REGENERATION_DURATION = ClockTicks.seconds(10);
+    private static final int REGENERATION_AMPLIFIER = 1;
 
     private final ClockTicks cooldown;
     private final SoundEvent sound;
@@ -69,6 +74,8 @@ public class PetReaction {
             return false;
         }
         this.nextAllowedGameTime = now + this.cooldown.getTicksAsInt();
+
+        animal.addEffect(new MobEffectInstance(MobEffects.REGENERATION, REGENERATION_DURATION.getTicksAsInt(), REGENERATION_AMPLIFIER));
 
         Location location = Location.fromEntity(animal, false).add(0, 0.1, 0, false);
         location.displayParticles(ParticleTypes.HEART, HEART_COUNT, 0.3, 0.5, 0.3, 0.01);

@@ -102,7 +102,7 @@ class VillagerKnowledgeAttachmentTest {
                 .originObservationId(UUID.randomUUID())
                 .originTimestampTick(0L)
                 .admittedAtTick(0L)
-                .metadata(Map.of("event_type", WorldEventType.COURTSHIP_COMPLETED.name()))
+                .metadata(Map.of("event_type", WorldEventType.COURTSHIP_CHILD_BIRTH.name()))
                 .packedPos(null)
                 .hop(0)
                 .originalWeight(1.0f)

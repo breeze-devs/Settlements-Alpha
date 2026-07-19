@@ -192,7 +192,8 @@ public final class EpisodicEntryAssembler {
     @Nullable
     private String resolveTarget(KnowledgeEntry entry, WorldEventType eventType) {
         boolean isNamableTarget = eventType == WorldEventType.TRADE_COMPLETED
-                || eventType == WorldEventType.COURTSHIP_COMPLETED
+                || eventType == WorldEventType.COURTSHIP_CHILD_BIRTH
+                || eventType == WorldEventType.COURTSHIP_DATE_COMPLETED
                 || eventType == WorldEventType.COURTSHIP_REJECTED
                 || eventType == WorldEventType.EMERALDS_DONATED;
         if (!isNamableTarget) {

@@ -113,6 +113,7 @@ import net.neoforged.neoforge.common.Tags;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -127,6 +128,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static final double DEFAULT_FOLLOW_RANGE = 48.0D;
     private static final int STARTING_BREAD_STACKS = 2;
     private static final int STARTING_BREAD_PER_STACK = 64;
+    private static final int MAX_DEATH_DROP_STACKS = 10;
     private static final int MAX_DISCHARGE_ATTEMPTS = 10;
     private static final float BREED_HUNGER_THRESHOLD = 0.7F;
     private static final int BREED_FOOD_REQUIREMENT = 32;
@@ -735,7 +737,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     }
 
     /**
-     * Scatters the villager's entire Settlements inventory on death
+     * Scatters a capped sample of the villager's Settlements inventory on death
      */
     @Override
     protected void dropCustomDeathLoot(@Nonnull ServerLevel level, @Nonnull DamageSource damageSource, boolean recentlyHit) {
@@ -753,7 +755,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         super.dropCustomDeathLoot(level, damageSource, recentlyHit);
 
         if (scatterInventory) {
-            for (ItemStack stack : this.getSettlementsInventory().drainAll()) {
+            // The inventory is drained in full regardless of the cap, since the entity is going away either way.
+            for (ItemStack stack : this.selectDeathDrops(this.getSettlementsInventory().drainAll())) {
                 ItemEntity itemEntity = new ItemEntity(level, this.getX(), this.getEyeY() - 0.3D, this.getZ(), stack);
 
                 double horizontalSpeed = this.random.nextFloat() * 0.25D;
@@ -763,6 +766,50 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 level.addFreshEntity(itemEntity);
             }
         }
+    }
+
+    /**
+     * Narrows the drained inventory down to the stacks that actually should be dropped.
+     * <p>
+     * The Settlements backpack is unbounded, so a long-lived villager can hoard enough stacks that scattering
+     * all of them spawns hundreds of item entities in a single tick and takes the server down with it. Two
+     * filters apply, in order:
+     * <ol>
+     *     <li>The starting bread grant is withheld. Every villager is seeded with it, so returning it on death
+     *     would mint bread into the world with each generation; only the surplus a villager actually gathered
+     *     is eligible to drop.</li>
+     *     <li>Whatever survives is sampled down to {@link #MAX_DEATH_DROP_STACKS}. The sample is uniform and
+     *     without replacement, so the drop is neither biased toward whichever kinds the ledger happens to
+     *     enumerate first nor able to duplicate a stack the villager never carried.</li>
+     * </ol>
+     */
+    private List<ItemStack> selectDeathDrops(@Nonnull List<ItemStack> drained) {
+        List<ItemStack> droppable = new ArrayList<>(drained.size());
+        int breadToWithhold = STARTING_BREAD_STACKS * STARTING_BREAD_PER_STACK;
+
+        for (ItemStack stack : drained) {
+            if (!stack.is(Items.BREAD) || breadToWithhold <= 0) {
+                droppable.add(stack);
+                continue;
+            }
+
+            int withheld = Math.min(breadToWithhold, stack.getCount());
+            breadToWithhold -= withheld;
+            if (withheld < stack.getCount()) {
+                droppable.add(stack.copyWithCount(stack.getCount() - withheld));
+            }
+        }
+
+        if (droppable.size() <= MAX_DEATH_DROP_STACKS) {
+            return droppable;
+        }
+
+        // Partial Fisher-Yates: only the prefix we keep has to be shuffled into place.
+        for (int i = 0; i < MAX_DEATH_DROP_STACKS; i++) {
+            Collections.swap(droppable, i, i + this.random.nextInt(droppable.size() - i));
+        }
+
+        return droppable.subList(0, MAX_DEATH_DROP_STACKS);
     }
 
     @Override

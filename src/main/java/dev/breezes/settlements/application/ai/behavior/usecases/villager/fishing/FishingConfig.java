@@ -66,6 +66,24 @@ public record FishingConfig(
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
+                identifier = "min_pond_depth",
+                description = "Minimum depth (in blocks, including the candidate block itself) a water body must have to be considered fishable.",
+                defaultValue = 1,
+                min = 1,
+                max = 8)
+        int minPondDepth,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = "min_pond_ring_water_count",
+                description = "Minimum number (out of 8) of water source blocks at radius 2 around a candidate water block required to consider it part of a real pond or lake, rather than a narrow channel.",
+                defaultValue = 4,
+                min = 0,
+                max = 8)
+        int minPondRingWaterCount,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
                 identifier = "min_wait_time_seconds",
                 description = "Minimum time (in seconds) to wait for a fish to bite.",
                 defaultValue = 5,

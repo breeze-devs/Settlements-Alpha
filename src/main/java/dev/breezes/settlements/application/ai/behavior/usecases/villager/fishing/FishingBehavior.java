@@ -105,6 +105,8 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 .rangeHorizontal(config.scanRangeHorizontal())
                 .rangeVertical(config.scanRangeVertical())
                 .completionRange(NAVIGATION_COMPLETION_DISTANCE)
+                .minPondDepth(config.minPondDepth())
+                .minPondRingWaterCount(config.minPondRingWaterCount())
                 .build();
         this.preconditions.add(this.nearbyWaterExistsCondition);
         this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(FISHING_ROD_ID), 1, 50, this.getClass().getSimpleName()));

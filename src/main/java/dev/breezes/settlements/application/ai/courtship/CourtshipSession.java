@@ -37,7 +37,12 @@ public final class CourtshipSession {
     @Builder.Default
     private int choreographyId = 0;
 
-    private boolean birthCompleted;
+    /**
+     * Guards BIRTH-stage re-entry once the stage has been resolved — by a birth or by a
+     * childless date. Named for the outcome, not the stage: a conception-roll failure still
+     * "resolves" the courtship (closes the session, applies cooldowns) without a birth.
+     */
+    private boolean resolved;
 
     public void transitionTo(@Nonnull CourtshipPhase next, long now) {
         this.phase = next;
@@ -59,8 +64,8 @@ public final class CourtshipSession {
         this.currentBeatIndex = beatIndex;
     }
 
-    public void markBirthCompleted() {
-        this.birthCompleted = true;
+    public void markResolved() {
+        this.resolved = true;
     }
 
     public UUID partnerOf(@Nonnull UUID villagerId) {

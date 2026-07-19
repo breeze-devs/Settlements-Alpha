@@ -27,6 +27,8 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
     private final int rangeHorizontal;
     private final int rangeVertical;
     private final int completionRange;
+    private final int minPondDepth;
+    private final int minPondRingWaterCount;
 
     @Nullable
     private BlockPos waterTarget;
@@ -34,13 +36,22 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
     private BlockPos shorePosition;
 
     @Builder
-    public NearbyWaterExistsCondition(int rangeHorizontal, int rangeVertical, int completionRange) {
+    public NearbyWaterExistsCondition(int rangeHorizontal, int rangeVertical, int completionRange,
+                                      int minPondDepth, int minPondRingWaterCount) {
         if (completionRange < 1) {
             throw new IllegalArgumentException("Completion range must be at least 1");
+        }
+        if (minPondDepth < 1) {
+            throw new IllegalArgumentException("Minimum pond depth must be at least 1");
+        }
+        if (minPondRingWaterCount < 0) {
+            throw new IllegalArgumentException("Minimum pond ring water count must be at least 0");
         }
         this.rangeHorizontal = rangeHorizontal;
         this.rangeVertical = rangeVertical;
         this.completionRange = completionRange;
+        this.minPondDepth = minPondDepth;
+        this.minPondRingWaterCount = minPondRingWaterCount;
 
         this.waterTarget = null;
         this.shorePosition = null;
@@ -63,6 +74,7 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
 
         BlockPos.MutableBlockPos waterMutable = new BlockPos.MutableBlockPos();
         BlockPos.MutableBlockPos shoreMutable = new BlockPos.MutableBlockPos();
+        BlockPos.MutableBlockPos probeMutable = new BlockPos.MutableBlockPos();
 
         for (int horizontalRadius = 0; horizontalRadius <= this.rangeHorizontal; horizontalRadius++) {
             for (int verticalOffsetIndex = 0; verticalOffsetIndex <= this.rangeVertical * 2; verticalOffsetIndex++) {
@@ -72,7 +84,7 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
                 }
 
                 if (horizontalRadius == 0) {
-                    if (checkWaterCandidate(entity, level, originX, originY + yOffset, originZ, waterMutable, shoreMutable)) {
+                    if (checkWaterCandidate(entity, level, originX, originY + yOffset, originZ, waterMutable, shoreMutable, probeMutable)) {
                         return true;
                     }
                     continue;
@@ -84,19 +96,19 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
                 int maxZ = originZ + horizontalRadius;
 
                 for (int x = minX; x <= maxX; x++) {
-                    if (checkWaterCandidate(entity, level, x, originY + yOffset, minZ, waterMutable, shoreMutable)) {
+                    if (checkWaterCandidate(entity, level, x, originY + yOffset, minZ, waterMutable, shoreMutable, probeMutable)) {
                         return true;
                     }
-                    if (checkWaterCandidate(entity, level, x, originY + yOffset, maxZ, waterMutable, shoreMutable)) {
+                    if (checkWaterCandidate(entity, level, x, originY + yOffset, maxZ, waterMutable, shoreMutable, probeMutable)) {
                         return true;
                     }
                 }
 
                 for (int z = minZ + 1; z < maxZ; z++) {
-                    if (checkWaterCandidate(entity, level, minX, originY + yOffset, z, waterMutable, shoreMutable)) {
+                    if (checkWaterCandidate(entity, level, minX, originY + yOffset, z, waterMutable, shoreMutable, probeMutable)) {
                         return true;
                     }
-                    if (checkWaterCandidate(entity, level, maxX, originY + yOffset, z, waterMutable, shoreMutable)) {
+                    if (checkWaterCandidate(entity, level, maxX, originY + yOffset, z, waterMutable, shoreMutable, probeMutable)) {
                         return true;
                     }
                 }
@@ -113,11 +125,17 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
                                         int y,
                                         int z,
                                         @Nonnull BlockPos.MutableBlockPos waterMutable,
-                                        @Nonnull BlockPos.MutableBlockPos shoreMutable) {
+                                        @Nonnull BlockPos.MutableBlockPos shoreMutable,
+                                        @Nonnull BlockPos.MutableBlockPos probeMutable) {
         waterMutable.set(x, y, z);
 
         FluidState fluidState = level.getFluidState(waterMutable);
         if (!fluidState.is(FluidTags.WATER) || !fluidState.isSource()) {
+            return false;
+        }
+
+        // Reject shallow puddles before we pay for findShorePosition's lookups or canReach's full pathfind below
+        if (!isPondShaped(level, waterMutable, probeMutable, this.minPondDepth, this.minPondRingWaterCount)) {
             return false;
         }
 
@@ -135,6 +153,56 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
 
         log.sensorStatus("Found water at {} with shore at {}", this.waterTarget, this.shorePosition);
         return true;
+    }
+
+    /**
+     * Checks whether the water block at {@code waterPos} looks like part of a real pond/lake rather than
+     * shallow decorative or irrigation water.
+     * <p>
+     * Two probes, cheapest first:
+     * <ol>
+     *     <li>Depth: the {@code minPondDepth - 1} blocks directly below the candidate must all be water
+     *     sources. Irrigation water sits directly on dirt/farmland, so this alone rejects it with a
+     *     single lookup at the default depth.</li>
+     *     <li>Ring: at least {@code minPondRingWaterCount} of the 8 blocks at Chebyshev radius 2 (same Y)
+     *     must be water sources.</li>
+     * </ol>
+     */
+    private static boolean isPondShaped(@Nonnull Level level,
+                                        @Nonnull BlockPos.MutableBlockPos waterPos,
+                                        @Nonnull BlockPos.MutableBlockPos probeMutable,
+                                        int minPondDepth,
+                                        int minPondRingWaterCount) {
+        int waterX = waterPos.getX();
+        int waterY = waterPos.getY();
+        int waterZ = waterPos.getZ();
+
+        for (int depth = 1; depth < minPondDepth; depth++) {
+            probeMutable.set(waterX, waterY - depth, waterZ);
+            if (!isWaterSource(level, probeMutable)) {
+                return false;
+            }
+        }
+
+        int ringWaterCount = 0;
+        for (int dx = -2; dx <= 2; dx += 2) {
+            for (int dz = -2; dz <= 2; dz += 2) {
+                if (dx == 0 && dz == 0) {
+                    continue;
+                }
+
+                probeMutable.set(waterX + dx, waterY, waterZ + dz);
+                if (isWaterSource(level, probeMutable)) {
+                    ringWaterCount++;
+                }
+            }
+        }
+        return ringWaterCount >= minPondRingWaterCount;
+    }
+
+    private static boolean isWaterSource(@Nonnull Level level, @Nonnull BlockPos pos) {
+        FluidState fluidState = level.getFluidState(pos);
+        return fluidState.is(FluidTags.WATER) && fluidState.isSource();
     }
 
     private static int getVerticalOffset(int index) {

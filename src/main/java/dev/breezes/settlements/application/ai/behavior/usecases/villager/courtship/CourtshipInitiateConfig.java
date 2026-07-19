@@ -48,7 +48,27 @@ public record CourtshipInitiateConfig(
                 defaultValue = 3,
                 min = 0,
                 max = 100)
-        int twinsChancePercent
+        int twinsChancePercent,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = "conception_chance_percent",
+                description = "Percent chance (0-100) that a completed courtship produces a child. On failure "
+                        + "the pair still had a successful date and both go on breed cooldown.",
+                defaultValue = 70,
+                min = 0,
+                max = 100)
+        int conceptionChancePercent,
+
+        @IntegerConfig(
+                type = ConfigurationType.BEHAVIOR,
+                identifier = "breed_cooldown_seconds",
+                description = "Seconds both parents are placed on breed cooldown after every completed "
+                        + "courtship, whether it produced a child or ended as a date.",
+                defaultValue = 300,
+                min = 1,
+                max = 3600)
+        int breedCooldownSeconds
 ) implements BehaviorTimingConfig {
 
     public CourtshipInitiateConfig {

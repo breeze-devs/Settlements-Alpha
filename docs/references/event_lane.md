@@ -133,8 +133,8 @@ are added. Every constant carries:
 | `selfWitnessed` (`boolean`) | Events with no single doer — every perceiver is an equal first-hand witness (the sightings). Defaults false; only sighting constants opt in. |
 
 Representative constants: `BEHAVIOR_STARTED/COMPLETED/FAILED`, `SHEEP_SHEARED`, `SHEEP_DYED`,
-`RESOURCE_HARVESTED`, `FARMLAND_CULTIVATED`, `TRADE_COMPLETED`, `COURTSHIP_COMPLETED`,
-`COURTSHIP_REJECTED`, `TRADE_INVITE_SENT`, `COURTSHIP_INVITE_SENT`,
+`RESOURCE_HARVESTED`, `FARMLAND_CULTIVATED`, `TRADE_COMPLETED`, `COURTSHIP_CHILD_BIRTH`,
+`COURTSHIP_DATE_COMPLETED`, `COURTSHIP_REJECTED`, `TRADE_INVITE_SENT`, `COURTSHIP_INVITE_SENT`,
 plus the `*_SIGHTED` sighting family (e.g. `ZOMBIE_SIGHTED`, `PLAYER_SIGHTED`) and `BELL_RUNG`.
 
 ## Consumer — PerceptionPipeline

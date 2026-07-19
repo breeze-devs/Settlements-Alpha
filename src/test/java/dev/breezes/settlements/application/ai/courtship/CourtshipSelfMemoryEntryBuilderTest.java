@@ -32,7 +32,7 @@ class CourtshipSelfMemoryEntryBuilderTest {
         Map<String, String> metadata = CourtshipSelfMemoryEntryBuilder.buildMetadata(actorId, reason);
 
         // Assert
-        assertEquals(WorldEventType.COURTSHIP_COMPLETED.name(), metadata.get(ObservationMetadataKeys.EVENT_TYPE));
+        assertEquals(WorldEventType.COURTSHIP_DATE_COMPLETED.name(), metadata.get(ObservationMetadataKeys.EVENT_TYPE));
     }
 
     @Test
@@ -133,7 +133,7 @@ class CourtshipSelfMemoryEntryBuilderTest {
         // Act
         KnowledgeEntry entry = CourtshipSelfMemoryEntryBuilder.build(actorId, null, 1000L, "no one answered", originId);
 
-        // Assert – weight must equal the base importance ObservationFactory assigns to COURTSHIP_COMPLETED
+        // Assert – weight must equal the base importance ObservationFactory assigns to COURTSHIP_DATE_COMPLETED
         // on the bus (2.5F), so the villager weights its own private memory consistently with witnessed events
         assertEquals(CourtshipSelfMemoryEntryBuilder.SELF_FAILURE_WEIGHT, entry.getWeight(), 0.001f);
     }

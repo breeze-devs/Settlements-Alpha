@@ -90,7 +90,7 @@ class PerceptionGateTest {
     void admits_rejectsDistantSocialEvent() {
         // Arrange — even a social event is rejected if it's too far away
         int eventChunkX = VILLAGER_CHUNK_X + 20;
-        WorldEvent event = worldEvent(WorldEventType.COURTSHIP_COMPLETED, eventChunkX, VILLAGER_CHUNK_Z);
+        WorldEvent event = worldEvent(WorldEventType.COURTSHIP_CHILD_BIRTH, eventChunkX, VILLAGER_CHUNK_Z);
 
         // Act & Assert
         assertFalse(PerceptionGate.admits(event, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z));

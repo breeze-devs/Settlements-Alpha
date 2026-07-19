@@ -213,9 +213,22 @@ class EpisodicEntryAssemblerTest {
     }
 
     @Test
-    void assemble_courtshipCompleted_targetFieldIsResolvedName() {
-        // Arrange — COURTSHIP_COMPLETED: relatedEntity is the courtship partner
-        this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.COURTSHIP_COMPLETED, 2.5f));
+    void assemble_courtshipChildBirth_targetFieldIsResolvedName() {
+        // Arrange — COURTSHIP_CHILD_BIRTH: relatedEntity is the courtship partner
+        this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.COURTSHIP_CHILD_BIRTH, 2.5f));
+        String expectedTargetName = this.nameResolver.resolve(TARGET_ID);
+
+        // Act
+        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
+
+        // Assert
+        assertEquals(expectedTargetName, result.get(0).getTarget());
+    }
+
+    @Test
+    void assemble_courtshipDateCompleted_targetFieldIsResolvedName() {
+        // Arrange — COURTSHIP_DATE_COMPLETED: relatedEntity is the date partner (childless date)
+        this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.COURTSHIP_DATE_COMPLETED, 2.5f));
         String expectedTargetName = this.nameResolver.resolve(TARGET_ID);
 
         // Act
