@@ -1,0 +1,16 @@
+Settlements - Authors and Contributors
+======================================
+
+"Breeze and the Settlements contributors" in the LICENSE-ASSETS file refers to
+the people recorded here. This list is curated by the project maintainers;
+contributors are added when their work is merged. The Git commit history remains
+the authoritative record of who contributed what.
+
+Assets (art, textures, sounds, models) - licensed under CC BY 4.0:
+  - Breeze (breeze-devs) - all original artwork and sound to date
+
+Code - licensed under GPLv3:
+  - The Git commit history is the authoritative record of code authorship.
+
+Third-party and Minecraft-derived assets are NOT covered by the above and are
+credited separately in CREDITS.md.

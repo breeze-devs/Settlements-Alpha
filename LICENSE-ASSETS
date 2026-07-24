@@ -1,0 +1,45 @@
+SETTLEMENTS - ASSET LICENSE
+===========================
+
+This file governs the ART, TEXTURE, SOUND, MODEL, and other non-code creative
+assets in this repository. The mod's SOURCE CODE is licensed separately under
+the GNU General Public License v3.0 (see the LICENSE file).
+
+-------------------------------------------------------------------------------
+Original assets
+-------------------------------------------------------------------------------
+
+The original creative assets of Settlements are:
+
+    Copyright (c) 2026 Breeze and the Settlements contributors
+
+(see the AUTHORS file for the people this refers to) and are licensed under the
+Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+    You are free to share and adapt these assets, including commercially,
+    provided you give appropriate credit.
+
+    License deed:  https://creativecommons.org/licenses/by/4.0/
+    Legal code:    https://creativecommons.org/licenses/by/4.0/legalcode
+
+Recommended attribution:
+
+    "Settlements assets (c) 2026 Breeze and the Settlements contributors,
+     licensed under CC BY 4.0."
+
+-------------------------------------------------------------------------------
+Assets NOT covered by this license
+-------------------------------------------------------------------------------
+
+The CC BY 4.0 grant above applies ONLY to assets original to this project. It
+does NOT cover third-party or Minecraft-derived assets, which remain under their
+own terms. Those assets - and their sources, creators, and permissions - are
+listed in CREDITS.md:
+
+  * Villager totem textures and the totem of cultivation
+        Used with the creator's personal permission; not sublicensed here.
+
+  * Textures derived from Minecraft's own assets
+        (c) Mojang Studios / Microsoft; used within this Minecraft mod.
+
+See CREDITS.md for the authoritative list.
