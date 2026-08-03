@@ -25,7 +25,9 @@ import javax.annotation.Nonnull;
 public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager, SettlementsVillagerModel<BaseVillager>> {
 
     private static final float SHADOW_RADIUS = 0.5F;
-    private static final float BABY_SCALE = 0.5F;
+    // Matches vanilla VillagerRenderer.scale(): the base model is authored slightly oversized, so
+    // vanilla itself shrinks it back down by this factor on every render.
+    private static final float VANILLA_MODEL_SCALE = 0.9375F;
 
     private final AttachmentRenderLayer attachmentRenderLayer;
 
@@ -53,16 +55,24 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
     }
 
     @Override
+    protected void scale(@Nonnull BaseVillager villager, @Nonnull PoseStack poseStack, float partialTickTime) {
+        float finalScale = VANILLA_MODEL_SCALE * villager.getAgeScale();
+        poseStack.scale(finalScale, finalScale, finalScale);
+    }
+
+    @Override
+    protected float getShadowRadius(@Nonnull BaseVillager villager) {
+        float f = super.getShadowRadius(villager);
+        return villager.isBaby() ? f * 0.5F : f;
+    }
+
+    @Override
     public void render(@Nonnull BaseVillager villager,
                        float yaw,
                        float partialTicks,
                        @Nonnull PoseStack poseStack,
                        @Nonnull MultiBufferSource buffer,
                        int packedLight) {
-        if (villager.isBaby()) {
-            poseStack.scale(BABY_SCALE, BABY_SCALE, BABY_SCALE);
-        }
-
         long gameTime = villager.level().getGameTime();
         VillagerAnimator animator = this.getOrUpdateAnimator(villager, gameTime);
         this.model.prepareAnimation(animator, villager.getLocomotionNavigationType(), gameTime, partialTicks);

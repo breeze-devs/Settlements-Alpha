@@ -1,6 +1,7 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.villager.genetics;
 
 import dev.breezes.settlements.domain.genetics.ConstitutionHealthResolver;
+import dev.breezes.settlements.domain.genetics.ConstitutionSizeResolver;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -26,6 +27,13 @@ public final class VillagerGeneticAttributes {
                     .modifierId(ResourceLocationUtil.mod("genetics/constitution_health"))
                     .operation(AttributeModifier.Operation.ADD_VALUE)
                     .resolver(ConstitutionHealthResolver::resolveBonus)
+                    .build(),
+            Binding.builder()
+                    .gene(GeneType.CONSTITUTION)
+                    .attribute(Attributes.SCALE)
+                    .modifierId(ResourceLocationUtil.mod("genetics/constitution_size"))
+                    .operation(AttributeModifier.Operation.ADD_VALUE)
+                    .resolver(ConstitutionSizeResolver::resolveBonus)
                     .build()
     );
 
