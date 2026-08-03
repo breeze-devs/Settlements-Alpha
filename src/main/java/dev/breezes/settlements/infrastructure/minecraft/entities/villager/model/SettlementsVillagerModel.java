@@ -84,7 +84,6 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
     @Nullable
     private AnimationFrame animationFrame;
     private AnimationFrame resolvedAnimationFrame = AnimationFrame.EMPTY;
-    // Snapped once per render call from the animator so per-arm visibility and socket selection stay in sync.
     private ArmConfiguration armConfiguration = ArmConfiguration.BOTH_CROSSED;
     @Nullable
     private VillagerAnimator animator;
@@ -130,8 +129,6 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         this.leg_right = this.legs.getChild("leg_right");
         this.feet_center_socket = this.legs.getChild("feet_center_socket");
 
-        // Both parent groups start visible; the per-arm children are toggled every frame in applyAnimationFrame
-        // based on armConfiguration, so the initial state here does not affect runtime rendering.
         this.arms_crossed.visible = true;
         this.arms_straight.visible = true;
     }
@@ -256,11 +253,11 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
     }
 
     /**
-     * Applies the cumulative transform of every ancestor down to the target bone.
-     * Must start from this.root because the renderer's layer pass enters model space
-     * after root()'s own push/pop has already closed — nothing from renderToBuffer
-     * persists into layer rendering, so reaching any socket requires re-walking
-     * the full chain from the top of the hierarchy.
+     * Applies the cumulative model-space transform from the root down to the requested socket.
+     * <p>
+     * Every chain must start at the root. Nothing the main render pass pushes survives into the layer
+     * pass — it enters model space only after the root's own push and pop have already closed — so
+     * reaching any socket means re-walking the full hierarchy rather than resuming partway down it.
      */
     public void applyBoneTransform(PoseStack pose, ModelPartRef ref) {
         switch (ref) {
@@ -337,8 +334,6 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
     private void applyAnimationFrame() {
         AnimationFrame frame = this.animationFrame == null ? AnimationFrame.EMPTY : this.animationFrame;
 
-        // Per-arm child visibility is resolved from the config each frame so the three consumers
-        // (geometry visibility, animation targets, held-item socket) can never desync.
         boolean leftCrossed = this.armConfiguration.left() == ArmPose.CROSSED;
         boolean rightCrossed = this.armConfiguration.right() == ArmPose.CROSSED;
         this.arm_crossed_left.visible = leftCrossed;
@@ -351,9 +346,6 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         this.arm_crossed_center_left.visible = leftCrossed && !rightCrossed;
         this.arm_crossed_center_right.visible = rightCrossed && !leftCrossed;
 
-        // All 12 arm targets are applied unconditionally. For a hidden arm the additive of
-        // neutral is a no-op, so authors only need to author the targets that match their
-        // declared arm config — unused targets quietly do nothing.
         applyRotation(this.arms_crossed, frame.get(AnimationTargets.ARMS_CROSSED_ROTATION));
         applyTranslation(this.arms_crossed, frame.get(AnimationTargets.ARMS_CROSSED_TRANSLATION));
         applyRotation(this.arms_straight, frame.get(AnimationTargets.ARMS_STRAIGHT_ROTATION));
@@ -372,37 +364,43 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         applyRotation(this.nose, frame.get(AnimationTargets.NOSE_ROTATION));
         applyTranslation(this.nose, frame.get(AnimationTargets.NOSE_TRANSLATION));
 
-        // Absolute head override: only applied when the frame explicitly carries this target,
-        // so normal yaw/pitch tracking from setupAnim is not clobbered during idle.
         if (frame.has(AnimationTargets.HEAD_ROTATION_OVERRIDE)) {
-            applyAbsoluteRotation(this.head, frame.get(AnimationTargets.HEAD_ROTATION_OVERRIDE));
+            applyAbsoluteRotation(this.head, frame.get(AnimationTargets.HEAD_ROTATION_OVERRIDE),
+                    frame.applicationWeight(AnimationTargets.HEAD_ROTATION_OVERRIDE));
         }
+        applyTranslation(this.head, frame.get(AnimationTargets.HEAD_TRANSLATION));
 
-        // Root motion is additive on top of resetPose's baseline, so it never accumulates drift
-        // across frames — resetPose runs at the top of setupAnim each tick.
+        // Root motion adds onto the baseline resetPose lays down at the top of every setupAnim, so it
+        // cannot accumulate drift across frames the way a running offset would.
         applyTranslation(this.root, frame.get(AnimationTargets.ROOT_TRANSLATION));
         applyRotation(this.root, frame.get(AnimationTargets.ROOT_ROTATION));
 
-        // Leg overrides are gated by frame.has so the vanilla walk-swing from setupAnim is left
-        // untouched during idle; the override only takes effect when a track explicitly authors it
-        // (e.g. moonwalk needs full control of leg rotation).
         if (frame.has(AnimationTargets.LEG_LEFT_ROTATION_OVERRIDE)) {
-            applyAbsoluteRotation(this.leg_left, frame.get(AnimationTargets.LEG_LEFT_ROTATION_OVERRIDE));
+            applyAbsoluteRotation(this.leg_left, frame.get(AnimationTargets.LEG_LEFT_ROTATION_OVERRIDE),
+                    frame.applicationWeight(AnimationTargets.LEG_LEFT_ROTATION_OVERRIDE));
         }
         if (frame.has(AnimationTargets.LEG_RIGHT_ROTATION_OVERRIDE)) {
-            applyAbsoluteRotation(this.leg_right, frame.get(AnimationTargets.LEG_RIGHT_ROTATION_OVERRIDE));
+            applyAbsoluteRotation(this.leg_right, frame.get(AnimationTargets.LEG_RIGHT_ROTATION_OVERRIDE),
+                    frame.applicationWeight(AnimationTargets.LEG_RIGHT_ROTATION_OVERRIDE));
         }
+        applyTranslation(this.leg_left, frame.get(AnimationTargets.LEG_LEFT_TRANSLATION));
+        applyTranslation(this.leg_right, frame.get(AnimationTargets.LEG_RIGHT_TRANSLATION));
 
-        // Face expression targets — PROVISIONAL: axes and ids need validation against the first
-        // authored face animation before they are considered stable.
         applyTranslation(this.monobrow, frame.get(AnimationTargets.MONOBROW_TRANSLATION));
         applyRotation(this.monobrow, frame.get(AnimationTargets.MONOBROW_ROTATION));
         applyTranslation(this.mouth, frame.get(AnimationTargets.MOUTH_TRANSLATION));
+        applyRotation(this.mouth, frame.get(AnimationTargets.MOUTH_ROTATION));
         applyScale(this.mouth, frame.get(AnimationTargets.MOUTH_SCALE));
         applyTranslation(this.eyelid_left, frame.get(AnimationTargets.EYELID_LEFT_TRANSLATION));
         applyTranslation(this.eyelid_right, frame.get(AnimationTargets.EYELID_RIGHT_TRANSLATION));
+        applyTranslation(this.eyeball_left, frame.get(AnimationTargets.EYEBALL_LEFT_TRANSLATION));
+        applyTranslation(this.eyeball_right, frame.get(AnimationTargets.EYEBALL_RIGHT_TRANSLATION));
+        applyScale(this.eyeball_left, frame.get(AnimationTargets.EYEBALL_LEFT_SCALE));
+        applyScale(this.eyeball_right, frame.get(AnimationTargets.EYEBALL_RIGHT_SCALE));
         applyTranslation(this.pupil_left, frame.get(AnimationTargets.PUPIL_LEFT_TRANSLATION));
         applyTranslation(this.pupil_right, frame.get(AnimationTargets.PUPIL_RIGHT_TRANSLATION));
+        applyScale(this.pupil_left, frame.get(AnimationTargets.PUPIL_LEFT_SCALE));
+        applyScale(this.pupil_right, frame.get(AnimationTargets.PUPIL_RIGHT_SCALE));
     }
 
     private static void applyRotation(ModelPart part, Vector3f rotation) {
@@ -417,13 +415,19 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         part.z += (float) translation.z;
     }
 
-    private static void applyAbsoluteRotation(ModelPart part, Vector3f rotation) {
-        part.xRot = rotation.x();
-        part.yRot = rotation.y();
-        part.zRot = rotation.z();
+    /**
+     * Hands a bone over to an authored rotation by the given coverage. Interpolating from whatever the
+     * part already holds — vanilla look-tracking, the walk-swing — is what lets ownership fade in and out
+     * instead of snapping; assigning the rotation outright would wrench the bone the moment a clip with
+     * this target starts, and drop it just as hard when the clip ends.
+     */
+    private static void applyAbsoluteRotation(ModelPart part, Vector3f rotation, float weight) {
+        part.xRot = Mth.lerp(weight, part.xRot, rotation.x());
+        part.yRot = Mth.lerp(weight, part.yRot, rotation.y());
+        part.zRot = Mth.lerp(weight, part.zRot, rotation.z());
     }
 
-    // Multiplicative onto resetPose's unit scale, so the unit-neutral (1,1,1) is a no-op.
+    // Multiplicative onto resetPose's unit scale, so the unit-neutral (1,1,1) is a no-op
     private static void applyScale(ModelPart part, Vector3f scale) {
         part.xScale *= scale.x();
         part.yScale *= scale.y();

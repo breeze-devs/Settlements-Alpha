@@ -22,6 +22,7 @@ public enum AnimationArchetype {
     DIG,
     TILL,
     FORGE,
+    READ_BOOK,
     ;
 
     private static final AnimationArchetype[] VALUES = values();

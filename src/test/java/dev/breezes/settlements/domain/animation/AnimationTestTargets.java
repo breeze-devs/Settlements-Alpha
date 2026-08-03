@@ -34,6 +34,14 @@ final class AnimationTestTargets {
             .policy(AnimationTargetPolicy.ABSOLUTE)
             .build();
 
+    static final AnimationTarget<Float> BLENDED_ABSOLUTE_FLOAT = AnimationTarget.<Float>builder()
+            .id("test:blended_absolute_float")
+            .valueType(Float.class)
+            .neutralValue(0.0F)
+            .interpolator(Interpolators.FLOAT)
+            .policy(AnimationTargetPolicy.BLENDED_ABSOLUTE)
+            .build();
+
     private AnimationTestTargets() {
     }
 }

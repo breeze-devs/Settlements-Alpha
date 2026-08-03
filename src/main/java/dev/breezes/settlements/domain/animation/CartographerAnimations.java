@@ -15,8 +15,8 @@ public final class CartographerAnimations {
 
     public static final int MARK_DURATION_TICKS = 40;
 
-    private static final int BLEND_IN_TICKS = 2;
-    private static final int BLEND_OUT_TICKS = 3;
+    private static final int BLEND_IN_TICKS = 4;
+    private static final int BLEND_OUT_TICKS = 4;
 
     // Spyglass sweep keyframe ticks
     public static final int SURVEY_DURATION_TICKS = 160;

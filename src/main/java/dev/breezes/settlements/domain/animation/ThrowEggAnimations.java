@@ -10,63 +10,147 @@ import org.joml.Vector3f;
 
 import java.util.List;
 
+/**
+ * A fast, continuous overhead windmill.
+ */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ThrowEggAnimations {
 
-    // The clip is exactly 0.25s = 5 ticks; the behavior reuses it across an egg burst
-    // by keeping loopMode LOOP, so this constant is also the cycle period.
     public static final int THROW_DURATION_TICKS = 5;
 
     public static KeyframeAnimation throwEgg() {
         return KeyframeAnimation.fromTracks()
                 .id(ResourceLocationUtil.mod("animation/throw/throw_egg"))
                 .durationTicks(THROW_DURATION_TICKS)
-                // LOOP because the behavior sustains this across a multi-egg burst;
-                // the behavior sets IDLE when the burst ends rather than letting it run ONCE.
                 .loopMode(LoopMode.LOOP)
-                .blendInTicks(1)
-                .blendOutTicks(1)
-                // arm_straight_left and arm_straight_right are the driven bones,
-                // so the straight-arm geometry must be visible for the windmill to show.
+                .blendInTicks(4)
+                .blendOutTicks(4)
+                // arm_straight_left and arm_straight_right are the driven bones, so the straight-arm
+                // geometry must be visible for the windmill to show.
                 .arms(ArmConfiguration.BOTH_STRAIGHT)
-                // arm_straight_left: full 360° windmill offset so left arm leads right by 180°.
-                // The 540° end value is intentional — one continuous forward-spin from 180° to 540°.
                 .track(AnimationTrack.<Vector3f>builder()
                         .target(AnimationTargets.ARM_STRAIGHT_LEFT_ROTATION)
                         .keyframes(List.of(
-                                new Keyframe<>(0, RotationUtil.degrees(180.0f, 0.0f, -10.0f), Easing.LINEAR),
-                                new Keyframe<>(5, RotationUtil.degrees(540.0f, 0.0f, -10.0f), Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(180.0f, 0.0f, -10.0f), Easing.CUBIC),
+                                new Keyframe<>(5, RotationUtil.degrees(540.0f, 0.0f, -10.0f), Easing.CUBIC)
                         ))
                         .build())
-                // arm_straight_right: full 360° windmill from rest, completing one revolution per cycle.
                 .track(AnimationTrack.<Vector3f>builder()
                         .target(AnimationTargets.ARM_STRAIGHT_RIGHT_ROTATION)
                         .keyframes(List.of(
-                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 10.0f), Easing.LINEAR),
-                                new Keyframe<>(5, RotationUtil.degrees(360.0f, 0.0f, 10.0f), Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 10.0f), Easing.CUBIC),
+                                new Keyframe<>(5, RotationUtil.degrees(360.0f, 0.0f, 10.0f), Easing.CUBIC)
                         ))
                         .build())
-                // torso: a constant 2° forward lean authored as two keyframes so the track is
-                // well-formed — a single keyframe would be uninterpolated and may be dropped.
+                // Nose flicks in reaction to the wind-up.
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.NOSE_ROTATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, RotationUtil.degrees(2.5f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(3, RotationUtil.degrees(-5.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(5, RotationUtil.degrees(2.5f, 0.0f, 0.0f), Easing.CUBIC)
+                        ))
+                        .build())
+                // Torso rocks side to side (roll) in counterpoint to the windmill, holding a constant
+                // forward lean (pitch).
                 .track(AnimationTrack.<Vector3f>builder()
                         .target(AnimationTargets.BODY_ROTATION)
                         .keyframes(List.of(
-                                new Keyframe<>(0, RotationUtil.degrees(2.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(5, RotationUtil.degrees(2.0f, 0.0f, 0.0f), Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(-3.0f, 0.0f, -3.0f), Easing.CUBIC),
+                                new Keyframe<>(3, RotationUtil.degrees(-3.0f, 0.0f, 3.0f), Easing.CUBIC),
+                                new Keyframe<>(5, RotationUtil.degrees(-3.0f, 0.0f, -3.0f), Easing.CUBIC)
                         ))
                         .build())
-                // torso position: a double-bob per revolution synced to the arm cycle.
-                // Source posVec uses vanilla's internal -Y convention; we negate Y on import
-                // so posVec(0,-0.08,0) → new Vec3(0.0, 0.08, 0.0) (body dips down visually).
-                // Tick mapping (0.0625*20=1.25→1, 0.125*20=2.5→3 half-up, 0.1875*20=3.75→4, 0.25*20=5).
+                // Torso bobs twice per cycle, once per arm passing overhead.
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.BODY_TRANSLATION)
                         .keyframes(List.of(
-                                new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(1, new Vec3(0.0, 0.08, 0.0), Easing.LINEAR),
-                                new Keyframe<>(3, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(4, new Vec3(0.0, 0.08, 0.0), Easing.LINEAR),
-                                new Keyframe<>(5, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, Vec3.ZERO, Easing.CUBIC),
+                                new Keyframe<>(1, new Vec3(0.0, 0.08, 0.0), Easing.CUBIC),
+                                new Keyframe<>(3, Vec3.ZERO, Easing.CUBIC),
+                                new Keyframe<>(4, new Vec3(0.0, 0.08, 0.0), Easing.CUBIC),
+                                new Keyframe<>(5, Vec3.ZERO, Easing.CUBIC)
+                        ))
+                        .build())
+                // A wide-eyed, startled face held for the whole clip: raised brow, wide eyes, dilated
+                // pupils, and an open mouth.
+                .track(AnimationTrack.<Vec3>builder()
+                        .target(AnimationTargets.MONOBROW_TRANSLATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vec3(0.0, -1.1, 0.0), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vec3>builder()
+                        .target(AnimationTargets.EYELID_LEFT_TRANSLATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vec3(0.0, -1.0, 0.0), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.EYEBALL_LEFT_SCALE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vector3f(1.0f, 2.0f, 1.0f), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vec3>builder()
+                        .target(AnimationTargets.PUPIL_LEFT_TRANSLATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vec3(0.9, 0.0, 0.0), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.PUPIL_LEFT_SCALE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vector3f(1.0f, 0.5f, 1.0f), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vec3>builder()
+                        .target(AnimationTargets.EYELID_RIGHT_TRANSLATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vec3(0.0, -1.0, 0.0), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.EYEBALL_RIGHT_SCALE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vector3f(1.0f, 2.0f, 1.0f), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vec3>builder()
+                        .target(AnimationTargets.PUPIL_RIGHT_TRANSLATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vec3(-0.9, 0.0, 0.0), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.PUPIL_RIGHT_SCALE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vector3f(1.0f, 0.5f, 1.0f), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vec3>builder()
+                        .target(AnimationTargets.MOUTH_TRANSLATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vec3(0.0, 0.1, 0.0), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.MOUTH_SCALE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vector3f(1.0f, 1.8f, 1.0f), Easing.LINEAR)
+                        ))
+                        .build())
+                // Legs splay outward into a braced stance held for the whole clip.
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.LEG_LEFT_ROTATION_OVERRIDE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, -7.5f, 0.0f), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.LEG_RIGHT_ROTATION_OVERRIDE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 7.5f, 0.0f), Easing.LINEAR)
                         ))
                         .build())
                 .build();

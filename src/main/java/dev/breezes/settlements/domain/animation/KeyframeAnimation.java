@@ -71,7 +71,7 @@ public final class KeyframeAnimation {
         }
 
         float animationTick = this.loopMode.resolveTick(elapsedTicks, this.durationTicks);
-        Map<AnimationTarget<?>, Object> values = new HashMap<>();
+        Map<AnimationTarget<?>, Object> values = HashMap.newHashMap(this.tracks.size());
         for (AnimationTrack<?> track : this.tracks) {
             values.put(track.getTarget(), track.sample(animationTick));
         }

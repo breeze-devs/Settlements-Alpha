@@ -5,7 +5,6 @@ import lombok.Getter;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 @Getter
 public final class AnimationTarget<V> {
@@ -40,6 +39,11 @@ public final class AnimationTarget<V> {
         return this.interpolator.interpolate(from, to, t);
     }
 
+    /**
+     * Folds an overriding value onto a base value according to this target's policy. Only valid for
+     * policies that are not coverage-tracked, since two values and a weight are all this signature
+     * carries.
+     */
     public V compose(@Nonnull V base, @Nonnull V over, float weight) {
         float clampedWeight = Math.clamp(weight, 0.0F, 1.0F);
         if (clampedWeight <= 0.0F) {
@@ -50,6 +54,8 @@ public final class AnimationTarget<V> {
             case ADDITIVE -> this.composeAdditive(base, over, clampedWeight);
             case MULTIPLICATIVE -> this.composeMultiplicative(base, over, clampedWeight);
             case ABSOLUTE -> this.blend(base, over, clampedWeight);
+            case BLENDED_ABSOLUTE -> throw new UnsupportedOperationException(
+                    "Target %s is coverage-tracked and must be composed through AnimationFrame".formatted(this.id));
         };
     }
 
@@ -76,7 +82,7 @@ public final class AnimationTarget<V> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id);
+        return this.id.hashCode();
     }
 
 }

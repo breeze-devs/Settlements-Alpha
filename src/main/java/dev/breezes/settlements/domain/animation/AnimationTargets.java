@@ -104,12 +104,23 @@ public final class AnimationTargets {
             .policy(AnimationTargetPolicy.ADDITIVE)
             .build();
 
+    // Head and leg rotations seize their bone rather than adding to it, so a clip can suppress vanilla
+    // look-tracking or the walk-swing outright. They are coverage-tracked so that seizure fades in and
+    // out with the owning layer instead of wrenching the bone off whatever pose it was already holding.
     public static final AnimationTarget<Vector3f> HEAD_ROTATION_OVERRIDE = AnimationTarget.<Vector3f>builder()
             .id("model_part:head.rotation_override")
             .valueType(Vector3f.class)
             .neutralValue(new Vector3f())
             .interpolator(Interpolators.VECTOR3F)
-            .policy(AnimationTargetPolicy.ABSOLUTE)
+            .policy(AnimationTargetPolicy.BLENDED_ABSOLUTE)
+            .build();
+
+    public static final AnimationTarget<Vec3> HEAD_TRANSLATION = AnimationTarget.<Vec3>builder()
+            .id("model_part:head.translation")
+            .valueType(Vec3.class)
+            .neutralValue(Vec3.ZERO)
+            .interpolator(Interpolators.VEC3)
+            .policy(AnimationTargetPolicy.ADDITIVE)
             .build();
 
     public static final AnimationTarget<Vector3f> BODY_ROTATION = AnimationTarget.<Vector3f>builder()
@@ -145,13 +156,12 @@ public final class AnimationTargets {
             .policy(AnimationTargetPolicy.ADDITIVE)
             .build();
 
-    // Leg overrides use ABSOLUTE policy (not additive) so an animation can suppress the vanilla walk-swing entirely
     public static final AnimationTarget<Vector3f> LEG_LEFT_ROTATION_OVERRIDE = AnimationTarget.<Vector3f>builder()
             .id("model_part:leg_left.rotation_override")
             .valueType(Vector3f.class)
             .neutralValue(new Vector3f())
             .interpolator(Interpolators.VECTOR3F)
-            .policy(AnimationTargetPolicy.ABSOLUTE)
+            .policy(AnimationTargetPolicy.BLENDED_ABSOLUTE)
             .build();
 
     public static final AnimationTarget<Vector3f> LEG_RIGHT_ROTATION_OVERRIDE = AnimationTarget.<Vector3f>builder()
@@ -159,12 +169,27 @@ public final class AnimationTargets {
             .valueType(Vector3f.class)
             .neutralValue(new Vector3f())
             .interpolator(Interpolators.VECTOR3F)
-            .policy(AnimationTargetPolicy.ABSOLUTE)
+            .policy(AnimationTargetPolicy.BLENDED_ABSOLUTE)
             .build();
 
-    // Root motion targets let animations displace and rotate the entire entity in model space,
-    // enabling effects like ground-pound impact recoil, kill-aura spin, or hover bob without
-    // touching individual bone positions.
+    public static final AnimationTarget<Vec3> LEG_LEFT_TRANSLATION = AnimationTarget.<Vec3>builder()
+            .id("model_part:leg_left.translation")
+            .valueType(Vec3.class)
+            .neutralValue(Vec3.ZERO)
+            .interpolator(Interpolators.VEC3)
+            .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
+    public static final AnimationTarget<Vec3> LEG_RIGHT_TRANSLATION = AnimationTarget.<Vec3>builder()
+            .id("model_part:leg_right.translation")
+            .valueType(Vec3.class)
+            .neutralValue(Vec3.ZERO)
+            .interpolator(Interpolators.VEC3)
+            .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
+    // Root motion displaces and rotates the whole entity in model space, for effects like impact recoil
+    // or a hover bob that no single bone can carry.
     public static final AnimationTarget<Vec3> ROOT_TRANSLATION = AnimationTarget.<Vec3>builder()
             .id("model_part:root.translation")
             .valueType(Vec3.class)
@@ -181,9 +206,8 @@ public final class AnimationTargets {
             .policy(AnimationTargetPolicy.ADDITIVE)
             .build();
 
-    // Face expression targets for boss/emote animations.
-    // PROVISIONAL: these ids and axes need validation against the first authored face animation;
-    // rename or add rotation variants once a real authored clip confirms the right convention.
+    // TODO: validate the face target ids and axes below against the first authored face animation, then
+    //  rename them or add rotation variants to match whatever convention that clip settles on.
     public static final AnimationTarget<Vec3> MONOBROW_TRANSLATION = AnimationTarget.<Vec3>builder()
             .id("model_part:monobrow.translation")
             .valueType(Vec3.class)
@@ -208,8 +232,15 @@ public final class AnimationTargets {
             .policy(AnimationTargetPolicy.ADDITIVE)
             .build();
 
-    // Per-axis mouth scale. Neutral is unit (1,1,1) and the policy is MULTIPLICATIVE so a missing
-    // target leaves the mesh at its authored size — used for the squash/stretch snore in the sleep clip.
+    public static final AnimationTarget<Vector3f> MOUTH_ROTATION = AnimationTarget.<Vector3f>builder()
+            .id("model_part:mouth.rotation")
+            .valueType(Vector3f.class)
+            .neutralValue(new Vector3f())
+            .interpolator(Interpolators.VECTOR3F)
+            .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
+    // Unit-neutral multiplication preserves the authored mesh scale when the target is absent.
     public static final AnimationTarget<Vector3f> MOUTH_SCALE = AnimationTarget.<Vector3f>builder()
             .id("model_part:mouth.scale")
             .valueType(Vector3f.class)
@@ -234,6 +265,40 @@ public final class AnimationTargets {
             .policy(AnimationTargetPolicy.ADDITIVE)
             .build();
 
+    // The eyeball sits between the eyelid and the pupil in the rig, so scaling it squashes the visible
+    // eye while carrying the pupil along with it — that is how the clips author squints and wide eyes.
+    public static final AnimationTarget<Vec3> EYEBALL_LEFT_TRANSLATION = AnimationTarget.<Vec3>builder()
+            .id("model_part:eyeball_left.translation")
+            .valueType(Vec3.class)
+            .neutralValue(Vec3.ZERO)
+            .interpolator(Interpolators.VEC3)
+            .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
+    public static final AnimationTarget<Vec3> EYEBALL_RIGHT_TRANSLATION = AnimationTarget.<Vec3>builder()
+            .id("model_part:eyeball_right.translation")
+            .valueType(Vec3.class)
+            .neutralValue(Vec3.ZERO)
+            .interpolator(Interpolators.VEC3)
+            .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
+    public static final AnimationTarget<Vector3f> EYEBALL_LEFT_SCALE = AnimationTarget.<Vector3f>builder()
+            .id("model_part:eyeball_left.scale")
+            .valueType(Vector3f.class)
+            .neutralValue(new Vector3f(1.0F, 1.0F, 1.0F))
+            .interpolator(Interpolators.VECTOR3F)
+            .policy(AnimationTargetPolicy.MULTIPLICATIVE)
+            .build();
+
+    public static final AnimationTarget<Vector3f> EYEBALL_RIGHT_SCALE = AnimationTarget.<Vector3f>builder()
+            .id("model_part:eyeball_right.scale")
+            .valueType(Vector3f.class)
+            .neutralValue(new Vector3f(1.0F, 1.0F, 1.0F))
+            .interpolator(Interpolators.VECTOR3F)
+            .policy(AnimationTargetPolicy.MULTIPLICATIVE)
+            .build();
+
     public static final AnimationTarget<Vec3> PUPIL_LEFT_TRANSLATION = AnimationTarget.<Vec3>builder()
             .id("model_part:pupil_left.translation")
             .valueType(Vec3.class)
@@ -248,6 +313,22 @@ public final class AnimationTargets {
             .neutralValue(Vec3.ZERO)
             .interpolator(Interpolators.VEC3)
             .policy(AnimationTargetPolicy.ADDITIVE)
+            .build();
+
+    public static final AnimationTarget<Vector3f> PUPIL_LEFT_SCALE = AnimationTarget.<Vector3f>builder()
+            .id("model_part:pupil_left.scale")
+            .valueType(Vector3f.class)
+            .neutralValue(new Vector3f(1.0F, 1.0F, 1.0F))
+            .interpolator(Interpolators.VECTOR3F)
+            .policy(AnimationTargetPolicy.MULTIPLICATIVE)
+            .build();
+
+    public static final AnimationTarget<Vector3f> PUPIL_RIGHT_SCALE = AnimationTarget.<Vector3f>builder()
+            .id("model_part:pupil_right.scale")
+            .valueType(Vector3f.class)
+            .neutralValue(new Vector3f(1.0F, 1.0F, 1.0F))
+            .interpolator(Interpolators.VECTOR3F)
+            .policy(AnimationTargetPolicy.MULTIPLICATIVE)
             .build();
 
 }

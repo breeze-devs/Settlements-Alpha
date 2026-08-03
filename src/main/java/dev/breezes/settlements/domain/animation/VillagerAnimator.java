@@ -15,9 +15,8 @@ public final class VillagerAnimator {
     private AnimationSelectionContext lastResolvedContext;
     private final LayerStack layerStack;
 
-    // Sleep is a vanilla-synced state read off the client, not a motion-plane archetype. While it is
-    // active the animator samples the sleep clip directly and bypasses the whole base/locomotion/
-    // idle-life/action fold, so a sleeping villager neither breathes idly, blinks, nor fidgets.
+    // Sleep is a vanilla-synced state read off the client, not a motion-plane archetype, so it rides
+    // above the whole base/locomotion/idle-life/action fold rather than occupying a layer within it.
     private final KeyframeAnimation sleepAnimation;
     private boolean sleeping;
     private long sleepStartGameTime;
@@ -66,7 +65,7 @@ public final class VillagerAnimator {
         boolean generationChanged = newGeneration != this.lastSeenGeneration;
         KeyframeAnimation resolvedAnimation = this.animationResolver.resolve(newArchetype, context);
         if (newArchetype == AnimationArchetype.IDLE) {
-            this.layerStack.clearAction();
+            this.layerStack.clearAction(gameTime);
         } else if (generationChanged) {
             this.layerStack.triggerAction(resolvedAnimation, gameTime);
         } else {
@@ -124,7 +123,7 @@ public final class VillagerAnimator {
 
     public AnimationFrame sample(long gameTime, float partialTicks) {
         if (this.sleeping) {
-            return this.sleepAnimation.sample(this.sleepElapsedTicks(gameTime, partialTicks));
+            return this.sleepFrame(gameTime, partialTicks);
         }
         return this.layerStack.sample(gameTime, partialTicks);
     }
@@ -133,9 +132,13 @@ public final class VillagerAnimator {
                                  float partialTicks,
                                  @Nonnull LocomotionAnimationContext locomotionContext) {
         if (this.sleeping) {
-            return this.sleepAnimation.sample(this.sleepElapsedTicks(gameTime, partialTicks));
+            return this.sleepFrame(gameTime, partialTicks);
         }
         return this.layerStack.sample(gameTime, partialTicks, locomotionContext);
+    }
+
+    private AnimationFrame sleepFrame(long gameTime, float partialTicks) {
+        return this.sleepAnimation.sample(this.sleepElapsedTicks(gameTime, partialTicks));
     }
 
     private ArmConfiguration sleepArmConfiguration(long gameTime, float partialTicks) {

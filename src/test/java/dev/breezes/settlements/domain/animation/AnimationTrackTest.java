@@ -36,6 +36,53 @@ class AnimationTrackTest {
     }
 
     @Test
+    void sample_findsCorrectSegmentInDenseTrack() {
+        // Arrange
+        AnimationTrack<Float> track = track(
+                new Keyframe<>(0, 0.0F, Easing.LINEAR),
+                new Keyframe<>(2, 2.0F, Easing.LINEAR),
+                new Keyframe<>(4, 4.0F, Easing.LINEAR),
+                new Keyframe<>(6, 6.0F, Easing.LINEAR),
+                new Keyframe<>(8, 8.0F, Easing.LINEAR),
+                new Keyframe<>(10, 10.0F, Easing.LINEAR));
+
+        // Act
+        float result = track.sample(7.0F);
+
+        // Assert
+        assertEquals(7.0F, result, 0.0001F);
+    }
+
+    @Test
+    void sample_exactInteriorTickUsesPreviousSegmentEndpoint() {
+        // Arrange
+        AnimationTrack<Float> track = track(
+                new Keyframe<>(0, 0.0F, Easing.STEP),
+                new Keyframe<>(5, 5.0F, Easing.LINEAR),
+                new Keyframe<>(10, 10.0F, Easing.LINEAR));
+
+        // Act
+        float result = track.sample(5.0F);
+
+        // Assert
+        assertEquals(5.0F, result, 0.0001F);
+    }
+
+    @Test
+    void sample_supportsNonMonotonicCallsWithoutSharedCursorState() {
+        // Arrange
+        AnimationTrack<Float> track = track(
+                new Keyframe<>(0, 0.0F, Easing.LINEAR),
+                new Keyframe<>(5, 5.0F, Easing.LINEAR),
+                new Keyframe<>(10, 10.0F, Easing.LINEAR));
+
+        // Act, Assert
+        assertEquals(9.0F, track.sample(9.0F), 0.0001F);
+        assertEquals(1.0F, track.sample(1.0F), 0.0001F);
+        assertEquals(6.0F, track.sample(6.0F), 0.0001F);
+    }
+
+    @Test
     void constructor_sortsKeyframesByTick() {
         // Arrange
         AnimationTrack<Float> track = track(

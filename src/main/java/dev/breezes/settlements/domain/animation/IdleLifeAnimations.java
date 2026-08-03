@@ -13,21 +13,13 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class IdleLifeAnimations {
 
-    public static final int BASE_IDLE_DURATION_TICKS = 80;  // breathe fills 0..60 (3 s), then holds neutral for a natural pause between breaths
+    // The final hold creates a natural pause between breathing cycles
+    public static final int BASE_IDLE_DURATION_TICKS = 80;
     public static final int BLINK_DURATION_TICKS = 6;
     public static final int PONDER_DURATION_TICKS = 80;
 
     /**
      * Looping breathe animation for the at-rest state.
-     * <p>
-     * Head rotation is intentionally omitted: HEAD_ROTATION_OVERRIDE is an ABSOLUTE target that
-     * suppresses vanilla look-tracking for the clip's entire duration. A 1.5° breathe bob is not
-     * worth permanently blinding the villager's gaze — look-tracking must remain active on the
-     * base layer. The head bob visual is imperceptible without it.
-     * <p>
-     * Eyelid channels are also intentionally omitted: the dedicated blink() clip owns them.
-     * Keeping eyelids here too would cause both clips to additively close the eyelid at once
-     * whenever blink fires on top of baseIdle, resulting in a double-close artifact.
      * <p>
      * A hold keyframe is appended at tick 80 (= the tick-60 neutral) on every track so the loop
      * pauses for one second between breathe cycles rather than snapping straight back to the top.
@@ -41,83 +33,132 @@ public final class IdleLifeAnimations {
                 .track(AnimationTrack.<Vector3f>builder()
                         .target(AnimationTargets.ARMS_CROSSED_ROTATION)
                         .keyframes(List.of(
-                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(24, RotationUtil.degrees(-3.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(60, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(80, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(-1.11f, 0.0f, 0.24f), Easing.LINEAR),
+                                new Keyframe<>(2, RotationUtil.degrees(-0.1f, 0.0f, 0.32f), Easing.LINEAR),
+                                new Keyframe<>(4, RotationUtil.degrees(0.75f, 0.0f, 0.4f), Easing.LINEAR),
+                                new Keyframe<>(6, RotationUtil.degrees(1.42f, 0.0f, 0.45f), Easing.LINEAR),
+                                new Keyframe<>(8, RotationUtil.degrees(1.85f, 0.0f, 0.49f), Easing.LINEAR),
+                                new Keyframe<>(10, RotationUtil.degrees(2.0f, 0.0f, 0.5f), Easing.LINEAR),
+                                new Keyframe<>(12, RotationUtil.degrees(1.85f, 0.0f, 0.49f), Easing.LINEAR),
+                                new Keyframe<>(14, RotationUtil.degrees(1.42f, 0.0f, 0.45f), Easing.LINEAR),
+                                new Keyframe<>(16, RotationUtil.degrees(0.75f, 0.0f, 0.4f), Easing.LINEAR),
+                                new Keyframe<>(18, RotationUtil.degrees(-0.1f, 0.0f, 0.32f), Easing.LINEAR),
+                                new Keyframe<>(22, RotationUtil.degrees(-2.22f, 0.0f, 0.15f), Easing.LINEAR),
+                                new Keyframe<>(28, RotationUtil.degrees(-5.78f, 0.0f, -0.15f), Easing.LINEAR),
+                                new Keyframe<>(32, RotationUtil.degrees(-7.9f, 0.0f, -0.32f), Easing.LINEAR),
+                                new Keyframe<>(34, RotationUtil.degrees(-8.75f, 0.0f, -0.4f), Easing.LINEAR),
+                                new Keyframe<>(36, RotationUtil.degrees(-9.42f, 0.0f, -0.45f), Easing.LINEAR),
+                                new Keyframe<>(38, RotationUtil.degrees(-9.85f, 0.0f, -0.49f), Easing.LINEAR),
+                                new Keyframe<>(40, RotationUtil.degrees(-10.0f, 0.0f, -0.5f), Easing.LINEAR),
+                                new Keyframe<>(42, RotationUtil.degrees(-9.85f, 0.0f, -0.49f), Easing.LINEAR),
+                                new Keyframe<>(44, RotationUtil.degrees(-9.42f, 0.0f, -0.45f), Easing.LINEAR),
+                                new Keyframe<>(46, RotationUtil.degrees(-8.75f, 0.0f, -0.4f), Easing.LINEAR),
+                                new Keyframe<>(48, RotationUtil.degrees(-7.9f, 0.0f, -0.32f), Easing.LINEAR),
+                                new Keyframe<>(52, RotationUtil.degrees(-5.78f, 0.0f, -0.15f), Easing.LINEAR),
+                                new Keyframe<>(58, RotationUtil.degrees(-2.22f, 0.0f, 0.15f), Easing.LINEAR),
+                                new Keyframe<>(60, RotationUtil.degrees(-1.11f, 0.0f, 0.24f), Easing.LINEAR),
+                                new Keyframe<>(80, RotationUtil.degrees(-1.11f, 0.0f, 0.24f), Easing.LINEAR)
                         ))
                         .build())
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.ARMS_CROSSED_TRANSLATION)
-                        // posVec(0, 0.2, -0.05) → Y negated → (0.0, -0.2, -0.05)
                         .keyframes(List.of(
-                                new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(24, new Vec3(0.0, -0.2, -0.05), Easing.LINEAR),
-                                new Keyframe<>(60, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(80, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, new Vec3(0.0, 0.5, -0.5), Easing.CUBIC),
+                                new Keyframe<>(30, Vec3.ZERO, Easing.CUBIC),
+                                new Keyframe<>(60, new Vec3(0.0, 0.5, -0.5), Easing.CUBIC),
+                                new Keyframe<>(80, new Vec3(0.0, 0.5, -0.5), Easing.LINEAR)
                         ))
                         .build())
-                .track(AnimationTrack.<Vec3>builder()
-                        .target(AnimationTargets.NOSE_TRANSLATION)
-                        // posVec(0, -0.05, 0) → Y negated → (0.0, 0.05, 0.0)
-                        // posVec(0,  0.05, 0) → Y negated → (0.0, -0.05, 0.0)
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.NOSE_ROTATION)
                         .keyframes(List.of(
-                                new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(6, new Vec3(0.0, 0.05, 0.0), Easing.LINEAR),
-                                new Keyframe<>(28, new Vec3(0.0, -0.05, 0.0), Easing.LINEAR),
-                                new Keyframe<>(60, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(80, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(3.38f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(4, RotationUtil.degrees(1.94f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(8, RotationUtil.degrees(0.78f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(10, RotationUtil.degrees(0.36f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(12, RotationUtil.degrees(0.1f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(14, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(16, RotationUtil.degrees(0.1f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(18, RotationUtil.degrees(0.36f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(20, RotationUtil.degrees(0.78f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(24, RotationUtil.degrees(1.94f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(34, RotationUtil.degrees(5.56f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(38, RotationUtil.degrees(6.72f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(40, RotationUtil.degrees(7.14f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(42, RotationUtil.degrees(7.4f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(44, RotationUtil.degrees(7.5f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(46, RotationUtil.degrees(7.4f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(48, RotationUtil.degrees(7.14f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(50, RotationUtil.degrees(6.72f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(54, RotationUtil.degrees(5.56f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(60, RotationUtil.degrees(3.38f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(80, RotationUtil.degrees(3.38f, 0.0f, 0.0f), Easing.LINEAR)
                         ))
                         .build())
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.PUPIL_LEFT_TRANSLATION)
-                        // posVec(0, -0.2, 0) → Y negated → (0.0, 0.2, 0.0)
                         .keyframes(List.of(
-                                new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(24, new Vec3(0.0, 0.2, 0.0), Easing.LINEAR),
-                                new Keyframe<>(60, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(80, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, new Vec3(0.1, 0.0, 0.0), Easing.CUBIC),
+                                new Keyframe<>(24, new Vec3(0.1, 0.1, 0.0), Easing.CUBIC),
+                                new Keyframe<>(60, new Vec3(0.1, 0.0, 0.0), Easing.CUBIC),
+                                new Keyframe<>(80, new Vec3(0.1, 0.0, 0.0), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.PUPIL_LEFT_SCALE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vector3f(1.0f, 1.0f, 1.0f), Easing.CUBIC),
+                                new Keyframe<>(24, new Vector3f(1.0f, 0.8f, 1.0f), Easing.CUBIC),
+                                new Keyframe<>(60, new Vector3f(1.0f, 1.0f, 1.0f), Easing.CUBIC),
+                                new Keyframe<>(80, new Vector3f(1.0f, 1.0f, 1.0f), Easing.LINEAR)
                         ))
                         .build())
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.PUPIL_RIGHT_TRANSLATION)
-                        // posVec(0, -0.2, 0) → Y negated → (0.0, 0.2, 0.0)
                         .keyframes(List.of(
-                                new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(24, new Vec3(0.0, 0.2, 0.0), Easing.LINEAR),
-                                new Keyframe<>(60, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(80, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, new Vec3(-0.1, 0.0, 0.0), Easing.CUBIC),
+                                new Keyframe<>(24, new Vec3(-0.1, 0.1, 0.0), Easing.CUBIC),
+                                new Keyframe<>(60, new Vec3(-0.1, 0.0, 0.0), Easing.CUBIC),
+                                new Keyframe<>(80, new Vec3(-0.1, 0.0, 0.0), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.PUPIL_RIGHT_SCALE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, new Vector3f(1.0f, 1.0f, 1.0f), Easing.CUBIC),
+                                new Keyframe<>(24, new Vector3f(1.0f, 0.8f, 1.0f), Easing.CUBIC),
+                                new Keyframe<>(60, new Vector3f(1.0f, 1.0f, 1.0f), Easing.CUBIC),
+                                new Keyframe<>(80, new Vector3f(1.0f, 1.0f, 1.0f), Easing.LINEAR)
                         ))
                         .build())
                 .track(AnimationTrack.<Vector3f>builder()
                         .target(AnimationTargets.BODY_ROTATION)
                         .keyframes(List.of(
-                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(24, RotationUtil.degrees(-1.5f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(60, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(14, RotationUtil.degrees(-1.35f, -2.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(30, RotationUtil.degrees(-3.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(46, RotationUtil.degrees(-1.35f, 2.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(60, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC),
                                 new Keyframe<>(80, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR)
                         ))
                         .build())
-                .track(AnimationTrack.<Vec3>builder()
-                        .target(AnimationTargets.BODY_TRANSLATION)
-                        // posVec(0, 0.1, 0.05) → Y negated → (0.0, -0.1, 0.05)
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.LEG_LEFT_ROTATION_OVERRIDE)
                         .keyframes(List.of(
-                                new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(24, new Vec3(0.0, -0.1, 0.05), Easing.LINEAR),
-                                new Keyframe<>(60, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(80, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, -7.5f, -1.0f), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.LEG_RIGHT_ROTATION_OVERRIDE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 10.0f, 1.0f), Easing.LINEAR)
                         ))
                         .build())
                 .build();
     }
 
     /**
-     * Single-shot eyelid blink, fired by the idle controller on a random timer.
-     * <p>
-     * Eyelid value is derived from the idle-breathe source's authored eyelid peak:
-     * posVec(0, -1.1, 0) → Y negated → Vec3(0, 1.1, 0).
-     * Keeping the blink isolated here means it can be independently scheduled and
-     * cancelled without disturbing the baseIdle breathe rhythm.
+     * Single-shot eyelid blink that closes both eyelids before returning to neutral.
      */
     public static KeyframeAnimation blink() {
         return KeyframeAnimation.fromTracks()
@@ -126,7 +167,6 @@ public final class IdleLifeAnimations {
                 .loopMode(LoopMode.ONCE)
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.EYELID_LEFT_TRANSLATION)
-                        // posVec(0, -1.1, 0) → Y negated → (0.0, 1.1, 0.0)
                         .keyframes(List.of(
                                 new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
                                 new Keyframe<>(2, new Vec3(0.0, 1.1, 0.0), Easing.LINEAR),
@@ -136,7 +176,6 @@ public final class IdleLifeAnimations {
                         .build())
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.EYELID_RIGHT_TRANSLATION)
-                        // posVec(0, -1.1, 0) → Y negated → (0.0, 1.1, 0.0)
                         .keyframes(List.of(
                                 new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
                                 new Keyframe<>(2, new Vec3(0.0, 1.1, 0.0), Easing.LINEAR),
@@ -148,8 +187,8 @@ public final class IdleLifeAnimations {
     }
 
     /**
-     * The villager furrows its brow, casts its eyes down and to one side, blinks,
-     * and shifts its weight in a small double-bob as if turning a thought over.
+     * The villager furrows its brow, casts its eyes down and to one side, and shifts its weight
+     * in a small double-bob as if turning a thought over.
      */
     public static KeyframeAnimation ponder() {
         return KeyframeAnimation.fromTracks()
@@ -160,54 +199,51 @@ public final class IdleLifeAnimations {
                 .blendOutTicks(8)
                 .arms(ArmConfiguration.BOTH_CROSSED)
                 .track(AnimationTrack.<Vector3f>builder()
-                        .target(AnimationTargets.HEAD_ROTATION_OVERRIDE)
+                        .target(AnimationTargets.ARMS_CROSSED_ROTATION)
                         .keyframes(List.of(
-                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(20, RotationUtil.degrees(-10.0f, -18.0f, -4.0f), Easing.LINEAR),
-                                new Keyframe<>(40, RotationUtil.degrees(-10.0f, -18.0f, -4.0f), Easing.LINEAR),
-                                new Keyframe<>(50, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(56, RotationUtil.degrees(8.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(62, RotationUtil.degrees(-2.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(68, RotationUtil.degrees(6.0f, 0.0f, 0.0f), Easing.LINEAR),
-                                new Keyframe<>(74, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(-2.11f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(4, RotationUtil.degrees(-1.17f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(8, RotationUtil.degrees(-0.46f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(12, RotationUtil.degrees(-0.05f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(14, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(16, RotationUtil.degrees(-0.05f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(20, RotationUtil.degrees(-0.46f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(24, RotationUtil.degrees(-1.17f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(32, RotationUtil.degrees(-3.19f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(40, RotationUtil.degrees(-5.39f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(44, RotationUtil.degrees(-6.33f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(48, RotationUtil.degrees(-7.04f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(52, RotationUtil.degrees(-7.45f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(56, RotationUtil.degrees(-7.45f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(60, RotationUtil.degrees(-7.04f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(64, RotationUtil.degrees(-6.33f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(72, RotationUtil.degrees(-4.31f, 0.0f, 0.0f), Easing.LINEAR),
+                                new Keyframe<>(80, RotationUtil.degrees(-2.11f, 0.0f, 0.0f), Easing.LINEAR)
                         ))
                         .build())
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.ARMS_CROSSED_TRANSLATION)
-                        // posVec(0, 0.22, 0) → Y negated → (0.0, -0.22, 0.0)
                         .keyframes(List.of(
-                                new Keyframe<>(56, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(62, new Vec3(0.0, -0.22, 0.0), Easing.LINEAR),
-                                new Keyframe<>(70, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, new Vec3(0.0, 0.5, -0.5), Easing.CUBIC),
+                                new Keyframe<>(40, Vec3.ZERO, Easing.CUBIC),
+                                new Keyframe<>(80, new Vec3(0.0, 0.5, -0.5), Easing.CUBIC)
                         ))
                         .build())
-                .track(AnimationTrack.<Vec3>builder()
-                        .target(AnimationTargets.EYELID_LEFT_TRANSLATION)
-                        // posVec(0, -1.1, 0) → Y negated → (0.0, 1.1, 0.0)
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.HEAD_ROTATION_OVERRIDE)
                         .keyframes(List.of(
-                                new Keyframe<>(36, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(38, new Vec3(0.0, 1.1, 0.0), Easing.LINEAR),
-                                new Keyframe<>(40, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(68, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(70, new Vec3(0.0, 1.1, 0.0), Easing.LINEAR),
-                                new Keyframe<>(72, Vec3.ZERO, Easing.LINEAR)
-                        ))
-                        .build())
-                .track(AnimationTrack.<Vec3>builder()
-                        .target(AnimationTargets.EYELID_RIGHT_TRANSLATION)
-                        // posVec(0, -1.1, 0) → Y negated → (0.0, 1.1, 0.0)
-                        .keyframes(List.of(
-                                new Keyframe<>(36, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(38, new Vec3(0.0, 1.1, 0.0), Easing.LINEAR),
-                                new Keyframe<>(40, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(68, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(70, new Vec3(0.0, 1.1, 0.0), Easing.LINEAR),
-                                new Keyframe<>(72, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(20, RotationUtil.degrees(-10.0f, -18.0f, -4.0f), Easing.CUBIC),
+                                new Keyframe<>(40, RotationUtil.degrees(-10.0f, -18.0f, -4.0f), Easing.CUBIC),
+                                new Keyframe<>(50, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(56, RotationUtil.degrees(8.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(62, RotationUtil.degrees(-2.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(68, RotationUtil.degrees(6.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(80, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC)
                         ))
                         .build())
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.MONOBROW_TRANSLATION)
-                        // posVec(0, 0.15, 0) → Y negated → (0.0, -0.15, 0.0)
                         .keyframes(List.of(
                                 new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
                                 new Keyframe<>(20, new Vec3(0.0, -0.15, 0.0), Easing.LINEAR),
@@ -217,31 +253,51 @@ public final class IdleLifeAnimations {
                         .build())
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.PUPIL_LEFT_TRANSLATION)
-                        // posVec(-0.3, 0.3, 0) → Y negated → (-0.3, -0.3, 0.0)
                         .keyframes(List.of(
-                                new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(16, new Vec3(-0.3, -0.3, 0.0), Easing.LINEAR),
-                                new Keyframe<>(40, new Vec3(-0.3, -0.3, 0.0), Easing.LINEAR),
-                                new Keyframe<>(48, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, new Vec3(0.1, 0.0, 0.0), Easing.CUBIC),
+                                new Keyframe<>(16, new Vec3(0.0, -0.3, 0.0), Easing.CUBIC),
+                                new Keyframe<>(40, new Vec3(0.0, -0.3, 0.0), Easing.CUBIC),
+                                new Keyframe<>(48, new Vec3(0.1, 0.0, 0.0), Easing.CUBIC)
                         ))
                         .build())
                 .track(AnimationTrack.<Vec3>builder()
                         .target(AnimationTargets.PUPIL_RIGHT_TRANSLATION)
-                        // posVec(-0.3, 0.3, 0) → Y negated → (-0.3, -0.3, 0.0)
                         .keyframes(List.of(
-                                new Keyframe<>(0, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(16, new Vec3(-0.3, -0.3, 0.0), Easing.LINEAR),
-                                new Keyframe<>(40, new Vec3(-0.3, -0.3, 0.0), Easing.LINEAR),
-                                new Keyframe<>(48, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, new Vec3(-0.1, 0.0, 0.0), Easing.CUBIC),
+                                new Keyframe<>(16, new Vec3(-0.3, -0.3, 0.0), Easing.CUBIC),
+                                new Keyframe<>(40, new Vec3(-0.3, -0.3, 0.0), Easing.CUBIC),
+                                new Keyframe<>(48, new Vec3(-0.1, 0.0, 0.0), Easing.CUBIC)
                         ))
                         .build())
-                .track(AnimationTrack.<Vec3>builder()
-                        .target(AnimationTargets.BODY_TRANSLATION)
-                        // posVec(0, 0.08, 0) → Y negated → (0.0, -0.08, 0.0)
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.BODY_ROTATION)
                         .keyframes(List.of(
-                                new Keyframe<>(56, Vec3.ZERO, Easing.LINEAR),
-                                new Keyframe<>(62, new Vec3(0.0, -0.08, 0.0), Easing.LINEAR),
-                                new Keyframe<>(70, Vec3.ZERO, Easing.LINEAR)
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(20, RotationUtil.degrees(-1.35f, -2.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(40, RotationUtil.degrees(-3.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(60, RotationUtil.degrees(-1.35f, 2.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(80, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.NOSE_ROTATION)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC),
+                                new Keyframe<>(24, RotationUtil.degrees(5.0f, 0.0f, 5.0f), Easing.CUBIC),
+                                new Keyframe<>(40, RotationUtil.degrees(5.0f, 0.0f, 5.0f), Easing.CUBIC),
+                                new Keyframe<>(54, RotationUtil.degrees(0.0f, 0.0f, 0.0f), Easing.CUBIC)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.LEG_LEFT_ROTATION_OVERRIDE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, -7.5f, -1.0f), Easing.LINEAR)
+                        ))
+                        .build())
+                .track(AnimationTrack.<Vector3f>builder()
+                        .target(AnimationTargets.LEG_RIGHT_ROTATION_OVERRIDE)
+                        .keyframes(List.of(
+                                new Keyframe<>(0, RotationUtil.degrees(0.0f, 10.0f, 1.0f), Easing.LINEAR)
                         ))
                         .build())
                 .build();

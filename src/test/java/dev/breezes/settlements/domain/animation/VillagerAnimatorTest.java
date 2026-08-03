@@ -47,6 +47,78 @@ class VillagerAnimatorTest {
     }
 
     @Test
+    void sample_blendsNewActionInFromUnderlyingLayers() {
+        // Arrange
+        AnimationResolver resolver = resolver(Map.of(
+                AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
+                AnimationArchetype.SWING_HEAVY, constantAnimation("swing", 12.0F, 4)));
+        VillagerAnimator animator = new VillagerAnimator(resolver);
+        animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 1, AnimationSelectionContext.generic(), 20L);
+
+        // Act
+        AnimationFrame frame = animator.sample(22L, 0.0F);
+
+        // Assert
+        assertEquals(6.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
+    }
+
+    @Test
+    void sample_blendsSustainedActionOutWhenCleared() {
+        // Arrange
+        AnimationResolver resolver = resolver(Map.of(
+                AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
+                AnimationArchetype.EAT, animation("eat", 0, 20, 4, 12.0F, null)));
+        VillagerAnimator animator = new VillagerAnimator(resolver);
+        animator.onMotionChanged(AnimationArchetype.EAT, (byte) 0, AnimationSelectionContext.generic(), 0L);
+        animator.onMotionChanged(AnimationArchetype.IDLE, (byte) 0, AnimationSelectionContext.generic(), 10L);
+
+        // Act
+        AnimationFrame frame = animator.sample(12L, 0.0F);
+
+        // Assert
+        assertEquals(6.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
+    }
+
+    @Test
+    void sample_snapsSleepOnAndOff() {
+        // Arrange
+        AnimationResolver resolver = resolver(Map.of(
+                AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
+                AnimationArchetype.SLEEP, animation("sleep", 4, 100, 4, 12.0F, null)));
+        VillagerAnimator animator = new VillagerAnimator(resolver);
+        animator.setSleeping(true, 20L);
+
+        // Act
+        AnimationFrame enteringFrame = animator.sample(22L, 0.0F);
+        animator.setSleeping(false, 24L);
+        AnimationFrame leavingFrame = animator.sample(26L, 0.0F);
+
+        // Assert
+        assertEquals(12.0F, enteringFrame.get(AnimationTestTargets.FLOAT), 0.0001F);
+        assertEquals(0.0F, leavingFrame.get(AnimationTestTargets.FLOAT), 0.0001F);
+    }
+
+    @Test
+    void sample_doesNotMixTheAwakePoseIntoSleep() {
+        // Arrange: both clips drive the same target, but sleep is a discrete pose rather than a layer
+        // transition and therefore owns the result immediately.
+        int sleepBlendInTicks = 4;
+        AnimationResolver resolver = resolver(Map.of(
+                AnimationArchetype.IDLE, constantAnimation("idle", 10.0F, 0),
+                AnimationArchetype.SLEEP, animation("sleep", sleepBlendInTicks, 100, 4, 20.0F, null)));
+        VillagerAnimator animator = new VillagerAnimator(resolver);
+        animator.setSleeping(true, 0L);
+
+        // Act
+        AnimationFrame atSleepStart = animator.sample(0L, 0.0F);
+        AnimationFrame laterInSleep = animator.sample(sleepBlendInTicks, 0.0F);
+
+        // Assert
+        assertEquals(20.0F, atSleepStart.get(AnimationTestTargets.FLOAT), 0.0001F);
+        assertEquals(20.0F, laterInSleep.get(AnimationTestTargets.FLOAT), 0.0001F);
+    }
+
+    @Test
     void sample_blendsMissingTargetsAgainstNeutralValue() {
         // Arrange
         AnimationResolver resolver = resolver(Map.of(

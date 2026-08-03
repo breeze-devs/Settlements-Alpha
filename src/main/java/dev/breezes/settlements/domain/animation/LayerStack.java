@@ -53,8 +53,11 @@ public final class LayerStack {
         actionLayer.replace(animation, gameTime, false);
     }
 
-    public void clearAction() {
-        this.layersByRole.remove(AnimationLayerRole.ACTION);
+    public void clearAction(long gameTime) {
+        AnimationLayer actionLayer = this.layersByRole.get(AnimationLayerRole.ACTION);
+        if (actionLayer != null) {
+            actionLayer.beginClear(gameTime);
+        }
     }
 
     public boolean hasAction() {
@@ -68,18 +71,23 @@ public final class LayerStack {
     public AnimationFrame sample(long gameTime,
                                  float partialTicks,
                                  @Nonnull LocomotionAnimationContext locomotionContext) {
-        // Sampling mutates: it auto-pops finished actions and advances the idle-life timers. This is a
-        // deliberate render-thread side effect — call it once per frame from the renderer, not as a
-        // pure query from elsewhere.
+        // Sampling mutates layer lifecycle state by retiring completed actions and crossfades. Idle-life
+        // lifecycle advancement is separate from frame construction so a fully hidden ambient layer
+        // does not allocate a frame that the fold will immediately discard.
         this.expireFinishedActions(gameTime, partialTicks);
+        float locomotionWeight = this.locomotionAnimator.weight(locomotionContext);
+        float idleLifeWeight = 1.0F - locomotionWeight;
+        IdleLifeAnimationContext idleLifeContext = this.idleLifeContext(gameTime, partialTicks);
+        this.idleLifeAnimator.advance(idleLifeContext);
 
         AnimationFrame frame = AnimationFrame.EMPTY;
         for (AnimationLayerRole role : SAMPLE_ORDER) {
             if (role == AnimationLayerRole.ACTION) {
                 // Idle-life ambience recedes as locomotion ramps in so the breather's body bob does not
                 // stack onto the gait's; at a standstill locomotion weight is 0 and idle-life shows fully.
-                float idleLifeWeight = 1.0F - this.locomotionAnimator.weight(locomotionContext);
-                frame = frame.composeOver(this.idleLifeFrame(gameTime, partialTicks), idleLifeWeight);
+                if (idleLifeWeight > 0.0F) {
+                    frame = frame.composeOver(this.idleLifeAnimator.sample(idleLifeContext), idleLifeWeight);
+                }
             }
             AnimationLayer layer = this.layersByRole.get(role);
             if (layer != null) {
@@ -105,6 +113,9 @@ public final class LayerStack {
                                              float partialTicks,
                                              @Nonnull LocomotionAnimationContext locomotionContext) {
         this.expireFinishedActions(gameTime, partialTicks);
+        float idleLifeWeight = 1.0F - this.locomotionAnimator.weight(locomotionContext);
+        IdleLifeAnimationContext idleLifeContext = this.idleLifeContext(gameTime, partialTicks);
+        this.idleLifeAnimator.advance(idleLifeContext);
 
         AnimationLayer actionLayer = this.layersByRole.get(AnimationLayerRole.ACTION);
         if (actionLayer != null) {
@@ -114,10 +125,12 @@ public final class LayerStack {
             }
         }
 
-        Optional<ArmConfiguration> idleLifeConfiguration = this.idleLifeAnimator.activeArmConfiguration(
-                this.idleLifeContext(gameTime, partialTicks));
-        if (idleLifeConfiguration.isPresent()) {
-            return idleLifeConfiguration.get();
+        if (idleLifeWeight > 0.0F) {
+            Optional<ArmConfiguration> idleLifeConfiguration = this.idleLifeAnimator.activeArmConfiguration(
+                    idleLifeContext);
+            if (idleLifeConfiguration.isPresent()) {
+                return idleLifeConfiguration.get();
+            }
         }
 
         // ACTION is already resolved above; this top-down pass is effectively the base-layer fallback,
@@ -135,10 +148,6 @@ public final class LayerStack {
 
         return this.locomotionAnimator.activeArmConfiguration(locomotionContext)
                 .orElse(ArmConfiguration.BOTH_CROSSED);
-    }
-
-    private AnimationFrame idleLifeFrame(long gameTime, float partialTicks) {
-        return this.idleLifeAnimator.sample(this.idleLifeContext(gameTime, partialTicks));
     }
 
     private IdleLifeAnimationContext idleLifeContext(long gameTime, float partialTicks) {
