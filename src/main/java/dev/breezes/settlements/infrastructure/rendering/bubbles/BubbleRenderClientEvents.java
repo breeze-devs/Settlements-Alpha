@@ -1,6 +1,7 @@
 package dev.breezes.settlements.infrastructure.rendering.bubbles;
 
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.infrastructure.rendering.highlight.SupplementaryEntityPass;
 import lombok.CustomLog;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
@@ -11,7 +12,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLivingEvent;
 
-// TODO: https://github.com/Mrbysco/NotableBubbleText/blob/bb245e78bcfd1edebe442cbb025c1ad91dfe94b9/src/main/java/com/mrbysco/nbt/command/BubbleCommands.java#L59-L68
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 @CustomLog
 public class BubbleRenderClientEvents {
@@ -26,6 +26,13 @@ public class BubbleRenderClientEvents {
 
         LivingEntity entity = event.getEntity();
         if (!(entity instanceof BaseVillager villager) || entity.isInvisibleTo(player)) {
+            return;
+        }
+
+        // Bubble state advances by the partial tick handed to this callback, so it has to advance once per
+        // frame rather than once per render call. A supplementary pass re-renders an entity vanilla already
+        // drew this frame, which would age every bubble on that villager at double speed while it runs.
+        if (event.getMultiBufferSource() instanceof SupplementaryEntityPass) {
             return;
         }
 

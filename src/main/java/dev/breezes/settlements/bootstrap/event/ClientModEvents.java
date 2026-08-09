@@ -4,6 +4,8 @@ import dev.breezes.settlements.bootstrap.registry.blockentities.BlockEntityTypeR
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry;
+import dev.breezes.settlements.di.ClientComponent;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.rendering.SettlementsCatRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.client.VillagerFishingHookRenderer;
@@ -16,6 +18,8 @@ import dev.breezes.settlements.infrastructure.rendering.particles.EggSplatPartic
 import dev.breezes.settlements.infrastructure.rendering.particles.OrbParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.StunnedStarParticle;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.entity.ChickenRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
@@ -31,9 +35,11 @@ import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 import javax.annotation.Nullable;
 
@@ -101,6 +107,21 @@ public class ClientModEvents {
         event.registerSpriteSet(ParticleTypeRegistry.EGG_SPLAT.get(), EggSplatParticle.Provider::new);
         event.registerSpriteSet(ParticleTypeRegistry.STUNNED_STAR.get(), StunnedStarParticle.Provider::new);
         event.registerSpriteSet(ParticleTypeRegistry.ORB.get(), OrbParticle.Provider::new);
+    }
+
+    @SubscribeEvent
+    public static void registerGuiLayers(RegisterGuiLayersEvent event) {
+        event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("hud"), ClientModEvents::renderHud);
+    }
+
+    private static void renderHud(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        // Registered before the client Dagger graph exists, so the defensive accessor is required
+        ClientComponent clientComponent = SettlementsDagger.clientOrNull();
+        if (clientComponent == null) {
+            return;
+        }
+
+        clientComponent.heldItemHudRenderer().render(guiGraphics, deltaTracker);
     }
 
 }

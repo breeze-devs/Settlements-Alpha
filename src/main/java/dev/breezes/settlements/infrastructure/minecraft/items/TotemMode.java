@@ -8,18 +8,18 @@ import org.joml.Vector3f;
 @Getter
 public enum TotemMode {
 
-    VANILLA(0, "item.settlements.villager_totem.mode.vanilla", 0.0F, 1.0F, 0.0F),
-    SETTLEMENTS(1, "item.settlements.villager_totem.mode.settlements", 1.0F, 0.84F, 0.0F),
-    STASIS(2, "item.settlements.villager_totem.mode.stasis", 0.1F, 0.1F, 0.1F);
+    VANILLA(0, "item.settlements.villager_totem.mode.vanilla", 0.25F, 0.85F, 0.95F),
+    SETTLEMENTS(1, "item.settlements.villager_totem.mode.settlements", 0.20F, 0.85F, 0.25F),
+    STASIS(2, "item.settlements.villager_totem.mode.stasis", 0.45F, 0.45F, 0.45F);
 
     private static final TotemMode DEFAULT_MODE = SETTLEMENTS;
     private static final TotemMode[] MODES = values();
 
     private final int serializedId;
     private final String translationKey;
-    private final float particleRed;
-    private final float particleGreen;
-    private final float particleBlue;
+    private final float hueRed;
+    private final float hueGreen;
+    private final float hueBlue;
 
     public static TotemMode defaultMode() {
         return DEFAULT_MODE;
@@ -38,8 +38,12 @@ public enum TotemMode {
         return MODES[(ordinal() + 1) % MODES.length];
     }
 
-    public Vector3f particleColor() {
-        return new Vector3f(particleRed, particleGreen, particleBlue);
+    /**
+     * This mode's identity color, as RGB in [0,1]. The single authority for the mode's hue — every mode-colored
+     * surface derives from this rather than restating it.
+     */
+    public Vector3f hue() {
+        return new Vector3f(hueRed, hueGreen, hueBlue);
     }
 
     public boolean isAlreadyTargetType(boolean isSettlementsVillager,

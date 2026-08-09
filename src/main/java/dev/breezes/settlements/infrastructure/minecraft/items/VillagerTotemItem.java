@@ -8,7 +8,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.conversion.VillagerConversionUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -30,12 +29,20 @@ import org.joml.Vector3f;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 public class VillagerTotemItem extends Item {
 
+    private static final String TOOLTIP_MODE_KEY = "item.settlements.villager_totem.tooltip.mode";
+    private static final String TOOLTIP_USE_KEY = "item.settlements.villager_totem.tooltip.use";
+    private static final String TOOLTIP_ITEMS_LOST_KEY = "item.settlements.villager_totem.tooltip.items_lost";
+    private static final String TOOLTIP_CYCLE_KEY = "item.settlements.villager_totem.tooltip.cycle";
     private static final String ALREADY_TARGET_TYPE_KEY = "item.settlements.villager_totem.already_target_type";
+
     private static final double MAX_DISTANCE_SQUARED = 16.0;
+
+    private static final ClockTicks COOLDOWN = ClockTicks.seconds(1.0);
 
     public VillagerTotemItem(Properties properties) {
         super(properties);
@@ -46,10 +53,8 @@ public class VillagerTotemItem extends Item {
         return true;
     }
 
-    @Nonnull
     @Override
     public ItemStack getCraftingRemainingItem(@Nonnull ItemStack stack) {
-        // Preserve the selected totem mode and any future stack data when crafting recipes use the totem as a catalyst.
         return stack.copy();
     }
 
@@ -65,40 +70,68 @@ public class VillagerTotemItem extends Item {
     @Override
     public void appendHoverText(@Nonnull ItemStack stack, @Nonnull Item.TooltipContext context, @Nonnull List<Component> tooltipComponents, @Nonnull TooltipFlag tooltipFlag) {
         TotemMode mode = getMode(stack);
-        tooltipComponents.add(Component.translatable("item.settlements.villager_totem.tooltip.mode",
+        tooltipComponents.add(Component.translatable(TOOLTIP_MODE_KEY,
                 Component.translatable(mode.getTranslationKey())).withStyle(ChatFormatting.GOLD));
-        tooltipComponents.add(Component.translatable("item.settlements.villager_totem.tooltip.use").withStyle(ChatFormatting.GRAY));
-        tooltipComponents.add(Component.translatable("item.settlements.villager_totem.tooltip.items_lost").withStyle(ChatFormatting.RED));
+        tooltipComponents.add(Component.translatable(TOOLTIP_CYCLE_KEY).withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.translatable(TOOLTIP_USE_KEY).withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.translatable(TOOLTIP_ITEMS_LOST_KEY).withStyle(ChatFormatting.RED));
+    }
+
+    /**
+     * Whether villager is an eligible conversion target for the current mode
+     * <p>
+     * False when the villager already matches what mode would produce.
+     */
+    public static boolean isEligibleForConversion(@Nonnull Villager villager, @Nonnull TotemMode mode) {
+        return !mode.isAlreadyTargetType(villager instanceof BaseVillager, villager.isNoAi());
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(@Nonnull Level level, @Nonnull Player player, @Nonnull InteractionHand hand) {
+    public InteractionResultHolder<ItemStack> use(@Nonnull Level level,
+                                                  @Nonnull Player player,
+                                                  @Nonnull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (player.isShiftKeyDown()) {
-            if (!level.isClientSide()) {
-                setMode(stack, getMode(stack).next());
-                level.playSound(null, player.blockPosition(), SoundEvents.LODESTONE_COMPASS_LOCK, SoundSource.PLAYERS);
-            }
-            return InteractionResultHolder.success(stack);
+        // Cycling is right click only
+        if (hand != InteractionHand.MAIN_HAND || player.isShiftKeyDown()) {
+            return InteractionResultHolder.pass(stack);
         }
 
-        return InteractionResultHolder.pass(stack);
+        if (!level.isClientSide()) {
+            // Safe to mutate the held stack here: the use key cannot re-fire while isUsingItem() is true
+            setMode(stack, getMode(stack).next());
+            level.playSound(null, player.blockPosition(), SoundEvents.LODESTONE_COMPASS_LOCK, SoundSource.PLAYERS);
+        }
+
+        player.getCooldowns().addCooldown(this, COOLDOWN.getTicksAsInt());
+
+        return InteractionResultHolder.success(stack);
     }
 
     @Override
-    public InteractionResult interactLivingEntity(@Nonnull ItemStack stack, @Nonnull Player player, @Nonnull LivingEntity target, @Nonnull InteractionHand hand) {
-        if (target instanceof Villager villager && player.isShiftKeyDown()) {
-            TotemTargetAttachment.setTarget(player, villager.getId());
-            player.startUsingItem(hand);
+    public InteractionResult interactLivingEntity(@Nonnull ItemStack stack,
+                                                  @Nonnull Player player,
+                                                  @Nonnull LivingEntity target,
+                                                  @Nonnull InteractionHand hand) {
+        if (hand != InteractionHand.MAIN_HAND || !(target instanceof Villager villager) || !player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
 
-            if (!player.level().isClientSide()) {
-                villager.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ClockTicks.seconds(3).getTicksAsInt(), 10, false, false));
-            }
-
+        // An ineligible target is refused silently. The held-item HUD names the villager's type before the
+        // click, and this path is reached on every stray sneak-click across an already-converted settlement,
+        // where a cue would be noise rather than news.
+        if (!isEligibleForConversion(villager, getMode(stack))) {
             return InteractionResult.CONSUME;
         }
-        return InteractionResult.PASS;
+
+        TotemTargetAttachment.setTarget(player, villager.getId());
+        player.startUsingItem(hand);
+
+        if (!player.level().isClientSide()) {
+            villager.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ClockTicks.seconds(3).getTicksAsInt(), 10, false, false));
+        }
+
+        return InteractionResult.CONSUME;
     }
 
     @Override
@@ -106,7 +139,6 @@ public class VillagerTotemItem extends Item {
         return ClockTicks.seconds(2.5).getTicksAsInt();
     }
 
-    @Nonnull
     @Override
     public UseAnim getUseAnimation(@Nonnull ItemStack stack) {
         return UseAnim.BOW;
@@ -116,85 +148,100 @@ public class VillagerTotemItem extends Item {
     public void onUseTick(@Nonnull Level level, @Nonnull LivingEntity playerEntity, @Nonnull ItemStack stack, int remainingUseDuration) {
         if (playerEntity instanceof Player player) {
             OptionalInt targetId = TotemTargetAttachment.getTarget(player);
-            if (targetId.isEmpty()) {
+            if (targetId.isEmpty() || !(level.getEntity(targetId.getAsInt()) instanceof Villager villager)) {
                 player.stopUsingItem();
                 return;
             }
 
-            if (level.getEntity(targetId.getAsInt()) instanceof Villager villager) {
-                if (villager.distanceToSqr(player) > MAX_DISTANCE_SQUARED) {
-                    player.stopUsingItem();
-                    return;
-                }
-
-                if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
-                    TotemMode mode = getMode(stack);
-
-                    int ticksUsed = this.getUseDuration(stack, player) - remainingUseDuration;
-                    double height = (villager.getBbHeight() * ticksUsed) / 50.0;
-                    double angle = ticksUsed * 0.5;
-                    double radius = 0.8;
-
-                    double x = villager.getX() + radius * Math.cos(angle);
-                    double y = villager.getY() + height;
-                    double z = villager.getZ() + radius * Math.sin(angle);
-
-                    serverLevel.sendParticles(new DustParticleOptions(mode.particleColor(), 1.0f), x, y, z, 2, 0, 0, 0, 0);
-
-                    if (remainingUseDuration % 10 == 0) {
-                        level.playSound(null, villager.blockPosition(), SoundEvents.ILLUSIONER_PREPARE_BLINDNESS, SoundSource.PLAYERS, 0.5F, 0.5F + (ticksUsed / 50.0F));
-                    }
-                }
-            } else {
+            if (villager.distanceToSqr(player) > MAX_DISTANCE_SQUARED) {
                 player.stopUsingItem();
+                return;
+            }
+
+            if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
+                TotemMode mode = getMode(stack);
+
+                int ticksUsed = this.getUseDuration(stack, player) - remainingUseDuration;
+                double height = (villager.getBbHeight() * ticksUsed) / 50.0;
+                double angle = ticksUsed * 0.5;
+                double radius = 0.8;
+
+                double x = villager.getX() + radius * Math.cos(angle);
+                double y = villager.getY() + height;
+                double z = villager.getZ() + radius * Math.sin(angle);
+
+                serverLevel.sendParticles(new DustParticleOptions(mode.hue(), 1.0f), x, y, z, 1, 0, 0, 0, 0);
+
+                if (remainingUseDuration % 10 == 0) {
+                    level.playSound(null, villager.blockPosition(), SoundEvents.ILLUSIONER_PREPARE_BLINDNESS, SoundSource.PLAYERS, 0.5F, 0.5F + (ticksUsed / 50.0F));
+                }
             }
         }
     }
 
     @Override
     public ItemStack finishUsingItem(@Nonnull ItemStack stack, @Nonnull Level level, @Nonnull LivingEntity livingEntity) {
-        if (livingEntity instanceof Player player) {
-            OptionalInt targetId = TotemTargetAttachment.getTarget(player);
-            if (targetId.isPresent() && !level.isClientSide() && level instanceof ServerLevel serverLevel) {
-                if (serverLevel.getEntity(targetId.getAsInt()) instanceof Villager villager
-                        && villager.distanceToSqr(livingEntity) <= MAX_DISTANCE_SQUARED) {
-                    TotemMode mode = getMode(stack);
-
-                    if (isAlreadyTargetType(villager, mode)) {
-                        failConversion(serverLevel, player, villager);
-                        return stack;
-                    }
-
-                    serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 2.0F),
-                            villager.getX(), villager.getY() + 1.0, villager.getZ(), 30, 0.5, 0.5, 0.5, 0.1);
-                    level.playSound(null, villager.blockPosition(), SoundEvents.EVOKER_CAST_SPELL, SoundSource.PLAYERS, 1.0F, 1.0F);
-
-                    convertVillager(serverLevel, villager, mode);
-                }
-            }
+        if (!(livingEntity instanceof Player player)) {
+            return stack;
         }
+
+        Optional<Villager> target = resolveChannelTarget(player, level);
+        if (target.isEmpty()) {
+            return stack;
+        }
+
+        Villager villager = target.get();
+        TotemMode mode = getMode(stack);
+
+        // interactLivingEntity already rejects an ineligible target before the channel starts; this only
+        // re-fires if some other actor changed the villager's type during the 2.5s channel.
+        if (!isEligibleForConversion(villager, mode)) {
+            rejectConversion(level, villager);
+            if (!level.isClientSide()) {
+                player.displayClientMessage(Component.translatable(ALREADY_TARGET_TYPE_KEY).withStyle(ChatFormatting.RED), true);
+            }
+            return stack;
+        }
+
+        player.getCooldowns().addCooldown(this, COOLDOWN.getTicksAsInt());
+
+        if (level instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 2.0F),
+                    villager.getX(), villager.getY() + 1.0, villager.getZ(), 30, 0.5, 0.5, 0.5, 0.1);
+            level.playSound(null, villager.blockPosition(), SoundEvents.EVOKER_CAST_SPELL, SoundSource.PLAYERS, 1.0F, 1.0F);
+
+            convertVillager(serverLevel, villager, mode);
+        }
+
         return stack;
     }
 
-    private boolean isAlreadyTargetType(@Nonnull Villager villager, TotemMode mode) {
-        return mode.isAlreadyTargetType(villager instanceof BaseVillager, villager.isNoAi());
+    /**
+     * The villager this channel is still locked onto, or empty if the lock was dropped or the target has since
+     * moved out of range.
+     */
+    private static Optional<Villager> resolveChannelTarget(@Nonnull Player player, @Nonnull Level level) {
+        OptionalInt targetId = TotemTargetAttachment.getTarget(player);
+        if (targetId.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return level.getEntity(targetId.getAsInt()) instanceof Villager villager
+                && villager.distanceToSqr(player) <= MAX_DISTANCE_SQUARED ? Optional.of(villager) : Optional.empty();
     }
 
-    private void failConversion(@Nonnull ServerLevel level,
-                                @Nonnull Player player,
-                                @Nonnull Villager villager) {
-        player.displayClientMessage(Component.translatable(ALREADY_TARGET_TYPE_KEY).withStyle(ChatFormatting.RED), true);
-        level.sendParticles(new DustParticleOptions(new Vector3f(0.85F, 0.0F, 0.0F), 1.5F),
+    private void rejectConversion(@Nonnull Level level, @Nonnull Villager villager) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        serverLevel.sendParticles(new DustParticleOptions(new Vector3f(0.85F, 0.0F, 0.0F), 1.5F),
                 villager.getX(), villager.getY() + 1.0, villager.getZ(), 20, 0.35, 0.35, 0.35, 0.02);
-        level.sendParticles(ParticleTypes.SMOKE,
-                villager.getX(), villager.getY() + 1.0, villager.getZ(), 12, 0.25, 0.25, 0.25, 0.01);
-        level.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_NO, SoundSource.PLAYERS, 1.0F, 0.8F);
+        serverLevel.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_NO, SoundSource.PLAYERS, 0.4F, 0.6F);
     }
 
     @Override
     public void releaseUsing(@Nonnull ItemStack stack, @Nonnull Level level, @Nonnull LivingEntity livingEntity, int timeCharged) {
-        // Single teardown point for the locked-on target: both aborting (stopUsingItem) and completing the channel
-        // (completeUsingItem -> stopUsingItem) route through here, so the transient attachment never lingers.
         if (livingEntity instanceof Player player) {
             TotemTargetAttachment.clearTarget(player);
         }
