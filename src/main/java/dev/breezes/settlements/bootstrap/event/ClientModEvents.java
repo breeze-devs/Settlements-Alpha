@@ -6,7 +6,7 @@ import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry;
 import dev.breezes.settlements.di.ClientComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
-import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationRenderer;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.rendering.SettlementsCatRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.client.VillagerFishingHookRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -35,6 +35,7 @@ import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
@@ -99,7 +100,12 @@ public class ClientModEvents {
 
     @SubscribeEvent
     public static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(BlockEntityTypeRegistry.TOTEM_OF_CULTIVATION.get(), TotemOfCultivationRenderer::new);
+        event.registerBlockEntityRenderer(BlockEntityTypeRegistry.CULTIVATION_LILY.get(), CultivationLilyRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
+        event.register(CultivationLilyRenderer.FLOATING_MESH_MODEL);
     }
 
     @SubscribeEvent
@@ -121,7 +127,7 @@ public class ClientModEvents {
             return;
         }
 
-        clientComponent.heldItemHudRenderer().render(guiGraphics, deltaTracker);
+        clientComponent.crosshairHudRenderer().render(guiGraphics, deltaTracker);
     }
 
 }

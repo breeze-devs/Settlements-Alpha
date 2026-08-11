@@ -32,9 +32,12 @@ import java.util.Optional;
  * Sneak + any axe on a chest unwaxes it (green border, AXE_WAX_OFF sound).
  * The axe never loses durability — this is purely a marking action, not a use.
  * <p>
- * Normal (non-sneak) right-click passes through unchanged so players can still open the chest. A
- * redundant interaction (waxing an already-waxed chest, or scraping an unwaxed one) also passes
- * through untouched — it neither cancels the open nor emits feedback.
+ * Normal (non-sneak) right-click passes through unchanged so players can still open the chest.
+ * Whether a wax gesture actually changes anything is decided from the server's authoritative wax
+ * read alone: a redundant interaction there (waxing an already-waxed chest, or scraping an unwaxed
+ * one) passes through untouched, mutating nothing and emitting no feedback. The client cannot make
+ * that same redundant-or-not call — {@code CHEST_WAXED} has no sync channel, so a client-side read
+ * would always report unwaxed — so it claims both wax gestures unconditionally instead of guessing.
  */
 @EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public final class WaxChestEvents {
@@ -70,18 +73,19 @@ public final class WaxChestEvents {
             return;
         }
 
-        // The wax flag is server-authoritative
         if (!(level instanceof ServerLevel serverLevel)) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
             return;
         }
 
         boolean currentlyWaxed = ChestWaxService.isWaxed(serverLevel, pos);
         if (currentlyWaxed == holdingHoneycomb) {
-            // Redundant interaction: behave as if this handler did not exist and emit no feedback
+            // Redundant interaction on the server's authoritative read: behave as if this handler
+            // did not exist and emit no feedback
             return;
         }
 
-        // State will change: claim the interaction so the chest does not open, then apply the flag.
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
 

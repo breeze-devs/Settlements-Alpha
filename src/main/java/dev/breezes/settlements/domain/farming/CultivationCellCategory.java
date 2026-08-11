@@ -27,7 +27,7 @@ public enum CultivationCellCategory {
     NEEDS_PLANT,
 
     /**
-     * Ground is farmland; canopy holds a crop that matches the totem filter (or no filter is set).
+     * Ground is farmland; canopy holds a crop that matches the zone's crop filter (or no filter is set).
      * Action: leave it — global harvest handles ripe crops.
      */
     OCCUPIED,

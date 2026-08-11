@@ -6,6 +6,7 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TotemTargetAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.conversion.VillagerConversionUtil;
+import dev.breezes.settlements.shared.util.InputIcons;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
@@ -72,8 +73,10 @@ public class VillagerTotemItem extends Item {
         TotemMode mode = getMode(stack);
         tooltipComponents.add(Component.translatable(TOOLTIP_MODE_KEY,
                 Component.translatable(mode.getTranslationKey())).withStyle(ChatFormatting.GOLD));
-        tooltipComponents.add(Component.translatable(TOOLTIP_CYCLE_KEY).withStyle(ChatFormatting.GRAY));
-        tooltipComponents.add(Component.translatable(TOOLTIP_USE_KEY).withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.translatable(TOOLTIP_CYCLE_KEY, InputIcons.rightClick())
+                .withStyle(ChatFormatting.GRAY));
+        tooltipComponents.add(Component.translatable(TOOLTIP_USE_KEY, InputIcons.sneak(), InputIcons.rightClick())
+                .withStyle(ChatFormatting.GRAY));
         tooltipComponents.add(Component.translatable(TOOLTIP_ITEMS_LOST_KEY).withStyle(ChatFormatting.RED));
     }
 

@@ -121,11 +121,11 @@ import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.planning.OpportunityRequirement;
 import dev.breezes.settlements.domain.crafting.catalog.CraftCatalogRegistry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
+import dev.breezes.settlements.domain.farming.CultivationCropRegistry;
 import dev.breezes.settlements.domain.forge.catalog.ForgeCatalogRegistry;
 import dev.breezes.settlements.domain.smelting.catalog.BlastOreRecipeRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.data.animal.ButcherableAnimalDataManager;
-import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
@@ -739,12 +739,12 @@ public final class BehaviorCatalogModule {
     @IntoSet
     static BehaviorCatalogEntry cultivatePlot(CultivatePlotConfig config,
                                               BehaviorSupport support,
-                                              CultivationCropDataManager cropRegistry) {
+                                              CultivationCropRegistry cropRegistry) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.CULTIVATE_PLOT)
                         .displayName("Cultivate Plot")
-                        .description("Till soil and plant seeds in a Totem of Cultivation zone")
+                        .description("Till soil and plant seeds in a Cultivation zone")
                         .category(BehaviorCategory.WORK)
                         .intensity(WorkIntensity.LIGHT)
                         .requiredChannel(BehaviorChannel.MOVEMENT)
@@ -754,7 +754,7 @@ public final class BehaviorCatalogModule {
                         .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
                         .interruptible(true)
                         .opportunity(new OpportunityRequirement.KnownSiteOpportunity(
-                                Set.of(MemoryTypeRegistry.CULTIVATION_TOTEM_SITES)))
+                                Set.of(MemoryTypeRegistry.CULTIVATION_SITES)))
                         .build())
                 .displayInfo(BehaviorDisplayMetadata.builder()
                         .displayNameKey(BehaviorKey.CULTIVATE_PLOT.displayNameKey())

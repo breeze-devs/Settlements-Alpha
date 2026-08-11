@@ -2,7 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.blockentities;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.bootstrap.registry.blocks.BlockRegistry;
-import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationBlockEntity;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -14,10 +14,10 @@ public final class BlockEntityTypeRegistry {
     public static final DeferredRegister<BlockEntityType<?>> REGISTRY =
             DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, SettlementsMod.MOD_ID);
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TotemOfCultivationBlockEntity>> TOTEM_OF_CULTIVATION =
-            REGISTRY.register("totem_of_cultivation",
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CultivationLilyBlockEntity>> CULTIVATION_LILY =
+            REGISTRY.register("cultivation_lily",
                     () -> BlockEntityType.Builder
-                            .of(TotemOfCultivationBlockEntity::new, BlockRegistry.TOTEM_OF_CULTIVATION.get())
+                            .of(CultivationLilyBlockEntity::new, BlockRegistry.CULTIVATION_LILY.get())
                             .build(null));
 
     public static void register(IEventBus eventBus) {

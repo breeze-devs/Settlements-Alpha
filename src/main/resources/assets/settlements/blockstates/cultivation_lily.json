@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "settlements:block/cultivation_lily"
+    },
+    "lit=true": {
+      "model": "settlements:block/cultivation_lily"
+    }
+  }
+}

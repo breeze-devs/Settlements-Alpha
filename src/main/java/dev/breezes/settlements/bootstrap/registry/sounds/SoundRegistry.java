@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.sounds;
 
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.audio.IPlayable;
+import dev.breezes.settlements.infrastructure.audio.PitchedPlayable;
 import dev.breezes.settlements.infrastructure.audio.SoundEventPlayable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,6 +10,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 
 import javax.annotation.Nonnull;
+import java.util.Optional;
 
 @AllArgsConstructor
 @Getter
@@ -37,6 +39,10 @@ public enum SoundRegistry {
     CUCCO_CALL(SoundEventPlayable.ofLazy(SoundEventRegistry.CUCCO_CALL, 0.8f, 1.0f)),
     CUCCO_FALL(SoundEventPlayable.ofLazy(SoundEventRegistry.CUCCO_FALL, 0.5f, 1.0f)),
     WOLOLO(SoundEventPlayable.ofLazy(SoundEventRegistry.WOLOLO, 1.0f, 1.0f)),
+    CULTIVATION_LILY_RESIZE(SoundEventPlayable.of(SoundEvents.EXPERIENCE_ORB_PICKUP, 0.6f, 1.0f)),
+    CULTIVATION_LILY_FILTER_SET(SoundEventPlayable.of(SoundEvents.ITEM_FRAME_ADD_ITEM, 1.0f, 1.0f)),
+    CULTIVATION_LILY_FILTER_CLEARED(SoundEventPlayable.of(SoundEvents.ITEM_FRAME_REMOVE_ITEM, 1.0f, 1.0f)),
+    CULTIVATION_LILY_FILTER_ALREADY_CLEARED(SoundEventPlayable.of(SoundEvents.ITEM_FRAME_BREAK, 1.0f, 1.0f)),
     ;
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound
@@ -45,6 +51,16 @@ public enum SoundRegistry {
 
     public void playGlobally(@Nonnull Location location, @Nonnull SoundSource soundSource) {
         this.playable.playGlobally(location, soundSource);
+    }
+
+    /**
+     * The pitch-override capability for this constant, present only when its {@link IPlayable} is
+     * also a {@link PitchedPlayable}. Absence here is what keeps a constant that never opted into a
+     * pitch override from exposing one at all, rather than exposing it uniformly and failing only the
+     * constants that never opted in.
+     */
+    public Optional<PitchedPlayable> pitchedPlayable() {
+        return this.playable instanceof PitchedPlayable pitched ? Optional.of(pitched) : Optional.empty();
     }
 
     public void playPrivately() {

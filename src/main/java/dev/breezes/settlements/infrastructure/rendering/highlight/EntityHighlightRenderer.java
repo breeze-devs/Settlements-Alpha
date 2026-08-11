@@ -3,10 +3,9 @@ package dev.breezes.settlements.infrastructure.rendering.highlight;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.breezes.settlements.di.ClientScope;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
+import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
 import dev.breezes.settlements.shared.util.ArgbColorUtil;
 import jakarta.inject.Inject;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.OutlineBufferSource;
@@ -19,6 +18,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,7 +35,6 @@ import java.util.Set;
  */
 @ClientSide
 @ClientScope
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class EntityHighlightRenderer {
 
     /**
@@ -43,10 +42,20 @@ public final class EntityHighlightRenderer {
      */
     private static final int MAX_HIGHLIGHTED_ENTITIES = 12;
 
-    private final Set<EntityHighlightProvider> providers;
+    private static final Comparator<EntityHighlightProvider> PRECEDENCE = Comparator
+            .comparingInt(EntityHighlightProvider::priority)
+            .reversed()
+            .thenComparing(provider -> provider.getClass().getName());
+
+    private final List<EntityHighlightProvider> orderedProviders;
+
+    @Inject
+    EntityHighlightRenderer(Set<EntityHighlightProvider> providers) {
+        this.orderedProviders = orderedByPrecedence(providers);
+    }
 
     public void render(@Nonnull RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || providers.isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || orderedProviders.isEmpty()) {
             return;
         }
 
@@ -74,13 +83,22 @@ public final class EntityHighlightRenderer {
         event.getLevelRenderer().requestOutlineEffect();
     }
 
+    /**
+     * Providers run in priority order and claim an entity with {@code putIfAbsent}, so the highest-priority
+     * provider to contribute a given entity always wins.
+     */
     private Map<Entity, Integer> collectContributions(@Nonnull EntityHighlightFrame frame) {
         Map<Entity, Integer> contributions = new LinkedHashMap<>();
-        for (EntityHighlightProvider provider : providers) {
-            provider.contribute(contributions::put, frame);
+        for (EntityHighlightProvider provider : orderedProviders) {
+            provider.contribute(contributions::putIfAbsent, frame);
         }
 
         return contributions;
+    }
+
+    @VisibleForTesting
+    static List<EntityHighlightProvider> orderedByPrecedence(@Nonnull Collection<EntityHighlightProvider> providers) {
+        return providers.stream().sorted(PRECEDENCE).toList();
     }
 
     private List<Entity> selectEntitiesToRender(@Nonnull RenderLevelStageEvent event,

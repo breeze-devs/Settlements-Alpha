@@ -2,7 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.blocks;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.DormantOreBlock;
-import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationBlock;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyBlock;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -43,12 +43,12 @@ public final class BlockRegistry {
                     DormantOreBlock.Host.DEEPSLATE
             ));
 
-    public static final DeferredHolder<Block, TotemOfCultivationBlock> TOTEM_OF_CULTIVATION = REGISTRY.register("totem_of_cultivation",
-            () -> new TotemOfCultivationBlock(
+    public static final DeferredHolder<Block, CultivationLilyBlock> CULTIVATION_LILY = REGISTRY.register("cultivation_lily",
+            () -> new CultivationLilyBlock(
                     BlockBehaviour.Properties.of()
                             .mapColor(MapColor.PLANT)
                             .noOcclusion()
-                            .lightLevel(TotemOfCultivationBlock::lightEmission)
+                            .lightLevel(CultivationLilyBlock::lightEmission)
                             .instabreak()
                             .sound(SoundType.WET_GRASS)
                             .pushReaction(PushReaction.DESTROY)

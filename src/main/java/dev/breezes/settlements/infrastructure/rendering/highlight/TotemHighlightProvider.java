@@ -32,6 +32,8 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class TotemHighlightProvider implements EntityHighlightProvider, ClientSessionResettable {
 
+    private static final int PRIORITY = 0;
+
     private static final double SCAN_RADIUS_BLOCKS = 16.0;
     private static final double SCAN_RADIUS_BLOCKS_SQUARED = SCAN_RADIUS_BLOCKS * SCAN_RADIUS_BLOCKS;
 
@@ -44,6 +46,11 @@ public final class TotemHighlightProvider implements EntityHighlightProvider, Cl
     @Nullable
     private WeakReference<Level> scannedLevel;
     private long nextScanAtMillis = Long.MIN_VALUE;
+
+    @Override
+    public int priority() {
+        return PRIORITY;
+    }
 
     @Override
     public void contribute(@Nonnull EntityHighlightSink sink, @Nonnull EntityHighlightFrame frame) {

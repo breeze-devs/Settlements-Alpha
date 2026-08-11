@@ -313,7 +313,7 @@ frameworks** — the older doc's claim that the mod-native one is "dormant" is n
   [Add a New Block Resource](common_tasks.md#add-a-new-block-resource-villager-block-sensing)).
 - **Vanilla `Sensor<Villager>`** — registered as a `SensorType` in `SensorTypeRegistry` and listed in
   `BaseVillager.sensorTypes()` (a private static **method**, not a `SENSOR_TYPES` field), ticked by the vanilla brain.
-  Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationTotemSensor`, `WillingCourtshipPartnersSensor`,
+  Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationSiteSensor`, `WillingCourtshipPartnersSensor`,
   `SettlementsHurtBySensor`. Used for entity and block-entity senses.
 
 For the memory side (vanilla-backed vs. decaying spatial, and the fact that neither persists across a reload), see

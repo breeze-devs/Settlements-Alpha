@@ -32,7 +32,7 @@ class SnapshotAssemblerTest {
         // Arrange / Act / Assert
         assertEquals("RIPE_MELON", SnapshotAssembler.toWireToken("ripe_melon_sites"));
         assertEquals("ORE", SnapshotAssembler.toWireToken("ore_sites"));
-        assertEquals("CULTIVATION_TOTEM", SnapshotAssembler.toWireToken("cultivation_totem_sites"));
+        assertEquals("CULTIVATION", SnapshotAssembler.toWireToken("cultivation_sites"));
     }
 
     @Test

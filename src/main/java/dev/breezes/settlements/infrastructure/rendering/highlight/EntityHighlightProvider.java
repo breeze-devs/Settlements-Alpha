@@ -11,6 +11,12 @@ import javax.annotation.Nonnull;
 @ClientSide
 public interface EntityHighlightProvider {
 
+    /**
+     * Cross-provider precedence when two providers highlight the same entity with different colors. Larger
+     * values win.
+     */
+    int priority();
+
     void contribute(@Nonnull EntityHighlightSink sink, @Nonnull EntityHighlightFrame frame);
 
 }

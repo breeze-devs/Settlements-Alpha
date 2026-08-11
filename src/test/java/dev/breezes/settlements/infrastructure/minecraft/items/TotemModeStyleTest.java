@@ -51,30 +51,20 @@ class TotemModeStyleTest {
     }
 
     @Test
-    void displayColors_matchRawHueChannels_forEveryMode() {
-        // Arrange, Act & Assert: the mode's own hue is the single authority for its color, so no display
-        // surface may deviate from it. A per-mode adjustment reintroduced here — a legibility tweak applied
+    void restingOutline_matchesRawHueChannels_forEveryMode() {
+        // Arrange, Act & Assert: the mode's own hue is the single authority for its color, so no surface that
+        // draws it may deviate from it. A per-mode adjustment reintroduced here — a legibility tweak applied
         // at the surface rather than to the hue — would put one mode's outline and its particles on colors
         // that no longer match, which is the drift this pins down. Legibility is answered by retuning the
         // hue itself, where every surface picks the change up at once.
         for (TotemMode mode : TotemMode.values()) {
             Vector3f rawHue = mode.hue();
             int rawPacked = ArgbColorUtil.pack(rawHue.x(), rawHue.y(), rawHue.z(), 1.0F);
+            int displayed = TotemModeStyle.restingOutlineColor(mode);
 
-            for (int displayed : new int[]{TotemModeStyle.restingOutlineColor(mode), TotemModeStyle.hudAccentColor(mode)}) {
-                assertEquals(ArgbColorUtil.red(rawPacked), ArgbColorUtil.red(displayed), mode + " red channel");
-                assertEquals(ArgbColorUtil.green(rawPacked), ArgbColorUtil.green(displayed), mode + " green channel");
-                assertEquals(ArgbColorUtil.blue(rawPacked), ArgbColorUtil.blue(displayed), mode + " blue channel");
-            }
-        }
-    }
-
-    @Test
-    void hudAccent_isFullyOpaque_forEveryMode() {
-        // Arrange, Act & Assert: unlike the outline colors, the HUD accent is flat 2D text color that never
-        // passes through the outline shaders — a stray alpha tunable here would make HUD text see-through.
-        for (TotemMode mode : TotemMode.values()) {
-            assertEquals(255, ArgbColorUtil.alpha(TotemModeStyle.hudAccentColor(mode)), mode + " HUD accent alpha");
+            assertEquals(ArgbColorUtil.red(rawPacked), ArgbColorUtil.red(displayed), mode + " red channel");
+            assertEquals(ArgbColorUtil.green(rawPacked), ArgbColorUtil.green(displayed), mode + " green channel");
+            assertEquals(ArgbColorUtil.blue(rawPacked), ArgbColorUtil.blue(displayed), mode + " blue channel");
         }
     }
 

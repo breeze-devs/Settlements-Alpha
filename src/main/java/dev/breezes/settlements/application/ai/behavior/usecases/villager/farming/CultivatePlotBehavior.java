@@ -33,15 +33,17 @@ import dev.breezes.settlements.domain.farming.CultivationCellResult;
 import dev.breezes.settlements.domain.farming.CultivationCropDefinition;
 import dev.breezes.settlements.domain.farming.CultivationCropRegistry;
 import dev.breezes.settlements.domain.farming.CultivationZoneCategorizer;
-import dev.breezes.settlements.domain.tags.SettlementsBlockTags;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
 import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
+import dev.breezes.settlements.domain.world.blocks.BlockStateView;
+import dev.breezes.settlements.domain.world.blocks.LevelBlockStateView;
+import dev.breezes.settlements.domain.world.blocks.LiveBlockSiteMatcher;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
-import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.CultivationTotemSiteMatchers;
-import dev.breezes.settlements.infrastructure.minecraft.blocks.totem.TotemOfCultivationBlockEntity;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyBlockEntity;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationSiteMatchers;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
@@ -88,7 +90,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
     private final int maxConfirms;
 
     @Nullable
-    private BlockPos selectedTotemPos;
+    private BlockPos selectedLilyPos;
     @Nullable
     private BlockPos currentCellPos;
     private final Deque<CultivationCellResult> pendingCells = new ArrayDeque<>();
@@ -111,12 +113,12 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                 .toList();
 
         this.preconditions.add(KnownBlockSitesPrecondition.builder()
-                .memoryType(MemoryTypeRegistry.CULTIVATION_TOTEM_SITES)
-                .matcher(CultivationTotemSiteMatchers.NEEDS_WORK)
+                .memoryType(MemoryTypeRegistry.CULTIVATION_SITES)
+                .matcher(CultivationSiteMatchers.NEEDS_WORK)
                 .confirmBox(this.confirmBox)
                 .maxSitesToConfirm(this.maxConfirms)
                 .completionRange(1)
-                .description("Known cultivation totem sites needing work")
+                .description("Known cultivation lily sites needing work")
                 .build());
         this.preconditions.add(support.getDemandSignalService().requireItem(new ItemMatch.ItemRef(IRON_HOE_ID), 1, 50,
                 this.getClass().getSimpleName()));
@@ -174,36 +176,37 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
         return OneShotStep.<BaseVillager>builder()
                 .name("PickNextCultivationCell")
                 .action(ctx -> {
-                    if (this.selectedTotemPos == null) {
-                        log.behaviorStatus("No totem selected, ending behavior");
+                    if (this.selectedLilyPos == null) {
+                        log.behaviorStatus("No lily selected, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 
                     BaseVillager villager = ctx.getInitiator();
                     Level level = villager.level();
+                    BlockStateView view = new LevelBlockStateView(level);
 
                     // Refill the queue on first call or when it's drained
                     if (this.pendingCells.isEmpty()) {
-                        BlockEntity be = level.getBlockEntity(this.selectedTotemPos);
-                        if (!(be instanceof TotemOfCultivationBlockEntity totem) || !totem.isValid()) {
-                            log.behaviorStatus("Totem at {} is no longer valid", this.selectedTotemPos);
+                        BlockEntity be = level.getBlockEntity(this.selectedLilyPos);
+                        if (!(be instanceof CultivationLilyBlockEntity lily) || !lily.isValid()) {
+                            log.behaviorStatus("Lily at {} is no longer valid", this.selectedLilyPos);
                             return StepResult.transition(Stage.AWARD);
                         }
 
                         List<CultivationCellResult> cells = CultivationZoneCategorizer.categorize(
-                                totem.streamZoneCells(this.selectedTotemPos), level, totem.getCropFilter());
+                                lily.getZone().streamCells(), view, lily.getCropFilter());
                         cells.stream()
                                 .filter(r -> CultivationZoneCategorizer.isActionable(r.category()))
                                 .forEach(this.pendingCells::add);
 
                         if (this.pendingCells.isEmpty()) {
-                            log.behaviorStatus("Totem zone has no actionable cells, ending behavior");
+                            log.behaviorStatus("Lily zone has no actionable cells, ending behavior");
                             return StepResult.transition(Stage.AWARD);
                         }
                     }
 
-                    BlockEntity blockEntity = level.getBlockEntity(this.selectedTotemPos);
-                    if (!(blockEntity instanceof TotemOfCultivationBlockEntity totem)) {
+                    BlockEntity blockEntity = level.getBlockEntity(this.selectedLilyPos);
+                    if (!(blockEntity instanceof CultivationLilyBlockEntity lily)) {
                         return StepResult.transition(Stage.AWARD);
                     }
 
@@ -213,7 +216,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
 
                         // Live re-verify the cell hasn't changed since we built the queue
                         CultivationCellCategory liveCategory = CultivationZoneCategorizer.categorizeCell(
-                                level, candidate.cellPos(), totem.getCropFilter());
+                                view, candidate.cellPos(), lily.getCropFilter());
                         if (!CultivationZoneCategorizer.isActionable(liveCategory)) {
                             continue;
                         }
@@ -222,7 +225,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                         // NEEDS_REPLANT path: under a filter it resolves to the filter crop only when
                         // the villager carries that seed (or bypass is on), so a scythe is never
                         // started without the means to replant.
-                        if (resolveCropToPlant(villager, totem).isEmpty()) {
+                        if (resolveCropToPlant(villager, lily).isEmpty()) {
                             log.behaviorStatus("Villager has no matching seeds, ending behavior");
                             return StepResult.transition(Stage.AWARD);
                         }
@@ -263,7 +266,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                     return StepResult.noOp();
                 })
                 .addKeyFrame(ClockTicks.of(TillAnimations.TILL_IMPACT_TICK), ctx -> {
-                    if (this.currentCellPos == null || this.selectedTotemPos == null) {
+                    if (this.currentCellPos == null || this.selectedLilyPos == null) {
                         return StepResult.noOp();
                     }
                     BaseVillager villager = ctx.getInitiator();
@@ -271,13 +274,30 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                     if (!(level instanceof ServerLevel)) {
                         return StepResult.noOp();
                     }
-                    BlockEntity be = level.getBlockEntity(this.selectedTotemPos);
-                    if (!(be instanceof TotemOfCultivationBlockEntity totem)) {
+                    BlockEntity be = level.getBlockEntity(this.selectedLilyPos);
+                    if (!(be instanceof CultivationLilyBlockEntity lily)) {
                         return StepResult.noOp();
                     }
 
                     BlockPos cellPos = this.currentCellPos;
                     BlockPos canopyPos = cellPos.above();
+
+                    // Re-check tilling condition
+                    BlockStateView view = new LevelBlockStateView(level);
+                    CultivationCellCategory liveCategory = CultivationZoneCategorizer.categorizeCell(
+                            view, cellPos, lily.getCropFilter());
+                    if (!CultivationZoneCategorizer.isActionable(liveCategory)) {
+                        return StepResult.noOp();
+                    }
+                    Optional<CultivationCropDefinition> cropDef = resolveCropToPlant(villager, lily);
+                    if (cropDef.isEmpty()) {
+                        return StepResult.noOp();
+                    }
+                    CultivationCropDefinition def = cropDef.get();
+                    Block cropBlock = BuiltInRegistries.BLOCK.get(def.cropBlock());
+                    if (!(cropBlock instanceof CropBlock crop)) {
+                        return StepResult.noOp();
+                    }
 
                     Location tillLocation = Location.of(cellPos, level).center(true).add(0, 0.5, 0, true);
                     tillLocation.playSound(SoundEvents.HOE_TILL, 0.8f, 1.0f, SoundSource.BLOCKS);
@@ -289,30 +309,13 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                         level.destroyBlock(canopyPos, true);
                     }
 
-                    // The crop can only take root on farmland; convert tillable ground, but bail if it is
-                    // neither farmland nor tillable (the world changed under us since the cell was picked)
-                    BlockState ground = level.getBlockState(cellPos);
-                    boolean farmland = ground.is(Blocks.FARMLAND);
-                    if (!farmland && ground.is(SettlementsBlockTags.TILLABLE)) {
+                    if (liveCategory == CultivationCellCategory.NEEDS_TILL) {
+                        BlockState ground = level.getBlockState(cellPos);
                         ParticleRegistry.harvestBlock(tillLocation, ground);
                         level.setBlockAndUpdate(cellPos, Blocks.FARMLAND.defaultBlockState());
                         ctx.primaryDeed().ifPresent(outcome -> outcome.recordDeedDetail("tilled"));
-                        farmland = true;
-                    }
-                    if (!farmland) {
-                        return StepResult.noOp();
                     }
 
-                    // Seed the resolved crop on the fresh farmland, consuming a seed (bypass-aware)
-                    Optional<CultivationCropDefinition> cropDef = resolveCropToPlant(villager, totem);
-                    if (cropDef.isEmpty()) {
-                        return StepResult.noOp();
-                    }
-                    CultivationCropDefinition def = cropDef.get();
-                    Block cropBlock = BuiltInRegistries.BLOCK.get(def.cropBlock());
-                    if (!(cropBlock instanceof CropBlock crop)) {
-                        return StepResult.noOp();
-                    }
                     Item seedItem = BuiltInRegistries.ITEM.get(def.seedItem());
                     boolean consumed = villager.getSettlementsInventory().consumeIfRequired(
                             seedItem, 1, GeneralConfig.bypassInventoryRequirements);
@@ -340,25 +343,34 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
         context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.FARMLAND_CULTIVATED, "farmland blocks"));
         context.setState(BehaviorStateType.VISITED_BLOCK_SITES, VisitedBlockSitesState.empty());
 
-        // Resolve which totem to work on before the state machine starts
-        boolean resolved = this.targetResolver.resolveBlockTarget(context,
-                MemoryTypeRegistry.CULTIVATION_TOTEM_SITES,
-                CultivationTotemSiteMatchers.NEEDS_WORK,
-                this.confirmBox,
-                this.maxConfirms,
-                1);
+        // Resolve which lily to work on before the state machine starts
+        boolean resolved = this.targetResolver.resolveBlockTarget(context, MemoryTypeRegistry.CULTIVATION_SITES,
+                this.servableSiteMatcher(villager), this.confirmBox, this.maxConfirms, 1);
         if (!resolved) {
-            this.requestStop("No valid totem needing cultivation found at behavior start");
+            this.requestStop("No valid plot needing cultivation found at behavior start");
             return;
         }
 
-        Optional<BlockPos> totemPos = TargetQueries.firstBlockPos(context);
-        if (totemPos.isEmpty()) {
-            this.requestStop("Could not read totem position from target state");
+        Optional<BlockPos> lilyPos = TargetQueries.firstBlockPos(context);
+        if (lilyPos.isEmpty()) {
+            this.requestStop("Could not read lily position from target state");
             return;
         }
 
-        this.selectedTotemPos = totemPos.get();
+        this.selectedLilyPos = lilyPos.get();
+    }
+
+    /**
+     * Only match when both needs work and this villager can supply what that work requires.
+     */
+    private LiveBlockSiteMatcher servableSiteMatcher(@Nonnull BaseVillager villager) {
+        return (pos, level) -> {
+            if (!CultivationSiteMatchers.NEEDS_WORK.matches(pos, level)) {
+                return false;
+            }
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            return blockEntity instanceof CultivationLilyBlockEntity lily && resolveCropToPlant(villager, lily).isPresent();
+        };
     }
 
     @Override
@@ -367,13 +379,13 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
 
-        this.selectedTotemPos = null;
+        this.selectedLilyPos = null;
         this.currentCellPos = null;
         this.pendingCells.clear();
     }
 
     /**
-     * Resolves which crop the villager should plant on the given totem, or empty if it cannot plant.
+     * Resolves which crop the villager should plant on the given lily, or empty if it cannot plant.
      * <p>
      * Filter set: the filter crop, gated on the villager carrying that seed (bypass lifts the gate).
      * No filter: the first registered seed the villager carries; under bypass there is no carried
@@ -381,9 +393,9 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
      * The returned definition supplies both the crop block to place and the seed item to consume.
      */
     private Optional<CultivationCropDefinition> resolveCropToPlant(@Nonnull BaseVillager villager,
-                                                                   @Nonnull TotemOfCultivationBlockEntity totem) {
+                                                                   @Nonnull CultivationLilyBlockEntity lily) {
         boolean bypass = GeneralConfig.bypassInventoryRequirements;
-        ResourceLocation filterCrop = totem.getCropFilter();
+        ResourceLocation filterCrop = lily.getCropFilter();
 
         if (filterCrop != null) {
             Optional<CultivationCropDefinition> def = this.cropRegistry.resolveByCropBlock(filterCrop);

@@ -7,6 +7,7 @@ import dev.breezes.settlements.di.modules.ConfigModule;
 import dev.breezes.settlements.di.modules.CraftingModule;
 import dev.breezes.settlements.di.modules.DataManagerModule;
 import dev.breezes.settlements.di.modules.EconomyModule;
+import dev.breezes.settlements.di.modules.FarmingModule;
 import dev.breezes.settlements.di.modules.ReloadListenerModule;
 import dev.breezes.settlements.di.modules.SmeltingModule;
 import dev.breezes.settlements.di.modules.WorldGenerationModule;
@@ -30,6 +31,7 @@ import java.util.Set;
         BehaviorServicesModule.class,
         EconomyModule.class,
         CraftingModule.class,
+        FarmingModule.class,
         SmeltingModule.class,
         WorldGenerationModule.class,
         ReloadListenerModule.class,

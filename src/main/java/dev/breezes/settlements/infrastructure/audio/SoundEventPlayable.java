@@ -10,7 +10,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Supplier;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class SoundEventPlayable implements IPlayable {
+public class SoundEventPlayable implements PitchedPlayable {
 
     // Stored as a supplier so deferred-registered SoundEvents can be resolved at play time
     // rather than at enum/class-initialization time, safely clearing the registry lifecycle race.
@@ -38,6 +38,11 @@ public class SoundEventPlayable implements IPlayable {
     @Override
     public void playGlobally(@Nonnull Location location, @Nonnull SoundSource soundSource) {
         location.playSound(this.soundSupplier.get(), this.volume, this.pitch, soundSource);
+    }
+
+    @Override
+    public void playGlobally(@Nonnull Location location, @Nonnull SoundSource soundSource, float pitchOverride) {
+        location.playSound(this.soundSupplier.get(), this.volume, pitchOverride, soundSource);
     }
 
 }

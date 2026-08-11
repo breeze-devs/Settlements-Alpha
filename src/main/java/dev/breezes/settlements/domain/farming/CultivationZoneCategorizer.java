@@ -1,13 +1,13 @@
 package dev.breezes.settlements.domain.farming;
 
 import dev.breezes.settlements.domain.tags.SettlementsBlockTags;
+import dev.breezes.settlements.domain.world.blocks.BlockStateView;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.CustomLog;
+import lombok.NoArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -18,17 +18,18 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Inventory-agnostic categorizer for totem zone cells.
+ * Inventory-agnostic categorizer for cultivation zone cells.
  * <p>
  * Shared between the BE's coarse {@code needsCultivation} flag and the behavior's live per-cell
  * scan so the categorization rule lives in exactly one place. "Inventory-agnostic" means this
  * class never checks whether a villager has seeds — the behavior enforces that separately and bails
  * per-cell when seeds are absent.
  * <p>
- * Geometry contract (from brief §3): {@code cellPos} is the ground block; {@code cellPos.above()}
- * is the canopy block where foliage and crops live.
+ * Geometry contract: {@code cellPos} is the ground block; {@code cellPos.above()} is the canopy block
+ * where foliage and crops live. Every cell position this class is given is a ground position, so a
+ * caller that hands it a canopy position reads the block above the canopy as the canopy.
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @CustomLog
 public final class CultivationZoneCategorizer {
 
@@ -39,15 +40,15 @@ public final class CultivationZoneCategorizer {
      * needed. Pass {@code null} to mean "no filter" (any existing crop is acceptable).
      *
      * @param cellStream   the zone cell positions to evaluate (ground plane)
-     * @param level        the server-side world
-     * @param cropFilterId the totem's configured crop block id, or {@code null} if no filter is set
+     * @param view         state-only view of the cells and their canopy
+     * @param cropFilterId the zone's configured crop block id, or {@code null} if no filter is set
      * @return one {@link CultivationCellResult} per cell position, in stream order
      */
     public static List<CultivationCellResult> categorize(@Nonnull Stream<BlockPos> cellStream,
-                                                         @Nonnull Level level,
+                                                         @Nonnull BlockStateView view,
                                                          @Nullable ResourceLocation cropFilterId) {
         return cellStream
-                .map(cellPos -> new CultivationCellResult(cellPos, categorizeCell(level, cellPos, cropFilterId)))
+                .map(cellPos -> new CultivationCellResult(cellPos, categorizeCell(view, cellPos, cropFilterId)))
                 .toList();
     }
 
@@ -60,19 +61,21 @@ public final class CultivationZoneCategorizer {
      * the full result list.
      */
     public static boolean hasAnyCultivationWork(@Nonnull Stream<BlockPos> cellStream,
-                                                @Nonnull Level level,
+                                                @Nonnull BlockStateView view,
                                                 @Nullable ResourceLocation cropFilterId) {
-        return cellStream.anyMatch(cellPos -> isActionable(categorizeCell(level, cellPos, cropFilterId)));
+        return cellStream.anyMatch(cellPos -> isActionable(categorizeCell(view, cellPos, cropFilterId)));
     }
 
     /**
      * Categorizes a single cell at {@code cellPos} (ground) and {@code cellPos.above()} (canopy).
+     * State-only by design ({@link BlockStateView}, not a live {@code Level}) so this runs
+     * identically on either logical side.
      */
-    public static CultivationCellCategory categorizeCell(@Nonnull Level level,
+    public static CultivationCellCategory categorizeCell(@Nonnull BlockStateView view,
                                                          @Nonnull BlockPos cellPos,
                                                          @Nullable ResourceLocation cropFilterId) {
-        BlockState ground = level.getBlockState(cellPos);
-        BlockState canopy = level.getBlockState(cellPos.above());
+        BlockState ground = view.getBlockState(cellPos);
+        BlockState canopy = view.getBlockState(cellPos.above());
 
         if (ground.is(SettlementsBlockTags.TILLABLE)) {
             return categorizeTillableGround(canopy);
@@ -137,6 +140,18 @@ public final class CultivationZoneCategorizer {
         return switch (category) {
             case NEEDS_TILL, NEEDS_PLANT, NEEDS_REPLANT -> true;
             case BLOCKED, OCCUPIED, SKIP -> false;
+        };
+    }
+
+    /**
+     * Returns true for categories that count toward "this zone is doing its job" — already
+     * cultivated (OCCUPIED) or capable of becoming so (NEEDS_TILL, NEEDS_PLANT, NEEDS_REPLANT).
+     * BLOCKED and SKIP do not count.
+     */
+    public static boolean counts(@Nonnull CultivationCellCategory category) {
+        return switch (category) {
+            case NEEDS_TILL, NEEDS_PLANT, NEEDS_REPLANT, OCCUPIED -> true;
+            case BLOCKED, SKIP -> false;
         };
     }
 

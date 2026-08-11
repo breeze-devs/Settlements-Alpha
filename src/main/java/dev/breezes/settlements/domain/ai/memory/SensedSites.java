@@ -12,7 +12,7 @@ import java.util.Map;
  * Immutable projection of a villager's spatial site memories at a single point in time.
  * <p>
  * Covers every memory whose payload is a {@code List<GlobalPos>} — the decaying block-resource
- * sites and the vanilla-backed cultivation totem sites alike — keyed off their shared
+ * sites and the vanilla-backed cultivation lily sites alike — keyed off their shared
  * {@link MemoryType} supertype so both kinds ride one snapshot.
  * <p>
  * Only types that had at least one live site at read-time appear as keys in the internal map;

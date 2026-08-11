@@ -240,7 +240,7 @@ scanned off-thread, indexed, capped, decayed, and written into every villager's 
 *act* on it, write a behavior that reads `RIPE_PUMPKIN_SITES` via `KnownBlockSitesPrecondition` +
 `BlockMemoryTargetResolver` (see [Add a New Behavior](#add-a-new-behavior)).
 
-> **Exception:** block **entities** (chests, cultivation totems) need NBT/block-entity access and cannot use the
+> **Exception:** block **entities** (chests, cultivation lilies) need NBT/block-entity access and cannot use the
 > section-palette scan — they use a bespoke sensor (below), not a `BlockResource`.
 
 ---
@@ -248,13 +248,13 @@ scanned off-thread, indexed, capped, decayed, and written into every villager's 
 ## Add a Custom Sensor (entity & block-entity senses)
 
 Reach for a bespoke sensor only when the sense is **not** a `BlockState` scan — i.e. entity senses (nearby pets,
-courtship partners, hurt-by) or block-entity senses (chests, cultivation totems). For harvestable blocks, add a Block
+courtship partners, hurt-by) or block-entity senses (chests, cultivation lilies). For harvestable blocks, add a Block
 Resource (above) instead.
 
 Two sensor bases exist in the codebase:
 
 - **Vanilla `Sensor<Villager>`** — registered as a `SensorType` and added to `BaseVillager.sensorTypes()`; ticked by the
-  vanilla brain. Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationTotemSensor`,
+  vanilla brain. Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationSiteSensor`,
   `WillingCourtshipPartnersSensor`. This is the usual path for a new entity/BE sense — the steps below cover it.
 - **Mod-native `AbstractSensor<BaseVillager>`** — bound as a `VillagerSensorFactory` `@IntoSet` in `SensorCatalogModule`
   (cooldown-driven, off the vanilla sensor tick). Examples: `EntityPerceptionSensor`, `EntitySightingEmitterSensor`, and
@@ -318,11 +318,17 @@ codec-serialized attachment or `SettlementSavedData`, deliberately *outside* the
 | Persists reload? | **No** — all mod modules registered `new MemoryModuleType<>(Optional.empty())`, no codec, so the brain serializer skips them. (Vanilla's own `HOME`/`JOB_SITE`/etc. persist because vanilla gave *them* codecs.) | **No** — attachment built without `.serialize(...)`; store is documented "Transient: not serialized". |
 | Decay | none (uncapped) | per-entry TTL + stalest-first eviction at `maxEntries` |
 | Written via | `IBrain.setMemory` | `IBrain.updateSites` (site upsert + confirmed-absence purge); a direct `setMemory` **throws** |
-| Use for | flags/entities/lists the vanilla brain machinery reads, or sensor-written lists that don't need decay (`VILLAGE_CHESTS`, `CULTIVATION_TOTEM_SITES`) | high-cardinality block-resource sites that should self-expire and stay bounded |
+| Use for | flags/entities/lists the vanilla brain machinery reads, or sensor-written lists that don't need decay (`VILLAGE_CHESTS`, `CULTIVATION_SITES`) | high-cardinality block-resource sites that should self-expire and stay bounded |
 
 Both are declared in `MemoryTypeRegistry` via the `vanillaBacked(...)` / `decaying(...)` factories. Practical
 consequence: right after a restart a villager has **no** Settlements memories (no remembered crop/ore sites, no
 `PLAN_BEHAVIOR_ACTIVE`); the next sensor scan cycle reconstructs them.
+
+> **A `List<GlobalPos>` site memory's identifier is a cross-repo wire contract.** `SnapshotAssembler` derives the SIS
+> monologue token from it (`_sites` stripped, uppercased), and the SIS phrasing table is keyed on the result. SIS does
+> not reject a token it does not recognize — it falls back to generic phrasing, so a rename that lands on only one side
+> produces vaguer villager narration and no error anywhere. Adding or renaming one of these identifiers means changing
+> the SIS phrasing table in the same window.
 
 ---
 

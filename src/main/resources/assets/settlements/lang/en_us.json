@@ -7,21 +7,29 @@
   "item.settlements.villager_totem.mode.settlements": "Settlements",
   "item.settlements.villager_totem.mode.stasis": "Stasis",
   "item.settlements.villager_totem.tooltip.mode": "Convert villager to: %s",
-  "item.settlements.villager_totem.tooltip.cycle": "Right Click to cycle mode",
-  "item.settlements.villager_totem.tooltip.use": "Sneak + Right Click on a villager to convert",
+  "item.settlements.villager_totem.tooltip.cycle": "%1$s to cycle mode",
+  "item.settlements.villager_totem.tooltip.use": "%1$s%2$s on a villager to convert",
   "item.settlements.villager_totem.tooltip.items_lost": "Warning: conversion destroys all villager inventory items",
   "item.settlements.villager_totem.already_target_type": "That villager is already that type",
 
+  "item.settlements.cultivation_lily.tooltip.place": "Place on water source to mark a cultivation zone for villagers",
+
   "ui.settlements.totem_hud.mode": "Mode: %s",
-  "ui.settlements.totem_hud.cycle": "Right Click to cycle",
+  "ui.settlements.totem_hud.cycle": "%1$s to cycle",
   "ui.settlements.totem_hud.already": "Already %s",
   "ui.settlements.totem_hud.convert_to": "Convert to %s",
-  "ui.settlements.totem_hud.gesture": "Sneak + Hold Right Click",
+  "ui.settlements.totem_hud.gesture": "%1$s + hold %2$s",
   "ui.settlements.totem_hud.items_lost": "Destroys their inventory",
+
+  "ui.settlements.lily_hud.zone": "Cultivation Zone",
+  "ui.settlements.lily_hud.zone_filtered": "Cultivation Zone (%s)",
+  "ui.settlements.lily_hud.filter_change_gesture": "%1$s empty-handed to clear filter",
+  "ui.settlements.lily_hud.filter_set_gesture": "%1$s with seed to filter crop",
+  "ui.settlements.lily_hud.resize_gesture": "%1$s%2$s empty-handed to resize",
 
   "block.settlements.dormant_ore": "Dormant Ore",
   "block.settlements.dormant_deepslate_ore": "Dormant Deepslate Ore",
-  "block.settlements.totem_of_cultivation": "Totem of Cultivation",
+  "block.settlements.cultivation_lily": "Cultivation Lily",
 
   "creative_tab.settlements": "Settlements",
 
@@ -325,9 +333,6 @@
   "subtitles.settlements.wololo": "A shepherd chants mysteriously",
 
   "action.settlements.chest.waxed": "Chest waxed, villagers will ignore it",
-  "action.settlements.chest.unwaxed": "Chest unwaxed, villagers may use it again",
-  "action.settlements.totem_of_cultivation.resized": "Cultivation zone: %s × %s",
-  "action.settlements.totem_of_cultivation.filter_set": "Cultivation filter set: %s",
-  "action.settlements.totem_of_cultivation.filter_cleared": "Cultivation filter cleared"
+  "action.settlements.chest.unwaxed": "Chest unwaxed, villagers may use it again"
 
 }

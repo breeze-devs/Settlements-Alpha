@@ -39,6 +39,7 @@ public final class ServerLifecycleEvents {
         NeoForge.EVENT_BUS.register(serverComponent.villagerZombificationServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.villageAnimalSpawnerServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.worldgenVillagerReplacementServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.cultivationSeedSyncServerEvents());
 
         // SIS/cognition graph: construct + register only when the kill-switch is on
         if (inferenceGate.isEnabled()) {
@@ -78,6 +79,7 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.villagerZombificationServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.villageAnimalSpawnerServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.worldgenVillagerReplacementServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.cultivationSeedSyncServerEvents());
 
             if (inferenceEnabled) {
                 NeoForge.EVENT_BUS.unregister(serverComponent.worldEventBusReaperServerEvents());

@@ -7,6 +7,8 @@ import dagger.multibindings.IntoMap;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.debug.handler.ClientBoundSettlementDebugPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
+import dev.breezes.settlements.infrastructure.network.features.farming.handler.ClientBoundCultivationSeedSetPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.farming.packet.ClientBoundCultivationSeedSetPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.handler.ClientBoundBubbleSnapshotPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.handler.ClientBoundDayPlanSnapshotPacketHandler;
@@ -78,5 +80,10 @@ public abstract class ClientNetworkModule {
     @IntoMap
     @ClassKey(ClientBoundVillagerDemandSnapshotPacket.class)
     abstract ClientSidePacketHandler<?> demandSnapshot(ClientBoundVillagerDemandSnapshotPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundCultivationSeedSetPacket.class)
+    abstract ClientSidePacketHandler<?> cultivationSeedSet(ClientBoundCultivationSeedSetPacketHandler impl);
 
 }

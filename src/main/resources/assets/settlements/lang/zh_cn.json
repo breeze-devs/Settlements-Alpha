@@ -8,21 +8,29 @@
   "item.settlements.villager_totem.mode.settlements": "万家烟火",
   "item.settlements.villager_totem.mode.stasis": "休眠（无AI）",
   "item.settlements.villager_totem.tooltip.mode": "将村民类型转换为：%s",
-  "item.settlements.villager_totem.tooltip.cycle": "右键切换模式",
-  "item.settlements.villager_totem.tooltip.use": "蹲下并长按右键村民进行转换",
+  "item.settlements.villager_totem.tooltip.cycle": "%1$s 切换模式",
+  "item.settlements.villager_totem.tooltip.use": "长按 %1$s%2$s 村民进行转换",
   "item.settlements.villager_totem.tooltip.items_lost": "转换时，村民的模组专属特性、记忆及背包将被全部抹除",
   "item.settlements.villager_totem.already_target_type": "这个村民已经是这种类型了",
 
+  "item.settlements.cultivation_lily.tooltip.place": "可放置于水面上，指定村民的耕作区域",
+
   "ui.settlements.totem_hud.mode": "模式：%s",
-  "ui.settlements.totem_hud.cycle": "右键切换模式",
+  "ui.settlements.totem_hud.cycle": "%1$s 切换模式",
   "ui.settlements.totem_hud.already": "已经是%s了",
   "ui.settlements.totem_hud.convert_to": "转换为%s",
-  "ui.settlements.totem_hud.gesture": "蹲下并长按右键",
+  "ui.settlements.totem_hud.gesture": "%1$s + 长按 %2$s",
   "ui.settlements.totem_hud.items_lost": "将抹除其全部背包物品",
+
+  "ui.settlements.lily_hud.zone": "耕作区域",
+  "ui.settlements.lily_hud.zone_filtered": "耕作区域（%s）",
+  "ui.settlements.lily_hud.filter_change_gesture": "空手 %1$s 清除筛选",
+  "ui.settlements.lily_hud.filter_set_gesture": "手持种子 %1$s 限定作物",
+  "ui.settlements.lily_hud.resize_gesture": "%1$s%2$s 空手调整大小",
 
   "block.settlements.dormant_ore": "待生长的矿石",
   "block.settlements.dormant_deepslate_ore": "待生长的深板岩矿石",
-  "block.settlements.totem_of_cultivation": "耕作图腾",
+  "block.settlements.cultivation_lily": "耕作睡莲",
 
   "creative_tab.settlements": "万家烟火",
 
@@ -324,8 +332,5 @@
   "subtitles.settlements.cucco_fall": "鸡不祥地坠落",
 
   "action.settlements.chest.waxed": "箱子已涂蜡，村民不会使用它",
-  "action.settlements.chest.unwaxed": "箱子已除蜡，村民可以使用它",
-  "action.settlements.totem_of_cultivation.resized": "耕作区域： %s×%s",
-  "action.settlements.totem_of_cultivation.filter_set": "作物筛选设置为：%s",
-  "action.settlements.totem_of_cultivation.filter_cleared": "作物筛选已清除"
+  "action.settlements.chest.unwaxed": "箱子已除蜡，村民可以使用它"
 }

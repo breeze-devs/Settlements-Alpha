@@ -23,7 +23,7 @@ public final class CreativeTabRegistry {
                 output.accept(ItemRegistry.VILLAGER_TOTEM.get());
                 output.accept(ItemRegistry.DORMANT_ORE.get());
                 output.accept(ItemRegistry.DORMANT_DEEPSLATE_ORE.get());
-                output.accept(ItemRegistry.TOTEM_OF_CULTIVATION.get());
+                output.accept(ItemRegistry.CULTIVATION_LILY.get());
             }))
             .build());
 

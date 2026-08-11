@@ -65,8 +65,8 @@ public final class SnapshotAssembler {
 
     /**
      * Translates a memory identifier into the SIS wire token: strip the {@code _sites} suffix and
-     * uppercase (e.g. {@code ripe_melon_sites → RIPE_MELON}, {@code cultivation_totem_sites →
-     * CULTIVATION_TOTEM}).
+     * uppercase (e.g. {@code ripe_melon_sites → RIPE_MELON}, {@code cultivation_sites →
+     * CULTIVATION}).
      * <p>
      * This bridges two independently-chosen vocabularies: the mod stores lower-case, suffixed
      * identifiers, while SIS's spatial phrasing table recognizes upper-case, suffix-less tokens.

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Outline and HUD colors for the villager totem, derived from {@link TotemMode#hue()}.
+ * Villager outline colors for the villager totem, derived from {@link TotemMode#hue()}.
  * <p>
  * Every color here is resolved at class-init, into a packed 0xAARRGGBB int: {@link TotemMode#hue()}
  * allocates a fresh {@link Vector3f} on every call, so resolving it once here means no caller ever pays that
@@ -32,21 +32,12 @@ public final class TotemModeStyle {
     private static final Map<TotemMode, Integer> MODE_COLORS = Arrays.stream(TotemMode.values())
             .collect(Collectors.toUnmodifiableMap(mode -> mode, TotemModeStyle::packHue));
 
-    /**
-     * Currently the same value {@link #hudAccentColor} returns. Kept as a separate call because the two are
-     * separate surfaces — one drawn against world pixels through the outline shaders, one flat 2D text — and
-     * collapsing the callers onto one accessor would make retuning either of them a breaking change.
-     */
     public static int restingOutlineColor(@Nonnull TotemMode mode) {
         return MODE_COLORS.get(mode);
     }
 
     public static int hoverOutlineColor() {
         return HOVER_OUTLINE_COLOR;
-    }
-
-    public static int hudAccentColor(@Nonnull TotemMode mode) {
-        return MODE_COLORS.get(mode);
     }
 
     private static int packHue(@Nonnull TotemMode mode) {

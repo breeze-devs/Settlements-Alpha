@@ -51,9 +51,9 @@ public final class MemoryTypeRegistry {
     public static final MemoryType.VanillaMemoryType<List<GlobalPos>> VILLAGE_CHESTS = MemoryType.vanillaBacked(
             "village_chests", MemoryModuleTypeRegistry.VILLAGE_CHESTS);
 
-    // CULTIVATION_TOTEM_SITES is written by CultivationTotemSensor, not BlockResource, so it does not need a site cap.
-    public static final MemoryType.VanillaMemoryType<List<GlobalPos>> CULTIVATION_TOTEM_SITES = MemoryType.vanillaBacked(
-            "cultivation_totem_sites", MemoryModuleTypeRegistry.CULTIVATION_TOTEM_SITES);
+    // CULTIVATION_SITES is written by CultivationSiteSensor, not BlockResource, so it does not need a site cap.
+    public static final MemoryType.VanillaMemoryType<List<GlobalPos>> CULTIVATION_SITES = MemoryType.vanillaBacked(
+            "cultivation_sites", MemoryModuleTypeRegistry.CULTIVATION_SITES);
 
     public static final MemoryType.DecayingSpatialMemoryType RIPE_MELON_SITES = MemoryType.decaying(
             "ripe_melon_sites", ClockTicks.minutes(40), 32);
@@ -121,14 +121,14 @@ public final class MemoryTypeRegistry {
 
     /**
      * All spatial site memories whose payload is a {@code List<GlobalPos>} — the decaying
-     * block-resource sites plus the vanilla-backed {@link #CULTIVATION_TOTEM_SITES}. Computed
+     * block-resource sites plus the vanilla-backed {@link #CULTIVATION_SITES}. Computed
      * once at class load since the membership is fixed; the per-villager sweep reads it hot.
      */
     private static final List<MemoryType<List<GlobalPos>>> SPATIAL_SITE_TYPES = buildSpatialSiteTypes();
 
     /**
      * All spatial site memories whose payload is a {@code List<GlobalPos>} — the decaying
-     * block-resource sites plus the vanilla-backed {@link #CULTIVATION_TOTEM_SITES}.
+     * block-resource sites plus the vanilla-backed {@link #CULTIVATION_SITES}.
      */
     public static List<MemoryType<List<GlobalPos>>> spatialSiteTypes() {
         return SPATIAL_SITE_TYPES;
@@ -136,7 +136,7 @@ public final class MemoryTypeRegistry {
 
     private static List<MemoryType<List<GlobalPos>>> buildSpatialSiteTypes() {
         List<MemoryType<List<GlobalPos>>> all = new ArrayList<>(decayingSpatialTypes());
-        all.add(CULTIVATION_TOTEM_SITES);
+        all.add(CULTIVATION_SITES);
         return List.copyOf(all);
     }
 

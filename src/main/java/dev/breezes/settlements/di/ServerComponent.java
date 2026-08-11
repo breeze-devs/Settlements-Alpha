@@ -26,6 +26,7 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.settlement.persistence.SettlementMetadataQueueService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.bootstrap.event.CourtshipSessionReaperServerEvents;
+import dev.breezes.settlements.bootstrap.event.CultivationSeedSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.GossipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.PersonaSweepServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlanOverlayPumpServerEvents;
@@ -191,6 +192,8 @@ public interface ServerComponent {
     VillageAnimalSpawnerServerEvents villageAnimalSpawnerServerEvents();
 
     WorldgenVillagerReplacementServerEvents worldgenVillagerReplacementServerEvents();
+
+    CultivationSeedSyncServerEvents cultivationSeedSyncServerEvents();
 
     Set<VillagerSensorFactory> villagerSensorFactories();
 

@@ -51,8 +51,8 @@ public final class MemoryModuleTypeRegistry {
             "nearby_sensed_entities",
             () -> new MemoryModuleType<>(Optional.empty()));
 
-    public static final Supplier<MemoryModuleType<List<GlobalPos>>> CULTIVATION_TOTEM_SITES = REGISTRY.register(
-            "cultivation_totem_sites",
+    public static final Supplier<MemoryModuleType<List<GlobalPos>>> CULTIVATION_SITES = REGISTRY.register(
+            "cultivation_sites",
             () -> new MemoryModuleType<>(Optional.empty()));
 
     public static final Supplier<MemoryModuleType<Boolean>> DEMANDED_GROUND_ITEM_NEARBY = REGISTRY.register(

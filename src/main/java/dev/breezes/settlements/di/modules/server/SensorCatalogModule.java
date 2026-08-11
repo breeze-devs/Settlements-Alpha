@@ -173,7 +173,7 @@ public abstract class SensorCatalogModule {
         return new BlockResource(BlockMatchers.ANVIL, MemoryTypeRegistry.ANVIL_SITES);
     }
 
-    // Cultivation totems are discovered by the dedicated CultivationTotemSensor (block-entity scan at a
+    // Cultivation lilies are discovered by the dedicated CultivationSiteSensor (block-entity scan at a
     // larger range), not the generic block-resource sensor — so there is no BlockResource entry here.
 
 }
