@@ -9,7 +9,7 @@
   "item.settlements.villager_totem.mode.stasis": "休眠（无AI）",
   "item.settlements.villager_totem.tooltip.mode": "将村民类型转换为：%s",
   "item.settlements.villager_totem.tooltip.cycle": "%1$s 切换模式",
-  "item.settlements.villager_totem.tooltip.use": "长按 %1$s%2$s 村民进行转换",
+  "item.settlements.villager_totem.tooltip.use": "%1$s + 长按 %2$s 对村民进行转换",
   "item.settlements.villager_totem.tooltip.items_lost": "转换时，村民的模组专属特性、记忆及背包将被全部抹除",
   "item.settlements.villager_totem.already_target_type": "这个村民已经是这种类型了",
 
@@ -20,7 +20,6 @@
   "ui.settlements.totem_hud.already": "已经是%s了",
   "ui.settlements.totem_hud.convert_to": "转换为%s",
   "ui.settlements.totem_hud.gesture": "%1$s + 长按 %2$s",
-  "ui.settlements.totem_hud.items_lost": "将抹除其全部背包物品",
 
   "ui.settlements.lily_hud.zone": "耕作区域",
   "ui.settlements.lily_hud.zone_filtered": "耕作区域（%s）",

@@ -6,7 +6,6 @@ import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyItem;
 import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.neoforged.bus.api.IEventBus;
@@ -29,12 +28,6 @@ public final class ItemRegistry {
 
     public static final DeferredHolder<Item, Item> VILLAGER_TOTEM = REGISTRY.register("villager_totem",
             () -> new VillagerTotemItem(new Item.Properties().stacksTo(1)));
-
-    public static final DeferredHolder<Item, BlockItem> DORMANT_ORE = REGISTRY.register("dormant_ore",
-            () -> new BlockItem(BlockRegistry.DORMANT_ORE.get(), new Item.Properties()));
-
-    public static final DeferredHolder<Item, BlockItem> DORMANT_DEEPSLATE_ORE = REGISTRY.register("dormant_deepslate_ore",
-            () -> new BlockItem(BlockRegistry.DORMANT_DEEPSLATE_ORE.get(), new Item.Properties()));
 
     public static final DeferredHolder<Item, CultivationLilyItem> CULTIVATION_LILY = REGISTRY.register("cultivation_lily",
             () -> new CultivationLilyItem(BlockRegistry.CULTIVATION_LILY.get(), new Item.Properties().stacksTo(16)));

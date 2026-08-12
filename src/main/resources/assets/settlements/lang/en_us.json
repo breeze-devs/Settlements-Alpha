@@ -8,9 +8,9 @@
   "item.settlements.villager_totem.mode.stasis": "Stasis",
   "item.settlements.villager_totem.tooltip.mode": "Convert villager to: %s",
   "item.settlements.villager_totem.tooltip.cycle": "%1$s to cycle mode",
-  "item.settlements.villager_totem.tooltip.use": "%1$s%2$s on a villager to convert",
+  "item.settlements.villager_totem.tooltip.use": "%1$s + hold %2$s on a villager to convert",
   "item.settlements.villager_totem.tooltip.items_lost": "Warning: conversion destroys all villager inventory items",
-  "item.settlements.villager_totem.already_target_type": "That villager is already that type",
+  "item.settlements.villager_totem.already_target_type": "The villager is already the target type",
 
   "item.settlements.cultivation_lily.tooltip.place": "Place on water source to mark a cultivation zone for villagers",
 
@@ -19,7 +19,6 @@
   "ui.settlements.totem_hud.already": "Already %s",
   "ui.settlements.totem_hud.convert_to": "Convert to %s",
   "ui.settlements.totem_hud.gesture": "%1$s + hold %2$s",
-  "ui.settlements.totem_hud.items_lost": "Destroys their inventory",
 
   "ui.settlements.lily_hud.zone": "Cultivation Zone",
   "ui.settlements.lily_hud.zone_filtered": "Cultivation Zone (%s)",

@@ -21,9 +21,9 @@ public record OreRegenConfig(
         @DoubleConfig(
                 type = ConfigurationType.FEATURE,
                 identifier = "regen_chance_per_random_tick",
-                description = "Probability that a dormant ore recharges on each random tick. At randomTickSpeed=3 (vanilla default) " +
-                        "and regenChancePerRandomTick=0.03, each recharge takes 37 mins on average",
-                defaultValue = 0.03,
+                description = "Probability that a dormant ore grows on each random tick. At randomTickSpeed=3 (vanilla default) " +
+                        "and regenChancePerRandomTick=0.06, each full recharge takes 37 mins on average",
+                defaultValue = 0.06,
                 min = 0.0,
                 max = 1.0)
         double regenChancePerRandomTick

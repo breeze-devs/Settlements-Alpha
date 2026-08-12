@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
-      "model": "settlements:block/dormant_deepslate_ore"
+    "stage=0": {
+      "model": "settlements:block/dormant_deepslate_ore_stage_0"
+    },
+    "stage=1": {
+      "model": "settlements:block/dormant_deepslate_ore_stage_1"
     }
   }
 }
