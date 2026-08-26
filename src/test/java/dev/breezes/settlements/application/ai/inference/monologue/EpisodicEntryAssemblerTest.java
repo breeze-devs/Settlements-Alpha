@@ -1,10 +1,10 @@
 package dev.breezes.settlements.application.ai.inference.monologue;
 
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
-import dev.breezes.settlements.application.ai.naming.VillagerNameResolver;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.PackedPos;
+import dev.breezes.settlements.domain.ai.naming.VillagerNameTable;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for {@link EpisodicEntryAssembler}.
  * <p>
- * Uses real {@link VillagerNameResolver} (pure, deterministic) and hand-built
+ * Uses a real {@link VillagerNameTable} (pure, deterministic) and hand-built
  * {@link KnowledgeEntry} objects. No Minecraft types are involved.
  */
 class EpisodicEntryAssemblerTest {
@@ -44,14 +44,14 @@ class EpisodicEntryAssemblerTest {
      */
     private static final int MAX_EPISODIC_ENTRIES = 24;
 
-    private VillagerNameResolver nameResolver;
+    private VillagerNameTable nameDirectory;
     private EpisodicEntryAssembler assembler;
     private VillagerKnowledgeStore store;
 
     @BeforeEach
     void setUp() {
-        this.nameResolver = new VillagerNameResolver();
-        this.assembler = new EpisodicEntryAssembler(this.nameResolver, inferenceConfigWithCap(MAX_EPISODIC_ENTRIES));
+        this.nameDirectory = new VillagerNameTable();
+        this.assembler = new EpisodicEntryAssembler(this.nameDirectory, inferenceConfigWithCap(MAX_EPISODIC_ENTRIES));
         this.store = new VillagerKnowledgeStore();
     }
 
@@ -177,7 +177,7 @@ class EpisodicEntryAssemblerTest {
     void assemble_bystander_actorFieldIsResolvedName() {
         // Arrange
         this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
-        String expectedActorName = this.nameResolver.resolve(ACTOR_ID);
+        String expectedActorName = this.nameDirectory.resolve(ACTOR_ID);
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
@@ -190,7 +190,7 @@ class EpisodicEntryAssemblerTest {
     void assemble_hearsay_actorFieldIsResolvedName() {
         // Arrange
         this.store.admit(hearsayEntry(SOURCE_ID, ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
-        String expectedActorName = this.nameResolver.resolve(ACTOR_ID);
+        String expectedActorName = this.nameDirectory.resolve(ACTOR_ID);
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
@@ -203,7 +203,7 @@ class EpisodicEntryAssemblerTest {
     void assemble_tradeCompleted_targetFieldIsResolvedName() {
         // Arrange — TRADE_COMPLETED: relatedEntity is the trading partner
         this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.TRADE_COMPLETED, 2.5f));
-        String expectedTargetName = this.nameResolver.resolve(TARGET_ID);
+        String expectedTargetName = this.nameDirectory.resolve(TARGET_ID);
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
@@ -216,7 +216,7 @@ class EpisodicEntryAssemblerTest {
     void assemble_courtshipChildBirth_targetFieldIsResolvedName() {
         // Arrange — COURTSHIP_CHILD_BIRTH: relatedEntity is the courtship partner
         this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.COURTSHIP_CHILD_BIRTH, 2.5f));
-        String expectedTargetName = this.nameResolver.resolve(TARGET_ID);
+        String expectedTargetName = this.nameDirectory.resolve(TARGET_ID);
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
@@ -229,7 +229,7 @@ class EpisodicEntryAssemblerTest {
     void assemble_courtshipDateCompleted_targetFieldIsResolvedName() {
         // Arrange — COURTSHIP_DATE_COMPLETED: relatedEntity is the date partner (childless date)
         this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.COURTSHIP_DATE_COMPLETED, 2.5f));
-        String expectedTargetName = this.nameResolver.resolve(TARGET_ID);
+        String expectedTargetName = this.nameDirectory.resolve(TARGET_ID);
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
@@ -242,7 +242,7 @@ class EpisodicEntryAssemblerTest {
     void assemble_emeraldsDonated_targetFieldIsResolvedName() {
         // Arrange — EMERALDS_DONATED: relatedEntity is the donation recipient
         this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.EMERALDS_DONATED, 2.5f));
-        String expectedTargetName = this.nameResolver.resolve(TARGET_ID);
+        String expectedTargetName = this.nameDirectory.resolve(TARGET_ID);
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
@@ -255,7 +255,7 @@ class EpisodicEntryAssemblerTest {
     void assemble_courtshipRejected_targetFieldIsResolvedName() {
         // Arrange — COURTSHIP_REJECTED: relatedEntity is the spurned presenter
         this.store.admit(directEntry(ACTOR_ID, TARGET_ID, WorldEventType.COURTSHIP_REJECTED, 2.5f));
-        String expectedTargetName = this.nameResolver.resolve(TARGET_ID);
+        String expectedTargetName = this.nameDirectory.resolve(TARGET_ID);
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
@@ -292,7 +292,7 @@ class EpisodicEntryAssemblerTest {
     void assemble_hearsay_sourceFieldIsResolvedName() {
         // Arrange
         this.store.admit(hearsayEntry(SOURCE_ID, ACTOR_ID, null, WorldEventType.TRADE_COMPLETED, 2.0f));
-        String expectedSourceName = this.nameResolver.resolve(SOURCE_ID);
+        String expectedSourceName = this.nameDirectory.resolve(SOURCE_ID);
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);

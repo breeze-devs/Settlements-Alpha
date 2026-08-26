@@ -1,8 +1,8 @@
 package dev.breezes.settlements.application.ai.inference.monologue;
 
 import dev.breezes.settlements.application.ai.dialogue.DialogueFacet;
-import dev.breezes.settlements.application.ai.naming.VillagerNameResolver;
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory;
 import dev.breezes.settlements.domain.genetics.GeneSignal;
 import dev.breezes.settlements.domain.personality.PersonalityStatus;
 import dev.breezes.settlements.domain.personality.VillagerPersonality;
@@ -32,7 +32,7 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class PersonaBundleAssembler {
 
-    private final VillagerNameResolver nameResolver;
+    private final VillagerNameDirectory nameDirectory;
     private final VillagerFacetDeriver facetDeriver;
 
     public PersonaBundle assemble(@Nonnull BaseVillager villager) {
@@ -40,7 +40,7 @@ public final class PersonaBundleAssembler {
         Anchors anchors = buildAnchors(villager);
 
         PersonaBundle.PersonaBundleBuilder builder = PersonaBundle.builder()
-                .name(this.nameResolver.resolve(villager.getUUID()))
+                .name(this.nameDirectory.resolve(villager.getUUID()))
                 .profession(villager.getProfession().id())
                 .geneSignals(GeneSignal.allFrom(villager.getGenetics()))
                 .anchors(anchors);

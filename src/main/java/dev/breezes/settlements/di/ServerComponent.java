@@ -46,6 +46,7 @@ import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
 import dev.breezes.settlements.di.modules.server.ConcurrencyModule;
 import dev.breezes.settlements.di.modules.server.DialogueServiceModule;
 import dev.breezes.settlements.di.modules.server.GossipModule;
+import dev.breezes.settlements.di.modules.server.NamingModule;
 import dev.breezes.settlements.di.modules.server.OverridePolicyModule;
 import dev.breezes.settlements.di.modules.server.PerceptionModule;
 import dev.breezes.settlements.di.modules.server.PlanInferenceModule;
@@ -60,6 +61,7 @@ import dev.breezes.settlements.di.modules.server.UiSyncModule;
 import dev.breezes.settlements.di.modules.server.WorldEventModule;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
+import dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
 import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventBus;
@@ -94,6 +96,7 @@ import java.util.concurrent.ExecutorService;
         GossipModule.class,
         DialogueServiceModule.class,
         OverridePolicyModule.class,
+        NamingModule.class,
 })
 public interface ServerComponent {
 
@@ -207,6 +210,9 @@ public interface ServerComponent {
 
     // Exposed for DormantOreBlock (non-injectable Minecraft block, server-only)
     OreRegenDataManager oreRegenDataManager();
+
+    // Exposed for BaseVillager (non-injectable Minecraft entity, server-only)
+    VillagerNameDirectory villagerNameDirectory();
 
     @Subcomponent.Factory
     interface Factory {

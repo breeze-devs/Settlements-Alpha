@@ -7,8 +7,6 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalState;
 import dev.breezes.settlements.domain.ai.memory.SettlementsMemoryStore;
 import dev.breezes.settlements.domain.personality.PersonaLineageSnapshot;
 import dev.breezes.settlements.domain.personality.VillagerPersonality;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentCodec;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.DayPlanAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TotemTargetAttachment;
@@ -52,12 +50,6 @@ public final class AttachmentRegistry {
             "demand_signals",
             () -> AttachmentType.builder(DemandSignalState::empty)
                     .serialize(DemandSignalCodec.STATE_CODEC)
-                    .build());
-
-    public static final Supplier<AttachmentType<DayPlanAttachmentState>> VILLAGER_DAY_PLAN = REGISTRY.register(
-            "day_plan",
-            () -> AttachmentType.builder(DayPlanAttachmentState::empty)
-                    .serialize(DayPlanAttachmentCodec.STATE_CODEC)
                     .build());
 
     public static final Supplier<AttachmentType<VillagerInventoryAttachmentState>> VILLAGER_INVENTORY = REGISTRY.register(

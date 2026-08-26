@@ -1,11 +1,11 @@
 package dev.breezes.settlements.application.ai.inference.monologue;
 
 import dev.breezes.settlements.application.ai.inference.InferenceConfig;
-import dev.breezes.settlements.application.ai.naming.VillagerNameResolver;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.PackedPos;
+import dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import jakarta.inject.Inject;
@@ -43,7 +43,7 @@ public final class EpisodicEntryAssembler {
     private static final Comparator<KnowledgeEntry> ADMITTED_AT_TICK_DESC =
             Comparator.comparingLong(KnowledgeEntry::getAdmittedAtTick).reversed();
 
-    private final VillagerNameResolver nameResolver;
+    private final VillagerNameDirectory nameDirectory;
     private final InferenceConfig inferenceConfig;
 
     /**
@@ -178,7 +178,7 @@ public final class EpisodicEntryAssembler {
         }
 
         UUID actorId = parseUuid(entry.getMetadata().get(ObservationMetadataKeys.ACTOR_ID));
-        return actorId != null ? this.nameResolver.resolve(actorId) : null;
+        return actorId != null ? this.nameDirectory.resolve(actorId) : null;
     }
 
     /**
@@ -201,7 +201,7 @@ public final class EpisodicEntryAssembler {
         }
 
         UUID targetId = entry.getRelatedEntity();
-        return targetId != null ? this.nameResolver.resolve(targetId) : null;
+        return targetId != null ? this.nameDirectory.resolve(targetId) : null;
     }
 
     /**
@@ -214,7 +214,14 @@ public final class EpisodicEntryAssembler {
             return null;
         }
 
-        return this.nameResolver.resolve(entry.getSource());
+        UUID sourceId = entry.getSource();
+        if (sourceId == null) {
+            // A hearsay entry structurally carries its gossiper, so this only occurs on corrupted
+            // persisted data; keep the speaker slot filled rather than ship a sourceless rumor.
+            return "Someone";
+        }
+
+        return this.nameDirectory.resolve(sourceId);
     }
 
     /**

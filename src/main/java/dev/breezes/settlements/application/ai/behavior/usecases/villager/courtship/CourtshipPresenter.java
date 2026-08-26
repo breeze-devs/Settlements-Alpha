@@ -45,7 +45,6 @@ public final class CourtshipPresenter {
 
     private static final BubbleSegment POPPY_ICON = BubbleSegment.Item.iconOnly(BuiltInRegistries.ITEM.getKey(Items.POPPY));
     private static final BubbleSegment BED_ICON = BubbleSegment.Item.iconOnly(BuiltInRegistries.ITEM.getKey(Items.RED_BED));
-    private static final BubbleSegment CLOCK_ICON = BubbleSegment.Item.iconOnly(BuiltInRegistries.ITEM.getKey(Items.CLOCK));
     private static final BubbleSegment BREAD_ICON = BubbleSegment.Item.iconOnly(BuiltInRegistries.ITEM.getKey(Items.BREAD));
 
     // A red cross appended after the reason icon, reading as "no <icon>" / failure. Mirrors the trade walk-away marker.
@@ -187,17 +186,16 @@ public final class CourtshipPresenter {
 
     /**
      * Maps a close reason to the icons that explain it: a reason-specific icon followed by a red cross.
-     * Returns an empty list for reasons that should not surface a bubble (success or silent cancellation).
+     * Returns an empty list for reasons that should stay internal.
      */
     private static List<BubbleSegment> failureSegments(@Nonnull CourtshipCloseReason reason) {
         return switch (reason) {
             case REJECTED_CHARISMA -> List.of(POPPY_ICON, FAILURE_CROSS);
             case ABORTED_NO_BED -> List.of(BED_ICON, FAILURE_CROSS);
-            case TIMEOUT -> List.of(CLOCK_ICON, FAILURE_CROSS);
             case ABORTED_WILLINGNESS -> List.of(BREAD_ICON, FAILURE_CROSS);
             case ABORTED_PARTNER_GONE -> List.of(PARTNER_GONE_MARK, FAILURE_CROSS);
             case ABORTED_SPAWN_FAILED -> List.of(FAILURE_CROSS);
-            case COMPLETED, EXTERNAL_CANCEL -> List.of();
+            case COMPLETED, EXTERNAL_CANCEL, TIMEOUT -> List.of();
         };
     }
 

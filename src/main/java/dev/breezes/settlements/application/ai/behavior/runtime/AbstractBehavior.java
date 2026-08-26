@@ -70,7 +70,6 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         this.latestPreconditionEvaluationResults.clear();
 
         if (this.preconditions.isEmpty()) {
-            log.behaviorWarn("No preconditions configured");
             return true;
         }
 

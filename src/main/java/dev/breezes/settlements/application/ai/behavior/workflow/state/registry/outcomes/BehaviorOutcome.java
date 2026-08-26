@@ -115,7 +115,7 @@ public final class BehaviorOutcome implements BehaviorState {
      * Records a deed directed at a specific entity (e.g. egged a villager), marking success.
      * <p>
      * Only call this when the victim is a known villager — the target UUID feeds
-     * {@link WorldEvent#getTargetId()}, which {@link dev.breezes.settlements.application.ai.naming.VillagerNameResolver}
+     * {@link WorldEvent#getTargetId()}, which {@link dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory}
      * will resolve to a name. For non-villager victims, leave the target unset so the phrasebook
      * renders "egged someone" instead of fabricating a name for a player or animal.
      */

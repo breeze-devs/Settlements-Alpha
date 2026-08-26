@@ -1,27 +1,19 @@
-package dev.breezes.settlements.application.ai.naming;
+package dev.breezes.settlements.domain.ai.naming;
 
-import dev.breezes.settlements.di.ServerScope;
-import jakarta.inject.Inject;
-import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Maps a villager UUID to a stable, human-readable name from a curated pool.
+ * Deterministically derives a stable, human-readable name from a villager UUID.
  * <p>
- * Names are deterministic (same UUID → same name across restarts) because they are derived from
- * UUID bits alone — no state is persisted. This makes it safe to name referenced villagers in
- * knowledge seeds even when those entities are unloaded at sweep time.
- * <p>
- * The pool is large enough that collision probability across a typical settlement of a few dozen
- * villagers is negligible. A future datapack-backed implementation can replace this class via DIP
- * without callers changing.
+ * Names are deterministic because they are derived from UUID bits alone with no saved state.
  */
-@ServerScope
-@NoArgsConstructor(onConstructor_ = @Inject)
-public final class VillagerNameResolver {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public final class VillagerNameGenerator {
 
     /**
      * Single mixed-gender pool of village-appropriate names.
@@ -35,7 +27,7 @@ public final class VillagerNameResolver {
             // C
             "Calder", "Calla", "Cora", "Corvin", "Cyra",
             // D
-            "Dagna", "Dagny", "Daric", "Delia", "Dirk", "Doran", "Draven",
+            "Dagna", "Dagny", "Daric", "Delia", "Dirk", "Dio", "Doran", "Draven",
             // E
             "Edda", "Edric", "Egil", "Elda", "Elric", "Elspeth", "Embla", "Erling", "Erwin", "Eska",
             // F
@@ -48,7 +40,7 @@ public final class VillagerNameResolver {
             // I
             "Ida", "Idris", "Idunn", "Inga", "Ingrid", "Ivar",
             // J
-            "Jarl", "Jarvik", "Jorid",
+            "Jarl", "Jarvik", "Jojo", "Jorid",
             // K
             "Karin", "Keld", "Ketil", "Kjeld", "Klara", "Knud", "Kolr",
             // L
@@ -83,27 +75,11 @@ public final class VillagerNameResolver {
     );
 
     /**
-     * Resolves the given UUID to a deterministic name.
-     * <p>
-     * Uses both the most-significant and least-significant 64 bits so UUIDs that share a
-     * high-word prefix (sequential UUID v1 batches) still spread across the pool.
+     * Generates a deterministic name for the given UUID.
      *
-     * @param uuid the villager UUID; if null, returns a safe fallback name
+     * @param uuid the villager UUID
      */
-    public String resolve(@Nullable UUID uuid) {
-        return resolveName(uuid);
-    }
-
-    /**
-     * Side-agnostic entry point for name resolution.
-     *
-     * @param uuid the villager UUID; if null, returns a safe fallback name
-     */
-    public static String resolveName(@Nullable UUID uuid) {
-        if (uuid == null) {
-            return "Someone";
-        }
-
+    public static String generateName(@Nonnull UUID uuid) {
         // XOR the two 64-bit halves so both halves contribute to the bucket, preventing
         // sequential UUIDs (same high word) from all mapping to adjacent names.
         long mixed = uuid.getMostSignificantBits() ^ uuid.getLeastSignificantBits();

@@ -1,7 +1,6 @@
 {
   "mod.name": "万家烟火",
 
-  "item.settlements.placeholder": "Placeholder",
   "item.settlements.base_villager_spawn_egg": "万家烟火村民刷怪蛋",
   "item.settlements.villager_totem": "村民图腾",
   "item.settlements.villager_totem.mode.vanilla": "MC原版",
@@ -63,6 +62,7 @@
   "ui.settlements.behavior.behavior.enchant_item": "附魔物品",
   "ui.settlements.behavior.behavior.smoke_meat": "熏肉",
   "ui.settlements.behavior.behavior.cut_stone": "切石头",
+  "ui.settlements.behavior.behavior.craft_goods": "制作商品",
   "ui.settlements.behavior.behavior.forge_tool": "锻造工具",
   "ui.settlements.behavior.behavior.harvest_nether_wart": "采下界疣",
   "ui.settlements.behavior.behavior.tame_wolf": "驯狼",
@@ -329,6 +329,7 @@
 
   "subtitles.settlements.cucco_call": "鸡不祥地啼叫",
   "subtitles.settlements.cucco_fall": "鸡不祥地坠落",
+  "subtitles.settlements.wololo": "牧羊人神秘地吟唱",
 
   "action.settlements.chest.waxed": "箱子已涂蜡，村民不会使用它",
   "action.settlements.chest.unwaxed": "箱子已除蜡，村民可以使用它"

@@ -134,63 +134,6 @@ class PlanRunnerTimingTest {
     }
 
     @Test
-    void detectOnLoadBackward_returnsTrueWhenLastExecutedSlotIsFutureRelativeToNow() {
-        // Arrange
-        DayPlan plan = DayPlan.builder()
-                .slot(slot(4_000, 600, PlanSlotStatus.COMPLETED))
-                .slot(slot(9_000, 600, PlanSlotStatus.PENDING))
-                .dayType(PlanDayType.WORK_DAY)
-                .calendarDay(1L)
-                .schedule(schedule())
-                .currentSlotIndex(1)
-                .build();
-
-        // Act
-        boolean backward = PlanRunner.detectOnLoadBackward(plan, 2_000);
-
-        // Assert
-        assertTrue(backward);
-    }
-
-    @Test
-    void detectOnLoadBackward_returnsFalseWhenNoSlotsHaveExecuted() {
-        // Arrange
-        DayPlan plan = DayPlan.builder()
-                .slot(slot(4_000, 600, PlanSlotStatus.PENDING))
-                .dayType(PlanDayType.WORK_DAY)
-                .calendarDay(1L)
-                .schedule(schedule())
-                .currentSlotIndex(0)
-                .build();
-
-        // Act
-        boolean backward = PlanRunner.detectOnLoadBackward(plan, 2_000);
-
-        // Assert
-        assertFalse(backward);
-    }
-
-    @Test
-    void detectOnLoadBackward_negativeExtendedNowTriggersBackwardDetection() {
-        // Arrange — a negative extended now (dayTime is still on the PRECEDING calendar day per
-        // WorldCalendar#civilOffsetWithin) is always "before" any already-executed slot's civil tick.
-        DayPlan plan = DayPlan.builder()
-                .slot(slot(1_000, 600, PlanSlotStatus.COMPLETED))
-                .slot(slot(9_000, 600, PlanSlotStatus.PENDING))
-                .dayType(PlanDayType.WORK_DAY)
-                .calendarDay(1L)
-                .schedule(schedule())
-                .currentSlotIndex(1)
-                .build();
-
-        // Act
-        boolean backward = PlanRunner.detectOnLoadBackward(plan, -1);
-
-        // Assert
-        assertTrue(backward);
-    }
-
-    @Test
     void dayPlanBuilder_rejectsSlotWindowThatCrossesPlanDayBoundary() {
         // Arrange, Act, Assert
         assertThrows(IllegalArgumentException.class, () -> DayPlan.builder()

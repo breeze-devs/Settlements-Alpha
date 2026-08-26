@@ -21,7 +21,6 @@ import net.minecraft.resources.ResourceLocation;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Locale;
 
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
@@ -45,7 +44,7 @@ public final class DayPlanSnapshotAssembler {
         return DayPlanSnapshot.builder()
                 .dayNumber(dayPlan.getCalendarDay())
                 .dayType(dayPlan.getDayType())
-                .currentTime(formatTime(CivilTime.civilFromDayTime(dayTime)))
+                .currentTime(CivilTime.formatClock(CivilTime.civilFromDayTime(dayTime)))
                 .planStatus(dayPlan.getStatus())
                 .villagerEntityId(villager.getId())
                 .villagerName(villager.getName().getString())
@@ -59,7 +58,7 @@ public final class DayPlanSnapshotAssembler {
         return DayPlanSlotSnapshot.builder()
                 .behaviorKey(slot.getBehaviorKey().id())
                 .displayNameKey(displayInfo.displayNameKey())
-                .formattedTime(formatTime(slot.getStartTick()))
+                .formattedTime(CivilTime.formatClock(slot.getStartTick()))
                 .iconItemId(displayInfo.iconItemId())
                 .status(resolveVisualStatus(slot, nowCivil))
                 .description(resolveDescription(slot))
@@ -101,12 +100,6 @@ public final class DayPlanSnapshotAssembler {
         // nowCivil is deliberately unbounded (see WorldCalendar#civilOffsetWithin), so a moment past
         // the plan's own bedtime correctly reads every remaining PENDING slot as COMPLETED.
         return slot.getStartTick() < nowCivil ? DayPlanSlotVisualStatus.COMPLETED : DayPlanSlotVisualStatus.UPCOMING;
-    }
-
-    private static String formatTime(int civilTick) {
-        int hour = civilTick / 1000;
-        int minute = (civilTick % 1000) * 60 / 1000;
-        return String.format(Locale.ROOT, "%02d:%02d", hour, minute);
     }
 
 }

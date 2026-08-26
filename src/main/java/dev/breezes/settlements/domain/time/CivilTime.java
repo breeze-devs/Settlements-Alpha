@@ -1,7 +1,9 @@
 package dev.breezes.settlements.domain.time;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+import java.util.Locale;
 
 /**
  * Conversion between Minecraft-space ticks (day begins at tick 0 == 06:00 dawn) and
@@ -14,7 +16,7 @@ import lombok.AllArgsConstructor;
  * ticks increase monotonically across a real calendar day. This class is the single place that
  * performs the shift so the rest of the codebase never hand-rolls the +/- 6000 offset.
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CivilTime {
 
     /**
@@ -48,6 +50,24 @@ public final class CivilTime {
      */
     public static int civilFromDayTime(long dayTime) {
         return civilFromMcTick(Math.floorMod(dayTime, TimeOfDay.TICKS_PER_DAY));
+    }
+
+    /**
+     * Renders a civil-space tick as an "HH:MM" clock reading. The input is a tick within one day,
+     * in [0, 24000); everything that stores or derives a civil tick already holds one.
+     * <p>
+     * A tick outside that range renders as itself rather than being wrapped into range. Wrapping
+     * would turn corrupt state into a plausible time of day, and the readings this formats are
+     * exactly what a reader would use to notice that corruption.
+     */
+    public static String formatClock(long civilTick) {
+        if (civilTick < 0 || civilTick >= TimeOfDay.TICKS_PER_DAY) {
+            return "??:?? (" + civilTick + ")";
+        }
+
+        long hour = civilTick / 1000;
+        long minute = (civilTick % 1000) * 60 / 1000;
+        return String.format(Locale.ROOT, "%02d:%02d", hour, minute);
     }
 
 }

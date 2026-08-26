@@ -30,6 +30,14 @@ public final class Elements {
         return new TextElement(textSupplier, color, true);
     }
 
+    /**
+     * Text drawn at a fraction of the font's natural size, for a secondary line that would otherwise
+     * carry the same visual weight as the primary line it sits beneath.
+     */
+    public static UIElement scaledText(@Nonnull Supplier<Component> textSupplier, int color, float scale) {
+        return new TextElement(textSupplier, color, false, scale);
+    }
+
     public static UIElement clickableText(@Nonnull Component text, int color, int hoverColor, @Nonnull Runnable onClick) {
         return new ClickableTextElement(text, color, hoverColor, onClick);
     }
@@ -105,25 +113,33 @@ public final class Elements {
 
     private static class TextElement extends BaseElement {
 
+        private static final float NATURAL_SCALE = 1.0F;
+
         private final Supplier<Component> textSupplier;
         private final int color;
         private final boolean centered;
+        private final float scale;
 
         TextElement(@Nonnull Supplier<Component> textSupplier, int color, boolean centered) {
+            this(textSupplier, color, centered, NATURAL_SCALE);
+        }
+
+        TextElement(@Nonnull Supplier<Component> textSupplier, int color, boolean centered, float scale) {
             super(centered ? SizeConstraint.FILL : SizeConstraint.WRAP,
                     SizeConstraint.WRAP,
                     Insets.NONE);
             this.textSupplier = textSupplier;
             this.color = color;
             this.centered = centered;
+            this.scale = scale;
         }
 
         @Override
         public void measure(int availableWidth, int availableHeight) {
             Font font = Minecraft.getInstance().font;
             Component text = textSupplier.get();
-            int textWidth = font.width(text);
-            int textHeight = font.lineHeight;
+            int textWidth = Math.round(font.width(text) * this.scale);
+            int textHeight = Math.round(font.lineHeight * this.scale);
 
             int w = resolveSize(widthConstraint, availableWidth, textWidth);
             int h = resolveSize(heightConstraint, availableHeight, textHeight);
@@ -136,10 +152,27 @@ public final class Elements {
             Component text = textSupplier.get();
             Bounds b = bounds();
 
-            if (centered) {
-                graphics.drawCenteredString(font, text, b.x() + b.width() / 2, b.y(), color);
+            if (this.scale == NATURAL_SCALE) {
+                this.draw(graphics, font, text, b.x(), b.y(), b.width());
+                return;
+            }
+
+            // Scale the pose rather than the coordinates: the draw below then works in unscaled font
+            // space, which is the only space Font can measure or lay out in, while the element's own
+            // bounds stay in screen space like every other element's.
+            graphics.pose().pushPose();
+            graphics.pose().translate(b.x(), b.y(), 0.0F);
+            graphics.pose().scale(this.scale, this.scale, 1.0F);
+            this.draw(graphics, font, text, 0, 0, Math.round(b.width() / this.scale));
+            graphics.pose().popPose();
+        }
+
+        private void draw(@Nonnull GuiGraphics graphics, @Nonnull Font font, @Nonnull Component text,
+                          int x, int y, int width) {
+            if (this.centered) {
+                graphics.drawCenteredString(font, text, x + width / 2, y, this.color);
             } else {
-                graphics.drawString(font, text, b.x(), b.y(), color, false);
+                graphics.drawString(font, text, x, y, this.color, false);
             }
         }
 

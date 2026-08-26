@@ -12,7 +12,6 @@ import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackag
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VillagerBrain;
 import dev.breezes.settlements.application.ai.dialogue.Occasion;
-import dev.breezes.settlements.application.ai.naming.VillagerNameResolver;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueRuntimeState;
 import dev.breezes.settlements.application.hunger.HungerConfig;
@@ -32,6 +31,8 @@ import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory;
+import dev.breezes.settlements.domain.ai.naming.VillagerNameGenerator;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.observation.ObservationBuffer;
@@ -53,7 +54,6 @@ import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.infrastructure.minecraft.ai.dialogue.ActivityOccasionMapper;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerDayPlanAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachment;
@@ -142,6 +142,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     // catch-up cursor, so batching only enlarges each delta — no events are missed as long as this
     // interval stays well under the bus TTL (EventLaneConfig.worldEventTtlTicks, default 100 ticks).
     private static final ClockTicks PERCEPTION_COOLDOWN_TICKS = ClockTicks.seconds(1);
+    // Occasional name sync for catching direct name data modifications
+    private static final ClockTicks NAME_SYNC_COOLDOWN_TICKS = ClockTicks.minutes(1);
 
     private static final SyncedDataWrapper<Byte> DATA_MOTION_ARCHETYPE = SyncedDataWrapper.<Byte>builder()
             .entityClass(BaseVillager.class)
@@ -173,6 +175,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private final IBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
     private final PlanRuntimeState planRuntimeState;
+
+    /**
+     * Not persisted: a villager that unloads mid-day regenerates its plan on its next plan tick
+     */
+    @Nullable
+    private DayPlan dayPlan;
+
     private final SocialCueRuntimeState socialCueRuntimeState;
     private final VillagerKnowledgeStore knowledgeStore;
     @Nullable
@@ -191,6 +200,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private VillagerTeardownLedger teardownLedger;
     private final ITickable reconcilerCooldown;
     private final ITickable perceptionCooldown;
+    private final ITickable nameSyncCooldown;
+    @Nullable
+    private String lastPublishedName;
     private long sootyExpiresAtGameTime;
     @Nullable
     private VillagerProfession cachedProfession;
@@ -230,6 +242,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.teardownLedger = new VillagerTeardownLedger(List.of());
         this.reconcilerCooldown = RECONCILER_COOLDOWN_TICKS.asTickable();
         this.perceptionCooldown = PERCEPTION_COOLDOWN_TICKS.asTickable();
+        this.nameSyncCooldown = NAME_SYNC_COOLDOWN_TICKS.asTickable();
         this.sootyExpiresAtGameTime = 0L;
     }
 
@@ -382,11 +395,51 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     }
 
     /**
-     * Returns the deterministic, UUID-mapped name as this villager's display name.
+     * Assigns a deterministic name the first time this villager spawns or loads without one.
+     * A player-applied name tag can overwrite this.
      */
+    private void assignNameIfAbsent() {
+        if (this.getCustomName() != null) {
+            return;
+        }
+
+        this.setCustomName(Component.literal(VillagerNameGenerator.generateName(this.getUUID())));
+    }
+
     @Override
-    public Component getName() {
-        return Component.literal(VillagerNameResolver.resolveName(this.getUUID()));
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+
+        if (!this.level().isClientSide()) {
+            // NBT deserializes before an entity is added to the level, so getName() is already
+            // accurate here -- this is the name directory's self-healing seam: a missed write, a
+            // bad prune, or a restored backup repairs itself the next time this villager loads.
+            this.upsertNameInDirectory();
+        }
+    }
+
+    @Override
+    public void setCustomName(@Nullable Component name) {
+        super.setCustomName(name);
+
+        // Do nothing before the entity is loaded into the world
+        if (!this.isAddedToLevel() || this.level().isClientSide()) {
+            return;
+        }
+
+        // Safe here because onAddedToLevel unconditionally upserts
+        this.upsertNameInDirectory();
+    }
+
+    private void upsertNameInDirectory() {
+        String currentName = this.getName().getString();
+        if (currentName.equals(this.lastPublishedName)) {
+            return;
+        }
+
+        VillagerNameDirectory directory = SettlementsDagger.serverOrThrow().villagerNameDirectory();
+        directory.upsert(this.getUUID(), currentName);
+        this.lastPublishedName = currentName;
     }
 
     public Component getProfessionDisplayName() {
@@ -481,6 +534,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                                         @Nonnull MobSpawnType spawnType,
                                         @Nullable SpawnGroupData spawnGroupData) {
         SpawnGroupData finalizedSpawnData = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
+        this.assignNameIfAbsent();
         VillagerGeneticAttributes.apply(this);
 
         if (this.settlementsInventory == null) {
@@ -521,6 +575,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     @Override
     public void load(@Nonnull CompoundTag nbtTag) {
         super.load(nbtTag);
+        // Backfills villagers persisted before this field existed; a no-op once CustomName is set.
+        this.assignNameIfAbsent();
         VillagerGeneticsAttachment.loadInto(this, this.genetics);
         VillagerGeneticAttributes.apply(this);
         VillagerBrainAttachment.loadInto(this);
@@ -610,6 +666,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         this.tickReconciler();
+        this.tickNameSync();
     }
 
     /**
@@ -715,8 +772,21 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
     }
 
+    /**
+     * Backstop for CustomName writes that bypass {@link #setCustomName}.
+     */
+    private void tickNameSync() {
+        if (!this.nameSyncCooldown.tickCheckAndReset(1)) {
+            return;
+        }
+
+        this.upsertNameInDirectory();
+    }
+
     @Override
     public void remove(@Nonnull RemovalReason reason) {
+        ServerComponent server = this.level().isClientSide() ? null : SettlementsDagger.serverOrNull();
+
         // Stop the running behavior before entity removal so TeardownScope obligations are discharged on death/unload.
         // The chain is:
         //   brain.stopAll → PlanRunnerBehavior.stop → planRunner.forceStop → behavior.stop → teardownAll
@@ -727,9 +797,15 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         this.planRuntimeState.clearPendingGeneration();
 
+        // De-register from name directory if villager is about to be permanently removed
+        if (server != null && reason.shouldDestroy()) {
+            server.villagerNameDirectory().remove(this.getUUID());
+            // Drop the cache too: if this same instance is ever revived, onAddedToLevel must re-publish
+            this.lastPublishedName = null;
+        }
+
         // Prune cache
-        if (!this.level().isClientSide() && shouldEvictServerScopeCaches(reason)) {
-            ServerComponent server = SettlementsDagger.serverOrThrow();
+        if (server != null && shouldEvictServerScopeCaches(reason)) {
             server.dialogueProvider().evict(this.getUUID());
         }
 
@@ -812,23 +888,26 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         return droppable.subList(0, MAX_DEATH_DROP_STACKS);
     }
 
+    /**
+     * Vanilla hook, also invoked directly on a profession change.
+     */
     @Override
     public void refreshBrain(@Nonnull ServerLevel level) {
         Brain<Villager> brain = this.getBrain();
         brain.stopAll(level, this);
         this.brain = brain.copyWithoutBehaviors();
-        VillagerDayPlanAttachment.clearDayPlan(this);
+        this.dayPlan = null;
         this.planRuntimeState.reset();
         this.registerBrainGoals(this.getBrain());
     }
 
     @Nullable
     public DayPlan getDayPlan() {
-        return VillagerDayPlanAttachment.getDayPlan(this);
+        return this.dayPlan;
     }
 
     public void setDayPlan(@Nonnull DayPlan dayPlan) {
-        VillagerDayPlanAttachment.setDayPlan(this, dayPlan);
+        this.dayPlan = dayPlan;
     }
 
     /**
@@ -992,6 +1071,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.bubbleService().applyCommand(this, command, this.level().getGameTime());
     }
 
+    /**
+     * Deliberately distinct from the {@code shouldDestroy()} gate: {@code shouldSave()}
+     * is also true for {@code UNLOADED_TO_CHUNK}, so reusing this predicate for the name directory
+     * would erase a villager's name every time a player simply flies out of render distance.
+     */
     private static boolean shouldEvictServerScopeCaches(@Nonnull RemovalReason reason) {
         return reason == RemovalReason.KILLED
                 || reason == RemovalReason.DISCARDED

@@ -53,7 +53,6 @@ public class PlanRunner {
     private static final String RESET_REASON_MISSING_SUCCESSOR = "missing successor plan";
     private static final String RESET_REASON_ASYNC_OVERRUN = "async plan generation overrun";
     private static final String RESET_REASON_BACKWARD_JUMP = "backward dayTime jump";
-    private static final String RESET_REASON_BACKWARD_WHILE_UNLOADED = "backward dayTime jump while unloaded";
     private static final String RESET_REASON_CALENDAR_DAY_MISMATCH = "calendar day mismatch";
 
     private static final int OVERRIDE_TICK_DELTA = 1;
@@ -153,9 +152,6 @@ public class PlanRunner {
                     villager.getUUID(), plan.getCalendarDay(), WorldCalendar.calendarDayOf(dayTime), dayTime);
             this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
             return;
-        } else if (delta.firstTick() && detectOnLoadBackward(plan, nowCivilFor(plan, dayTime))) {
-            // Runtime clocks are transient across reloads; persisted slot order is the only reliable signal for unloaded time travel.
-            plan = this.hardReset(level, villager, runtime, dayTime, RESET_REASON_BACKWARD_WHILE_UNLOADED, delta);
         } else if (delta.deltaTicks() == 0) {
             // Frozen daylight should freeze planned behavior too, otherwise villagers drift through schedules while the world clock is paused.
             return;
@@ -938,17 +934,6 @@ public class PlanRunner {
                 case COMPLETED, SKIPPED, INTERRUPTED -> plan.advanceSlot();
             }
         }
-    }
-
-    @VisibleForTesting
-    static boolean detectOnLoadBackward(@Nonnull DayPlan plan, int nowCivil) {
-        int previousSlotIndex = plan.getCurrentSlotIndex() - 1;
-        if (previousSlotIndex < 0 || previousSlotIndex >= plan.getSlots().size()) {
-            return false;
-        }
-
-        PlanSlot lastExecuted = plan.getSlots().get(previousSlotIndex);
-        return lastExecuted.getStartTick() > nowCivil;
     }
 
     @VisibleForTesting

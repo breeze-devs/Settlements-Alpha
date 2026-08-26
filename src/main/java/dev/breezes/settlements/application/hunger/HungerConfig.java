@@ -82,7 +82,7 @@ public record HungerConfig(
         @FloatConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "eat_priority_threshold",
-                description = "Villagers will try to eat when hunger falls below this threshold.",
+                description = "Hunger below which a meal consumes food and grants regeneration.",
                 defaultValue = 0.7f,
                 min = 0.0f,
                 max = 1.0f)

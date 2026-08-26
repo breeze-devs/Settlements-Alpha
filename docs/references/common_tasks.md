@@ -308,8 +308,9 @@ Sensors write memories; behaviors consume them later.
 ## Villager Memory: vanilla-backed vs decaying
 
 Villager memory comes in two flavors, and **neither survives a world reload** — both are rebuilt from sensors after
-load. Anything that must persist (owned wolves, genetics, inventory, day plan, settlement metadata) lives in a
-codec-serialized attachment or `SettlementSavedData`, deliberately *outside* the memory system.
+load. Anything that must persist (owned wolves, genetics, inventory, settlement metadata) lives in a
+codec-serialized attachment or `SettlementSavedData`, deliberately *outside* the memory system. The day plan is
+likewise reload-transient: it is regenerated, not restored, after a load.
 
 | | Vanilla-backed (`MemoryType.VanillaMemoryType<T>`) | Decaying (`MemoryType.DecayingSpatialMemoryType`) |
 |---|---|---|

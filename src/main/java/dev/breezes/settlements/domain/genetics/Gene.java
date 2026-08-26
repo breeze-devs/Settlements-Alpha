@@ -6,18 +6,14 @@ package dev.breezes.settlements.domain.genetics;
  */
 public record Gene(double value) {
 
+    public static final double MINIMUM_VALUE = 0.0;
+    public static final double MAXIMUM_VALUE = 1.0;
+
     public Gene {
-        if (value < 0.0 || value > 1.0) {
-            throw new IllegalArgumentException("Gene value must be between 0.0 and 1.0, got: " + value);
+        if (value < MINIMUM_VALUE || value > MAXIMUM_VALUE) {
+            throw new IllegalArgumentException("Gene value must be between " + MINIMUM_VALUE + " and "
+                    + MAXIMUM_VALUE + ", got: " + value);
         }
-    }
-
-    public boolean isTierReached(float threshold) {
-        return this.value >= threshold;
-    }
-
-    public boolean isDebuffActive(float threshold) {
-        return this.value <= threshold;
     }
 
 }

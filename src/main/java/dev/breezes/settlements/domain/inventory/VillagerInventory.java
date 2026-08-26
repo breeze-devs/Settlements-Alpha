@@ -147,6 +147,17 @@ public class VillagerInventory implements IVillagerEquipment {
         return this.consume(item, amount) == amount;
     }
 
+    /**
+     * The variant-matched counterpart of {@link #consumeIfRequired(Item, int, boolean)}, for a
+     * caller holding the exact stack it chose rather than the item kind it needs.
+     */
+    public boolean consumeIfRequired(@Nonnull ItemStack variant, int amount, boolean bypass) {
+        if (bypass) {
+            return true;
+        }
+        return this.consume(variant, amount) == amount;
+    }
+
     // Equipment
 
     public Optional<ItemStack> getMainHand() {

@@ -68,6 +68,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.forge.ForgeToolBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.forge.ForgeToolConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.EatFoodBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.hunger.MealPresenter;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.idle.WalkDogConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.dyeleather.DyeLeatherBehavior;
@@ -208,12 +209,12 @@ public final class BehaviorCatalogModule {
 
     @Provides
     @IntoSet
-    static BehaviorCatalogEntry eatFood(BehaviorSupport support) {
+    static BehaviorCatalogEntry eatFood(BehaviorSupport support, MealPresenter presenter) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.EAT_FOOD)
                         .displayName("Eat Food")
-                        .description("Consume food from inventory to restore hunger")
+                        .description("Have a meal -- eats and heals when it helps, otherwise just takes the break")
                         .category(BehaviorCategory.SELF_CARE)
                         .intensity(WorkIntensity.NONE)
                         .requiredChannel(BehaviorChannel.INTERACTION)
@@ -225,7 +226,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.EAT_FOOD.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("bread"))
                         .build())
-                .factory(() -> new EatFoodBehavior(support))
+                .factory(() -> new EatFoodBehavior(support, presenter))
                 .build();
     }
 
