@@ -1,6 +1,5 @@
 package dev.breezes.settlements.application.ai.planning;
 
-import dev.breezes.settlements.application.ai.behavior.publication.BehaviorOutcomePublisher;
 import dev.breezes.settlements.application.ai.override.OverridePolicy;
 import dev.breezes.settlements.application.ai.override.OverrideRequest;
 import dev.breezes.settlements.di.ServerScope;
@@ -21,7 +20,6 @@ import dev.breezes.settlements.domain.ai.planning.PlanIntent;
 import dev.breezes.settlements.domain.ai.planning.PlanSlot;
 import dev.breezes.settlements.domain.ai.planning.PlanSlotStatus;
 import dev.breezes.settlements.domain.ai.planning.PlanStatus;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.WorldCalendar;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -93,8 +91,6 @@ public class PlanRunner {
     private final VillagerWakeScheduler wakeScheduler;
     private final MinimalPlanFactory minimalPlanFactory;
     private final Set<OverridePolicy> overridePolicies;
-    private final BehaviorOutcomePublisher behaviorOutcomePublisher;
-    private final WorldEventEmitter worldEventEmitter;
     private final PlanRequestService planRequestService;
 
     /**
@@ -334,8 +330,6 @@ public class PlanRunner {
         this.setPlanActiveMemory(villager);
         slot.markStatus(PlanSlotStatus.ACTIVE);
         plan.markStatus(PlanStatus.ACTIVE);
-
-        this.worldEventEmitter.emitBehaviorStarted(villager, slot.getBehaviorKey());
     }
 
     private void tickActiveSlot(@Nonnull ServerLevel level,
@@ -371,13 +365,12 @@ public class PlanRunner {
         } catch (RuntimeException e) {
             log.behaviorError("Plan behavior '{}' threw during tick for villager {}; force-stopping wedged behavior",
                     slot.getBehaviorKey(), villager.getUUID(), e);
-            this.abortPlanBehavior(level, villager, runtime, slot, plan, behavior, "behavior threw during tick");
+            this.abortPlanBehavior(level, villager, runtime, slot, plan, behavior);
             return;
         }
 
         if (behavior.getStatus() == BehaviorStatus.STOPPED) {
             slot.markStatus(PlanSlotStatus.COMPLETED);
-            this.behaviorOutcomePublisher.publishCompleted(villager, slot.getBehaviorKey(), behavior);
             runtime.clearCurrentBehavior();
             this.clearPlanActiveMemory(villager);
             plan.advanceSlot();
@@ -399,22 +392,20 @@ public class PlanRunner {
                                         @Nonnull IBehavior<BaseVillager> behavior) {
         log.behaviorWarn("Plan behavior '{}' exceeded max run duration ({} ticks) for villager {}; force-stopping wedged behavior",
                 slot.getBehaviorKey(), runtime.getCurrentBehaviorElapsedTicks(), villager.getUUID());
-        this.abortPlanBehavior(level, villager, runtime, slot, plan, behavior, "behavior ceiling exceeded");
+        this.abortPlanBehavior(level, villager, runtime, slot, plan, behavior);
     }
 
     /**
      * Shared recovery for a plan-slot behavior that cannot continue (run-duration ceiling or an
-     * uncaught exception from tick): stop it, mark the slot SKIPPED rather than re-queue it (a
-     * wedged or throwing behavior would just repeat the same failure next attempt), and publish
-     * the failure under the caller-supplied reason.
+     * uncaught exception from tick): stop it, then mark the slot SKIPPED rather than re-queue it —
+     * a wedged or throwing behavior would just repeat the same failure next attempt.
      */
     private void abortPlanBehavior(@Nonnull ServerLevel level,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull PlanRuntimeState runtime,
                                    @Nonnull PlanSlot slot,
                                    @Nonnull DayPlan plan,
-                                   @Nonnull IBehavior<BaseVillager> behavior,
-                                   @Nonnull String failureReason) {
+                                   @Nonnull IBehavior<BaseVillager> behavior) {
         if (behavior.getStatus() != BehaviorStatus.STOPPED) {
             behavior.stop(level, villager);
         }
@@ -422,7 +413,6 @@ public class PlanRunner {
         runtime.clearCurrentBehavior();
         this.clearPlanActiveMemory(villager);
         plan.advanceSlot();
-        this.behaviorOutcomePublisher.publishFailed(villager, slot.getBehaviorKey(), failureReason);
     }
 
     /**
@@ -458,16 +448,15 @@ public class PlanRunner {
         }
 
         if (override.getStatus() == BehaviorStatus.STOPPED) {
-            this.onOverrideCompleted(villager, runtime, runtime.getOverrideBehaviorKey(), override);
+            this.onOverrideCompleted(villager, runtime, runtime.getOverrideBehaviorKey());
         }
     }
 
     /**
      * Force-stops an override that has exceeded its per-behavior ceiling (see
-     * {@link #resolveOverrideMaxDurationTicks}). Unlike a normal completion this publishes no
-     * outcome — the override never finished its work — but it still discharges teardown via
-     * {@code stop()}, clears the slot and the plan-active lock, and re-queues the interrupted plan
-     * slot so the villager resumes instead of remaining frozen.
+     * {@link #resolveOverrideMaxDurationTicks}). Teardown is still discharged via {@code stop()},
+     * the slot and the plan-active lock are cleared, and the interrupted plan slot is re-queued so
+     * the villager resumes instead of remaining frozen.
      */
     private void abortStuckOverride(@Nonnull ServerLevel level,
                                     @Nonnull BaseVillager villager,
@@ -515,16 +504,15 @@ public class PlanRunner {
     }
 
     /**
-     * Handles override completion: publishes the completion outcome and re-queues the interrupted
-     * plan slot so the villager resumes its day where the override pre-empted it.
+     * Handles override completion: clears the slot and re-queues the interrupted plan slot so the
+     * villager resumes its day when the override pre-empted it.
      */
     private void onOverrideCompleted(@Nonnull BaseVillager villager,
                                      @Nonnull PlanRuntimeState runtime,
-                                     @Nullable BehaviorKey completedKey,
-                                     @Nonnull IBehavior<BaseVillager> completed) {
-        if (completedKey != null) {
-            this.behaviorOutcomePublisher.publishCompleted(villager, completedKey, completed);
-        } else {
+                                     @Nullable BehaviorKey completedKey) {
+        if (completedKey == null) {
+            // The key is installed alongside the behavior, so its absence means the override slot
+            // was mutated behind the runner's back — worth surfacing even though recovery is normal.
             log.behaviorWarn("Override completed without behavior key for villager {}", villager.getUUID());
         }
         runtime.clearOverride();
@@ -697,8 +685,6 @@ public class PlanRunner {
         // just replaced (e.g. a hard reset regenerating into the next authored day).
         runSeekLoop(newPlan, nowCivilFor(newPlan, dayTime));
 
-        this.worldEventEmitter.emitDayPlanInvalidated(villager);
-
         this.logHardReset(villager, dayTime, reason, delta);
         return newPlan;
     }
@@ -869,7 +855,6 @@ public class PlanRunner {
         plan.markStatus(PlanStatus.COMPLETED);
         if (!runtime.isPlanExhausted()) {
             runtime.markPlanExhausted();
-            this.worldEventEmitter.emitPlanExhausted(villager);
             this.submitNextPlanAsync(level, villager, runtime, plan);
         }
     }

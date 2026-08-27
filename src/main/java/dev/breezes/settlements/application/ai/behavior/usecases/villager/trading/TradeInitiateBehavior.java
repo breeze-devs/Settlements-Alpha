@@ -27,7 +27,6 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -76,7 +75,6 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
     private final DemandEvaluator demandEvaluator;
     private final PartnerScanner partnerScanner;
     private final NegotiationEngine negotiationEngine;
-    private final WorldEventEmitter worldEventEmitter;
 
     @Nullable
     private PartnerScanner.TradeCandidate pendingCandidate;
@@ -114,7 +112,6 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         this.demandEvaluator = support.getDemandEvaluator();
         this.partnerScanner = partnerScanner;
         this.negotiationEngine = negotiationEngine;
-        this.worldEventEmitter = support.getWorldEventEmitter();
 
         this.preconditions.add(this.canInitiateTrade());
         this.initializeStateMachine(this.createControlStep(), Stage.CLOSED);
@@ -231,8 +228,6 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
                 currentGameTime);
         this.pendingCandidate = null;
         this.activeSessionId = session.getSessionId();
-
-        this.worldEventEmitter.emitTradeInviteSent(buyer, session.getResponderId(), session.getSessionId());
 
         return StepResult.transition(Stage.WAIT_FOR_ACCEPT);
     }

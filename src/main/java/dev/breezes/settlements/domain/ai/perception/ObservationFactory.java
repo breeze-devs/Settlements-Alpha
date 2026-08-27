@@ -19,18 +19,8 @@ import java.util.UUID;
  * Converts a gate-admitted {@link WorldEvent} into an {@link Observation}
  * ready for the {@link dev.breezes.settlements.domain.ai.observation.ObservationBuffer}
  * <p>
- * Importance baselines are tuned so:
- * <ul>
- *   <li>Threats and social acts (trade, courtship) score above the
- *       {@link dev.breezes.settlements.application.ai.memory.MemoryImportanceGate#PROMOTION_THRESHOLD}
- *       even before gene/novelty modifiers.</li>
- *   <li>Routine behavior lifecycle events start below the threshold and only
- *       promote for high-intelligence villagers observing novel activity.</li>
- * </ul>
- * <p>
- * Metadata is materialized only when an observation promotes to knowledge. Most admitted
- * observations are short-lived scoring candidates, so delaying map allocation keeps the
- * per-villager perception hot path lean.
+ * Metadata materialization is a separate call ({@link #metadataFor}) rather than part of the
+ * observation, so an observation discarded before promotion never allocates the map.
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ObservationFactory {
@@ -69,7 +59,7 @@ public final class ObservationFactory {
     }
 
     /**
-     * Builds the persistence metadata only after the importance gate chooses to promote.
+     * Builds the persistence metadata for an observation that is being promoted to knowledge.
      */
     public static Map<String, String> metadataFor(@Nonnull Observation observation) {
         Map<String, String> metadata = new HashMap<>();
@@ -108,9 +98,9 @@ public final class ObservationFactory {
     }
 
     private static UUID observationIdFor(@Nonnull WorldEvent event) {
-        // When a content-addressed dedupeKey is present, use it directly so that independent
-        // witnesses of the same subject converge on one fact id. The gossip subsystem can then
-        // recognize the shared id and call corroborate() rather than storing a second copy.
+        // A content-addressed dedupeKey is used verbatim so independent witnesses of one subject
+        // derive a single shared id rather than one id each. Everything downstream is keyed on that
+        // id, so the second arrival of the same occurrence is recognized as the same fact.
         if (event.getDedupeKey() != null) {
             return event.getDedupeKey();
         }

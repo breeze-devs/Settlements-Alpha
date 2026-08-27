@@ -17,9 +17,10 @@ import java.util.UUID;
 /**
  * Captures the deed-level result of one behavior run.
  * <p>
- * The state is intentionally passive: behavior steps record facts as side effects happen, while
- * publisher policy decides how those facts become world events. This keeps workflow state free of
- * bus side effects and lets future behaviors add detail without widening the state registry.
+ * The state is intentionally passive: behavior steps record facts as side effects happen, and
+ * nothing here reaches the world-event bus. Keeping the recording free of bus side effects is what
+ * lets the consumer of these facts change without revisiting a single behavior, and lets future
+ * behaviors add detail without widening the state registry.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
@@ -114,10 +115,9 @@ public final class BehaviorOutcome implements BehaviorState {
     /**
      * Records a deed directed at a specific entity (e.g. egged a villager), marking success.
      * <p>
-     * Only call this when the victim is a known villager — the target UUID feeds
-     * {@link WorldEvent#getTargetId()}, which {@link dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory}
-     * will resolve to a name. For non-villager victims, leave the target unset so the phrasebook
-     * renders "egged someone" instead of fabricating a name for a player or animal.
+     * Only call this when the victim is a known villager. The recorded target is treated downstream
+     * as a nameable person, so passing a player or an animal fabricates a villager name for it;
+     * leaving the target unset renders the deed against an anonymous someone instead.
      */
     public void recordTargetedDeed(@Nonnull UUID targetId) {
         this.partnerId = targetId;
@@ -173,9 +173,9 @@ public final class BehaviorOutcome implements BehaviorState {
      * Records one structured detail slot for deed phrasing.
      * <p>
      * Behaviors call this for detail they can supply structurally (e.g. trade item, price) rather
-     * than as a free-form string. The publisher will auto-derive {@code item}/{@code count} from
-     * {@link #magnitude}/{@link #unitNoun} for yield deeds; explicit values here take precedence
-     * so a behavior can override a specific slot if needed.
+     * than as a free-form string, so a consumer can phrase the deed without parsing prose. A yield
+     * deed's item and count are already implied by {@link #magnitude} and {@link #unitNoun}; use
+     * this only for detail those two cannot carry.
      */
     public void putDetailField(@Nonnull String key, @Nonnull String value) {
         if (this.detailFields == null) {

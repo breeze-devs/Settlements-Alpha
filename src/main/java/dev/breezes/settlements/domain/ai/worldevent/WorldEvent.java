@@ -10,17 +10,6 @@ import java.util.UUID;
 
 /**
  * Immutable envelope for a single event on the {@link WorldEventBus}.
- * <p>
- * Design notes:
- * <ul>
- *   <li>{@link #sequence} is a monotonically increasing integer assigned by the bus at append time.
- *       Per-villager cursors store {@code lastSeenSeq} and consume only the delta each tick.</li>
- *   <li>{@link #chunkX} and {@link #chunkZ} enable cheap Manhattan-distance rejection in the
- *       Phase 4 perception gate — no world-lookup needed at filter time.</li>
- *   <li>{@link #registryId} is non-null only for offer/exclusive events (trade invite, courtship
- *       invite). First-accept-wins resolution goes through the owning registry, never the bus.
- *       Events are announcements; registries are state of record.</li>
- * </ul>
  */
 @Getter
 @Builder
@@ -37,7 +26,7 @@ public final class WorldEvent {
     private final long gameTick;
 
     /**
-     * Semantic type, including namespace classification
+     * Semantic type of the event
      */
     private final WorldEventType type;
 
@@ -86,7 +75,7 @@ public final class WorldEvent {
     private final UUID registryId;
 
     /**
-     * Optional string metadata (e.g. behavior key for BEHAVIOR_STARTED / BEHAVIOR_COMPLETED)
+     * Optional string metadata (e.g. the behavior key that produced the event)
      * Kept as a plain string to avoid pulling domain types into the envelope.
      */
     @Nullable
@@ -131,11 +120,10 @@ public final class WorldEvent {
      * When present, {@link dev.breezes.settlements.domain.ai.perception.ObservationFactory}
      * uses this UUID directly as the observation id instead of the actor-keyed derivation.
      * Two villagers that independently witness the same subject in the same coarse
-     * spatial cell and time bucket will emit events with the same dedupeKey, so the
-     * first admitter's fact can be corroborated by the second through gossip rather than
-     * treated as an independent duplicate.
+     * spatial cell and time bucket emit events with the same dedupeKey, so both perceive one
+     * origin id and a store admitting the second recognizes the fact it already holds.
      * <p>
-     * Null for all pre-sighting events, which use the existing witness-keyed derivation.
+     * Null for events other than sightings, which use the witness-keyed derivation instead.
      */
     @Nullable
     private final UUID dedupeKey;

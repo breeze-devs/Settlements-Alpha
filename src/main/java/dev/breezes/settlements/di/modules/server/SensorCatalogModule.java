@@ -12,7 +12,6 @@ import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensor;
 import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensor;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
-import dev.breezes.settlements.application.ai.sensors.EntitySightingEmitterSensor;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.di.BaseLane;
@@ -20,7 +19,6 @@ import dev.breezes.settlements.di.CognitionScoped;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 
@@ -38,7 +36,9 @@ public abstract class SensorCatalogModule {
     abstract Set<VillagerSensorFactory> baseVillagerSensorFactories();
 
     /**
-     * Sensors that only make sense with the SIS cognition lane on.
+     * Sensors that only make sense with the SIS cognition lane on. The set is empty, and the
+     * declaration is kept so the lane stays a wiring seam rather than something a future
+     * cognition sensor has to re-introduce.
      */
     @Multibinds
     @CognitionScoped
@@ -62,13 +62,6 @@ public abstract class SensorCatalogModule {
     @BaseLane
     static VillagerSensorFactory entityPerceptionSensor(EntityPerceptionSensorConfig config) {
         return villager -> new EntityPerceptionSensor(config, villager);
-    }
-
-    @Provides
-    @IntoSet
-    @CognitionScoped
-    static VillagerSensorFactory entitySightingEmitterSensor(WorldEventEmitter emitter) {
-        return villager -> new EntitySightingEmitterSensor(emitter, villager);
     }
 
     @Provides

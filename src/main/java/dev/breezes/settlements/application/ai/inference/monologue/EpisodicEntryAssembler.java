@@ -15,6 +15,7 @@ import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +37,6 @@ public final class EpisodicEntryAssembler {
 
     private static final String PERSPECTIVE_PARTICIPANT = "FIRST_HAND_PARTICIPANT";
     private static final String PERSPECTIVE_BYSTANDER = "FIRST_HAND_BYSTANDER";
-    private static final String PERSPECTIVE_HEARSAY = "HEARSAY";
 
     private static final Comparator<KnowledgeEntry> WEIGHT_DESC =
             Comparator.comparingDouble(KnowledgeEntry::getWeight).reversed();
@@ -47,34 +47,27 @@ public final class EpisodicEntryAssembler {
     private final InferenceConfig inferenceConfig;
 
     /**
-     * Assembles up to {@link InferenceConfig#maxEpisodicEntries()} structured episodic entries from the store.
+     * Assembles up to {@link InferenceConfig#maxEpisodicEntries()} structured episodic entries from the store,
+     * heaviest first and most recently admitted first among equals.
      * <p>
      * Entries not backed by a seed-worthy {@link WorldEventType} are silently dropped.
-     * Deduplication by origin observation id runs before the sort and cap, preferring
-     * first-hand entries (lowest hop) then highest weight on tie.
      *
      * @param observerId  the UUID of the observing villager; used to derive PARTICIPANT vs BYSTANDER
      * @param store       the villager's knowledge store — plain Java, no Minecraft dependency
      * @param currentTick the current level game time; ageTicks = currentTick − admittedAtTick
      */
     public List<EpisodicEntryDTO> assemble(UUID observerId, VillagerKnowledgeStore store, long currentTick) {
-        // Dedup by origin observation id
-        Map<UUID, ResolvedEntry> bestByOriginId = new HashMap<>();
-
+        List<ResolvedEntry> seedWorthy = new ArrayList<>();
         for (KnowledgeEntry entry : store.entriesView()) {
             WorldEventType eventType = resolveEventType(entry);
             if (eventType == null || !eventType.isSeedWorthy()) {
                 continue;
             }
 
-            UUID originId = entry.getOriginObservationId();
-            ResolvedEntry existing = bestByOriginId.get(originId);
-            if (existing == null || isBetterCandidate(entry, existing.entry())) {
-                bestByOriginId.put(originId, new ResolvedEntry(entry, eventType));
-            }
+            seedWorthy.add(new ResolvedEntry(entry, eventType));
         }
 
-        return bestByOriginId.values().stream()
+        return seedWorthy.stream()
                 .sorted(Comparator.comparing(ResolvedEntry::entry, WEIGHT_DESC.thenComparing(ADMITTED_AT_TICK_DESC)))
                 .limit(this.inferenceConfig.maxEpisodicEntries())
                 .map(resolved -> toDto(observerId, resolved, currentTick))
@@ -93,12 +86,10 @@ public final class EpisodicEntryAssembler {
                 .perspective(perspective)
                 .actor(resolveActor(entry, perspective))
                 .target(resolveTarget(entry, eventType))
-                .source(resolveSource(entry))
                 .outcome(entry.getMetadata().get(ObservationMetadataKeys.OUTCOME))
                 .reason(entry.getMetadata().get(ObservationMetadataKeys.REASON))
                 .detail(collectDetailMap(entry.getMetadata()))
                 .pos(resolvePos(entry.getPackedPos()))
-                .hop(entry.getHop())
                 .ageTicks(ageTicks)
                 .build();
     }
@@ -146,17 +137,12 @@ public final class EpisodicEntryAssembler {
     /**
      * Derives the perspective of the observing villager relative to this entry.
      * <p>
-     * Hop > 0 is always HEARSAY regardless of actor. For first-hand entries, an absent
-     * actor_id defaults to FIRST_HAND_PARTICIPANT rather than BYSTANDER: most terminal
-     * deeds are the villager's own actions, and the behavior pipeline does not always write
-     * actor_id for first-person events. Misclassifying them as BYSTANDER would cause SIS
-     * to render "I saw someone harvest" instead of "I harvested".
+     * An absent actor_id defaults to FIRST_HAND_PARTICIPANT rather than BYSTANDER: most terminal
+     * deeds are the villager's own actions, and actor_id is not always written for first-person
+     * events. Misclassifying them as BYSTANDER would cause SIS to render "I saw someone harvest"
+     * instead of "I harvested".
      */
     private static String derivePerspective(KnowledgeEntry entry, UUID observerId) {
-        if (entry.isHearsay()) {
-            return PERSPECTIVE_HEARSAY;
-        }
-
         UUID actorId = parseUuid(entry.getMetadata().get(ObservationMetadataKeys.ACTOR_ID));
         if (actorId == null || observerId.equals(actorId)) {
             return PERSPECTIVE_PARTICIPANT;
@@ -205,38 +191,6 @@ public final class EpisodicEntryAssembler {
     }
 
     /**
-     * Resolves the gossip source name for HEARSAY entries.
-     * Returns null for first-hand entries; Gson omits the null, matching the wire contract.
-     */
-    @Nullable
-    private String resolveSource(KnowledgeEntry entry) {
-        if (!entry.isHearsay()) {
-            return null;
-        }
-
-        UUID sourceId = entry.getSource();
-        if (sourceId == null) {
-            // A hearsay entry structurally carries its gossiper, so this only occurs on corrupted
-            // persisted data; keep the speaker slot filled rather than ship a sourceless rumor.
-            return "Someone";
-        }
-
-        return this.nameDirectory.resolve(sourceId);
-    }
-
-    /**
-     * Returns true when the candidate is preferred over the existing entry for the same origin id.
-     * Lower hop wins first (first-hand beats hearsay); equal hop falls back to higher weight.
-     */
-    private static boolean isBetterCandidate(KnowledgeEntry candidate, KnowledgeEntry existing) {
-        if (candidate.getHop() != existing.getHop()) {
-            return candidate.getHop() < existing.getHop();
-        }
-
-        return candidate.getWeight() > existing.getWeight();
-    }
-
-    /**
      * Parses a WorldEventType from entry metadata without throwing on missing or unknown tokens.
      * Returns null so callers can skip gracefully rather than crashing on future event type additions.
      */
@@ -270,8 +224,8 @@ public final class EpisodicEntryAssembler {
     }
 
     /**
-     * Pairs a surviving knowledge entry with its already-resolved event type, so the type is
-     * parsed exactly once per entry (during dedup) instead of again in {@link #toDto}.
+     * Pairs a surviving knowledge entry with its already-resolved event type, so the type is parsed
+     * once per entry rather than again for each entry that survives the cap.
      */
     private record ResolvedEntry(KnowledgeEntry entry, WorldEventType eventType) {
     }

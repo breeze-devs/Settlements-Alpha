@@ -21,8 +21,8 @@ import java.util.Map;
  * Converts between the domain store and its flat NBT attachment representation.
  * Follows the same pattern as {@link VillagerGeneticsAttachment}.
  * <p>
- * {@code type} and {@code weight} are not persisted (see {@link KnowledgeEntryState}) —
- * {@link #loadInto} reconstructs them from the fields that are.
+ * The entry's semantic type is not persisted (see {@link KnowledgeEntryState}); {@link #loadInto}
+ * derives it from the event_type metadata key, and drops any entry whose key no longer resolves.
  */
 @CustomLog
 public final class VillagerKnowledgeAttachment {
@@ -42,10 +42,7 @@ public final class VillagerKnowledgeAttachment {
                     .relatedEntity(entry.getRelatedEntity())
                     .metadata(KnowledgeMetadataSanitizer.sanitize(entry.getMetadata()))
                     .packedPos(entry.getPackedPos())
-                    .source(entry.getSource())
-                    .hop(entry.getHop())
-                    .originalWeight(entry.getOriginalWeight())
-                    .corroborationCount(entry.getCorroborationCount())
+                    .weight(entry.getWeight())
                     .build());
         }
         villager.setData(AttachmentRegistry.VILLAGER_KNOWLEDGE, VillagerKnowledgeAttachmentState.of(states));
@@ -75,9 +72,6 @@ public final class VillagerKnowledgeAttachment {
                 continue;
             }
 
-            float weight = KnowledgeEntry.recomputeWeight(entryState.originalWeight(),
-                    entryState.corroborationCount(), VillagerKnowledgeStore.CORROBORATION_BUMP);
-
             KnowledgeEntry entry = KnowledgeEntry.builder()
                     .originObservationId(entryState.originObservationId())
                     .type(type)
@@ -86,11 +80,7 @@ public final class VillagerKnowledgeAttachment {
                     .relatedEntity(entryState.relatedEntity())
                     .metadata(metadata)
                     .packedPos(entryState.packedPos())
-                    .source(entryState.source())
-                    .hop(entryState.hop())
-                    .weight(weight)
-                    .originalWeight(entryState.originalWeight())
-                    .corroborationCount(entryState.corroborationCount())
+                    .weight(entryState.weight())
                     .build();
             store.admit(entry);
         }

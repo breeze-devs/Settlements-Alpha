@@ -1,12 +1,9 @@
 package dev.breezes.settlements.application.ai.gossip;
 
-import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
-import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,10 +33,9 @@ class GossipSessionRegistryTest {
     void happyPath_sendInviteAcceptComplete_freesBothParticipants() {
         // Arrange
         long tick = 100L;
-        KnowledgeEntry entry = knowledgeEntry();
 
         // Act — initiate
-        GossipSession session = this.registry.sendInvite(initiatorId, receiverId, entry, tick);
+        GossipSession session = this.registry.sendInvite(initiatorId, receiverId, tick);
         UUID sessionId = session.getSessionId();
 
         // Assert — both participants are locked
@@ -76,11 +72,10 @@ class GossipSessionRegistryTest {
     void sendInvite_sameInitiatorAndReceiver_throwsAndDoesNotRegisterSession() {
         // Arrange
         long tick = 100L;
-        KnowledgeEntry entry = knowledgeEntry();
 
         // Act
         assertThrows(IllegalArgumentException.class,
-                () -> this.registry.sendInvite(initiatorId, initiatorId, entry, tick));
+                () -> this.registry.sendInvite(initiatorId, initiatorId, tick));
 
         // Assert
         assertFalse(this.registry.isParticipating(initiatorId));
@@ -92,8 +87,7 @@ class GossipSessionRegistryTest {
     void inviteTimeout_unacceptedInviteIsAborted_freesBothParticipants() {
         // Arrange
         long startTick = 0L;
-        KnowledgeEntry entry = knowledgeEntry();
-        GossipSession session = this.registry.sendInvite(initiatorId, receiverId, entry, startTick);
+        GossipSession session = this.registry.sendInvite(initiatorId, receiverId, startTick);
 
         // Sanity: both locked before timeout
         assertTrue(this.registry.isParticipating(initiatorId));
@@ -119,7 +113,7 @@ class GossipSessionRegistryTest {
     void inviteTimeout_notYetExpired_doesNotAbort() {
         // Arrange
         long startTick = 0L;
-        this.registry.sendInvite(initiatorId, receiverId, knowledgeEntry(), startTick);
+        this.registry.sendInvite(initiatorId, receiverId, startTick);
 
         // Act — tick just before expiry
         long justBeforeExpiry = startTick
@@ -137,7 +131,7 @@ class GossipSessionRegistryTest {
     void sessionMaxLifetime_acceptedSessionThatNeverCompletes_isAborted_freesBothParticipants() {
         // Arrange — open and accept a session, then never call completeSession
         long startTick = 0L;
-        GossipSession session = this.registry.sendInvite(initiatorId, receiverId, knowledgeEntry(), startTick);
+        GossipSession session = this.registry.sendInvite(initiatorId, receiverId, startTick);
         this.registry.acceptInvite(receiverId);
 
         // Verify the session is in ACCEPTED phase and participants are locked
@@ -164,7 +158,7 @@ class GossipSessionRegistryTest {
     void sessionMaxLifetime_notYetExpired_doesNotAbort() {
         // Arrange — accept a session
         long startTick = 0L;
-        this.registry.sendInvite(initiatorId, receiverId, knowledgeEntry(), startTick);
+        this.registry.sendInvite(initiatorId, receiverId, startTick);
         this.registry.acceptInvite(receiverId);
 
         // Act — tick just before max lifetime
@@ -182,7 +176,7 @@ class GossipSessionRegistryTest {
     void sessionMaxLifetime_completedSessionIsNotTouchedByReaper() {
         // Arrange — run a full happy-path session to completion
         long startTick = 0L;
-        GossipSession session = this.registry.sendInvite(initiatorId, receiverId, knowledgeEntry(), startTick);
+        GossipSession session = this.registry.sendInvite(initiatorId, receiverId, startTick);
         this.registry.acceptInvite(receiverId);
         this.registry.completeSession(session.getSessionId());
 
@@ -195,18 +189,6 @@ class GossipSessionRegistryTest {
 
         // Assert — completed phase is preserved (reaper must not transition terminal sessions)
         assertEquals(GossipPhase.COMPLETED, session.getPhase());
-    }
-
-    private static KnowledgeEntry knowledgeEntry() {
-        return KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(),
-                ObservationType.RESOURCE,
-                0L,
-                0L,
-                null,
-                Map.of(),
-                1.5f,
-                null);
     }
 
 }

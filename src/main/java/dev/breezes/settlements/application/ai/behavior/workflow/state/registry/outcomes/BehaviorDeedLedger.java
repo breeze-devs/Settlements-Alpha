@@ -11,8 +11,12 @@ import java.util.Optional;
 /**
  * Ordered deed facts recorded during a single behavior run.
  * <p>
- * Behaviors record the primary deed plus any qualitatively distinct secondary deeds here; the
- * publisher remains the only owner of world-event fan-out policy.
+ * Behaviors record the primary deed plus any qualitatively distinct secondary deeds here. The
+ * ledger only accumulates facts — deciding which of them become world events belongs to whatever
+ * reads it, so a behavior never has to know the fan-out policy in force.
+ * <p>
+ * TODO: nothing reads the ledger today. The deed vocabulary is deliberately kept recorded while
+ *  the emission payload is redesigned, so the behaviors do not have to be revisited.
  */
 @CustomLog
 public final class BehaviorDeedLedger implements BehaviorState {

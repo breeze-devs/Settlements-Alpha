@@ -42,9 +42,9 @@ public final class SocialCueArbiter {
 
     /**
      * Cadence for the catalog admission scan. Each scan walks every cue entry and evaluates its
-     * trigger — several triggers scan perceived entities and the knowledge store — so running it
-     * every tick while idle is pure overhead. Cue cooldowns are all stored as absolute game-ticks,
-     * so throttling the scan only delays <em>noticing</em> a trigger; it never drifts cue timing.
+     * trigger — several of them scan perceived entities — so running it every tick while idle is
+     * pure overhead. Cue cooldowns are all stored as absolute game-ticks, so throttling the scan
+     * only delays <em>noticing</em> a trigger; it never drifts cue timing.
      */
     private static final ClockTicks ADMISSION_SCAN_INTERVAL = ClockTicks.seconds(1);
 

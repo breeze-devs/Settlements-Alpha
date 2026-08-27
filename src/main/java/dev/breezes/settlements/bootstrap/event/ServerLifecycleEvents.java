@@ -41,10 +41,12 @@ public final class ServerLifecycleEvents {
         NeoForge.EVENT_BUS.register(serverComponent.worldgenVillagerReplacementServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.cultivationSeedSyncServerEvents());
 
+        // Gossips fire even when inference is off, so the session reaper must run regardless
+        NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
+
         // SIS/cognition graph: construct + register only when the kill-switch is on
         if (inferenceGate.isEnabled()) {
             NeoForge.EVENT_BUS.register(serverComponent.worldEventBusReaperServerEvents());
-            NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
             NeoForge.EVENT_BUS.register(serverComponent.eveningDialoguePackSweepServerEvents());
             NeoForge.EVENT_BUS.register(serverComponent.planOverlayPumpServerEvents());
             NeoForge.EVENT_BUS.register(serverComponent.personaSweepServerEvents());
@@ -80,10 +82,10 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.villageAnimalSpawnerServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.worldgenVillagerReplacementServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.cultivationSeedSyncServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
 
             if (inferenceEnabled) {
                 NeoForge.EVENT_BUS.unregister(serverComponent.worldEventBusReaperServerEvents());
-                NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
                 NeoForge.EVENT_BUS.unregister(serverComponent.eveningDialoguePackSweepServerEvents());
                 NeoForge.EVENT_BUS.unregister(serverComponent.planOverlayPumpServerEvents());
                 NeoForge.EVENT_BUS.unregister(serverComponent.personaSweepServerEvents());

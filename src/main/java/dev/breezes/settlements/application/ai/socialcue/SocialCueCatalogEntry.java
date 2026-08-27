@@ -81,10 +81,11 @@ public final class SocialCueCatalogEntry {
      * Optional callback invoked by the arbiter when this cue completes.
      * Receives the villager and the context key that was returned by {@link #trigger} at
      * admission time (stored in {@link SocialCue#getContextKey()}). Null means no action
-     * on completion (the default for cosmetic cues like greet-player).
+     * on completion, which is the case for a purely cosmetic cue.
      * <p>
-     * This seam is used by the gossip cues to write the knowledge copy once both villagers
-     * have finished their cue scripts.
+     * This is where a cue that opened session state closes it. It fires only when the script runs to
+     * its end — a cue canceled mid-run never reaches it — so a cue that opens state a cancellation
+     * would strand needs a reaper behind it as well.
      */
     @Nullable
     private final BiConsumer<BaseVillager, String> onComplete;

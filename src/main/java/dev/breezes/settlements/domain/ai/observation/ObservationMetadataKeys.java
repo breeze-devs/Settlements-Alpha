@@ -22,8 +22,8 @@ public final class ObservationMetadataKeys {
     public static final String EVENT_TYPE = "event_type";
 
     /**
-     * The behavior key string carried by BEHAVIOR_STARTED/BEHAVIOR_COMPLETED events.
-     * Present only when the originating world-event had a non-null metadata string.
+     * The behavior key string carried by the originating world-event.
+     * Present only when that event had a non-null metadata string.
      */
     public static final String EVENT_META = "event_meta";
 

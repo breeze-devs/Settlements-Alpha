@@ -20,8 +20,7 @@ import java.util.UUID;
  * <p>
  * Private failures (e.g. the initiator waited for an accept that never came) are unobservable
  * by bystanders, so they must not appear on the bus. The villager should still remember the
- * attempt as a direct observation (hop = 0, source = null) so the monologue projector can
- * surface it as a personal failure seed.
+ * attempt first-hand so the monologue projector can surface it as a personal failure seed.
  * <p>
  * Separating the entry construction from the Minecraft-bound wiring ({@link CourtshipSelfMemoryRecorder})
  * keeps this class dependency-free and unit-testable.
@@ -36,7 +35,7 @@ public final class CourtshipSelfMemoryEntryBuilder {
 
     /**
      * Constructs a first-hand knowledge entry recording that this villager's courtship attempt
-     * failed with the given reason, using a random origin id (off-bus, cannot corroborate).
+     * failed with the given reason.
      *
      * @param actorId             UUID of the villager who initiated and experienced the failure
      * @param partnerId           UUID of the courtship target, or null if already gone
@@ -58,8 +57,10 @@ public final class CourtshipSelfMemoryEntryBuilder {
 
     /**
      * Materializes the metadata map the projector reads to render the seed phrase.
-     * Mirrors what {@link dev.breezes.settlements.domain.ai.perception.ObservationFactory#metadataFor}
-     * would produce for a bus-emitted courtship failure, using the same key constants.
+     * <p>
+     * Written with the same {@link ObservationMetadataKeys} constants a perceived observation is
+     * stored under, so an entry recorded here is indistinguishable in shape from one the
+     * perception lane wrote and needs no reader of its own.
      */
     public static Map<String, String> buildMetadata(@Nonnull UUID actorId, @Nonnull String reason) {
         Map<String, String> metadata = new HashMap<>(4);

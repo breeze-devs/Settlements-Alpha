@@ -7,12 +7,11 @@ import dev.breezes.settlements.infrastructure.config.annotations.integers.Intege
 import dev.breezes.settlements.infrastructure.config.annotations.strings.StringConfig;
 
 /**
- * Always-on scripted-cue cadence knobs, split out of
- * {@link dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig}.
+ * Cadence knobs for the scripted-cue lane: the ambient chatter cooldown and the charisma curve every
+ * cue's cooldown is scaled through.
  * <p>
- * Unlike gossip cadence (which only matters with the SIS kill-switch on), ambient chatter and the
- * charisma-scaled cooldown curve {@link SocialCueArbiter} applies to every cue keep firing in
- * dumb mode, so they stay in {@code general.toml}.
+ * These live in {@code general.toml} rather than {@code inference.toml} because the lane they tune
+ * runs regardless if the SIS kill-switch is on.
  */
 @BehaviorConfig(name = "social_cue", type = ConfigurationType.GENERAL)
 public record SocialCueConfig(

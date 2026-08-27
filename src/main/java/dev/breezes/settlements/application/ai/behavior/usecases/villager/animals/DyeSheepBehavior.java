@@ -192,7 +192,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(targets));
 
-        // Headline the deed with the run's color (wololo falls back to blue) so monologue/gossip can say "dyed N sheep blue".
+        // Headline the deed with the run's color (wololo falls back to blue) so the deed reads "dyed N sheep blue".
         DyeColor headlineColor = this.selectedDyeColor != null ? this.selectedDyeColor : WOLOLO_RESULT_COLOR;
         context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.SHEEP_DYED, "sheep", describeColor(headlineColor)));
     }

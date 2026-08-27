@@ -6,9 +6,15 @@ import dev.breezes.settlements.infrastructure.config.annotations.integers.Intege
 
 /**
  * Tuning knobs for the event-lane subsystem: {@code WorldEventBus} TTL, observation buffer
- * capacity, knowledge store capacity, and gossip cadence.
+ * capacity, knowledge store capacity, and gossip cadence and range.
  * <p>
- * Every knob here only matters while the SIS kill-switch is on.
+ * The perception knobs take effect only while the SIS kill-switch is on, since the lane they tune is
+ * not ticked otherwise. The gossip knobs apply either way — the gossip cues are presentation and run
+ * regardless of the switch.
+ * <p>
+ * TODO: move the gossip knobs to {@code SocialCueConfig} ({@code general.toml}) — they tune an
+ *  always-on lane, and an operator with inference off should not have to edit the inference config
+ *  to change live behavior.
  * <p>
  * The Minecraft entity constructor path is not Dagger-created, so per-villager stores read
  * these values through the current server component with constant fallbacks during early bootstrap.

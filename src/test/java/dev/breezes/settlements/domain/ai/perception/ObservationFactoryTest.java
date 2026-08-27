@@ -1,6 +1,5 @@
 package dev.breezes.settlements.domain.ai.perception;
 
-import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
 import dev.breezes.settlements.domain.ai.observation.Observation;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
@@ -95,18 +94,6 @@ class ObservationFactoryTest {
     }
 
     @Test
-    void fromEvent_mapsBehaviorStartedToTaskCompletionObservationType() {
-        // Arrange
-        WorldEvent event = worldEvent(WorldEventType.BEHAVIOR_STARTED);
-
-        // Act
-        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
-
-        // Assert
-        assertEquals(ObservationType.TASK_COMPLETION, observation.type());
-    }
-
-    @Test
     void fromEvent_usesProvidedCurrentTickAsTimestamp() {
         // Arrange
         WorldEvent event = worldEvent(WorldEventType.RESOURCE_HARVESTED);
@@ -119,32 +106,20 @@ class ObservationFactoryTest {
     }
 
     @Test
-    void fromEvent_tradeCompletedBaseImportanceExceedsPromotionThreshold() {
+    void fromEvent_salientSocialEventOutweighsRoutineDeed() {
         // Arrange
-        WorldEvent event = worldEvent(WorldEventType.TRADE_COMPLETED);
+        WorldEvent tradeEvent = worldEvent(WorldEventType.TRADE_COMPLETED);
+        WorldEvent pickupEvent = worldEvent(WorldEventType.ITEM_COLLECTED);
 
         // Act
-        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
+        float tradeImportance = ObservationFactory.fromEvent(tradeEvent, CURRENT_TICK).baseImportance();
+        float pickupImportance = ObservationFactory.fromEvent(pickupEvent, CURRENT_TICK).baseImportance();
 
-        // Assert — importance alone (before gene/novelty) should exceed the threshold,
-        // because trade completions are semantically significant social facts.
-        assertTrue(observation.baseImportance() >= MemoryImportanceGate.PROMOTION_THRESHOLD,
-                "Trade-completed base importance " + observation.baseImportance() +
-                        " should be >= promotion threshold " + MemoryImportanceGate.PROMOTION_THRESHOLD);
-    }
-
-    @Test
-    void fromEvent_behaviorStartedBaseImportanceBelowPromotionThreshold() {
-        // Arrange — routine lifecycle events should not unconditionally promote
-        WorldEvent event = worldEvent(WorldEventType.BEHAVIOR_STARTED);
-
-        // Act
-        Observation observation = ObservationFactory.fromEvent(event, CURRENT_TICK);
-
-        // Assert
-        assertTrue(observation.baseImportance() < MemoryImportanceGate.PROMOTION_THRESHOLD,
-                "Behavior-started base importance " + observation.baseImportance() +
-                        " should be < promotion threshold " + MemoryImportanceGate.PROMOTION_THRESHOLD);
+        // Assert — base importance becomes the stored entry's weight, so a completed trade has to
+        // outrank a routine pickup wherever episodic entries are ordered by it
+        assertTrue(tradeImportance > pickupImportance,
+                "Trade-completed importance " + tradeImportance +
+                        " should outrank item-collected importance " + pickupImportance);
     }
 
     @Test
@@ -185,11 +160,11 @@ class ObservationFactoryTest {
 
     @Test
     void metadataFor_carriesEventMetaWhenPresent() {
-        // Arrange — behavior events carry a behavior key string as metadata
+        // Arrange — a deed event carries the producing behavior's key string as metadata
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
                 .gameTick(100L)
-                .type(WorldEventType.BEHAVIOR_STARTED)
+                .type(WorldEventType.RESOURCE_HARVESTED)
                 .actorId(UUID.randomUUID())
                 .posX(0).posY(64).posZ(0)
                 .chunkX(0).chunkZ(0)
@@ -550,7 +525,8 @@ class ObservationFactoryTest {
         UUID idA = ObservationFactory.fromEvent(witnessA, CURRENT_TICK).id();
         UUID idB = ObservationFactory.fromEvent(witnessB, CURRENT_TICK).id();
 
-        // Assert — both witnesses produce the same observation id, enabling corroboration
+        // Assert — both witnesses produce the same observation id, so a store holding one of them
+        // recognizes the other as the same fact
         assertEquals(idA, idB, "Co-witnesses with the same dedupeKey must produce the same observation id");
     }
 

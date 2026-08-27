@@ -26,8 +26,8 @@ class WorldEventBusTest {
         UUID actor = UUID.randomUUID();
 
         // Act
-        WorldEvent first = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
-        WorldEvent second = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_COMPLETED), 101L);
+        WorldEvent first = bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
+        WorldEvent second = bus.emit(buildBuilder(actor, WorldEventType.CHEST_MANAGED), 101L);
 
         // Assert
         assertTrue(first.getSequence() < second.getSequence());
@@ -37,7 +37,7 @@ class WorldEventBusTest {
     void visitDelta_visitsOnlyEventsAfterCursor() {
         // Arrange
         UUID actor = UUID.randomUUID();
-        WorldEvent e1 = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
+        WorldEvent e1 = bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
         WorldEvent e2 = bus.emit(buildBuilder(actor, WorldEventType.SHEEP_SHEARED), 101L);
         WorldEvent e3 = bus.emit(buildBuilder(actor, WorldEventType.RESOURCE_HARVESTED), 102L);
         List<WorldEvent> visited = new ArrayList<>();
@@ -55,8 +55,8 @@ class WorldEventBusTest {
     void visitDelta_visitsAllEventsWhenCursorIsZero() {
         // Arrange
         UUID actor = UUID.randomUUID();
-        bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
-        bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_COMPLETED), 101L);
+        bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
+        bus.emit(buildBuilder(actor, WorldEventType.CHEST_MANAGED), 101L);
         List<WorldEvent> visited = new ArrayList<>();
 
         // Act
@@ -70,7 +70,7 @@ class WorldEventBusTest {
     void visitDelta_visitsNothing_whenNothingNew() {
         // Arrange
         UUID actor = UUID.randomUUID();
-        WorldEvent event = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
+        WorldEvent event = bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
         List<WorldEvent> visited = new ArrayList<>();
 
         // Act
@@ -96,7 +96,7 @@ class WorldEventBusTest {
     void visitDelta_visitsOnlyEventsAfterCursorAndReturnsHighestSeq() {
         // Arrange
         UUID actor = UUID.randomUUID();
-        WorldEvent e1 = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
+        WorldEvent e1 = bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
         WorldEvent e2 = bus.emit(buildBuilder(actor, WorldEventType.SHEEP_SHEARED), 101L);
         WorldEvent e3 = bus.emit(buildBuilder(actor, WorldEventType.RESOURCE_HARVESTED), 102L);
         List<WorldEvent> visited = new ArrayList<>();
@@ -113,7 +113,7 @@ class WorldEventBusTest {
     void visitDelta_returnsCursorWhenNothingNew() {
         // Arrange
         UUID actor = UUID.randomUUID();
-        WorldEvent event = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
+        WorldEvent event = bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
         List<WorldEvent> visited = new ArrayList<>();
 
         // Act
@@ -128,8 +128,8 @@ class WorldEventBusTest {
     void evict_removesOldEvents_retainsRecent() {
         // Arrange
         UUID actor = UUID.randomUUID();
-        bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 10L);   // old
-        bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_COMPLETED), 105L); // recent
+        bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 10L);   // old
+        bus.emit(buildBuilder(actor, WorldEventType.CHEST_MANAGED), 105L); // recent
 
         // Act — evict at tick 115, TTL is 100; events at tick < 15 are evicted
         bus.evict(115L);
@@ -144,8 +144,8 @@ class WorldEventBusTest {
     void evict_retainsAllWhenAllRecent() {
         // Arrange
         UUID actor = UUID.randomUUID();
-        bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
-        bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_COMPLETED), 101L);
+        bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
+        bus.emit(buildBuilder(actor, WorldEventType.CHEST_MANAGED), 101L);
 
         // Act — evict at tick 150; threshold = 150 - 100 = 50; both events at 100+, retained
         bus.evict(150L);
@@ -159,8 +159,8 @@ class WorldEventBusTest {
         // Arrange
         UUID actor = UUID.randomUUID();
         WorldEventBus configuredBus = new WorldEventBus(eventLaneConfigWithTtl(40));
-        configuredBus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
-        configuredBus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_COMPLETED), 130L);
+        configuredBus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
+        configuredBus.emit(buildBuilder(actor, WorldEventType.CHEST_MANAGED), 130L);
 
         // Act — threshold = 150 - 40 = 110, so only the first event is evicted.
         configuredBus.evict(150L);
@@ -180,7 +180,7 @@ class WorldEventBusTest {
     void currentSeq_returnsLastEmittedSeq() {
         // Arrange
         UUID actor = UUID.randomUUID();
-        WorldEvent event = bus.emit(buildBuilder(actor, WorldEventType.BEHAVIOR_STARTED), 100L);
+        WorldEvent event = bus.emit(buildBuilder(actor, WorldEventType.ITEM_COLLECTED), 100L);
 
         // Act & Assert
         assertEquals(event.getSequence(), bus.currentSeq());

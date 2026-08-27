@@ -1,7 +1,6 @@
 package dev.breezes.settlements.infrastructure.minecraft.attachments;
 
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
-import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.PackedPos;
 import dev.breezes.settlements.domain.ai.observation.Observation;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
@@ -17,23 +16,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Verifies the load-time reconstruction logic in {@link VillagerKnowledgeAttachment}: type and
- * weight are dropped from persistence (see {@link KnowledgeEntryState}) and must be recomputed on
- * load to equal the pre-save values exactly.
+ * Verifies the load-time reconstruction logic in {@link VillagerKnowledgeAttachment}: the entry's
+ * semantic type is not persisted (see {@link KnowledgeEntryState}) and must be derived on load to
+ * equal the pre-save value exactly.
  * <p>
  * {@link VillagerKnowledgeAttachment#saveFrom}/{@code loadInto} themselves require a
  * {@link dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager}, which
- * is unmockable Minecraft state — so this test exercises the same reconstruction helpers
- * ({@link VillagerKnowledgeAttachment#resolveObservationType}, {@link KnowledgeEntry#recomputeWeight})
- * that {@code loadInto} calls internally, driven from a real {@link KnowledgeEntryState} built the
- * same way {@code saveFrom} would build one.
+ * is unmockable Minecraft state — so this test exercises the reconstruction helper
+ * {@link VillagerKnowledgeAttachment#resolveObservationType} that {@code loadInto} calls
+ * internally, driven from a real {@link KnowledgeEntryState} built the same way {@code saveFrom}
+ * would build one.
  */
 class VillagerKnowledgeAttachmentTest {
 
     @Test
-    void reconstruction_typeAndWeight_equalPreSaveValues() {
-        // Arrange — build a first-hand entry the same way PerceptionPipeline does, then simulate
-        // the "state" it would be flattened into for persistence (type/weight dropped).
+    void reconstruction_observationType_equalsPreSaveValue() {
+        // Arrange — build an entry the same way PerceptionPipeline does, then simulate the "state"
+        // it would be flattened into for persistence (semantic type dropped).
         UUID actorId = UUID.randomUUID();
         WorldEvent event = WorldEvent.builder()
                 .sequence(1L)
@@ -51,7 +50,6 @@ class VillagerKnowledgeAttachmentTest {
         KnowledgeEntry preSave = KnowledgeEntry.fromDirectObservation(
                 observation.id(), observation.type(),
                 100L, 100L, null, metadata, 2.4f, packedPos);
-        preSave.corroborate(VillagerKnowledgeStore.CORROBORATION_BUMP);
 
         KnowledgeEntryState state = KnowledgeEntryState.builder()
                 .originObservationId(preSave.getOriginObservationId())
@@ -60,20 +58,14 @@ class VillagerKnowledgeAttachmentTest {
                 .relatedEntity(preSave.getRelatedEntity())
                 .metadata(preSave.getMetadata())
                 .packedPos(preSave.getPackedPos())
-                .source(preSave.getSource())
-                .hop(preSave.getHop())
-                .originalWeight(preSave.getOriginalWeight())
-                .corroborationCount(preSave.getCorroborationCount())
+                .weight(preSave.getWeight())
                 .build();
 
         // Act — reconstruct exactly as VillagerKnowledgeAttachment.loadInto does
         ObservationType reconstructedType = VillagerKnowledgeAttachment.resolveObservationType(state.metadata());
-        float reconstructedWeight = KnowledgeEntry.recomputeWeight(
-                state.originalWeight(), state.corroborationCount(), VillagerKnowledgeStore.CORROBORATION_BUMP);
 
-        // Assert — reconstructed values equal the pre-save values
+        // Assert — the derived type equals the pre-save value
         assertEquals(preSave.getType(), reconstructedType);
-        assertEquals(preSave.getWeight(), reconstructedWeight, 0.0001f);
     }
 
     @Test
@@ -86,9 +78,7 @@ class VillagerKnowledgeAttachmentTest {
                 .admittedAtTick(0L)
                 .metadata(Map.of("event_type", WorldEventType.RESOURCE_HARVESTED.name()))
                 .packedPos(packedPos)
-                .hop(0)
-                .originalWeight(1.0f)
-                .corroborationCount(0)
+                .weight(1.0f)
                 .build();
 
         // Act, Assert
@@ -104,9 +94,7 @@ class VillagerKnowledgeAttachmentTest {
                 .admittedAtTick(0L)
                 .metadata(Map.of("event_type", WorldEventType.COURTSHIP_CHILD_BIRTH.name()))
                 .packedPos(null)
-                .hop(0)
-                .originalWeight(1.0f)
-                .corroborationCount(0)
+                .weight(1.0f)
                 .build();
 
         // Act, Assert

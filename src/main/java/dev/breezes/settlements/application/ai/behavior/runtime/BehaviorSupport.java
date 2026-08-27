@@ -6,7 +6,6 @@ import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.application.economy.supply.SupplyEvaluator;
 import dev.breezes.settlements.application.hunger.HungerConfig;
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -21,7 +20,6 @@ import lombok.Getter;
 public class BehaviorSupport {
 
     private final HungerConfig hungerConfig;
-    private final WorldEventEmitter worldEventEmitter;
     private final DemandSignalService demandSignalService;
     private final DemandEvaluator demandEvaluator;
     private final SupplyEvaluator supplyEvaluator;

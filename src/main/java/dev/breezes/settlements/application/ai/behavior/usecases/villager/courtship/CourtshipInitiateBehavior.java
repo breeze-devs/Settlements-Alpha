@@ -27,7 +27,6 @@ import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistr
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -61,7 +60,6 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     private final BedReservationService bedReservationService;
     private final CourtshipPresenter courtshipPresenter;
     private final CourtshipChoreographyLibrary choreographyLibrary;
-    private final WorldEventEmitter worldEventEmitter;
     private final CourtshipSelfMemoryRecorder selfMemoryRecorder;
 
     @Nullable
@@ -83,7 +81,6 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         this.bedReservationService = bedReservationService;
         this.courtshipPresenter = courtshipPresenter;
         this.choreographyLibrary = choreographyLibrary;
-        this.worldEventEmitter = support.getWorldEventEmitter();
         this.selfMemoryRecorder = selfMemoryRecorder;
 
         this.preconditions.add(this.canInitiateCourtship());
@@ -195,8 +192,6 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         int placeholderDuration = 300;
         CourtshipSession session = this.sessionRegistry.sendInvite(self, partner, placeholderDuration, self.level().getGameTime());
         this.activeSessionId = session.getSessionId();
-
-        this.worldEventEmitter.emitCourtshipInviteSent(self, partner.getUUID(), session.getSessionId());
 
         return StepResult.transition(Stage.WAIT_FOR_ACCEPT);
     }

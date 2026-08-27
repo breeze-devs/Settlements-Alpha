@@ -15,15 +15,11 @@ import java.util.UUID;
  * but is intentionally much smaller: there is no planner, no futures, no queued arrivals.
  * <p>
  * Stores:
- * <ul>
- *   <li>The currently executing {@link SocialCue} and its progress counters.</li>
- *   <li>A global per-cue-key cooldown to prevent the same cue from firing back-to-back.</li>
- *   <li>A per-target cooldown so a lingering player is not waved at every cycle.</li>
- *   <li>A gaze slot consulted by {@code LookQueries} as the middle tier in the resolution order.</li>
- *   <li>A {@link #lastSeenSeq} cursor for the {@code WorldEventBus} — seeded on load. It is the
- *       per-villager read position the Phase 4 perception gate will drain (no consumer drains it
- *       yet; the override lane reacts off the registries, not the bus).</li>
- * </ul>
+ * - The currently executing {@link SocialCue} and its progress counters.
+ * - A global per-cue-key cooldown to prevent the same cue from firing back-to-back.
+ * - A per-target cooldown so a lingering player is not waved at every cycle.
+ * - A gaze slot consulted by {@code LookQueries} as the middle tier in the resolution order.
+ * - The perception lane's per-villager {@code WorldEventBus} read position and observation buffer.
  */
 @Getter
 public final class SocialCueRuntimeState {
@@ -61,9 +57,9 @@ public final class SocialCueRuntimeState {
 
     /**
      * Absolute game-tick at which this villager may next run a catalog admission scan.
-     * The arbiter throttles {@code tryAdmit} to roughly 1 Hz because evaluating every cue's
-     * trigger each tick (entity and knowledge-store scans) is wasted work while idle. Active-cue
-     * dispatch is never gated by this — only the admission scan. Zero means "scan on the next tick".
+     * The arbiter throttles the scan because evaluating every cue's trigger each tick is wasted work
+     * while idle. Active-cue dispatch is never gated by this — only the admission scan. Zero means
+     * "scan on the next tick".
      */
     private long nextAdmissionScanTick;
 
@@ -89,10 +85,8 @@ public final class SocialCueRuntimeState {
     private boolean admissionScanInitialized;
 
     /**
-     * Per-villager ring buffer for observations produced during the perception gate pass.
-     * Populated by {@code PerceptionPipeline} from admitted world-events; drained by
-     * the importance gate for memory promotion. Kept here rather than on a separate domain
-     * record so all per-villager transient AI state is co-located.
+     * Per-villager ring buffer holding the observations of one perception pass, between the
+     * gate that admits them and the promotion that consumes them.
      */
     private final ObservationBuffer observationBuffer;
 

@@ -10,11 +10,12 @@ import java.util.UUID;
 
 /**
  * A single discrete event perceived by a villager, queued in the {@link ObservationBuffer}
- * before the importance gate determines whether it is promoted to episodic memory.
+ * before the admission gate determines whether it is promoted to episodic memory.
  * <p>
- * {@code id} is a stable identity for this observation used as the deduplication key ({@code originObservationId}).
- * Observations derived from the same world-event carry the same id on both the initiator and the receiver so the
- * store can reject news that has already been seen regardless of the gossip path it traveled.
+ * {@code id} is a stable identity for this observation, carried onto the promoted entry as its
+ * originObservationId. Independent witnesses of one occurrence derive the same id, so a store
+ * already holding that occurrence recognizes the second arrival as the fact it has rather than a
+ * second fact.
  * <p>
  * Event-derived details stay in typed fields while the observation is buffered so the
  * hot perception path does not allocate a metadata map for observations that never promote.

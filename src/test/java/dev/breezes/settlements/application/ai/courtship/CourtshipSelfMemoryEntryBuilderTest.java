@@ -73,32 +73,6 @@ class CourtshipSelfMemoryEntryBuilderTest {
     }
 
     @Test
-    void build_entryHasHopZero() {
-        // Arrange
-        UUID actorId = UUID.randomUUID();
-        UUID originId = UUID.randomUUID();
-
-        // Act
-        KnowledgeEntry entry = CourtshipSelfMemoryEntryBuilder.build(actorId, null, 1000L, "no one answered", originId);
-
-        // Assert – hop 0 marks this as a first-hand observation, never hearsay
-        assertEquals(0, entry.getHop());
-    }
-
-    @Test
-    void build_entryHasNullSource() {
-        // Arrange
-        UUID actorId = UUID.randomUUID();
-        UUID originId = UUID.randomUUID();
-
-        // Act
-        KnowledgeEntry entry = CourtshipSelfMemoryEntryBuilder.build(actorId, null, 1000L, "no one answered", originId);
-
-        // Assert – null source confirms this was not shared by a gossip partner
-        assertNull(entry.getSource());
-    }
-
-    @Test
     void build_entryUsesSuppliedOriginObservationId() {
         // Arrange
         UUID actorId = UUID.randomUUID();

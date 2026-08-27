@@ -31,7 +31,7 @@ class VillagerKnowledgeAttachmentCodecTest {
         KnowledgeEntryState decodedEntry = decoded.entries().getFirst();
         assertEquals(entry.originObservationId(), decodedEntry.originObservationId());
         assertEquals(entry.packedPos(), decodedEntry.packedPos());
-        assertEquals(entry.corroborationCount(), decodedEntry.corroborationCount());
+        assertEquals(entry.weight(), decodedEntry.weight());
     }
 
     @Test
@@ -85,6 +85,24 @@ class VillagerKnowledgeAttachmentCodecTest {
     }
 
     @Test
+    void stateCodec_dropsOnlyTheUnreadableEntry() {
+        // Arrange — two entries, the second stripped of its required weight field
+        UUID survivingId = UUID.fromString("00000000-0000-0000-0000-0000000000aa");
+        UUID corruptedId = UUID.fromString("00000000-0000-0000-0000-0000000000bb");
+        JsonElement payload = encode(VillagerKnowledgeAttachmentState.of(List.of(
+                entry().toBuilder().originObservationId(survivingId).build(),
+                entry().toBuilder().originObservationId(corruptedId).build())));
+        entryAt(payload, 1).remove("weight");
+
+        // Act
+        VillagerKnowledgeAttachmentState decoded = decode(payload);
+
+        // Assert — the readable entry survives instead of being discarded alongside the bad one
+        assertEquals(1, decoded.entries().size());
+        assertEquals(survivingId, decoded.entries().getFirst().originObservationId());
+    }
+
+    @Test
     void stateCodec_roundTripsEmptyState() {
         // Arrange, Act
         VillagerKnowledgeAttachmentState decoded = decode(encode(VillagerKnowledgeAttachmentState.empty()));
@@ -95,44 +113,8 @@ class VillagerKnowledgeAttachmentCodecTest {
     }
 
     @Test
-    void entryCodec_omitsHopWhenZero() {
-        // Arrange — hop = 0 is the overwhelmingly common (first-hand) case
-        KnowledgeEntryState state = entry().toBuilder().hop(0).build();
-
-        // Act
-        JsonElement payload = encode(VillagerKnowledgeAttachmentState.of(List.of(state)));
-
-        // Assert
-        assertFalse(firstEntry(payload).has("hop"), "hop must be omitted from the wire when 0");
-    }
-
-    @Test
-    void entryCodec_writesHopWhenNonZero() {
-        // Arrange
-        KnowledgeEntryState state = entry().toBuilder().hop(2).build();
-
-        // Act
-        JsonElement payload = encode(VillagerKnowledgeAttachmentState.of(List.of(state)));
-
-        // Assert
-        assertEquals(2, firstEntry(payload).get("hop").getAsInt());
-    }
-
-    @Test
-    void entryCodec_roundTripsHop() {
-        // Arrange
-        KnowledgeEntryState state = entry().toBuilder().hop(3).build();
-
-        // Act
-        VillagerKnowledgeAttachmentState decoded = decode(encode(VillagerKnowledgeAttachmentState.of(List.of(state))));
-
-        // Assert
-        assertEquals(3, decoded.entries().getFirst().hop());
-    }
-
-    @Test
     void entryCodec_omitsAdmittedAtTickWhenEqualToOriginTimestampTick() {
-        // Arrange — first-hand entries always have admittedAtTick == originTimestampTick
+        // Arrange — an entry admitted the tick it was observed carries no separate admission tick
         KnowledgeEntryState state = entry().toBuilder()
                 .originTimestampTick(500L)
                 .admittedAtTick(500L)
@@ -148,7 +130,7 @@ class VillagerKnowledgeAttachmentCodecTest {
 
     @Test
     void entryCodec_writesAdmittedAtTickWhenDifferentFromOriginTimestampTick() {
-        // Arrange — hearsay entries admit later than the origin observation
+        // Arrange — an entry admitted later than the observation it came from
         KnowledgeEntryState state = entry().toBuilder()
                 .originTimestampTick(500L)
                 .admittedAtTick(650L)
@@ -221,13 +203,11 @@ class VillagerKnowledgeAttachmentCodecTest {
     }
 
     @Test
-    void uuidCodec_roundTripsRelatedEntityAndSourceAsIntArrays() {
+    void uuidCodec_roundTripsRelatedEntityAsIntArray() {
         // Arrange
         UUID relatedEntity = UUID.fromString("11111111-2222-3333-4444-555555555555");
-        UUID source = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa");
         KnowledgeEntryState state = entry().toBuilder()
                 .relatedEntity(relatedEntity)
-                .source(source)
                 .build();
 
         // Act
@@ -235,7 +215,6 @@ class VillagerKnowledgeAttachmentCodecTest {
 
         // Assert
         assertEquals(relatedEntity, decoded.entries().getFirst().relatedEntity());
-        assertEquals(source, decoded.entries().getFirst().source());
     }
 
     private static JsonElement encode(VillagerKnowledgeAttachmentState state) {
@@ -252,9 +231,13 @@ class VillagerKnowledgeAttachmentCodecTest {
     }
 
     private static JsonObject firstEntry(JsonElement payload) {
+        return entryAt(payload, 0);
+    }
+
+    private static JsonObject entryAt(JsonElement payload, int index) {
         JsonObject object = payload.getAsJsonObject();
         JsonArray entries = object.getAsJsonArray("entries");
-        return entries.get(0).getAsJsonObject();
+        return entries.get(index).getAsJsonObject();
     }
 
     private static KnowledgeEntryState entry() {
@@ -265,10 +248,7 @@ class VillagerKnowledgeAttachmentCodecTest {
                 .relatedEntity(UUID.fromString("00000000-0000-0000-0000-000000000002"))
                 .metadata(Map.of("event_type", "RESOURCE_HARVESTED"))
                 .packedPos(42L)
-                .source(UUID.fromString("00000000-0000-0000-0000-000000000003"))
-                .hop(1)
-                .originalWeight(3.0F)
-                .corroborationCount(2)
+                .weight(3.0F)
                 .build();
     }
 

@@ -13,8 +13,8 @@ import java.util.Map;
  * so the language model can render them in first or third person as appropriate.
  * <p>
  * Null fields are omitted from the wire representation by Gson's default serializer behavior,
- * matching the SIS VillagerEpisodicEntryDTO (extra="forbid") contract. Primitive fields
- * ({@link #hop}, {@link #ageTicks}) are always present.
+ * matching the SIS VillagerEpisodicEntryDTO (extra="forbid") contract. The primitive
+ * {@link #ageTicks} is always present.
  */
 @Builder
 @Getter
@@ -26,7 +26,7 @@ public final class EpisodicEntryDTO {
     private final String eventType;
 
     /**
-     * One of "FIRST_HAND_PARTICIPANT", "FIRST_HAND_BYSTANDER", or "HEARSAY".
+     * One of "FIRST_HAND_PARTICIPANT" or "FIRST_HAND_BYSTANDER".
      * Controls whether SIS renders first-person or third-person prose for this entry.
      */
     private final String perspective;
@@ -46,12 +46,6 @@ public final class EpisodicEntryDTO {
      */
     @Nullable
     private final String target;
-
-    /**
-     * Resolved display name of the gossip source. Present only for HEARSAY entries.
-     */
-    @Nullable
-    private final String source;
 
     /**
      * The EventOutcome name ("SUCCESS" or "FAILURE") if recorded by the originating behavior.
@@ -82,16 +76,10 @@ public final class EpisodicEntryDTO {
      * render spatial direction ("a zombie to the south-east").
      * <p>
      * Null — and thus omitted by Gson — only when position metadata is absent; never sent partial
-     * or zeroed. Hearsay entries carry the original witness's coords, copied through from the origin
-     * observation; SIS owns whether to phrase direction for hearsay.
+     * or zeroed.
      */
     @Nullable
     private final int[] pos;
-
-    /**
-     * Gossip hop count. 0 = directly observed; > 0 = received via hearsay.
-     */
-    private final int hop;
 
     /**
      * Age of this entry in game ticks (currentTick - admittedAtTick), clamped to >= 0.

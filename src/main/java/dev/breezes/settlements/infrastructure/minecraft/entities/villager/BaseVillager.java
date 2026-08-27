@@ -138,9 +138,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     public static final float PANIC_DAMAGE_THRESHOLD = 0.1F;
 
     private static final ClockTicks RECONCILER_COOLDOWN_TICKS = ClockTicks.seconds(5);
-    // Perception drains the WorldEventBus on a 1 Hz cadence instead of every tick. The bus is a
+    // Perception drains the WorldEventBus on a coarse cadence instead of every tick. The bus is a
     // catch-up cursor, so batching only enlarges each delta — no events are missed as long as this
-    // interval stays well under the bus TTL (EventLaneConfig.worldEventTtlTicks, default 100 ticks).
+    // interval stays well under the bus TTL (EventLaneConfig.worldEventTtlTicks).
     private static final ClockTicks PERCEPTION_COOLDOWN_TICKS = ClockTicks.seconds(1);
     // Occasional name sync for catching direct name data modifications
     private static final ClockTicks NAME_SYNC_COOLDOWN_TICKS = ClockTicks.minutes(1);
@@ -591,7 +591,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             this.addStartingFood(this.settlementsInventory);
         }
 
-        // Restore episodic knowledge so gossip re-sharing and memory grounding survive restarts.
+        // Restore episodic knowledge so a villager's memory of its own past survives a restart
         VillagerKnowledgeAttachment.loadInto(this, this.knowledgeStore);
     }
 
@@ -644,15 +644,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     protected void customServerAiStep() {
         ServerComponent server = SettlementsDagger.serverOrThrow();
 
-        // The whole perception lane — cursor seed + drain — is cognition-lane work. With SIS off the
-        // bus never receives events, so the seed-to-high-water-mark step can never complete (seq stays
-        // 0) and would otherwise resolve the bus and re-read currentSeq() every tick forever, forcing an
-        // otherwise-unused bus into existence. Gate the seed with the same switch as the drain.
         boolean cognitionEnabled = server.inferenceGate().isEnabled();
         if (cognitionEnabled) {
-            // Seed before the brain tick so the override detector (PlanRunner.tickOverride, run inside
-            // the brain tick) never drains pre-load history on a freshly loaded villager. The cursor is
-            // transient (not persisted); this is a one-time skip-history operation.
+            // The cursor is transient, so every load starts it at zero and would otherwise replay the
+            // whole retained log; seeding it to the high-water mark is the one-time skip.
             this.seedEventCursorOnFirstTick(server);
         }
 
@@ -694,11 +689,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     }
 
     /**
-     * Runs the perception pipeline
-     * <p>
-     * Runs after the brain tick (freshest sensor data) and the SocialCue tick.
-     * Throttled to {@link #PERCEPTION_COOLDOWN_TICKS}; the pipeline is a catch-up cursor drain,
-     * so a coarser cadence only batches the delta rather than dropping events.
+     * Runs the perception pipeline, throttled to {@link #PERCEPTION_COOLDOWN_TICKS}.
      */
     private void tickPerception(@Nonnull ServerComponent server) {
         if (!this.perceptionCooldown.tickCheckAndReset(1)) {

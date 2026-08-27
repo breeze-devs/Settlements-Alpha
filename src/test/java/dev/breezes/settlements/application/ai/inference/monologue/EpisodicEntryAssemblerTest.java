@@ -34,7 +34,6 @@ class EpisodicEntryAssemblerTest {
     private static final UUID OBSERVER_ID = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001");
     private static final UUID ACTOR_ID = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000002");
     private static final UUID TARGET_ID = UUID.fromString("cccccccc-0000-0000-0000-000000000003");
-    private static final UUID SOURCE_ID = UUID.fromString("dddddddd-0000-0000-0000-000000000004");
 
     private static final long CURRENT_TICK = 10_000L;
     private static final long ADMITTED_TICK = 9_000L;
@@ -72,13 +71,13 @@ class EpisodicEntryAssemblerTest {
 
     @Test
     void assemble_nonSeedWorthyEventType_entryExcluded() {
-        // Arrange — BEHAVIOR_STARTED is not seed-worthy (isSeedWorthy() == false)
-        this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.BEHAVIOR_STARTED, 5.0f));
+        // Arrange — ITEM_COLLECTED is not seed-worthy (isSeedWorthy() == false)
+        this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.ITEM_COLLECTED, 5.0f));
 
         // Act
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
-        // Assert — lifecycle noise is filtered before reaching the DTO list
+        // Assert — routine noise is filtered before reaching the DTO list
         assertTrue(result.isEmpty());
     }
 
@@ -110,7 +109,7 @@ class EpisodicEntryAssemblerTest {
     }
 
     @Test
-    void assemble_hop0_actorEqualsObserver_perspectiveIsParticipant() {
+    void assemble_actorEqualsObserver_perspectiveIsParticipant() {
         // Arrange — actor_id matches observerId: the villager did this themselves
         this.store.admit(directEntry(OBSERVER_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
 
@@ -123,7 +122,7 @@ class EpisodicEntryAssemblerTest {
     }
 
     @Test
-    void assemble_hop0_actorAbsent_perspectiveIsParticipant() {
+    void assemble_actorAbsent_perspectiveIsParticipant() {
         // Arrange — no actor_id in metadata (common for self-recorded terminal deeds)
         this.store.admit(directEntry(null, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
 
@@ -136,7 +135,7 @@ class EpisodicEntryAssemblerTest {
     }
 
     @Test
-    void assemble_hop0_actorDifferentFromObserver_perspectiveIsBystander() {
+    void assemble_actorDifferentFromObserver_perspectiveIsBystander() {
         // Arrange — the villager witnessed someone else's deed
         this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
 
@@ -146,19 +145,6 @@ class EpisodicEntryAssemblerTest {
         // Assert
         assertEquals(1, result.size());
         assertEquals("FIRST_HAND_BYSTANDER", result.get(0).getPerspective());
-    }
-
-    @Test
-    void assemble_hop1_perspectiveIsHearsay() {
-        // Arrange — hearsay entry (hop = 1)
-        this.store.admit(hearsayEntry(SOURCE_ID, ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
-
-        // Act
-        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
-
-        // Assert
-        assertEquals(1, result.size());
-        assertEquals("HEARSAY", result.get(0).getPerspective());
     }
 
     @Test
@@ -177,19 +163,6 @@ class EpisodicEntryAssemblerTest {
     void assemble_bystander_actorFieldIsResolvedName() {
         // Arrange
         this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
-        String expectedActorName = this.nameDirectory.resolve(ACTOR_ID);
-
-        // Act
-        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
-
-        // Assert
-        assertEquals(expectedActorName, result.get(0).getActor());
-    }
-
-    @Test
-    void assemble_hearsay_actorFieldIsResolvedName() {
-        // Arrange
-        this.store.admit(hearsayEntry(SOURCE_ID, ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
         String expectedActorName = this.nameDirectory.resolve(ACTOR_ID);
 
         // Act
@@ -289,31 +262,6 @@ class EpisodicEntryAssemblerTest {
     }
 
     @Test
-    void assemble_hearsay_sourceFieldIsResolvedName() {
-        // Arrange
-        this.store.admit(hearsayEntry(SOURCE_ID, ACTOR_ID, null, WorldEventType.TRADE_COMPLETED, 2.0f));
-        String expectedSourceName = this.nameDirectory.resolve(SOURCE_ID);
-
-        // Act
-        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
-
-        // Assert
-        assertEquals(expectedSourceName, result.get(0).getSource());
-    }
-
-    @Test
-    void assemble_firstHand_sourceFieldIsNull() {
-        // Arrange
-        this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
-
-        // Act
-        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
-
-        // Assert — first-hand entries have no gossip source; field must be absent on wire
-        assertNull(result.get(0).getSource());
-    }
-
-    @Test
     void assemble_outcomeAndReasonPresentInMetadata_passthroughToDto() {
         // Arrange
         this.store.admit(directEntryWithOutcomeAndReason(
@@ -379,50 +327,6 @@ class EpisodicEntryAssemblerTest {
 
         // Assert — clamped to zero, never negative
         assertEquals(0L, result.get(0).getAgeTicks());
-    }
-
-    @Test
-    void assemble_dedupeByOriginId_prefersLowerHop() {
-        // Arrange — same originObservationId, one first-hand (hop=0) and one hearsay (hop=1)
-        UUID sharedOriginId = UUID.randomUUID();
-        KnowledgeEntry firstHand = buildEntryWithOriginId(
-                sharedOriginId, OBSERVER_ID, null, WorldEventType.RESOURCE_HARVESTED, 0, 1.0f);
-        KnowledgeEntry hearsay = buildHearsayWithOriginId(
-                sharedOriginId, SOURCE_ID, ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 1, 5.0f);
-
-        VillagerKnowledgeStore storeWithBoth = new VillagerKnowledgeStore(10);
-        storeWithBoth.admit(firstHand);
-        storeWithBoth.admit(hearsay);
-
-        // Act
-        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, storeWithBoth, CURRENT_TICK);
-
-        // Assert — exactly one entry; the first-hand entry (lower hop) wins
-        assertEquals(1, result.size());
-        assertEquals("FIRST_HAND_PARTICIPANT", result.get(0).getPerspective());
-    }
-
-    @Test
-    void assemble_dedupeByOriginId_collapsesSameOriginToSingleEntry() {
-        // Arrange — two entries sharing one originObservationId. The store admits the first and
-        // treats the same-source repeat as a duplicate, so exactly one survives all the way to the
-        // wire (the assembler's per-origin dedup mirrors the store's per-origin keying).
-        UUID sharedOriginId = UUID.randomUUID();
-        KnowledgeEntry first = buildHearsayWithOriginId(
-                sharedOriginId, SOURCE_ID, ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 1, 5.0f);
-        KnowledgeEntry duplicate = buildHearsayWithOriginId(
-                sharedOriginId, SOURCE_ID, ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 1, 1.0f);
-
-        VillagerKnowledgeStore storeWithBoth = new VillagerKnowledgeStore(10);
-        storeWithBoth.admit(first);
-        storeWithBoth.admit(duplicate);
-
-        // Act
-        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, storeWithBoth, CURRENT_TICK);
-
-        // Assert — the shared origin id collapses to exactly one episodic DTO on the wire
-        assertEquals(1, result.size());
-        assertEquals(WorldEventType.RESOURCE_HARVESTED.name(), result.get(0).getEventType());
     }
 
     @Test
@@ -495,8 +399,7 @@ class EpisodicEntryAssemblerTest {
 
     @Test
     void assemble_detailPlayerSlot_populatesPlayerNameOnDetailMap() {
-        // Arrange — a sighting whose detail.player slot carries the player's display name,
-        // matching what WorldEventEmitter.emitSighting snapshots for a Player subject
+        // Arrange — a sighting whose detail.player slot carries the player's display name
         Map<String, String> metadata = new HashMap<>(buildMetadata(ACTOR_ID, WorldEventType.PLAYER_SIGHTED));
         metadata.put(ObservationMetadataKeys.DETAIL_PREFIX + "player", "Steve");
         KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(
@@ -534,30 +437,6 @@ class EpisodicEntryAssemblerTest {
         assertEquals("bread", detail.get("item"));
         assertEquals("4", detail.get("count"));
         assertEquals("1 emerald", detail.get("price"));
-    }
-
-    @Test
-    void assemble_hopFieldMatchesEntryHop() {
-        // Arrange — hearsay entry at hop=1
-        this.store.admit(hearsayEntry(SOURCE_ID, ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
-
-        // Act
-        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
-
-        // Assert
-        assertEquals(1, result.get(0).getHop());
-    }
-
-    @Test
-    void assemble_firstHandEntry_hopIsZero() {
-        // Arrange
-        this.store.admit(directEntry(ACTOR_ID, null, WorldEventType.RESOURCE_HARVESTED, 2.0f));
-
-        // Act
-        List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
-
-        // Assert
-        assertEquals(0, result.get(0).getHop());
     }
 
     @Test
@@ -639,71 +518,6 @@ class EpisodicEntryAssemblerTest {
         return KnowledgeEntry.fromDirectObservation(
                 UUID.randomUUID(), ObservationType.SOCIAL,
                 ADMITTED_TICK, ADMITTED_TICK, targetId, Map.copyOf(metadata), weight, null);
-    }
-
-    private static KnowledgeEntry hearsayEntry(UUID sourceId,
-                                               @Nullable UUID actorId,
-                                               @Nullable UUID targetId,
-                                               WorldEventType eventType,
-                                               float weight) {
-        Map<String, String> metadata = buildMetadata(actorId, eventType);
-        KnowledgeEntry base = KnowledgeEntry.fromDirectObservation(
-                UUID.randomUUID(), ObservationType.SOCIAL,
-                ADMITTED_TICK, ADMITTED_TICK, targetId, metadata, weight, null);
-        return KnowledgeEntry.fromHearsay(base, sourceId, ADMITTED_TICK + 100L, weight * 0.8f);
-    }
-
-    /**
-     * Builds a first-hand entry with a predetermined origin id (for dedupe tests).
-     */
-    private static KnowledgeEntry buildEntryWithOriginId(UUID originId,
-                                                         @Nullable UUID actorId,
-                                                         @Nullable UUID targetId,
-                                                         WorldEventType eventType,
-                                                         int hop,
-                                                         float weight) {
-        Map<String, String> metadata = buildMetadata(actorId, eventType);
-        return KnowledgeEntry.builder()
-                .originObservationId(originId)
-                .type(ObservationType.SOCIAL)
-                .originTimestampTick(ADMITTED_TICK)
-                .admittedAtTick(ADMITTED_TICK)
-                .relatedEntity(targetId)
-                .metadata(metadata)
-                .packedPos(null)
-                .source(null)
-                .hop(hop)
-                .weight(weight)
-                .originalWeight(weight)
-                .corroborationCount(0)
-                .build();
-    }
-
-    /**
-     * Builds a hearsay entry with a predetermined origin id (for dedupe tests).
-     */
-    private static KnowledgeEntry buildHearsayWithOriginId(UUID originId,
-                                                           UUID sourceId,
-                                                           @Nullable UUID actorId,
-                                                           @Nullable UUID targetId,
-                                                           WorldEventType eventType,
-                                                           int hop,
-                                                           float weight) {
-        Map<String, String> metadata = buildMetadata(actorId, eventType);
-        return KnowledgeEntry.builder()
-                .originObservationId(originId)
-                .type(ObservationType.SOCIAL)
-                .originTimestampTick(ADMITTED_TICK)
-                .admittedAtTick(ADMITTED_TICK + 100L)
-                .relatedEntity(targetId)
-                .metadata(metadata)
-                .packedPos(null)
-                .source(sourceId)
-                .hop(hop)
-                .weight(weight)
-                .originalWeight(weight)
-                .corroborationCount(0)
-                .build();
     }
 
     private static Map<String, String> buildMetadata(@Nullable UUID actorId, WorldEventType eventType) {

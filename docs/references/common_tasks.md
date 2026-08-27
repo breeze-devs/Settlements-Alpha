@@ -19,8 +19,8 @@ never fires.
 Annotate a `record` with `@BehaviorConfig(name = ..., type = ConfigurationType.BEHAVIOR)` and `implements
 BehaviorTimingConfig`. Each component carries a config annotation (`@IntegerConfig`, `@DoubleConfig`, …); the
 `ConfigAnnotationProcessor` scans `@BehaviorConfig` types at startup and builds the NeoForge `ModConfigSpec` (record
-components are handled by `RecordConfigProcessor`). Reuse the standard identifiers from `BehaviorConfigConstants` for the
-four cooldown fields plus `experienceReward`.
+components are handled by `RecordConfigProcessor`). Reuse the standard identifiers from `BehaviorConfigConstants` for
+the four cooldown fields plus `experienceReward`.
 
 ```
 @BehaviorConfig(name = "harvest_pumpkin", type = ConfigurationType.BEHAVIOR)
@@ -109,8 +109,10 @@ static BehaviorCatalogEntry harvestPumpkin(HarvestPumpkinConfig config, Behavior
 ```
 
 There is no vanilla `Activity` here — categorization is `BehaviorCategory` + `WorkIntensity`. Use `SELF_CARE` for
-eating, `SOCIAL` for trade/courtship, and `LEISURE` + `WorkIntensity.NONE` for nitwit/idle behaviors. (A nitwit-eligible
-behavior **must** be `LEISURE`/`NONE`: a `WORK` behavior gets a zero-length work window on a nitwit and never fires.)
+eating, `SOCIAL` for trade/courtship, and `LEISURE` + `WorkIntensity.NONE` for nitwit/idle behaviors. (A `WORK`
+behavior can never fire on a nitwit: nitwits are routed through the rest-day generator, whose `RestDayPolicy` zeroes
+both work-intensity multipliers and which emits no work activity block. `SOCIAL` and `SELF_CARE` are unaffected, so only
+genuinely work-shaped behaviors need re-categorizing to reach a nitwit.)
 
 ### 5. Add the BehaviorKey constant
 
@@ -124,6 +126,8 @@ This is the seam that is *not* compile-checked — a catalog entry no pool refer
 profession's pool (`VillagerProfessionKey` is a record with static constants, not an enum):
 
 ```
+@Provides
+@IntoSet
 static ProfessionBehaviorPool farmerPool() {
     return ProfessionBehaviorPool.builder()
             .profession(VillagerProfessionKey.FARMER)
@@ -133,7 +137,8 @@ static ProfessionBehaviorPool farmerPool() {
 }
 ```
 
-Universal behaviors (eat, wander, rest, trade) are merged in by `BehaviorPoolResolver` and are not listed per-profession.
+Universal behaviors — the ones every profession can do — are merged in by `BehaviorPoolResolver` and are not listed
+per-profession. `BehaviorPoolResolver.UNIVERSAL_ENTRIES` is the set; add a key there rather than to every pool.
 
 ### 7. Build and verify
 
@@ -165,9 +170,10 @@ parameter.
 ## Add a New Data Manager
 
 Datapack loaders are codec-backed and extend one of the base classes in `infrastructure/minecraft/data/framework`
-— you do **not** hand-roll a `SimpleJsonResourceReloadListener`, and registration is a single `@Binds` line, not
-an edit to `CommonModEvents`. The full walkthrough (choosing a base, authoring the codec, wiring, and testing)
-lives in the [Datapack System](datapack_system.md) reference — see [Adding a new loader](datapack_system.md#adding-a-new-loader).
+— you do **not** hand-roll a `SimpleJsonResourceReloadListener`, and registration is a single `@Binds` line, not an edit
+to `CommonModEvents`. The full walkthrough (choosing a base, authoring the codec, wiring, and testing)
+lives in the [Datapack System](datapack_system.md) reference —
+see [Adding a new loader](datapack_system.md#adding-a-new-loader).
 
 In short:
 
@@ -175,8 +181,8 @@ In short:
    or plain `CodecJsonDataManager` for a bespoke shape).
 2. Author the domain `record` + its co-located `FooCodec` (`public static final Codec<Foo> CODEC`).
 3. Write the loader; `implements` its domain registry interface.
-4. `@Provides @Singleton` the concrete loader in `di/modules/DataManagerModule.java`, and bind it to its registry
-   port in the relevant feature module.
+4. `@Provides @Singleton` the concrete loader in `di/modules/DataManagerModule.java`, and bind it to its registry port
+   in the relevant feature module.
 5. Add one `@Binds @IntoSet @DataReloadListeners` line in `di/modules/ReloadListenerModule.java`.
 6. Drop the JSON under `data/settlements/settlements/<directory>/` and test via `manager.reload(entries)`.
 
@@ -185,10 +191,12 @@ In short:
 ## Add a New Block Resource (villager block sensing)
 
 Villagers sense harvestable/collectable **blocks** (crops, ore, sand, gravel, full hives, …) through a shared,
-server-scoped `WorldResourceIndex`, **not** through per-sensor world scans. An off-thread scanner (`ResourceIndexRefresher`,
-on the `@WorldScanExecutor`) keeps the index fresh using palette-prefiltered section snapshots; a single stateless
-`BlockResourceSensor` queries it for every resource at once and folds the hits into each villager's decaying spatial
-memory (bounded, self-expiring — see [Villager Memory](#villager-memory-vanilla-backed-vs-decaying)).
+server-scoped `WorldResourceIndex`, **not** through per-sensor world scans. An off-thread scanner
+(`ResourceIndexRefresher`, on the `@WorldScanExecutor`) keeps the index fresh using palette-prefiltered section
+snapshots; one
+`BlockResourceSensor` class covers every resource, querying the index for all of them in a single pass and folding the
+hits into each villager's decaying spatial memory (bounded, self-expiring — see
+[Villager Memory](#villager-memory-vanilla-backed-vs-decaying)).
 
 **So adding a block resource is pure registration — you write no sensor.** Three steps:
 
@@ -217,8 +225,12 @@ Declare the memory slot with a retention (TTL) and `maxEntries` (the nearest-K c
 
 ```
 public static final MemoryType.DecayingSpatialMemoryType RIPE_PUMPKIN_SITES =
-        MemoryType.decaying("ripe_pumpkin_sites", ClockTicks.minutes(40), 32);
+        MemoryType.decaying("ripe_pumpkin_sites", retention, maxEntries);
 ```
+
+Pick the retention from how long a sighting of this resource stays actionable, and the cap from how many candidate sites
+a behavior would ever want to choose between. The live values for every site memory sit together in
+`MemoryTypeRegistry`, which is where to compare against a similar resource.
 
 Decaying types need **no** vanilla `MemoryModuleType` and are **not** added to `BaseVillager` — they live in the
 `SettlementsMemoryStore`, not the vanilla brain.
@@ -256,9 +268,12 @@ Two sensor bases exist in the codebase:
 - **Vanilla `Sensor<Villager>`** — registered as a `SensorType` and added to `BaseVillager.sensorTypes()`; ticked by the
   vanilla brain. Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationSiteSensor`,
   `WillingCourtshipPartnersSensor`. This is the usual path for a new entity/BE sense — the steps below cover it.
-- **Mod-native `AbstractSensor<BaseVillager>`** — bound as a `VillagerSensorFactory` `@IntoSet` in `SensorCatalogModule`
-  (cooldown-driven, off the vanilla sensor tick). Examples: `EntityPerceptionSensor`, `EntitySightingEmitterSensor`, and
-  the block-resource sensor itself. Use this when you need the mod's own sensor lifecycle rather than the vanilla brain tick.
+- **Mod-native `AbstractSensor<BaseVillager>`** — bound as a `VillagerSensorFactory` `@IntoSet @BaseLane` in
+  `SensorCatalogModule` (cooldown-driven, off the vanilla sensor tick). Examples: `EntityPerceptionSensor`,
+  `DemandedGroundItemSensor`, and the block-resource sensor itself. Use this when you need the mod's own sensor
+  lifecycle rather than the vanilla brain tick. The lane qualifier is not optional: the unqualified
+  `Set<VillagerSensorFactory>` is a merge provider over `@BaseLane` + `@CognitionScoped`, so an unqualified `@IntoSet`
+  contribution collides with it. Use `@CognitionScoped` only for a sensor that makes no sense with SIS off.
 
 ### 1. Register the memory the sensor writes
 
@@ -307,10 +322,15 @@ Sensors write memories; behaviors consume them later.
 
 ## Villager Memory: vanilla-backed vs decaying
 
-Villager memory comes in two flavors, and **neither survives a world reload** — both are rebuilt from sensors after
-load. Anything that must persist (owned wolves, genetics, inventory, settlement metadata) lives in a
-codec-serialized attachment or `SettlementSavedData`, deliberately *outside* the memory system. The day plan is
-likewise reload-transient: it is regenerated, not restored, after a load.
+Villager memory comes in two flavors, and **neither is serialized by the memory system** — both are rebuilt from sensors
+after load. Anything that must persist (genetics, inventory, settlement metadata) lives in a codec-serialized attachment
+or `SettlementSavedData` instead. The day plan is likewise reload-transient: it is regenerated, not restored, after a
+load.
+
+The one memory that outlives a reload is `OWNED_WOLVES`, and it does so through an explicit mirror rather than through
+the memory system: `VillagerBrainAttachment` copies it out to a codec-serialized attachment on save and writes it back
+into the brain on load. Any other memory that must survive needs the same treatment — a mirror somebody writes, not a
+property of the memory type.
 
 | | Vanilla-backed (`MemoryType.VanillaMemoryType<T>`) | Decaying (`MemoryType.DecayingSpatialMemoryType`) |
 |---|---|---|
@@ -322,8 +342,8 @@ likewise reload-transient: it is regenerated, not restored, after a load.
 | Use for | flags/entities/lists the vanilla brain machinery reads, or sensor-written lists that don't need decay (`VILLAGE_CHESTS`, `CULTIVATION_SITES`) | high-cardinality block-resource sites that should self-expire and stay bounded |
 
 Both are declared in `MemoryTypeRegistry` via the `vanillaBacked(...)` / `decaying(...)` factories. Practical
-consequence: right after a restart a villager has **no** Settlements memories (no remembered crop/ore sites, no
-`PLAN_BEHAVIOR_ACTIVE`); the next sensor scan cycle reconstructs them.
+consequence: right after a restart a villager has almost no Settlements memories (no remembered crop/ore sites, no
+`PLAN_BEHAVIOR_ACTIVE`) beyond the mirrored `OWNED_WOLVES`; the next sensor scan cycle reconstructs the rest.
 
 > **A `List<GlobalPos>` site memory's identifier is a cross-repo wire contract.** `SnapshotAssembler` derives the SIS
 > monologue token from it (`_sites` stripped, uppercased), and the SIS phrasing table is keyed on the result. SIS does
@@ -383,11 +403,11 @@ MyService service = SettlementsDagger.serverOrThrow().myService();
 MyClientState state = SettlementsDagger.client().myClientState();
 ```
 
-**Important:** The service must be exposed as an accessor method on the relevant component interface. If it isn't,
-add one.
+**Important:** The service must be exposed as an accessor method on the relevant component interface. If it isn't, add
+one.
 
-For server-scoped access, prefer `serverOrThrow()` when you are certain a server is running (e.g., inside a
-server tick handler). Use `serverOrNull()` when the server may not be available (e.g., during client-only phases).
+For server-scoped access, prefer `serverOrThrow()` when you are certain a server is running (e.g., inside a server tick
+handler). Use `serverOrNull()` when the server may not be available (e.g., during client-only phases).
 
 ---
 
@@ -411,5 +431,5 @@ If your new class has a simple constructor with all dependencies injectable, you
    MyService myService();
    ```
 
-3. Build — Dagger resolves the constructor parameters from the existing graph. If any parameter type is not bound,
-   the build fails with a clear error.
+3. Build — Dagger resolves the constructor parameters from the existing graph. If any parameter type is not bound, the
+   build fails with a clear error.

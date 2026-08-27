@@ -5,7 +5,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,9 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for {@link VillagerKnowledgeStore}: Guard 1 (origin-id dedupe),
- * Guard 2 (hop cap), capacity eviction, and shareable-entry filtering.
- * No Minecraft types are used.
+ * Unit tests for {@link VillagerKnowledgeStore}: origin-id dedupe, capacity eviction, and the
+ * read views.
  */
 class VillagerKnowledgeStoreTest {
 
@@ -53,8 +51,7 @@ class VillagerKnowledgeStoreTest {
         AdmitResult firstResult = this.store.admit(first);
         AdmitResult secondResult = this.store.admit(duplicate);
 
-        // Assert – Guard 1: duplicate origin-id is rejected regardless of weight or content.
-        // Both entries share the same source (null for direct observations) so this is IGNORED_DUPLICATE.
+        // Assert – a duplicate origin-id is rejected regardless of weight or content
         assertEquals(AdmitResult.NEW_ENTRY, firstResult);
         assertEquals(AdmitResult.IGNORED_DUPLICATE, secondResult);
         assertEquals(1, this.store.size());
@@ -74,51 +71,6 @@ class VillagerKnowledgeStoreTest {
     void knows_falseForUnknownOriginId() {
         // Arrange & Act & Assert
         assertFalse(this.store.knows(UUID.randomUUID()));
-    }
-
-    @Test
-    void admit_rejectsEntryBeyondHopCap() {
-        // Arrange – entry at hop MAX_HOP_COUNT + 1 should be rejected
-        KnowledgeEntry tooManyHops = hearsayEntry(UUID.randomUUID(), KnowledgeEntry.MAX_HOP_COUNT + 1);
-
-        // Act
-        AdmitResult result = this.store.admit(tooManyHops);
-
-        // Assert – Guard 2: over-cap entries are never stored
-        assertEquals(AdmitResult.REJECTED_HOP_CAP, result);
-        assertTrue(this.store.isEmpty());
-    }
-
-    @Test
-    void admit_acceptsEntryAtExactHopCap() {
-        // Arrange – entry exactly at the cap is stored (but not re-shareable)
-        KnowledgeEntry atCap = hearsayEntry(UUID.randomUUID(), KnowledgeEntry.MAX_HOP_COUNT);
-
-        // Act
-        AdmitResult result = this.store.admit(atCap);
-
-        // Assert
-        assertEquals(AdmitResult.NEW_ENTRY, result);
-        assertEquals(1, this.store.size());
-    }
-
-    @Test
-    void shareableEntries_excludesEntriesAtHopCap() {
-        // Arrange
-        UUID shareable1Id = UUID.randomUUID();
-        UUID shareable2Id = UUID.randomUUID();
-        UUID cappedId = UUID.randomUUID();
-
-        this.store.admit(directEntry(shareable1Id, 3.0f));
-        this.store.admit(hearsayEntry(shareable2Id, 1));        // hop 1 < cap → shareable
-        this.store.admit(hearsayEntry(cappedId, KnowledgeEntry.MAX_HOP_COUNT)); // at cap → not shareable
-
-        // Act
-        List<KnowledgeEntry> shareable = this.store.shareableEntries();
-
-        // Assert – only entries below the hop cap are returned
-        assertEquals(2, shareable.size());
-        assertTrue(shareable.stream().noneMatch(e -> e.getOriginObservationId().equals(cappedId)));
     }
 
     @Test
@@ -226,18 +178,6 @@ class VillagerKnowledgeStoreTest {
                 Map.of(),
                 weight,
                 null);
-    }
-
-    private static KnowledgeEntry hearsayEntry(UUID originId, int hop) {
-        KnowledgeEntry source = directEntry(originId, 2.0f);
-        // Build a hearsay entry by simulating fromHearsay hop-by-hop
-        KnowledgeEntry current = source;
-        for (int i = 0; i < hop; i++) {
-            // We simulate by building the final hearsay entry with the desired hop count directly
-            // rather than chaining (the factory would normally do hop - 1 then add 1)
-            current = KnowledgeEntry.fromHearsay(current, UUID.randomUUID(), 200L, 1.0f);
-        }
-        return current;
     }
 
 }

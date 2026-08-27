@@ -1,7 +1,6 @@
 package dev.breezes.settlements.domain.ai.perception;
 
 import dev.breezes.settlements.domain.ai.worldevent.WorldEvent;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventNamespace;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import org.junit.jupiter.api.Test;
 
@@ -14,24 +13,6 @@ class PerceptionGateTest {
 
     private static final int VILLAGER_CHUNK_X = 10;
     private static final int VILLAGER_CHUNK_Z = 10;
-
-    @Test
-    void admits_rejectsSystemNamespaceEventRegardlessOfDistance() {
-        // Arrange — system event right next to the villager (same chunk)
-        WorldEvent event = worldEvent(WorldEventType.DAY_PLAN_INVALIDATED, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z);
-
-        // Act & Assert
-        assertFalse(PerceptionGate.admits(event, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z));
-    }
-
-    @Test
-    void admits_rejectsPlanExhaustedSystemEvent() {
-        // Arrange
-        WorldEvent event = worldEvent(WorldEventType.PLAN_EXHAUSTED, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z);
-
-        // Act & Assert
-        assertFalse(PerceptionGate.admits(event, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z));
-    }
 
     @Test
     void admits_admitsWorldEventInSameChunk() {
@@ -97,17 +78,14 @@ class PerceptionGateTest {
     }
 
     @Test
-    void admits_allowsAllWorldNamespaceTypesWithinRadius() {
-        // Arrange & Act — all WORLD events at distance 0 should be admitted
+    void admits_allowsEveryEventTypeWithinRadius() {
+        // Arrange & Act — distance is the only admission term, so no type is rejected at distance 0
         for (WorldEventType type : WorldEventType.values()) {
-            if (type.getNamespace() != WorldEventNamespace.WORLD) {
-                continue;
-            }
             WorldEvent event = worldEvent(type, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z);
 
             // Assert
             assertTrue(PerceptionGate.admits(event, VILLAGER_CHUNK_X, VILLAGER_CHUNK_Z),
-                    "Expected WORLD event " + type + " to be admitted at distance 0");
+                    "Expected event " + type + " to be admitted at distance 0");
         }
     }
 

@@ -1,7 +1,6 @@
 package dev.breezes.settlements.application.ai.gossip;
 
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -18,12 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * Server-scope registry for in-flight gossip sessions.
  * <p>
  * Models a strict 1:1 initiate/accept handshake: each session has exactly one initiator and
- * one receiver. The registry is the state of record; events are announcements. A pending invite
- * is stored here until the receiver's arbiter admits the matching cue (via {@code onAdmit}),
- * at which point the invite is consumed and the session advances to ACCEPTED.
+ * one receiver. A pending invite is stored here until the receiver's arbiter admits the matching
+ * cue (via {@code onAdmit}), at which point the invite is consumed and the session advances to
+ * ACCEPTED.
  * <p>
- * A gossip session is lighter than a courtship session: it has no multi-phase choreography,
- * no bed reservation, and the knowledge transfer is a single atomic write on completion.
+ * A gossip session is lighter than a courtship session: it has no multi-phase choreography and
+ * no bed reservation. It exists to pair the two villagers for the duration of the exchange.
  */
 @ServerScope
 @AllArgsConstructor(onConstructor_ = @Inject)
@@ -66,15 +65,13 @@ public final class GossipSessionRegistry {
      * Opens a new gossip session from the initiator to the receiver and registers
      * a pending invite for the receiver to pick up.
      *
-     * @param initiatorId  UUID of the villager sharing knowledge
-     * @param receiverId   UUID of the intended recipient
-     * @param entryToShare the knowledge entry the initiator wants to share
-     * @param currentTick  current game tick (for invite timeout accounting)
+     * @param initiatorId UUID of the villager starting the exchange
+     * @param receiverId  UUID of the intended recipient
+     * @param currentTick current game tick (for invite timeout accounting)
      * @return the newly created session
      */
     public GossipSession sendInvite(@Nonnull UUID initiatorId,
                                     @Nonnull UUID receiverId,
-                                    @Nonnull KnowledgeEntry entryToShare,
                                     long currentTick) {
         if (initiatorId.equals(receiverId)) {
             throw new IllegalArgumentException("Gossip initiator and receiver must be different villagers");
@@ -85,7 +82,6 @@ public final class GossipSessionRegistry {
                 .sessionId(sessionId)
                 .initiatorId(initiatorId)
                 .receiverId(receiverId)
-                .entryToShare(entryToShare)
                 .openedAtTick(currentTick)
                 .phase(GossipPhase.INVITE_SENT)
                 .build();
@@ -153,7 +149,7 @@ public final class GossipSessionRegistry {
     }
 
     /**
-     * Closes the session as COMPLETED after the knowledge copy has been written
+     * Closes the session as COMPLETED once the receiver's cue has finished
      */
     public void completeSession(UUID sessionId) {
         closeSession(sessionId, GossipPhase.COMPLETED);

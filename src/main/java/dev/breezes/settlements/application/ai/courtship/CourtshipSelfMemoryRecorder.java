@@ -30,9 +30,8 @@ public final class CourtshipSelfMemoryRecorder {
     /**
      * Records a private courtship failure for the acting villager.
      * <p>
-     * The entry uses a random origin id so it never corroborates with any bus-emitted event
-     * (those carry ids derived from the world-event sequence and actor UUID). Each failed
-     * attempt is recorded as an independent fact.
+     * The origin id is drawn at random rather than derived, so every failed attempt is its own
+     * fact and none can collide with a perceived observation's id and be discarded as a repeat.
      *
      * @param self      the villager who initiated the courtship
      * @param partnerId UUID of the intended courtship target, or null if the target was unknown

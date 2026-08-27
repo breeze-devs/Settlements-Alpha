@@ -12,7 +12,7 @@ import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.application.ai.inference.monologue.MonologueRequestAssembler;
 import dev.breezes.settlements.application.ai.inference.persona.PersonaRequestAssembler;
-import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
+import dev.breezes.settlements.application.ai.memory.MemoryAdmissionGate;
 import dev.breezes.settlements.application.ai.memory.SensedSiteReader;
 import dev.breezes.settlements.application.ai.perception.PerceptionPipeline;
 import dev.breezes.settlements.application.ai.persona.PersonaConfig;
@@ -65,7 +65,6 @@ import dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
 import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventBus;
-import dev.breezes.settlements.domain.ai.worldevent.WorldEventEmitter;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
@@ -114,7 +113,7 @@ public interface ServerComponent {
 
     Provider<PlanRunnerBehavior> planRunnerBehaviorProvider();
 
-    MemoryImportanceGate memoryImportanceGate();
+    MemoryAdmissionGate memoryAdmissionGate();
 
     ServerSidePacketReceiver serverSidePacketReceiver();
 
@@ -135,8 +134,6 @@ public interface ServerComponent {
     WorldEventBus worldEventBus();
 
     WorldResourceIndex worldResourceIndex();
-
-    WorldEventEmitter worldEventEmitter();
 
     PerceptionPipeline perceptionPipeline();
 

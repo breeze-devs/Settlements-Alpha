@@ -336,7 +336,6 @@ class PlanWireShapeTest {
         EpisodicEntryDTO entry = EpisodicEntryDTO.builder()
                 .eventType("RESOURCE_HARVESTED")
                 .perspective("FIRST_HAND_PARTICIPANT")
-                .hop(0)
                 .ageTicks(120L)
                 .build();
         PlanBatchRequest payload = PlanBatchRequest.builder()

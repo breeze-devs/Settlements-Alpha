@@ -7,8 +7,12 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Flat, serialization-friendly record mirroring the fields of {@link dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry}.
+ * Flat, serialization-friendly record carrying the persisted fields of
+ * {@link dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry}.
  * Used exclusively by the NBT attachment codec.
+ * <p>
+ * The entry's semantic type has no field here: it is a function of the event_type metadata key,
+ * so persisting it would store one fact twice and let the two copies disagree.
  */
 @Builder(toBuilder = true)
 public record KnowledgeEntryState(
@@ -18,10 +22,7 @@ public record KnowledgeEntryState(
         @Nullable UUID relatedEntity,
         Map<String, String> metadata,
         @Nullable Long packedPos,
-        @Nullable UUID source,
-        int hop,
-        float originalWeight,
-        int corroborationCount
+        float weight
 ) {
 
 }

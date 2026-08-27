@@ -21,9 +21,6 @@ import dev.breezes.settlements.di.CognitionScoped;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
-import dev.breezes.settlements.domain.ai.knowledge.GossipWeightCalculator;
-import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
-import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
@@ -34,7 +31,6 @@ import dev.breezes.settlements.domain.time.TimeOfDay;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.PlayerGreetCooldownAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Zombie;
@@ -259,16 +255,18 @@ public abstract class SocialCueCatalogModule {
     /**
      * Gossip-initiate cue: the initiating villager leans toward a nearby peer and plays a "psst" bubble
      * <p>
-     * Fires when: the villager has at least one shareable knowledge entry AND a nearby villager
-     * that is not itself and not already participating AND neither is already in a gossip session.
+     * Gossip is presentation only — the pair mimes an exchange and no information moves between them.
+     * <p>
+     * Fires when: neither the initiator nor the candidate is already in a gossip session, and the
+     * candidate is within gossip range.
      * <p>
      * Context key = receiver UUID string. The trigger is a pure predicate — it only selects a
      * receiver and returns their UUID; it never mutates the registry. The {@code onAdmit} callback
-     * re-selects the best entry (same tick, store unchanged) and calls {@code sendInvite}.
+     * calls {@code sendInvite}.
      */
     @Provides
     @IntoSet
-    @CognitionScoped
+    @BaseLane
     static SocialCueCatalogEntry gossipInitiate(GossipSessionRegistry gossipSessionRegistry,
                                                 EventLaneConfig eventLaneConfig) {
         int gossipMaxDistanceSquared = eventLaneConfig.gossipMaxDistanceSquared();
@@ -285,36 +283,23 @@ public abstract class SocialCueCatalogModule {
                         return Optional.empty();
                     }
 
-                    VillagerKnowledgeStore store = initiator.getKnowledgeStore();
-                    List<KnowledgeEntry> shareable = store.shareableEntries();
-                    if (shareable.isEmpty()) {
-                        return Optional.empty();
-                    }
-
                     // Find any nearby villager that is not the initiator and not already in a gossip session
                     Optional<BaseVillager> receiver = findGossipReceiver(initiator, gossipSessionRegistry, gossipMaxDistanceSquared);
                     return receiver.map(baseVillager -> baseVillager.getUUID().toString());
                 })
                 .onAdmit((initiator, receiverUuidStr) -> {
                     // Registry mutation happens here, after all per-target and duration checks
-                    // have already passed. Re-select the best entry: onAdmit runs synchronously
-                    // in the same tick as the trigger, so the store is unchanged and selection
-                    // is consistent with what the trigger observed.
-                    VillagerKnowledgeStore store = initiator.getKnowledgeStore();
-                    List<KnowledgeEntry> shareable = store.shareableEntries();
-                    if (shareable.isEmpty()) {
-                        return;
-                    }
-                    KnowledgeEntry entryToShare = selectBestEntry(shareable);
+                    // have already passed.
                     UUID receiverId = UUID.fromString(receiverUuidStr);
                     gossipSessionRegistry.sendInvite(
                             initiator.getUUID(),
                             receiverId,
-                            entryToShare,
                             initiator.level().getGameTime());
                 })
                 .scriptFactory(initiator -> {
-                    // Aim gaze at the same villager the trigger selected as the gossip receiver,
+                    // Re-selecting lands on the villager the trigger picked: the factory runs in the
+                    // same tick, and the registry mutation that would change the answer is in onAdmit,
+                    // which the arbiter fires only after this script is built.
                     Optional<BaseVillager> receiver = findGossipReceiver(initiator, gossipSessionRegistry, gossipMaxDistanceSquared);
                     Location gazeTarget = receiver
                             .map(v -> Location.fromEntity(v, true))
@@ -326,14 +311,14 @@ public abstract class SocialCueCatalogModule {
                             new CueStep.Wait(ClockTicks.seconds(2))
                     ));
                 })
-                // The knowledge transfer happens on the receiver's side (gossip_accept onComplete).
-                // Nothing extra needed on completion — the registry times out if the receiver never accepts.
+                // Nothing to do on completion: the receiver's cue closes the session, and the
+                // registry times the invite out if the receiver never accepts.
                 .build();
     }
 
     /**
-     * Gossip-accept cue: mirrors the initiator's cue on the receiver's side, then writes
-     * the knowledge copy into the receiver's store on completion.
+     * Gossip-accept cue: mirrors the initiator's cue on the receiver's side so both villagers
+     * turn to each other and bubble, then closes the session on completion.
      * <p>
      * Fires when: there is a pending gossip invite for this villager in the GossipSessionRegistry.
      * Context key = session UUID string (used by the onAdmit and onComplete callbacks).
@@ -348,7 +333,7 @@ public abstract class SocialCueCatalogModule {
      */
     @Provides
     @IntoSet
-    @CognitionScoped
+    @BaseLane
     static SocialCueCatalogEntry gossipAccept(GossipSessionRegistry gossipSessionRegistry,
                                               EventLaneConfig eventLaneConfig) {
         return SocialCueCatalogEntry.builder()
@@ -380,43 +365,23 @@ public abstract class SocialCueCatalogModule {
                     gossipSessionRegistry.acceptInvite(receiver.getUUID());
                 })
                 .scriptFactory(receiver -> {
-                    // Mirror the initiator's lean-in cue so both villagers perform the gesture.
+                    // Mirror the initiator's lean-in so the pair face each other for the exchange;
+                    // a receiver staring elsewhere reads as two unrelated villagers talking to nobody.
+                    Location gazeTarget = gossipSessionRegistry.getActiveSession(receiver.getUUID())
+                            .flatMap(session -> findPerceivedVillager(receiver, session.getInitiatorId()))
+                            .map(initiator -> Location.fromEntity(initiator, true))
+                            .orElse(null);
+
                     return SocialCueScript.of(List.of(
+                            new CueStep.Gaze(gazeTarget),
                             new CueStep.Speak(DialogueLine.translatable("dialogue.settlements.social_cue.gossip.listening"), SpeechRegister.AMBIENT, ClockTicks.seconds(3)),
                             new CueStep.Wait(ClockTicks.seconds(2))
                     ));
                 })
                 .onComplete((receiver, sessionIdStr) -> {
-                    // The knowledge transfer is the receiver's completion action.
-                    // Look up the session, copy the entry into the receiver's store.
-                    UUID sessionId = UUID.fromString(sessionIdStr);
-                    gossipSessionRegistry.getActiveSession(receiver.getUUID()).ifPresent(session -> {
-                        KnowledgeEntry sourceEntry = session.getEntryToShare();
-                        long currentTick = receiver.level().getGameTime();
-                        int incomingHop = sourceEntry.getHop() + 1;
-
-                        float baseWeight = GossipWeightCalculator.compute(
-                                sourceEntry.getWeight(),
-                                sourceEntry.getOriginTimestampTick(),
-                                currentTick,
-                                receiver.getGenetics(),
-                                incomingHop);
-
-                        KnowledgeEntry hearsayEntry = KnowledgeEntry.fromHearsay(
-                                sourceEntry,
-                                session.getInitiatorId(),
-                                currentTick,
-                                baseWeight);
-
-                        // Knowledge copy: write to receiver's store if not already known.
-                        // admit() now applies corroboration logic on the dedupe branch so a
-                        // second independent source corroborating the same fact bumps confidence
-                        // rather than silently no-oping. The session must close regardless of the
-                        // outcome — leaving it open would permanently lock both participants out
-                        // of future gossip.
-                        receiver.getKnowledgeStore().admit(hearsayEntry);
-                        gossipSessionRegistry.completeSession(sessionId);
-                    });
+                    // Teardown is unconditional: an open session permanently locks both
+                    // participants out of future gossip via isParticipating.
+                    gossipSessionRegistry.completeSession(UUID.fromString(sessionIdStr));
                 })
                 .build();
     }
@@ -431,29 +396,20 @@ public abstract class SocialCueCatalogModule {
     }
 
     /**
-     * Selects the single most-important shareable entry to share during a gossip exchange.
-     * Prefers first-hand entries to hearsay (lower hop = more trustworthy), then falls
-     * back to the highest weight for tiebreaking.
+     * Resolves a villager the perceiver can currently sense, by UUID. Sensing is the source of
+     * truth rather than a world-wide entity lookup: a session partner who has walked out of
+     * perception range is one this villager cannot plausibly aim at.
      */
-    @VisibleForTesting
-    protected static KnowledgeEntry selectBestEntry(List<KnowledgeEntry> shareable) {
-        KnowledgeEntry best = shareable.getFirst();
-        for (KnowledgeEntry candidate : shareable) {
-            if (candidate.getHop() < best.getHop()) {
-                best = candidate;
-            } else if (candidate.getHop() == best.getHop() && candidate.getWeight() > best.getWeight()) {
-                best = candidate;
-            }
-        }
-        return best;
+    private static Optional<BaseVillager> findPerceivedVillager(BaseVillager perceiver, UUID villagerId) {
+        return perceiver.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.NEARBY_SENSED_ENTITIES)
+                .orElse(PerceivedEntities.empty())
+                .closest(BaseVillager.class, candidate -> candidate.getUUID().equals(villagerId), perceiver);
     }
 
     /**
-     * Finds the nearest villager who: (a) is not the initiator and (b) is not already in a
-     * gossip session. The initiator does not check whether the candidate already knows the fact
-     * — reading another villager's private knowledge store violates the Phase 4 anti-telepathy
-     * rule. Gossip flows blind; the receiver dedupes on receipt via
-     * {@link VillagerKnowledgeStore#admit}.
+     * Finds the nearest villager who: is not the initiator, is not already in a gossip session,
+     * and is within gossip range.
      */
     private static Optional<BaseVillager> findGossipReceiver(BaseVillager initiator,
                                                              GossipSessionRegistry registry,

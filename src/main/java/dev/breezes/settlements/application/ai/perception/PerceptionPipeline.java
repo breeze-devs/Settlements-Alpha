@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.perception;
 
-import dev.breezes.settlements.application.ai.memory.MemoryImportanceGate;
+import dev.breezes.settlements.application.ai.memory.MemoryAdmissionGate;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueRuntimeState;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
@@ -8,47 +8,33 @@ import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.PackedPos;
 import dev.breezes.settlements.domain.ai.observation.Observation;
 import dev.breezes.settlements.domain.ai.observation.ObservationBuffer;
-import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.ai.perception.ObservationFactory;
 import dev.breezes.settlements.domain.ai.perception.PerceptionGate;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventBus;
-import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
-import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.SectionPos;
 
-import java.util.List;
 import java.util.Map;
 
 /**
  * Application-layer pipeline that activates the per-villager observation scaffolding.
  * <p>
- * Consumer of the {@link WorldEventBus} cursor. On each call to {@link #tick} it:
- * <ol>
- *   <li>Drains the delta from the bus using the villager's {@code lastSeenSeq} cursor.</li>
- *   <li>Runs each new event through {@link PerceptionGate} (namespace + Manhattan-distance
- *       rejection). Events whose source chunk is too far away are silently discarded.</li>
- *   <li>Converts admitted events to {@link Observation}s via {@link ObservationFactory}
- *       and writes them into the per-villager {@link ObservationBuffer}.</li>
- *   <li>Drains the buffer, scores each observation through {@link MemoryImportanceGate},
- *       and promotes qualifying observations into the villager's {@link VillagerKnowledgeStore}
- *       as first-hand {@link KnowledgeEntry} records.</li>
- * </ol>
+ * Consumer of the {@link WorldEventBus} cursor, running between {@link PerceptionGate} and the
+ * villager's {@link VillagerKnowledgeStore} with {@link MemoryAdmissionGate} deciding what gets
+ * that far.
  * <p>
- * The hard anti-telepathy rule is enforced here: long-range knowledge is only possible
- * via villager-to-villager gossip, never by direct bus admission.
+ * The hard anti-telepathy rule is enforced here: an entry reaches a villager's store only through
+ * that villager's own perception of the event, never by being handed one.
  */
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class PerceptionPipeline {
 
-    private static final ObservationType[] OBSERVATION_TYPES = ObservationType.values();
-
     private final WorldEventBus worldEventBus;
-    private final MemoryImportanceGate importanceGate;
+    private final MemoryAdmissionGate admissionGate;
 
     /**
      * Runs the full perception pass for one villager
@@ -84,44 +70,25 @@ public final class PerceptionPipeline {
             return;
         }
 
-        // Drain the buffer and run observations through the importance gate.
-        VillagerProfessionKey professionKey = villager.getProfession();
-        GeneticsProfile genetics = villager.getGenetics();
-        List<Observation> observations = buffer.drain();
-        int[] observationTypeFrequencies = countObservationTypes(observations);
         VillagerKnowledgeStore knowledgeStore = villager.getKnowledgeStore();
-        for (Observation observation : observations) {
-            int similarPeerCount = observationTypeFrequencies[observation.type().ordinal()] - 1;
-
-            // Own deeds get a salience bump
-            boolean isSelfDeed = villager.getUUID().equals(observation.actorId());
-            float score = this.importanceGate.score(observation, professionKey, genetics, similarPeerCount, isSelfDeed);
-
-            // Force-remember covers the doer of a salient deed OR any first-hand witnessed event
-            boolean forceAdmit = observation.eventType().isSelfRememberableTerminalEvent()
-                    && (isSelfDeed || observation.eventType().isSelfWitnessed());
-
-            if (forceAdmit || this.importanceGate.shouldPromote(score)) {
-                // Promote into the per-villager knowledge store. Direct observations are first-hand (hop=0, hearsay=false).
-                Map<String, String> metadata = ObservationFactory.metadataFor(observation);
-                long packedPos = PackedPos.asLong(
-                        (int) Math.floor(observation.posX()),
-                        (int) Math.floor(observation.posY()),
-                        (int) Math.floor(observation.posZ()));
-                KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(observation.id(),
-                        observation.type(), observation.timestampTick(), observation.timestampTick(),
-                        observation.relatedEntity(), metadata, score, packedPos);
-                knowledgeStore.admit(entry);
+        for (Observation observation : buffer.drain()) {
+            if (!this.admissionGate.admits(observation)) {
+                continue;
             }
-        }
-    }
 
-    private static int[] countObservationTypes(List<Observation> observations) {
-        int[] frequencies = new int[OBSERVATION_TYPES.length];
-        for (Observation observation : observations) {
-            frequencies[observation.type().ordinal()]++;
+            Map<String, String> metadata = ObservationFactory.metadataFor(observation);
+            long packedPos = PackedPos.asLong(
+                    (int) Math.floor(observation.posX()),
+                    (int) Math.floor(observation.posY()),
+                    (int) Math.floor(observation.posZ()));
+            // The event type's base importance is the only salience signal available, so it stands
+            // in as the entry's weight: it ranks types against each other, which is what the
+            // episodic ordering needs, even though it varies with nothing about this villager.
+            KnowledgeEntry entry = KnowledgeEntry.fromDirectObservation(observation.id(),
+                    observation.type(), observation.timestampTick(), observation.timestampTick(),
+                    observation.relatedEntity(), metadata, observation.baseImportance(), packedPos);
+            knowledgeStore.admit(entry);
         }
-        return frequencies;
     }
 
 }

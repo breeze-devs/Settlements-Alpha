@@ -212,7 +212,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
     protected void onBehaviorStart(@Nonnull Level world,
                                    @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-
         context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.SHEEP_SHEARED, "wool"));
         Expertise expertise = context.getInitiator().getMinecraftEntity().getExpertise();
         int limit = config.expertiseShearLimit().getOrDefault(expertise.getConfigName(), DEFAULT_SHEAR_LIMIT);

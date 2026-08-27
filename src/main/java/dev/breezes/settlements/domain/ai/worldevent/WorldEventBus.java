@@ -30,8 +30,10 @@ import java.util.function.Consumer;
  *   <li>{@code PlanRunner} must function even if the bus is never ticked (events are
  *       optional fan-out, not required in-system flow).</li>
  *   <li>Emit only at semantic boundaries — never per-tick state.</li>
- *   <li>{@link WorldEventNamespace#SYSTEM} events bypass per-villager perception gates.</li>
  * </ul>
+ * <p>
+ * TODO: the bus currently has no producers — it is the seam a redesigned emission path plugs
+ *  back into, so the append/cursor contract is kept intact rather than deleted.
  */
 @ServerScope
 @CustomLog

@@ -1,27 +1,20 @@
 package dev.breezes.settlements.domain.ai.knowledge;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Per-villager episodic knowledge store.
  * <p>
- * This is the store the perception pipeline will promote into. It holds {@link KnowledgeEntry} records that were either:
- * <ul>
- *   <li>Directly observed by this villager and promoted by {@link dev.breezes.settlements.application.ai.memory.MemoryImportanceGate}.</li>
- *   <li>Received hearsay from another villager during a gossip exchange.</li>
- * </ul>
+ * Holds the {@link KnowledgeEntry} facts this villager perceived first-hand, keyed by origin
+ * observation id so that one occurrence occupies one entry however many times it is perceived.
  * <p>
  * Capacity is bounded by the instance max-entry setting. When the store is full, the oldest
  * entry (by admission tick) is evicted to make room — knowledge decays naturally.
- * This class carries no Minecraft state and is fully unit-testable without mocks.
  */
 public final class VillagerKnowledgeStore {
 
@@ -30,13 +23,6 @@ public final class VillagerKnowledgeStore {
      * Insertion-order FIFO eviction when full prevents unbounded memory growth.
      */
     public static final int MAX_ENTRIES = 200;
-
-    /**
-     * Absolute weight bump applied to an existing entry when a second independent
-     * source corroborates the same fact. Intentionally modest — corroboration
-     * signals additional confidence, not a proportional increase in magnitude.
-     */
-    public static final float CORROBORATION_BUMP = 0.1f;
 
     /**
      * LinkedHashMap retains insertion order for cheap oldest-first eviction.
@@ -68,26 +54,14 @@ public final class VillagerKnowledgeStore {
     /**
      * Attempts to add an entry, returning a typed result describing what happened.
      * <p>
-     * Also applies corroboration: if the origin-id is already known from a different independent
-     * source, the existing entry's corroboration count and weight are bumped and
-     * {@link AdmitResult#CORROBORATED_EXISTING} is returned so callers can act on the distinction.
+     * An origin id already present is left untouched: the stored entry is the same fact, and the
+     * first admission of it is the one whose admission tick reflects when this villager learned it.
      */
     public AdmitResult admit(KnowledgeEntry entry) {
-        // Limit hop cap — only entries within the propagation limit are stored.
-        if (entry.getHop() > KnowledgeEntry.MAX_HOP_COUNT) {
-            return AdmitResult.REJECTED_HOP_CAP;
-        }
-
-        // Corroboration-aware dedupe
-        // - a different independent source confirming the same fact bumps its confidence;
-        // - the same source re-sharing is a pure no-op (no new information).
-        KnowledgeEntry existing = this.entriesByOriginId.get(entry.getOriginObservationId());
-        if (existing != null) {
-            if (!Objects.equals(existing.getSource(), entry.getSource())) {
-                // Independent corroboration: different witness, same fact.
-                existing.corroborate(CORROBORATION_BUMP);
-                return AdmitResult.CORROBORATED_EXISTING;
-            }
+        // TODO: this is the seam a reinstated corroboration model plugs into — a repeat admission
+        //  currently drops the fact that something confirmed a fact already held, which is
+        //  information the entry has nowhere to record.
+        if (this.entriesByOriginId.containsKey(entry.getOriginObservationId())) {
             return AdmitResult.IGNORED_DUPLICATE;
         }
 
@@ -112,21 +86,6 @@ public final class VillagerKnowledgeStore {
      */
     public Collection<KnowledgeEntry> entriesView() {
         return Collections.unmodifiableCollection(this.entriesByOriginId.values());
-    }
-
-    /**
-     * Returns entries that are candidates for gossip sharing
-     */
-    public List<KnowledgeEntry> shareableEntries() {
-        Collection<KnowledgeEntry> values = this.entriesByOriginId.values();
-        List<KnowledgeEntry> shareable = new ArrayList<>(values.size());
-
-        for (KnowledgeEntry entry : values) {
-            if (entry.isShareable()) {
-                shareable.add(entry);
-            }
-        }
-        return shareable;
     }
 
     /**

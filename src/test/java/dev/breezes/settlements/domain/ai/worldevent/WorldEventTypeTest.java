@@ -14,10 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>
  * Critical invariants:
  * <ol>
- *   <li>All pre-sighting constants must have forceRemember == seedWorthy, so
+ *   <li>The constants enrolled below keep forceRemember == seedWorthy, so
  *       {@link WorldEventType#isSelfRememberableTerminalEvent()} and
- *       {@link WorldEventType#isSeedWorthy()} agree, preserving the single-flag semantics
- *       existing callers depend on.</li>
+ *       {@link WorldEventType#isSeedWorthy()} agree for them.</li>
  *   <li>The sighting constants (ZOMBIE_SIGHTED through GOLEM_SIGHTED) exercise the
  *       decoupling: ZOMBIE_SIGHTED has forceRemember=true AND seedWorthy=true, while the
  *       social sightings have forceRemember=false AND seedWorthy=true.</li>
@@ -26,20 +25,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class WorldEventTypeTest {
 
     /**
-     * All constants defined before the sighting types must keep forceRemember == seedWorthy,
-     * so existing consumers of the single flag are unaffected.
+     * The enrolled constants deliberately keep forceRemember == seedWorthy: they are either
+     * salient enough to both bypass the gate and seed a monologue, or routine enough to do
+     * neither.
      * <p>
-     * This is a backwards-compatibility guard for constants that predate the flag split, not a
-     * general rule — constants added afterwards are free to decouple and are covered by their
-     * own tests instead of being enrolled here.
+     * The list is explicit rather than derived from the enum because the two flags are genuinely
+     * independent — COURTSHIP_DATE_COMPLETED and the social sightings decouple them on purpose and
+     * are covered by their own tests. Enrolling a constant here is a statement that its flags are
+     * meant to move together.
      */
     @ParameterizedTest
     @EnumSource(value = WorldEventType.class, names = {
-            "BEHAVIOR_STARTED", "BEHAVIOR_COMPLETED", "BEHAVIOR_FAILED",
             "SHEEP_SHEARED", "SHEEP_DYED", "RESOURCE_HARVESTED", "FARMLAND_CULTIVATED",
             "TRADE_COMPLETED", "COURTSHIP_CHILD_BIRTH", "COURTSHIP_REJECTED",
             "TRADE_INVITE_SENT", "COURTSHIP_INVITE_SENT",
-            "DAY_PLAN_INVALIDATED", "PLAN_EXHAUSTED",
             "COW_MILKED", "FISH_CAUGHT", "STONE_CUT", "RESOURCE_EXCAVATED",
             "MEAT_SMOKED", "ORE_SMELTED", "FURNACE_MISFIRED", "LIVESTOCK_BUTCHERED",
             "ITEM_ENCHANTED", "LEATHER_DYED", "LEATHER_WASHED", "ANIMAL_BRED",
@@ -48,26 +47,16 @@ class WorldEventTypeTest {
             "CHICKENS_CHASED", "CHICKENS_REVENGED", "LANDSCAPE_SURVEYED",
             "CHEST_MANAGED", "ITEM_COLLECTED"
     })
-    void preSightingConstants_forceRememberAndSeedWorthyAreEqual(WorldEventType type) {
+    void alignedConstants_forceRememberAndSeedWorthyAreEqual(WorldEventType type) {
         // Arrange — derived implicitly from the enum constant
 
         // Act
         boolean forceRemember = type.isSelfRememberableTerminalEvent();
         boolean seedWorthy = type.isSeedWorthy();
 
-        // Assert — decoupling must not alter existing constant behaviour
+        // Assert
         assertEquals(forceRemember, seedWorthy,
-                "Pre-sighting constant " + type + " must have matching forceRemember/seedWorthy flags");
-    }
-
-    @Test
-    void behaviorStarted_isNeitherForceRememberNorSeedWorthy() {
-        // Arrange
-        WorldEventType type = WorldEventType.BEHAVIOR_STARTED;
-
-        // Act & Assert
-        assertFalse(type.isSelfRememberableTerminalEvent(), "BEHAVIOR_STARTED must not force-remember (lifecycle noise)");
-        assertFalse(type.isSeedWorthy(), "BEHAVIOR_STARTED must not seed monologue");
+                "Constant " + type + " must have matching forceRemember/seedWorthy flags");
     }
 
     @Test
@@ -184,7 +173,7 @@ class WorldEventTypeTest {
 
     @ParameterizedTest
     @EnumSource(value = WorldEventType.class, names = {
-            "BEHAVIOR_STARTED", "RESOURCE_HARVESTED", "TRADE_COMPLETED", "FURNACE_MISFIRED"
+            "ITEM_COLLECTED", "RESOURCE_HARVESTED", "TRADE_COMPLETED", "FURNACE_MISFIRED"
     })
     void deedConstants_areNotSelfWitnessed(WorldEventType type) {
         // Deeds have a single doer; force-remember applies to that doer, not to bystanders.
