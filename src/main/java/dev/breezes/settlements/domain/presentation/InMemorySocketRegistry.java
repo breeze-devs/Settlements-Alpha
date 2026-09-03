@@ -11,6 +11,15 @@ public final class InMemorySocketRegistry implements SocketRegistry {
 
     private static final float VANILLA_ARMS_PITCH_RAD = (float) Math.toRadians(-40);
 
+    /**
+     * How far to either side of the villager's crossed-arms centerline the umbrella rides.
+     * The left and right sockets are otherwise identical; they differ only in this term's sign.
+     */
+    private static final double UMBRELLA_LATERAL_OFFSET = 0.2D;
+    private static final double UMBRELLA_VERTICAL_OFFSET = -0.575D;
+    private static final double UMBRELLA_FORWARD_OFFSET = -0.725D;
+    private static final float UMBRELLA_PITCH_RAD = (float) Math.toRadians(52.5);
+
     private final Map<SocketId, Socket> socketsById;
 
     @Builder
@@ -55,12 +64,27 @@ public final class InMemorySocketRegistry implements SocketRegistry {
                 .localRotation(new Vector3f())
                 .build();
 
+        Socket umbrellaLeft = Socket.builder()
+                .id(SocketId.UMBRELLA_LEFT)
+                .bone(ModelPartRef.ARMS_CROSSED_SOCKET)
+                .localTranslation(new Vec3(UMBRELLA_LATERAL_OFFSET, UMBRELLA_VERTICAL_OFFSET, UMBRELLA_FORWARD_OFFSET))
+                .localRotation(new Vector3f(UMBRELLA_PITCH_RAD, 0.0F, 0.0F))
+                .build();
+        Socket umbrellaRight = Socket.builder()
+                .id(SocketId.UMBRELLA_RIGHT)
+                .bone(ModelPartRef.ARMS_CROSSED_SOCKET)
+                .localTranslation(new Vec3(-UMBRELLA_LATERAL_OFFSET, UMBRELLA_VERTICAL_OFFSET, UMBRELLA_FORWARD_OFFSET))
+                .localRotation(new Vector3f(UMBRELLA_PITCH_RAD, 0.0F, 0.0F))
+                .build();
+
         return InMemorySocketRegistry.builder()
                 .socketsById(Map.of(
                         SocketId.CROSSED_ARMS_CENTER, armsCenterHold,
                         SocketId.HAND_RIGHT, handRight,
                         SocketId.HAND_LEFT, handLeft,
-                        SocketId.FEET_CENTER, feetCenter
+                        SocketId.FEET_CENTER, feetCenter,
+                        SocketId.UMBRELLA_LEFT, umbrellaLeft,
+                        SocketId.UMBRELLA_RIGHT, umbrellaRight
                 ))
                 .build();
     }

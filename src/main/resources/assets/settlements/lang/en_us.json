@@ -144,6 +144,7 @@
 
   "key.settlements.open_villager_stats": "[DEBUG] Open Villager Stats",
   "key.settlements.open_day_plan": "[DEBUG] Open Day Plan",
+  "key.settlements.toggle_debug_tuning_overlay": "[DEBUG] Toggle Tuning Overlay",
 
   "ui.settlements.dayplan.title": "DAY PLAN",
   "ui.settlements.dayplan.loading": "Loading day plan...",

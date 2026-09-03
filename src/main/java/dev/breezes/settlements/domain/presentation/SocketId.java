@@ -5,6 +5,8 @@ public enum SocketId {
     CROSSED_ARMS_CENTER,
     HAND_RIGHT,
     HAND_LEFT,
-    FEET_CENTER
+    FEET_CENTER,
+    UMBRELLA_LEFT,
+    UMBRELLA_RIGHT
 
 }

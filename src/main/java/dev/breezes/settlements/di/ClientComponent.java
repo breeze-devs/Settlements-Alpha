@@ -15,6 +15,8 @@ import dev.breezes.settlements.domain.presentation.SocketRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationSeedSetClientProjection;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketReceiver;
 import dev.breezes.settlements.infrastructure.rendering.debug.SettlementDebugOverlayState;
+import dev.breezes.settlements.infrastructure.rendering.debug.tuning.DebugTuningBoard;
+import dev.breezes.settlements.infrastructure.rendering.debug.tuning.DebugTuningHudRenderer;
 import dev.breezes.settlements.infrastructure.rendering.highlight.EntityHighlightRenderer;
 import dev.breezes.settlements.infrastructure.rendering.zone.CultivationLilyPlacementPreviewRenderer;
 import dev.breezes.settlements.infrastructure.rendering.zone.CultivationLilyZoneRevealRenderer;
@@ -52,6 +54,10 @@ public interface ClientComponent {
     EntityHighlightRenderer entityHighlightRenderer();
 
     CrosshairHudRenderer crosshairHudRenderer();
+
+    DebugTuningBoard debugTuningBoard();
+
+    DebugTuningHudRenderer debugTuningHudRenderer();
 
     CultivationLilyZoneRevealRenderer cultivationLilyZoneRevealRenderer();
 

@@ -11,9 +11,11 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.cats.rendering.
 import dev.breezes.settlements.infrastructure.minecraft.entities.client.VillagerFishingHookRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.UmbrellaModel;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.rendering.SettlementsVillagerRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.rendering.SettlementsWolfRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
+import dev.breezes.settlements.infrastructure.rendering.debug.DevTooling;
 import dev.breezes.settlements.infrastructure.rendering.particles.EggSplatParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.OrbParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.StunnedStarParticle;
@@ -96,6 +98,7 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(SettlementsVillagerModel.LAYER, SettlementsVillagerModel::createBodyLayer);
+        event.registerLayerDefinition(UmbrellaModel.LAYER, UmbrellaModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -118,6 +121,11 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("hud"), ClientModEvents::renderHud);
+
+        if (DevTooling.isEnabled()) {
+            event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("debug_tuning_overlay"),
+                    ClientModEvents::renderDebugTuningOverlay);
+        }
     }
 
     private static void renderHud(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
@@ -128,6 +136,15 @@ public class ClientModEvents {
         }
 
         clientComponent.crosshairHudRenderer().render(guiGraphics, deltaTracker);
+    }
+
+    private static void renderDebugTuningOverlay(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        ClientComponent clientComponent = SettlementsDagger.clientOrNull();
+        if (clientComponent == null) {
+            return;
+        }
+
+        clientComponent.debugTuningHudRenderer().render(guiGraphics, deltaTracker);
     }
 
 }

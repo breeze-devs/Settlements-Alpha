@@ -13,6 +13,7 @@ import dev.breezes.settlements.domain.presentation.InMemorySocketRegistry;
 import dev.breezes.settlements.domain.presentation.SlotAnchorRegistry;
 import dev.breezes.settlements.domain.presentation.SocketRegistry;
 import dev.breezes.settlements.infrastructure.rendering.attachment.EquipmentAttachmentProvider;
+import dev.breezes.settlements.infrastructure.rendering.attachment.UmbrellaAttachmentProvider;
 
 @Module
 public abstract class ClientAttachmentModule {
@@ -20,6 +21,10 @@ public abstract class ClientAttachmentModule {
     @Binds
     @IntoSet
     abstract AttachmentProvider equipmentAttachmentProvider(EquipmentAttachmentProvider implementation);
+
+    @Binds
+    @IntoSet
+    abstract AttachmentProvider umbrellaAttachmentProvider(UmbrellaAttachmentProvider implementation);
 
     @Provides
     @ClientScope

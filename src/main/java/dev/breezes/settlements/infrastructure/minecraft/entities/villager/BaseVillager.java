@@ -38,6 +38,7 @@ import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.observation.ObservationBuffer;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.common.DebouncedSignal;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
@@ -65,6 +66,7 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTear
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.genetics.VillagerGeneticAttributes;
+import dev.breezes.settlements.infrastructure.minecraft.mixins.EntityMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.VillagerMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.SettlementsGroundPathNavigation;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
@@ -145,6 +147,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     // Occasional name sync for catching direct name data modifications
     private static final ClockTicks NAME_SYNC_COOLDOWN_TICKS = ClockTicks.minutes(1);
 
+    // Rain exposure is sampled coarsely with debouncing
+    private static final ClockTicks RAIN_EXPOSURE_SAMPLE_COOLDOWN_TICKS = ClockTicks.seconds(1);
+    private static final int RAIN_EXPOSURE_OBSERVATIONS_TO_CHANGE = 2;
+
     private static final SyncedDataWrapper<Byte> DATA_MOTION_ARCHETYPE = SyncedDataWrapper.<Byte>builder()
             .entityClass(BaseVillager.class)
             .serializer(EntityDataSerializers.BYTE)
@@ -166,6 +172,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             .defaultValue(false)
             .build();
     private static final SyncedDataWrapper<Boolean> DATA_SOOTY = SyncedDataWrapper.<Boolean>builder()
+            .entityClass(BaseVillager.class)
+            .serializer(EntityDataSerializers.BOOLEAN)
+            .defaultValue(false)
+            .build();
+    private static final SyncedDataWrapper<Boolean> DATA_EXPOSED_TO_RAIN = SyncedDataWrapper.<Boolean>builder()
             .entityClass(BaseVillager.class)
             .serializer(EntityDataSerializers.BOOLEAN)
             .defaultValue(false)
@@ -201,6 +212,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private final ITickable reconcilerCooldown;
     private final ITickable perceptionCooldown;
     private final ITickable nameSyncCooldown;
+    private final ITickable rainExposureCooldown;
+    private final DebouncedSignal rainExposure;
     @Nullable
     private String lastPublishedName;
     private long sootyExpiresAtGameTime;
@@ -243,6 +256,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.reconcilerCooldown = RECONCILER_COOLDOWN_TICKS.asTickable();
         this.perceptionCooldown = PERCEPTION_COOLDOWN_TICKS.asTickable();
         this.nameSyncCooldown = NAME_SYNC_COOLDOWN_TICKS.asTickable();
+        this.rainExposureCooldown = RAIN_EXPOSURE_SAMPLE_COOLDOWN_TICKS.asTickable();
+        this.rainExposure = new DebouncedSignal(false, RAIN_EXPOSURE_OBSERVATIONS_TO_CHANGE);
         this.sootyExpiresAtGameTime = 0L;
     }
 
@@ -283,6 +298,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         DATA_LOCOMOTION_NAVIGATION_TYPE.define(builder);
         DATA_BOBBER_DEPLOYED.define(builder);
         DATA_SOOTY.define(builder);
+        DATA_EXPOSED_TO_RAIN.define(builder);
     }
 
     @Override
@@ -363,6 +379,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     public boolean isSooty() {
         return DATA_SOOTY.get(this.entityData);
+    }
+
+    public boolean isExposedToRain() {
+        return DATA_EXPOSED_TO_RAIN.get(this.entityData);
     }
 
     private void addStartingFood(@Nonnull VillagerInventory inventory) {
@@ -602,6 +622,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         if (!this.level().isClientSide()) {
             this.tickHunger();
             this.tickSooty();
+            this.tickRainExposure();
             this.bubbleService().tick(this, this.level().getGameTime());
         } else {
             this.restockReaction.tickClient(this);
@@ -625,6 +646,18 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             return;
         }
         super.handleEntityEvent(id);
+    }
+
+    /**
+     * Samples whether rain is falling on this villager and publishes the debounced answer.
+     */
+    private void tickRainExposure() {
+        if (!this.rainExposureCooldown.tickCheckAndReset(1)) {
+            return;
+        }
+
+        boolean inRain = ((EntityMixin) this).invokeIsInRain() && !this.isUnderWater();
+        DATA_EXPOSED_TO_RAIN.set(this.entityData, this.rainExposure.observe(inRain));
     }
 
     private void tickSooty() {

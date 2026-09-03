@@ -14,6 +14,7 @@ import dev.breezes.settlements.domain.animation.ChopAnimations;
 import dev.breezes.settlements.domain.animation.DefaultAnimationResolver;
 import dev.breezes.settlements.domain.animation.DefaultIdleLifeAnimatorFactory;
 import dev.breezes.settlements.domain.animation.DefaultLocomotionAnimator;
+import dev.breezes.settlements.domain.animation.DefaultUmbrellaAnimatorFactory;
 import dev.breezes.settlements.domain.animation.DigAnimations;
 import dev.breezes.settlements.domain.animation.EatingAnimations;
 import dev.breezes.settlements.domain.animation.FishingAnimations;
@@ -35,6 +36,7 @@ import dev.breezes.settlements.domain.animation.RepairIronGolemAnimations;
 import dev.breezes.settlements.domain.animation.SleepingAnimations;
 import dev.breezes.settlements.domain.animation.ThrowEggAnimations;
 import dev.breezes.settlements.domain.animation.TillAnimations;
+import dev.breezes.settlements.domain.animation.UmbrellaAnimatorFactory;
 import dev.breezes.settlements.domain.animation.WaveAnimations;
 import dev.breezes.settlements.domain.presentation.ItemCategory;
 
@@ -52,6 +54,9 @@ public abstract class ClientAnimationModule {
 
     @Binds
     abstract LocomotionAnimator locomotionAnimator(DefaultLocomotionAnimator implementation);
+
+    @Binds
+    abstract UmbrellaAnimatorFactory umbrellaAnimatorFactory(DefaultUmbrellaAnimatorFactory implementation);
 
     @Provides
     @ClientSessionScope

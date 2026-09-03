@@ -25,9 +25,9 @@ AnimationDefinition.Builder.withLength(1.5F)
 
 Two facts that make this tractable:
 
-1. **The clips are authored against our own rig** (`assets/settlements_villager.bbmodel`), so the Blockbench bone names
-   (`arm_straight_right`, `arms_crossed`, `torso`, `nose`, `leg_left`, …) **match our model parts exactly**. Values are
-   already in our coordinate space.
+1. **The clips are authored against our own rig** (`assets/models/settlements_villager.bbmodel`), so the Blockbench bone
+   names (`arm_straight_right`, `arms_crossed`, `torso`, `nose`, `leg_left`, …) **match our model parts exactly**.
+   Values are already in our coordinate space.
 2. **We do not run vanilla `AnimationDefinition` at runtime** — our system is a reimplementation sampled in **ticks**,
    not seconds. You transcode the *data* into our `KeyframeAnimation` / `AnimationTrack` / `AnimationTarget` types; you
    never reference the exported class.
@@ -230,3 +230,5 @@ See [animation_system.md](animation_system.md) §"Adding a new animation".
 - Compare the curve and loop seam with the source in Blockbench.
 - Verify in-game through the real archetype or locomotion path. The retired debug-pose overlay is unavailable, so
   runtime wiring is required for final visual verification.
+- Where the clip is wired correctly but a placement or magnitude reads wrong, see
+  [Animation and Model Tuning](animation_model_tuning.md) for finding the value without a relaunch per guess.

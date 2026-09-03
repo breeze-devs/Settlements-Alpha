@@ -3,7 +3,9 @@ package dev.breezes.settlements.infrastructure.rendering.animation;
 import dev.breezes.settlements.di.ClientSessionScope;
 import dev.breezes.settlements.domain.animation.AnimationResolver;
 import dev.breezes.settlements.domain.animation.IdleLifeAnimatorFactory;
+import dev.breezes.settlements.domain.animation.LayerStackAnimators;
 import dev.breezes.settlements.domain.animation.LocomotionAnimator;
+import dev.breezes.settlements.domain.animation.UmbrellaAnimatorFactory;
 import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import jakarta.inject.Inject;
@@ -23,16 +25,19 @@ public final class ClientAnimatorRegistry {
     private final AnimationResolver animationResolver;
     private final IdleLifeAnimatorFactory idleLifeAnimatorFactory;
     private final LocomotionAnimator locomotionAnimator;
+    private final UmbrellaAnimatorFactory umbrellaAnimatorFactory;
     private final Map<Integer, VillagerAnimator> animatorsByEntityId = new ConcurrentHashMap<>();
     private int lookupCount;
 
     @Inject
     ClientAnimatorRegistry(@Nonnull AnimationResolver animationResolver,
                            @Nonnull IdleLifeAnimatorFactory idleLifeAnimatorFactory,
-                           @Nonnull LocomotionAnimator locomotionAnimator) {
+                           @Nonnull LocomotionAnimator locomotionAnimator,
+                           @Nonnull UmbrellaAnimatorFactory umbrellaAnimatorFactory) {
         this.animationResolver = animationResolver;
         this.idleLifeAnimatorFactory = idleLifeAnimatorFactory;
         this.locomotionAnimator = locomotionAnimator;
+        this.umbrellaAnimatorFactory = umbrellaAnimatorFactory;
     }
 
     public VillagerAnimator getOrCreate(@Nonnull BaseVillager villager) {
@@ -42,7 +47,11 @@ public final class ClientAnimatorRegistry {
     VillagerAnimator getOrCreate(int entityId, @Nonnull IntPredicate entityExists) {
         this.prunePeriodically(entityExists);
         return this.animatorsByEntityId.computeIfAbsent(entityId, ignored ->
-                new VillagerAnimator(this.animationResolver, this.idleLifeAnimatorFactory.create(entityId), this.locomotionAnimator, entityId));
+                new VillagerAnimator(this.animationResolver, LayerStackAnimators.builder()
+                        .idleLife(this.idleLifeAnimatorFactory.create(entityId))
+                        .locomotion(this.locomotionAnimator)
+                        .umbrella(this.umbrellaAnimatorFactory.create())
+                        .build(), entityId));
     }
 
     public int size() {

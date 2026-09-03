@@ -12,11 +12,8 @@ public sealed interface AttachmentContent permits AttachmentContent.ItemContent,
     record ItemContent(@Nonnull ItemStack stack) implements AttachmentContent {
     }
 
-    /**
-     * Carries a stable model id instead of a baked client model so the attachment plane stays safe for common code.
-     * The client renderer can resolve this id once custom attachment models are introduced.
-     */
-    record ModelContent(@Nonnull ResourceLocation modelId) implements AttachmentContent {
+    record ModelContent(@Nonnull ResourceLocation modelId,
+                        @Nonnull ResourceLocation texture) implements AttachmentContent {
     }
 
     record BillboardContent(@Nonnull ResourceLocation texture) implements AttachmentContent {

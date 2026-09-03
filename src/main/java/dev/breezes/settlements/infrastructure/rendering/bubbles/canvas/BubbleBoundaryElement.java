@@ -71,8 +71,8 @@ public class BubbleBoundaryElement {
 
         int light = parameter.getPackedLight();
 
-        int imageSize = 32; // TODO: texture size edge pixel count (square)
-        int edgeSize = 6; // TODO: edge size in pixels
+        int imageSize = 32;
+        int edgeSize = 6;
 
         BubbleBoundingBox boundingBox = this.innerElement.getBoundingBox();
         float fullWidth = boundingBox.getWidth() + edgeSize * 2;
@@ -81,30 +81,31 @@ public class BubbleBoundaryElement {
         float xStart = -fullWidth / 2F;
         float yStart = -fullHeight / 2F;
 
-        //Render Top left corner of bubble
+        // Render Top left corner of bubble
         drawTexture(pose, buffer, xStart, yStart, BubbleRenderLayer.BACKGROUND_NORMAL, 0, 0, 6, 6, 6, 6, imageSize, imageSize, light);
-        //Render Top right corner of bubble
+        // Render Top right corner of bubble
         drawTexture(pose, buffer, xStart + fullWidth - edgeSize, yStart, BubbleRenderLayer.BACKGROUND_NORMAL, 9, 0, 6, 6, 6, 6, imageSize, imageSize, light);
-        //Render Bottom left corner of bubble
+        // Render Bottom left corner of bubble
         drawTexture(pose, buffer, xStart, yStart + fullHeight - edgeSize, BubbleRenderLayer.BACKGROUND_NORMAL, 0, 9, 6, 6, 6, 6, imageSize, imageSize, light);
-        //Render Bottom right corner of bubble
+        // Render Bottom right corner of bubble
         drawTexture(pose, buffer, xStart + fullWidth - edgeSize, yStart + fullHeight - edgeSize, BubbleRenderLayer.BACKGROUND_NORMAL, 9, 9, 6, 6, 6, 6, imageSize, imageSize, light);
 
-        //Render the top center of the bubble
+        // Render the top center of the bubble
         drawTexture(pose, buffer, xStart + edgeSize, yStart, BubbleRenderLayer.BACKGROUND_NORMAL, 7, 0, 1, 6, boundingBox.getWidth(), 6, imageSize, imageSize, light);
-        //Render the left middle of the bubble
+        // Render the left middle of the bubble
         drawTexture(pose, buffer, xStart, yStart + edgeSize, BubbleRenderLayer.BACKGROUND_NORMAL, 0, 7, 6, 1, 6, boundingBox.getHeight(), imageSize, imageSize, light);
-        //Render the right middle of the bubble
+        // Render the right middle of the bubble
         drawTexture(pose, buffer, xStart + fullWidth - edgeSize, yStart + edgeSize, BubbleRenderLayer.BACKGROUND_NORMAL, 9, 7, 6, 1, 6, boundingBox.getHeight(), imageSize, imageSize, light);
-        //Render the bottom center of the bubble
+        // Render the bottom center of the bubble
         drawTexture(pose, buffer, xStart + edgeSize, yStart + fullHeight - edgeSize, BubbleRenderLayer.BACKGROUND_NORMAL, 7, 9, 1, 6, boundingBox.getWidth(), 6, imageSize, imageSize, light);
 
-        //Render the center of the bubble
+        // Render the center of the bubble
         drawTexture(pose, buffer, xStart + edgeSize, yStart + edgeSize, BubbleRenderLayer.BACKGROUND_NORMAL, 7, 7, 1, 1, boundingBox.getWidth(), boundingBox.getHeight(), imageSize, imageSize, light);
 
-        //Render the tail of the bubble based on the above uv positions offset using the poseStack
+        // Render the tail of the bubble based on the above uv positions offset using the poseStack
         int tailTextureSize = 6;
-        drawTexture(pose, buffer, xStart + fullWidth / 2F - tailTextureSize / 2F, yStart + fullHeight - 1.5F, BubbleRenderLayer.BACKGROUND_HIGH, 0, 16, 6, 5, 5, 5, imageSize, imageSize, light);
+        float tailPixelOffset = -2.0F;
+        drawTexture(pose, buffer, xStart + fullWidth / 2F - tailTextureSize / 2F, yStart + fullHeight + tailPixelOffset, BubbleRenderLayer.BACKGROUND_HIGH, 0, 16, 6, 5, 5, 5, imageSize, imageSize, light);
 
         if (parameter.getBuffer() instanceof MultiBufferSource.BufferSource source) {
             source.endBatch(BUBBLE);

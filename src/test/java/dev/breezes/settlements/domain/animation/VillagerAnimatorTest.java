@@ -4,12 +4,18 @@ import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VillagerAnimatorTest {
+
+    private static final int FILLER_ENTITY_ID = 1;
+    private static final float UMBRELLA_VALUE = 7.0F;
 
     @Test
     void onArchetypeChanged_startsNewAnimation() {
@@ -17,11 +23,11 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.SWING_HEAVY, constantAnimation("swing", 12.0F, 0)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
 
         // Act
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 1, AnimationSelectionContext.generic(), 20L);
-        AnimationFrame frame = animator.sample(20L, 0.0F);
+        AnimationFrame frame = sample(animator, 20L, 0.0F);
 
         // Assert
         assertEquals(AnimationArchetype.SWING_HEAVY, animator.getLastSeenArchetype());
@@ -35,12 +41,12 @@ class VillagerAnimatorTest {
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.INTERACT, constantAnimation("interact", 10.0F, 0),
                 AnimationArchetype.SWING_HEAVY, constantAnimation("swing", 20.0F, 4)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.INTERACT, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Act
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 2, AnimationSelectionContext.generic(), 10L);
-        AnimationFrame frame = animator.sample(12L, 0.0F);
+        AnimationFrame frame = sample(animator, 12L, 0.0F);
 
         // Assert
         assertEquals(15.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -52,11 +58,11 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.SWING_HEAVY, constantAnimation("swing", 12.0F, 4)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 1, AnimationSelectionContext.generic(), 20L);
 
         // Act
-        AnimationFrame frame = animator.sample(22L, 0.0F);
+        AnimationFrame frame = sample(animator, 22L, 0.0F);
 
         // Assert
         assertEquals(6.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -68,12 +74,12 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.EAT, animation("eat", 0, 20, 4, 12.0F, null)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.EAT, (byte) 0, AnimationSelectionContext.generic(), 0L);
         animator.onMotionChanged(AnimationArchetype.IDLE, (byte) 0, AnimationSelectionContext.generic(), 10L);
 
         // Act
-        AnimationFrame frame = animator.sample(12L, 0.0F);
+        AnimationFrame frame = sample(animator, 12L, 0.0F);
 
         // Assert
         assertEquals(6.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -85,13 +91,13 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.SLEEP, animation("sleep", 4, 100, 4, 12.0F, null)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.setSleeping(true, 20L);
 
         // Act
-        AnimationFrame enteringFrame = animator.sample(22L, 0.0F);
+        AnimationFrame enteringFrame = sample(animator, 22L, 0.0F);
         animator.setSleeping(false, 24L);
-        AnimationFrame leavingFrame = animator.sample(26L, 0.0F);
+        AnimationFrame leavingFrame = sample(animator, 26L, 0.0F);
 
         // Assert
         assertEquals(12.0F, enteringFrame.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -106,12 +112,12 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 10.0F, 0),
                 AnimationArchetype.SLEEP, animation("sleep", sleepBlendInTicks, 100, 4, 20.0F, null)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.setSleeping(true, 0L);
 
         // Act
-        AnimationFrame atSleepStart = animator.sample(0L, 0.0F);
-        AnimationFrame laterInSleep = animator.sample(sleepBlendInTicks, 0.0F);
+        AnimationFrame atSleepStart = sample(animator, 0L, 0.0F);
+        AnimationFrame laterInSleep = sample(animator, sleepBlendInTicks, 0.0F);
 
         // Assert
         assertEquals(20.0F, atSleepStart.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -125,12 +131,12 @@ class VillagerAnimatorTest {
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.INTERACT, constantAnimation("hold", 10.0F, 0),
                 AnimationArchetype.SWING_HEAVY, animation("swing", 4, List.of())));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.INTERACT, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Act
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 2, AnimationSelectionContext.generic(), 10L);
-        AnimationFrame frame = animator.sample(12L, 0.0F);
+        AnimationFrame frame = sample(animator, 12L, 0.0F);
 
         // Assert
         assertEquals(5.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -142,12 +148,12 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.SWING_HEAVY, animation("swing", 0, 10, 2, 12.0F, null)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 1, AnimationSelectionContext.generic(), 20L);
 
         // Act
-        AnimationFrame frameDuringBlendOut = animator.sample(31L, 0.0F);
-        AnimationFrame frameAfterExpiry = animator.sample(33L, 0.1F);
+        AnimationFrame frameDuringBlendOut = sample(animator, 31L, 0.0F);
+        AnimationFrame frameAfterExpiry = sample(animator, 33L, 0.1F);
 
         // Assert
         assertEquals(6.0F, frameDuringBlendOut.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -162,12 +168,12 @@ class VillagerAnimatorTest {
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.EAT, constantAnimation("eat", 10.0F, 0),
                 AnimationArchetype.SWING_HEAVY, animation("swing", 0, 10, 0, 12.0F, null)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.EAT, (byte) 0, AnimationSelectionContext.generic(), 0L);
 
         // Act
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 1, AnimationSelectionContext.generic(), 0L);
-        AnimationFrame frame = animator.sample(20L, 0.0F);
+        AnimationFrame frame = sample(animator, 20L, 0.0F);
 
         // Assert
         assertEquals(0.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -181,12 +187,12 @@ class VillagerAnimatorTest {
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.SWING_HEAVY, animation("swing", 0, 10, 0, 12.0F, null),
                 AnimationArchetype.EAT, constantAnimation("eat", 10.0F, 0)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.SWING_HEAVY, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Act
         animator.onMotionChanged(AnimationArchetype.EAT, (byte) 1, AnimationSelectionContext.generic(), 0L);
-        AnimationFrame frame = animator.sample(50L, 0.0F);
+        AnimationFrame frame = sample(animator, 50L, 0.0F);
 
         // Assert
         assertEquals(10.0F, frame.get(AnimationTestTargets.FLOAT), 0.0001F);
@@ -198,13 +204,13 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.INTERACT, animation("interact", 0, 10, 0, 12.0F, null)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
 
         // Act
         animator.onMotionChanged(AnimationArchetype.INTERACT, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Assert
-        assertEquals(ArmConfiguration.BOTH_CROSSED, animator.currentArmConfiguration());
+        assertEquals(ArmConfiguration.BOTH_CROSSED, armConfiguration(animator, 0L, 0.0F));
     }
 
     @Test
@@ -213,16 +219,16 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.HARVEST, animation("harvest", 0, 10, 0, 12.0F, ArmConfiguration.BOTH_STRAIGHT)));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.HARVEST, (byte) 1, AnimationSelectionContext.generic(), 0L);
 
         // Act
-        ArmConfiguration activeConfig = animator.currentArmConfiguration();
-        animator.sample(11L, 0.1F);
+        ArmConfiguration activeConfig = armConfiguration(animator, 0L, 0.0F);
+        sample(animator, 11L, 0.1F);
 
         // Assert
         assertEquals(ArmConfiguration.BOTH_STRAIGHT, activeConfig);
-        assertEquals(ArmConfiguration.BOTH_CROSSED, animator.currentArmConfiguration());
+        assertEquals(ArmConfiguration.BOTH_CROSSED, armConfiguration(animator, 0L, 0.0F));
     }
 
     @Test
@@ -231,12 +237,83 @@ class VillagerAnimatorTest {
         AnimationResolver resolver = resolver(Map.of(
                 AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
                 AnimationArchetype.HARVEST, timelineArmAnimation("harvest")));
-        VillagerAnimator animator = new VillagerAnimator(resolver);
+        VillagerAnimator animator = animator(resolver);
         animator.onMotionChanged(AnimationArchetype.HARVEST, (byte) 1, AnimationSelectionContext.generic(), 10L);
 
         // Act, Assert
-        assertEquals(ArmConfiguration.BOTH_STRAIGHT, animator.currentArmConfiguration(29L, 0.9F));
-        assertEquals(ArmConfiguration.BOTH_CROSSED, animator.currentArmConfiguration(30L, 0.0F));
+        assertEquals(ArmConfiguration.BOTH_STRAIGHT, armConfiguration(animator, 29L, 0.9F));
+        assertEquals(ArmConfiguration.BOTH_CROSSED, armConfiguration(animator, 30L, 0.0F));
+    }
+
+    @Test
+    void sample_stowsTheUmbrellaWhenTheVillagerFallsAsleepStillHoldingIt() {
+        // Arrange: deployed and visible while awake under an open gate.
+        GatedUmbrellaAnimator umbrella = new GatedUmbrellaAnimator();
+        VillagerAnimator animator = umbrellaAnimator(umbrella);
+        animator.sample(0L, 0.0F, LocomotionAnimationContext.idle(), true);
+        assertTrue(animator.isUmbrellaVisible(0L, 0.0F));
+
+        // Act: the villager lies down while the weather gate is still open.
+        animator.setSleeping(true, 10L);
+        AnimationFrame sleepingFrame = animator.sample(10L, 0.0F, LocomotionAnimationContext.idle(), true);
+
+        // Assert: sleep overrides the gate, and the umbrella stows rather than riding the sleep pose.
+        assertFalse(animator.isUmbrellaVisible(10L, 0.0F));
+        assertFalse(sleepingFrame.has(AnimationTestTargets.ABSOLUTE_FLOAT));
+    }
+
+    @Test
+    void sample_composesTheUmbrellaOverTheSleepPoseWhileItIsStillRetracting() {
+        // Arrange: an umbrella that stays visible through its retract, as the real one does for the
+        // whole lower-and-close.
+        VillagerAnimator animator = umbrellaAnimator(new AlwaysVisibleUmbrellaAnimator());
+        animator.setSleeping(true, 0L);
+
+        // Act
+        AnimationFrame frame = animator.sample(0L, 0.0F, LocomotionAnimationContext.idle(), false);
+
+        // Assert: the retract needs its own frame folded over the sleep pose, or the canopy snaps to its
+        // default rather than closing.
+        assertEquals(UMBRELLA_VALUE, frame.get(AnimationTestTargets.ABSOLUTE_FLOAT), 0.0001F);
+    }
+
+    @Test
+    void sample_redeploysTheUmbrellaOnWakingWhileTheGateIsStillOpen() {
+        // Arrange: slept through an open gate, so the umbrella is stowed.
+        GatedUmbrellaAnimator umbrella = new GatedUmbrellaAnimator();
+        VillagerAnimator animator = umbrellaAnimator(umbrella);
+        animator.setSleeping(true, 0L);
+        animator.sample(0L, 0.0F, LocomotionAnimationContext.idle(), true);
+
+        // Act
+        animator.setSleeping(false, 20L);
+        animator.sample(20L, 0.0F, LocomotionAnimationContext.idle(), true);
+
+        // Assert
+        assertTrue(animator.isUmbrellaVisible(20L, 0.0F));
+    }
+
+    private static VillagerAnimator umbrellaAnimator(@Nonnull UmbrellaAnimator umbrellaAnimator) {
+        AnimationResolver resolver = resolver(Map.of(
+                AnimationArchetype.IDLE, constantAnimation("idle", 0.0F, 0),
+                AnimationArchetype.SLEEP, constantAnimation("sleep", 12.0F, 0)));
+        return new VillagerAnimator(resolver, LayerStackAnimators.builder()
+                .umbrella(umbrellaAnimator)
+                .build(), FILLER_ENTITY_ID);
+    }
+
+    private static VillagerAnimator animator(@Nonnull AnimationResolver resolver) {
+        return new VillagerAnimator(resolver, LayerStackAnimators.builder().build(), FILLER_ENTITY_ID);
+    }
+
+    private static AnimationFrame sample(@Nonnull VillagerAnimator animator, long gameTime, float partialTicks) {
+        return animator.sample(gameTime, partialTicks, LocomotionAnimationContext.idle(), false);
+    }
+
+    private static ArmConfiguration armConfiguration(@Nonnull VillagerAnimator animator,
+                                                     long gameTime,
+                                                     float partialTicks) {
+        return animator.currentArmConfiguration(gameTime, partialTicks, LocomotionAnimationContext.idle());
     }
 
     private static AnimationResolver resolver(Map<AnimationArchetype, KeyframeAnimation> animations) {
@@ -279,6 +356,49 @@ class VillagerAnimatorTest {
                         .build()))
                 .armConfiguration(armConfiguration)
                 .build();
+    }
+
+    /**
+     * Stands in for the real state machine's contract without its clips: visible exactly while the last
+     * gate it was advanced with was open.
+     */
+    private static final class GatedUmbrellaAnimator implements UmbrellaAnimator {
+
+        private boolean deployed;
+
+        @Override
+        public void advance(@Nonnull UmbrellaAnimationContext context) {
+            this.deployed = context.shouldDeploy();
+        }
+
+        @Override
+        public AnimationFrame sample(@Nonnull UmbrellaAnimationContext context) {
+            return AnimationFrame.of(Map.of(AnimationTestTargets.ABSOLUTE_FLOAT, UMBRELLA_VALUE));
+        }
+
+        @Override
+        public boolean isVisible(@Nonnull UmbrellaAnimationContext context) {
+            return this.deployed;
+        }
+
+    }
+
+    private static final class AlwaysVisibleUmbrellaAnimator implements UmbrellaAnimator {
+
+        @Override
+        public void advance(@Nonnull UmbrellaAnimationContext context) {
+        }
+
+        @Override
+        public AnimationFrame sample(@Nonnull UmbrellaAnimationContext context) {
+            return AnimationFrame.of(Map.of(AnimationTestTargets.ABSOLUTE_FLOAT, UMBRELLA_VALUE));
+        }
+
+        @Override
+        public boolean isVisible(@Nonnull UmbrellaAnimationContext context) {
+            return true;
+        }
+
     }
 
     private static KeyframeAnimation timelineArmAnimation(String name) {

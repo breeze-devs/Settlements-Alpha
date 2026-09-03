@@ -19,19 +19,16 @@ public final class LayerStack {
     private final EnumMap<AnimationLayerRole, AnimationLayer> layersByRole = new EnumMap<>(AnimationLayerRole.class);
     private final IdleLifeAnimator idleLifeAnimator;
     private final LocomotionAnimator locomotionAnimator;
+    private final UmbrellaAnimator umbrellaAnimator;
     private final int entityId;
 
-    public LayerStack(@Nonnull KeyframeAnimation baseAnimation) {
-        this(baseAnimation, IdleLifeAnimator.NONE, LocomotionAnimator.NONE, 0);
-    }
-
     public LayerStack(@Nonnull KeyframeAnimation baseAnimation,
-                      @Nonnull IdleLifeAnimator idleLifeAnimator,
-                      @Nonnull LocomotionAnimator locomotionAnimator,
+                      @Nonnull LayerStackAnimators animators,
                       int entityId) {
         this.layersByRole.put(AnimationLayerRole.BASE, AnimationLayer.persistent(baseAnimation, 0L));
-        this.idleLifeAnimator = idleLifeAnimator;
-        this.locomotionAnimator = locomotionAnimator;
+        this.idleLifeAnimator = animators.getIdleLife();
+        this.locomotionAnimator = animators.getLocomotion();
+        this.umbrellaAnimator = animators.getUmbrella();
         this.entityId = entityId;
     }
 
@@ -64,17 +61,12 @@ public final class LayerStack {
         return this.layersByRole.containsKey(AnimationLayerRole.ACTION);
     }
 
-    public AnimationFrame sample(long gameTime, float partialTicks) {
-        return this.sample(gameTime, partialTicks, LocomotionAnimationContext.idle());
-    }
-
     public AnimationFrame sample(long gameTime,
                                  float partialTicks,
-                                 @Nonnull LocomotionAnimationContext locomotionContext) {
-        // Sampling mutates layer lifecycle state by retiring completed actions and crossfades. Idle-life
-        // lifecycle advancement is separate from frame construction so a fully hidden ambient layer
-        // does not allocate a frame that the fold will immediately discard.
+                                 @Nonnull LocomotionAnimationContext locomotionContext,
+                                 boolean umbrellaShouldDeploy) {
         this.expireFinishedActions(gameTime, partialTicks);
+
         float locomotionWeight = this.locomotionAnimator.weight(locomotionContext);
         float idleLifeWeight = 1.0F - locomotionWeight;
         IdleLifeAnimationContext idleLifeContext = this.idleLifeContext(gameTime, partialTicks);
@@ -97,11 +89,32 @@ public final class LayerStack {
                 frame = frame.composeOver(this.locomotionAnimator.sample(locomotionContext), 1.0F);
             }
         }
-        return frame;
+
+        return this.composeUmbrellaOver(frame, gameTime, partialTicks, umbrellaShouldDeploy);
     }
 
-    public ArmConfiguration armConfiguration(long gameTime, float partialTicks) {
-        return this.armConfiguration(gameTime, partialTicks, LocomotionAnimationContext.idle());
+    /**
+     * Advances the umbrella state machine one observation and composes its frame over the given one.
+     * Unchanged while the umbrella is fully stowed.
+     */
+    public AnimationFrame composeUmbrellaOver(@Nonnull AnimationFrame frame,
+                                              long gameTime,
+                                              float partialTicks,
+                                              boolean shouldDeploy) {
+        UmbrellaAnimationContext context = this.umbrellaContext(gameTime, partialTicks, shouldDeploy);
+        this.umbrellaAnimator.advance(context);
+        if (!this.umbrellaAnimator.isVisible(context)) {
+            return frame;
+        }
+        return frame.composeOver(this.umbrellaAnimator.sample(context), 1.0F);
+    }
+
+    /**
+     * Whether the umbrella attachment should still be rendered, reading the state this frame's
+     * {@link #sample} call already advanced rather than advancing it again.
+     */
+    public boolean isUmbrellaVisible(long gameTime, float partialTicks) {
+        return this.umbrellaAnimator.isVisible(this.umbrellaContext(gameTime, partialTicks, false));
     }
 
     /**
@@ -152,6 +165,10 @@ public final class LayerStack {
 
     private IdleLifeAnimationContext idleLifeContext(long gameTime, float partialTicks) {
         return new IdleLifeAnimationContext(this.entityId, gameTime, partialTicks, this.hasAction());
+    }
+
+    private UmbrellaAnimationContext umbrellaContext(long gameTime, float partialTicks, boolean shouldDeploy) {
+        return new UmbrellaAnimationContext(this.entityId, gameTime, partialTicks, shouldDeploy);
     }
 
     private void expireFinishedActions(long gameTime, float partialTicks) {

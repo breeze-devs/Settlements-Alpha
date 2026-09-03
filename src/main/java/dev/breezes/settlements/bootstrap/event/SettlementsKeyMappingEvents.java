@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.infrastructure.rendering.debug.DevTooling;
 import dev.breezes.settlements.presentation.ui.keybindings.SettlementsKeyMappings;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -15,8 +16,11 @@ public final class SettlementsKeyMappingEvents {
 
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-        event.register(SettlementsKeyMappings.OPEN_VILLAGER_STATS);
-        event.register(SettlementsKeyMappings.OPEN_DAY_PLAN);
+        if (DevTooling.isEnabled()) {
+            event.register(SettlementsKeyMappings.OPEN_VILLAGER_STATS);
+            event.register(SettlementsKeyMappings.OPEN_DAY_PLAN);
+            event.register(SettlementsKeyMappings.TOGGLE_DEBUG_TUNING_OVERLAY);
+        }
     }
 
 }

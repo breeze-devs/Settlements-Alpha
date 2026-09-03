@@ -8,6 +8,9 @@ in [Finding current implementations](#finding-current-implementations) for those
 
 For the Blockbench-to-track workflow, see [Animation Import](animation_import_blockbench.md).
 
+For settling a placement or magnitude in a running game, see
+[Animation and Model Tuning](animation_model_tuning.md).
+
 ---
 
 ## Start here
@@ -21,6 +24,7 @@ For the Blockbench-to-track workflow, see [Animation Import](animation_import_bl
 | Clip authoring or target semantics | [KeyframeAnimation](../../src/main/java/dev/breezes/settlements/domain/animation/KeyframeAnimation.java), [AnimationTrack](../../src/main/java/dev/breezes/settlements/domain/animation/AnimationTrack.java), [AnimationTargets](../../src/main/java/dev/breezes/settlements/domain/animation/AnimationTargets.java) |
 | Arm geometry | [ArmConfiguration](../../src/main/java/dev/breezes/settlements/domain/presentation/ArmConfiguration.java), [ArmConfigurationTimeline](../../src/main/java/dev/breezes/settlements/domain/animation/ArmConfigurationTimeline.java), [SettlementsVillagerModel](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/model/SettlementsVillagerModel.java) |
 | Items, props, or sockets | [RenderableAttachment](../../src/main/java/dev/breezes/settlements/domain/attachment/RenderableAttachment.java), [Socket](../../src/main/java/dev/breezes/settlements/domain/presentation/Socket.java), [AttachmentRenderLayer](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/model/rendering/AttachmentRenderLayer.java) |
+| Umbrella carry, deploy, or the rain gate | [UmbrellaAnimator](../../src/main/java/dev/breezes/settlements/domain/animation/UmbrellaAnimator.java), [UmbrellaCarryAnimations](../../src/main/java/dev/breezes/settlements/domain/animation/UmbrellaCarryAnimations.java), [UmbrellaAttachmentProvider](../../src/main/java/dev/breezes/settlements/infrastructure/rendering/attachment/UmbrellaAttachmentProvider.java) |
 | Client registration | [ClientAnimationModule](../../src/main/java/dev/breezes/settlements/di/modules/client/ClientAnimationModule.java), [ClientAttachmentModule](../../src/main/java/dev/breezes/settlements/di/modules/client/ClientAttachmentModule.java) |
 
 ---
@@ -42,6 +46,7 @@ gait is selected by navigation intent rather than inferred from item or animatio
 A rendered pose is folded bottom-to-top:
 
 ```text
+Umbrella     carry gesture and canopy, while the rain gate holds
 Action       transient one-shot or sustained work pose
 Idle-Life    breathing, blinking, fidgets
 Locomotion   authored gait, weighted by movement
@@ -50,8 +55,9 @@ Base         resolved idle floor
 
 Only Base and Action are
 concrete [AnimationLayer](../../src/main/java/dev/breezes/settlements/domain/animation/AnimationLayer.java) entries.
-Locomotion and Idle-Life are animator components folded at their required depth
-by [LayerStack](../../src/main/java/dev/breezes/settlements/domain/animation/LayerStack.java).
+Locomotion, Idle-Life, and Umbrella are animator components folded at their required depth
+by [LayerStack](../../src/main/java/dev/breezes/settlements/domain/animation/LayerStack.java). The umbrella composes
+last because it must also survive the sleep pose, which replaces everything beneath it.
 
 ---
 
@@ -144,7 +150,7 @@ do not treat it as an arbitrary pure query.
 
 ---
 
-## Locomotion, Idle-Life, and sleep
+## Locomotion, Idle-Life, umbrella, and sleep
 
 ### Locomotion
 
@@ -180,6 +186,31 @@ and an active fidget fades away when work takes over.
 Authoring rule: an ambient fidget should generally not own `HEAD_ROTATION_OVERRIDE`. Coverage makes ownership smooth,
 but it still suppresses vanilla gaze while fully covered. Prefer eyes, brow, torso, and additive head-adjacent motion
 unless taking the gaze is intentional and readable.
+
+### Umbrella
+
+The umbrella is a rain-gated attachment rather than an archetype: no behavior selects it and no archetype resolves to
+it. [UmbrellaAnimator](../../src/main/java/dev/breezes/settlements/domain/animation/UmbrellaAnimator.java) owns its
+deploy/stow state machine and separates advancement from frame construction, as Idle-Life does, so a supplementary
+render pass cannot age it twice (**P8**).
+
+Its gate is steadied twice, on opposite sides of the network boundary, and neither pass substitutes for the other:
+
+- the server debounces its rain sample before publishing, so a villager crossing under an eave never puts a flicker on
+  the wire;
+- each client animator holds its own delay before committing a change that does arrive, so a crowd whose gate flips on
+  one tick does not raise in unison.
+
+Two consequences are easy to break from the outside:
+
+- **Visibility outlives the gate.** Whether to render the attachment at all is the animator's answer, not the gate's, so
+  the umbrella stays on screen for the whole lower-and-close instead of disappearing the instant the rain stops.
+- **Sleep shuts the gate rather than dropping the umbrella.** The sleep pose replaces the body outright, but the
+  umbrella is still advanced and composed over it, so a villager going to bed stows one instead of losing it mid-motion.
+
+The carry clips and the canopy clips overlap by design, in both directions. The carry pair additionally carries an
+invariant that a retune can break with nothing failing until someone watches an interrupt; it is stated
+at [UmbrellaCarryAnimations](../../src/main/java/dev/breezes/settlements/domain/animation/UmbrellaCarryAnimations.java).
 
 ### Sleep
 
@@ -237,7 +268,12 @@ Presentation is resolved independently:
 - [AttachmentDisplayProfile](../../src/main/java/dev/breezes/settlements/domain/presentation/AttachmentDisplayProfile.java)
   supplies slot/category tuning;
 - [SlotTargets](../../src/main/java/dev/breezes/settlements/domain/animation/SlotTargets.java) carries animation deltas
-  for a slot.
+  for a slot;
+- [AttachmentModel](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/model/rendering/AttachmentModel.java)
+  is the seam for content that draws as a baked rig rather than through the item pipeline, and
+  [AttachmentModelRegistry](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/model/rendering/AttachmentModelRegistry.java)
+  resolves a content's model id to one. That registry is built by the renderer rather than supplied by Dagger, because
+  baking a layer is only reachable from the renderer's own context.
 
 The render order is:
 
@@ -245,7 +281,8 @@ The render order is:
 2. replay the full root-to-bone transform chain;
 3. apply the socket-local transform;
 4. apply the display profile;
-5. apply animation slot deltas;
+5. apply animation slot deltas, turning about the content's own root pivot rather than about the origin it is drawn at
+   (**P15**);
 6. render the attachment content.
 
 A socket transform must start at the model root. Attachment rendering occurs after the model render pass has closed its
@@ -253,8 +290,8 @@ pose-stack scope, so no ancestor transform can be assumed to remain active.
 
 For the authoritative model hierarchy,
 inspect [SettlementsVillagerModel](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/model/SettlementsVillagerModel.java)
-or the Blockbench source at [settlements_villager.bbmodel](../../assets/settlements_villager.bbmodel). Do not copy the
-hierarchy into this document.
+or the Blockbench source at [settlements_villager.bbmodel](../../assets/models/settlements_villager.bbmodel). Do not
+copy the hierarchy into this document.
 
 ---
 
@@ -339,6 +376,7 @@ rg "AnimationArchetype\." src/main/java
 rg "ModelPartRef\." src/main/java
 rg "SocketId\." src/main/java
 rg "AttachmentSlot\." src/main/java
+rg "InMemoryAttachmentModelRegistry" src/main/java
 ```
 
 Use the code for:
@@ -369,6 +407,7 @@ When changing the system, cover the smallest relevant boundary:
 - locomotion zero/full-weight behavior;
 - arm-configuration precedence;
 - sleep pose selection;
+- umbrella gate delay, reversal handoff, and visibility across a whole stow;
 - target application in the model or attachment layer.
 
 Run the animation suite while iterating:

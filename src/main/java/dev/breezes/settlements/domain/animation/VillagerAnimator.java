@@ -21,13 +21,8 @@ public final class VillagerAnimator {
     private boolean sleeping;
     private long sleepStartGameTime;
 
-    public VillagerAnimator(@Nonnull AnimationResolver animationResolver) {
-        this(animationResolver, IdleLifeAnimator.NONE, LocomotionAnimator.NONE, 0);
-    }
-
     public VillagerAnimator(@Nonnull AnimationResolver animationResolver,
-                            @Nonnull IdleLifeAnimator idleLifeAnimator,
-                            @Nonnull LocomotionAnimator locomotionAnimator,
+                            @Nonnull LayerStackAnimators animators,
                             int entityId) {
         this.animationResolver = animationResolver;
         this.lastSeenArchetype = AnimationArchetype.IDLE;
@@ -35,8 +30,7 @@ public final class VillagerAnimator {
         this.lastResolvedContext = AnimationSelectionContext.generic();
         this.layerStack = new LayerStack(
                 animationResolver.resolve(AnimationArchetype.IDLE, AnimationSelectionContext.generic()),
-                idleLifeAnimator,
-                locomotionAnimator,
+                animators,
                 entityId);
         this.sleepAnimation = animationResolver.resolve(AnimationArchetype.SLEEP, AnimationSelectionContext.generic());
         this.sleeping = false;
@@ -101,17 +95,6 @@ public final class VillagerAnimator {
      * rather than blending — geometry visibility cannot be crossfaded, so we always read the
      * current (not outgoing) animation's declared config.
      */
-    public ArmConfiguration currentArmConfiguration() {
-        return this.currentArmConfiguration(0L, 0.0F);
-    }
-
-    public ArmConfiguration currentArmConfiguration(long gameTime, float partialTicks) {
-        if (this.sleeping) {
-            return this.sleepArmConfiguration(gameTime, partialTicks);
-        }
-        return this.layerStack.armConfiguration(gameTime, partialTicks);
-    }
-
     public ArmConfiguration currentArmConfiguration(long gameTime,
                                                     float partialTicks,
                                                     @Nonnull LocomotionAnimationContext locomotionContext) {
@@ -121,20 +104,23 @@ public final class VillagerAnimator {
         return this.layerStack.armConfiguration(gameTime, partialTicks, locomotionContext);
     }
 
-    public AnimationFrame sample(long gameTime, float partialTicks) {
-        if (this.sleeping) {
-            return this.sleepFrame(gameTime, partialTicks);
-        }
-        return this.layerStack.sample(gameTime, partialTicks);
-    }
-
     public AnimationFrame sample(long gameTime,
                                  float partialTicks,
-                                 @Nonnull LocomotionAnimationContext locomotionContext) {
+                                 @Nonnull LocomotionAnimationContext locomotionContext,
+                                 boolean umbrellaShouldDeploy) {
         if (this.sleeping) {
-            return this.sleepFrame(gameTime, partialTicks);
+            // Sleep replaces the body pose outright, but the umbrella is still advanced and composed --
+            // against a gate held shut, so a villager going to bed stows it rather than losing it mid-air
+            return this.layerStack.composeUmbrellaOver(this.sleepFrame(gameTime, partialTicks), gameTime, partialTicks, false);
         }
-        return this.layerStack.sample(gameTime, partialTicks, locomotionContext);
+        return this.layerStack.sample(gameTime, partialTicks, locomotionContext, umbrellaShouldDeploy);
+    }
+
+    /**
+     * Whether the umbrella attachment should be rendered this frame.
+     */
+    public boolean isUmbrellaVisible(long gameTime, float partialTicks) {
+        return this.layerStack.isUmbrellaVisible(gameTime, partialTicks);
     }
 
     private AnimationFrame sleepFrame(long gameTime, float partialTicks) {

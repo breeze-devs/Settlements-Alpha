@@ -11,7 +11,8 @@
     "CatMixin",
     "WolfMixin",
     "VillagerMixin",
-    "LevelMixin"
+    "LevelMixin",
+    "EntityMixin"
   ],
   "client": [
   ],

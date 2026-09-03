@@ -29,4 +29,11 @@ public final class SettlementsKeyMappings {
             KEY_CATEGORY
     );
 
+    public static final KeyMapping TOGGLE_DEBUG_TUNING_OVERLAY = new KeyMapping(
+            "key.settlements.toggle_debug_tuning_overlay",
+            InputConstants.Type.KEYSYM,
+            InputConstants.UNKNOWN.getValue(),
+            KEY_CATEGORY
+    );
+
 }

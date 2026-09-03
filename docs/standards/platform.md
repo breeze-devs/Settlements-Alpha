@@ -136,6 +136,21 @@ A codec-backed attachment compounds this: reading it discards the *whole attachm
 clean success, so the same swallow-everything failure mode reaches all the way up from one corrupted element to every
 entry the attachment held.
 
+### P15 — A Blockbench group's origin exports as its bone's offset
+
+Moving a group's origin re-pivots the rig in Blockbench and moves the **bone** in the export, leaving that group's
+geometry standing off the origin it is drawn at by exactly the distance the pivot moved. The model still renders where
+it did, so the export looks correct from every angle that does not rotate it.
+
+**A rotation applied at the draw origin therefore swings the model around a point that far away** rather than turning it
+about the pivot that was chosen. Nothing reports the discrepancy, and the severity scales with the correction: nudging a
+pivot slightly still looks roughly right, while moving it the length of the model makes the rotation orbit a point out
+in space — which presents as a socket or placement fault, since the pivot is the one thing that was just made correct.
+
+Rotate about an offset the model reports from its own baked root bone instead of about the draw origin. Derive that
+offset from the bone rather than restating it as a literal: a hand-copied copy is invalidated by the next export, and
+invalidated specifically by whoever is re-pivoting the rig, who has no reason to look for it (**F1**).
+
 ## Build
 
 ### P5 — Dagger needs `javax.inject` on the runtime classpath, permanently

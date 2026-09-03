@@ -12,6 +12,7 @@ import dev.breezes.settlements.domain.presentation.ItemCategory;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.EquipmentLookup;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.UmbrellaModel;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
 
 public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager, SettlementsVillagerModel<BaseVillager>> {
 
@@ -36,9 +38,14 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
 
         // Minecraft owns renderer construction, so the Dagger graph is reached through the project bootstrap bridge.
         ClientComponent clientComponent = SettlementsDagger.client();
+        // context.bakeLayer is only reachable here, so the model-id -> baked-model registry is built
+        // per renderer instance rather than supplied through Dagger like the other attachment registries.
+        UmbrellaModel umbrellaModel = new UmbrellaModel(context.bakeLayer(UmbrellaModel.LAYER));
+        AttachmentModelRegistry attachmentModelRegistry = new InMemoryAttachmentModelRegistry(Map.of(UmbrellaModel.ID, umbrellaModel));
         this.attachmentRenderLayer = new AttachmentRenderLayer(
                 this,
                 context.getItemInHandRenderer(),
+                attachmentModelRegistry,
                 clientComponent.attachmentProviders(),
                 clientComponent.slotAnchorRegistry(),
                 clientComponent.socketRegistry(),
@@ -75,7 +82,8 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
                        int packedLight) {
         long gameTime = villager.level().getGameTime();
         VillagerAnimator animator = this.getOrUpdateAnimator(villager, gameTime);
-        this.model.prepareAnimation(animator, villager.getLocomotionNavigationType(), gameTime, partialTicks);
+        this.model.prepareAnimation(animator, villager.getLocomotionNavigationType(), gameTime, partialTicks,
+                villager.isExposedToRain());
         try {
             super.render(villager, yaw, partialTicks, poseStack, buffer, packedLight);
         } finally {

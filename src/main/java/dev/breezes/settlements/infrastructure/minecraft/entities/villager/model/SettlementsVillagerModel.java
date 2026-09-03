@@ -12,6 +12,7 @@ import dev.breezes.settlements.domain.presentation.ModelPartRef;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import lombok.CustomLog;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.client.model.HeadedModel;
 import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.VillagerHeadModel;
@@ -84,12 +85,14 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
     @Nullable
     private AnimationFrame animationFrame;
     private AnimationFrame resolvedAnimationFrame = AnimationFrame.EMPTY;
+    @Setter
     private ArmConfiguration armConfiguration = ArmConfiguration.BOTH_CROSSED;
     @Nullable
     private VillagerAnimator animator;
     private NavigationType locomotionNavigationType = NavigationType.STROLL;
     private long animationGameTime;
     private float animationPartialTicks;
+    private boolean shouldDeployUmbrella;
 
     public SettlementsVillagerModel(ModelPart root) {
         this.root = root.getChild("root");
@@ -285,11 +288,13 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
     public void prepareAnimation(@Nonnull VillagerAnimator animator,
                                  @Nonnull NavigationType locomotionNavigationType,
                                  long gameTime,
-                                 float partialTicks) {
+                                 float partialTicks,
+                                 boolean shouldDeployUmbrella) {
         this.animator = animator;
         this.locomotionNavigationType = locomotionNavigationType;
         this.animationGameTime = gameTime;
         this.animationPartialTicks = partialTicks;
+        this.shouldDeployUmbrella = shouldDeployUmbrella;
     }
 
     public void clearPreparedAnimation() {
@@ -297,13 +302,10 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
         this.locomotionNavigationType = NavigationType.STROLL;
         this.animationGameTime = 0L;
         this.animationPartialTicks = 0.0F;
+        this.shouldDeployUmbrella = false;
         this.resolvedAnimationFrame = AnimationFrame.EMPTY;
         this.animationFrame = null;
         this.armConfiguration = ArmConfiguration.BOTH_CROSSED;
-    }
-
-    public void setArmConfiguration(ArmConfiguration armConfiguration) {
-        this.armConfiguration = armConfiguration;
     }
 
     private void resolveAnimationFrame(float limbSwing, float limbSwingAmount) {
@@ -316,8 +318,8 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
                 this.locomotionNavigationType,
                 limbSwing,
                 limbSwingAmount);
-        AnimationFrame sampledFrame = this.animator.sample(this.animationGameTime, this.animationPartialTicks, context);
-        this.resolvedAnimationFrame = sampledFrame;
+        this.resolvedAnimationFrame = this.animator.sample(this.animationGameTime, this.animationPartialTicks,
+                context, this.shouldDeployUmbrella);
         this.animationFrame = this.resolvedAnimationFrame;
         this.armConfiguration = this.animator.currentArmConfiguration(this.animationGameTime, this.animationPartialTicks, context);
     }
@@ -325,7 +327,6 @@ public class SettlementsVillagerModel<T extends Entity> extends HierarchicalMode
     @Override
     public void hatVisible(boolean visible) {
         // The profession layer drives this; all three head-dress parts must toggle together
-        // so neither the base hat mesh nor the overlay ever appears without the other.
         this.head.visible = visible;
         this.headwear.visible = visible;
         this.hat.visible = visible;

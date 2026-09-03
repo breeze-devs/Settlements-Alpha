@@ -7,6 +7,8 @@ import dev.breezes.settlements.domain.animation.IdleLifeAnimatorFactory;
 import dev.breezes.settlements.domain.animation.KeyframeAnimation;
 import dev.breezes.settlements.domain.animation.LocomotionAnimator;
 import dev.breezes.settlements.domain.animation.LoopMode;
+import dev.breezes.settlements.domain.animation.UmbrellaAnimator;
+import dev.breezes.settlements.domain.animation.UmbrellaAnimatorFactory;
 import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import org.junit.jupiter.api.Test;
@@ -25,7 +27,8 @@ class ClientAnimatorRegistryTest {
     @Test
     void getOrCreate_reusesAnimatorForSameVillagerId() {
         // Arrange
-        ClientAnimatorRegistry registry = new ClientAnimatorRegistry(resolver(), idleLifeAnimatorFactory(), LocomotionAnimator.NONE);
+        ClientAnimatorRegistry registry = new ClientAnimatorRegistry(
+                resolver(), idleLifeAnimatorFactory(), LocomotionAnimator.NONE, umbrellaAnimatorFactory());
         int villagerId = 42;
         IntPredicate entityExists = ignored -> true;
 
@@ -41,7 +44,8 @@ class ClientAnimatorRegistryTest {
     @Test
     void getOrCreate_prunesAnimatorStateWhenEntityNoLongerExists() {
         // Arrange
-        ClientAnimatorRegistry registry = new ClientAnimatorRegistry(resolver(), idleLifeAnimatorFactory(), LocomotionAnimator.NONE);
+        ClientAnimatorRegistry registry = new ClientAnimatorRegistry(
+                resolver(), idleLifeAnimatorFactory(), LocomotionAnimator.NONE, umbrellaAnimatorFactory());
         int villagerId = 42;
         Set<Integer> liveEntityIds = ConcurrentHashMap.newKeySet();
         liveEntityIds.add(villagerId);
@@ -81,6 +85,10 @@ class ClientAnimatorRegistryTest {
 
     private static IdleLifeAnimatorFactory idleLifeAnimatorFactory() {
         return entityId -> IdleLifeAnimator.NONE;
+    }
+
+    private static UmbrellaAnimatorFactory umbrellaAnimatorFactory() {
+        return () -> UmbrellaAnimator.NONE;
     }
 
 }

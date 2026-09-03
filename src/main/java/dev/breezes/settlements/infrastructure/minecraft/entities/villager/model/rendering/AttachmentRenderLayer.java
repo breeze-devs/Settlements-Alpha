@@ -34,6 +34,7 @@ public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, Settl
 
     private final SettlementsVillagerRenderer renderer;
     private final ItemInHandRenderer itemInHandRenderer;
+    private final AttachmentModelRegistry attachmentModelRegistry;
     private final List<AttachmentProvider> attachmentProviders;
     private final SlotAnchorRegistry slotAnchorRegistry;
     private final SocketRegistry socketRegistry;
@@ -41,6 +42,7 @@ public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, Settl
 
     public AttachmentRenderLayer(@Nonnull SettlementsVillagerRenderer renderer,
                                  @Nonnull ItemInHandRenderer itemInHandRenderer,
+                                 @Nonnull AttachmentModelRegistry attachmentModelRegistry,
                                  @Nonnull Set<AttachmentProvider> attachmentProviders,
                                  @Nonnull SlotAnchorRegistry slotAnchorRegistry,
                                  @Nonnull SocketRegistry socketRegistry,
@@ -48,6 +50,7 @@ public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, Settl
         super(renderer);
         this.renderer = renderer;
         this.itemInHandRenderer = itemInHandRenderer;
+        this.attachmentModelRegistry = attachmentModelRegistry;
         this.attachmentProviders = attachmentProviders.stream()
                 .sorted(Comparator.comparingInt(AttachmentProvider::renderOrder)
                         .thenComparing(provider -> provider.getClass().getName()))
@@ -100,14 +103,17 @@ public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, Settl
 
         applyTransform(poseStack, socket.getLocalTranslation(), socket.getLocalRotation(), socket.getLocalScale());
         applyTransform(poseStack, profile.getTranslation(), profile.getRotation(), profile.getScale());
-        applyTransform(
+
+        // Turned about the content's own pivot point rather than about the origin it is drawn at
+        applyPivotedTransform(
                 poseStack,
                 frame.get(SlotTargets.translation(attachment.slot())),
                 frame.get(SlotTargets.rotation(attachment.slot())),
-                frame.get(SlotTargets.scale(attachment.slot())));
+                frame.get(SlotTargets.scale(attachment.slot())),
+                this.rootPivotOffsetFor(attachment.content()));
 
         ItemDisplayContext displayContext = displayContextFor(attachment, anchor, profile, frame);
-        this.renderContent(attachment.content(), villager, displayContext, poseStack, buffer, packedLight);
+        this.renderContent(attachment.content(), villager, displayContext, frame, poseStack, buffer, packedLight);
         poseStack.popPose();
     }
 
@@ -124,20 +130,19 @@ public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, Settl
     private void renderContent(@Nonnull AttachmentContent content,
                                @Nonnull BaseVillager villager,
                                @Nonnull ItemDisplayContext displayContext,
+                               @Nonnull AnimationFrame frame,
                                @Nonnull PoseStack poseStack,
                                @Nonnull MultiBufferSource buffer,
                                int packedLight) {
         switch (content) {
-            case AttachmentContent.ItemContent itemContent -> this.itemInHandRenderer.renderItem(
-                    villager,
-                    itemContent.stack(),
-                    displayContext,
-                    false,
-                    poseStack,
-                    buffer,
-                    packedLight);
+            case AttachmentContent.ItemContent itemContent ->
+                    this.itemInHandRenderer.renderItem(villager, itemContent.stack(), displayContext, false, poseStack,
+                            buffer, packedLight);
             case AttachmentContent.ModelContent modelContent -> {
-                // TODO: Resolve model ids through a client attachment-model registry once custom models exist.
+                AttachmentModel model = this.attachmentModelRegistry.get(modelContent.modelId());
+                if (model != null) {
+                    model.render(frame, poseStack, buffer, packedLight, modelContent.texture());
+                }
             }
             case AttachmentContent.BillboardContent billboardContent -> {
                 // TODO: Render camera-facing quads once transient visual props are introduced.
@@ -149,11 +154,39 @@ public final class AttachmentRenderLayer extends RenderLayer<BaseVillager, Settl
                                        @Nonnull Vec3 translation,
                                        @Nonnull Vector3f rotation,
                                        float scale) {
+        applyPivotedTransform(poseStack, translation, rotation, scale, Vec3.ZERO);
+    }
+
+    /**
+     * Applies a slot transform whose rotation turns about the given pivot.
+     * <p>
+     * A zero pivot is exactly the unpivoted transform.
+     */
+    private static void applyPivotedTransform(@Nonnull PoseStack poseStack,
+                                              @Nonnull Vec3 translation,
+                                              @Nonnull Vector3f rotation,
+                                              float scale,
+                                              @Nonnull Vec3 pivot) {
         poseStack.translate(translation.x, translation.y, translation.z);
+        poseStack.translate(pivot.x, pivot.y, pivot.z);
         poseStack.mulPose(Axis.XP.rotation(rotation.x()));
         poseStack.mulPose(Axis.YP.rotation(rotation.y()));
         poseStack.mulPose(Axis.ZP.rotation(rotation.z()));
+        poseStack.translate(-pivot.x, -pivot.y, -pivot.z);
         poseStack.scale(scale, scale, scale);
+    }
+
+    /**
+     * Only a model attachment has a rig whose root can sit off the draw origin.
+     * An item is rendered by the item pipeline in its own space, which owns its own centering.
+     */
+    private Vec3 rootPivotOffsetFor(@Nonnull AttachmentContent content) {
+        if (!(content instanceof AttachmentContent.ModelContent modelContent)) {
+            return Vec3.ZERO;
+        }
+
+        AttachmentModel model = this.attachmentModelRegistry.get(modelContent.modelId());
+        return model == null ? Vec3.ZERO : model.rootPivotOffset();
     }
 
 }

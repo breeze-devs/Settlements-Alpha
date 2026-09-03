@@ -144,6 +144,7 @@
 
   "key.settlements.open_villager_stats": "【测试】打开村民状态",
   "key.settlements.open_day_plan": "【测试】打开日程表",
+  "key.settlements.toggle_debug_tuning_overlay": "【测试】打开调试界面",
 
   "ui.settlements.dayplan.title": "日程表",
   "ui.settlements.dayplan.loading": "正在加载日程表…",
