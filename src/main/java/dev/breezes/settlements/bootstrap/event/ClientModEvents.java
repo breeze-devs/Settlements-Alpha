@@ -18,6 +18,7 @@ import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
 import dev.breezes.settlements.infrastructure.rendering.debug.DevTooling;
 import dev.breezes.settlements.infrastructure.rendering.particles.EggSplatParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.OrbParticle;
+import dev.breezes.settlements.infrastructure.rendering.particles.SleepingZParticle;
 import dev.breezes.settlements.infrastructure.rendering.particles.StunnedStarParticle;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import net.minecraft.client.DeltaTracker;
@@ -116,6 +117,7 @@ public class ClientModEvents {
         event.registerSpriteSet(ParticleTypeRegistry.EGG_SPLAT.get(), EggSplatParticle.Provider::new);
         event.registerSpriteSet(ParticleTypeRegistry.STUNNED_STAR.get(), StunnedStarParticle.Provider::new);
         event.registerSpriteSet(ParticleTypeRegistry.ORB.get(), OrbParticle.Provider::new);
+        event.registerSpriteSet(ParticleTypeRegistry.SLEEPING_Z.get(), SleepingZParticle.Provider::new);
     }
 
     @SubscribeEvent

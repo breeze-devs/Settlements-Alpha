@@ -24,6 +24,9 @@ public class ParticleTypeRegistry {
     public static final Supplier<SimpleParticleType> STUNNED_STAR =
             REGISTRY.register("stunned_star", () -> new SimpleParticleType(false));
 
+    public static final Supplier<SimpleParticleType> SLEEPING_Z =
+            REGISTRY.register("sleeping_z", () -> new SimpleParticleType(false));
+
     /**
      * Colorable magic orb particle. Carries color + motion mode via {@link OrbParticleOptions}
      * so a single registered type covers all colors and motion styles.

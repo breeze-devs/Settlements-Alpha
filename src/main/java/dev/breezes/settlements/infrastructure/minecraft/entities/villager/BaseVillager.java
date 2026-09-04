@@ -620,11 +620,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         super.tick();
 
         if (!this.level().isClientSide()) {
+            // Server side
             this.tickHunger();
             this.tickSooty();
             this.tickRainExposure();
             this.bubbleService().tick(this, this.level().getGameTime());
         } else {
+            // Client side
             this.restockReaction.tickClient(this);
         }
     }
