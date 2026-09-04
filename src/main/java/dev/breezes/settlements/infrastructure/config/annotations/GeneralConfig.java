@@ -30,4 +30,10 @@ public class GeneralConfig {
             defaultValue = true)
     public static boolean bypassInventoryRequirements;
 
+    @BooleanConfig(type = ConfigurationType.GENERAL,
+            identifier = "enable_chat_bubbles",
+            description = "Governs whether villager chat bubbles are drawn on this client",
+            defaultValue = true)
+    public static boolean chatBubblesEnabled;
+
 }

@@ -4,6 +4,7 @@ import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.infrastructure.network.features.farming.packet.ClientBoundCultivationSeedSetPacket;
+import dev.breezes.settlements.infrastructure.network.features.schedule.packet.ClientBoundVillageDayTypePacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.dayplan.packet.ClientBoundDayPlanSnapshotPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerDemandSnapshotPacket;
@@ -32,6 +33,7 @@ public class PacketRegistry {
         registerClient(registrar, ClientBoundSettlementDebugPacket.ID, ClientBoundSettlementDebugPacket.CODEC);
         registerClient(registrar, ClientBoundBubbleSnapshotPacket.ID, ClientBoundBubbleSnapshotPacket.CODEC);
         registerClient(registrar, ClientBoundCultivationSeedSetPacket.ID, ClientBoundCultivationSeedSetPacket.CODEC);
+        registerClient(registrar, ClientBoundVillageDayTypePacket.ID, ClientBoundVillageDayTypePacket.CODEC);
 
         // Shared UiSync lifecycle packets
         registerServer(registrar, ServerBoundOpenUiPacket.ID, ServerBoundOpenUiPacket.CODEC);

@@ -2,6 +2,7 @@ package dev.breezes.settlements.presentation.ui.hud;
 
 import dev.breezes.settlements.di.ClientScope;
 import dev.breezes.settlements.di.ClientSessionResettable;
+import dev.breezes.settlements.presentation.ui.ClientSurfaceSuppression;
 import dev.breezes.settlements.presentation.ui.framework.UITheme;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
@@ -83,7 +84,7 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (shouldSuppress(minecraft)) {
+        if (ClientSurfaceSuppression.isHudSuppressed(minecraft)) {
             return;
         }
 
@@ -92,14 +93,6 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
         HitResult.Type hitType = minecraft.hitResult == null ? HitResult.Type.MISS : minecraft.hitResult.getType();
         HudFrame frame = buildFrame(minecraft, deltaTracker, hitType);
         resolveContent(frame).ifPresent(resolved -> draw(guiGraphics, minecraft.font, resolved.content(), resolved.alpha()));
-    }
-
-    private static boolean shouldSuppress(@Nonnull Minecraft minecraft) {
-        return minecraft.options.hideGui
-                || minecraft.screen != null
-                || minecraft.player == null
-                || minecraft.level == null
-                || minecraft.player.isSpectator();
     }
 
     private static HudFrame buildFrame(@Nonnull Minecraft minecraft, @Nonnull DeltaTracker deltaTracker, @Nonnull HitResult.Type hitType) {

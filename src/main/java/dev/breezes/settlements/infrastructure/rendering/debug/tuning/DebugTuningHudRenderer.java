@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.rendering.debug.tuning;
 
 import dev.breezes.settlements.di.ClientScope;
 import dev.breezes.settlements.presentation.ui.framework.UITheme;
+import dev.breezes.settlements.presentation.ui.ClientSurfaceSuppression;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
@@ -35,12 +36,8 @@ public final class DebugTuningHudRenderer implements LayeredDraw.Layer {
 
     @Override
     public void render(@Nonnull GuiGraphics guiGraphics, @Nonnull DeltaTracker deltaTracker) {
-        if (!this.board.isVisible()) {
-            return;
-        }
-
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.options.hideGui) {
+        if (ClientSurfaceSuppression.isHudSuppressed(minecraft) || !this.board.isVisible()) {
             return;
         }
 

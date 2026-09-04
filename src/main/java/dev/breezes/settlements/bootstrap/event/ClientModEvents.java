@@ -121,6 +121,7 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("hud"), ClientModEvents::renderHud);
+        event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("clock_hud"), ClientModEvents::renderClockHud);
 
         if (DevTooling.isEnabled()) {
             event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("debug_tuning_overlay"),
@@ -136,6 +137,15 @@ public class ClientModEvents {
         }
 
         clientComponent.crosshairHudRenderer().render(guiGraphics, deltaTracker);
+    }
+
+    private static void renderClockHud(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        ClientComponent clientComponent = SettlementsDagger.clientOrNull();
+        if (clientComponent == null) {
+            return;
+        }
+
+        clientComponent.clockHudRenderer().render(guiGraphics, deltaTracker);
     }
 
     private static void renderDebugTuningOverlay(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {

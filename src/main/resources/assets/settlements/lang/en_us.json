@@ -26,6 +26,11 @@
   "ui.settlements.lily_hud.filter_set_gesture": "%1$s with seed to filter crop",
   "ui.settlements.lily_hud.resize_gesture": "%1$s%2$s empty-handed to resize",
 
+  "ui.settlements.clock_hud.day": "Day %s",
+  "ui.settlements.clock_hud.day_type.work": "Work Day",
+  "ui.settlements.clock_hud.day_type.rest": "Rest Day",
+  "ui.settlements.clock_hud.day_type.unknown": "...",
+
   "block.settlements.dormant_ore": "Dormant Ore",
   "block.settlements.dormant_deepslate_ore": "Dormant Deepslate Ore",
   "block.settlements.cultivation_lily": "Cultivation Lily",

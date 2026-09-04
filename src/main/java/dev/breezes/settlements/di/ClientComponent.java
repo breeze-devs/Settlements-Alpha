@@ -13,6 +13,7 @@ import dev.breezes.settlements.domain.presentation.AttachmentDisplayProfileRegis
 import dev.breezes.settlements.domain.presentation.SlotAnchorRegistry;
 import dev.breezes.settlements.domain.presentation.SocketRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationSeedSetClientProjection;
+import dev.breezes.settlements.infrastructure.minecraft.data.schedule.VillageDayTypeClientProjection;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketReceiver;
 import dev.breezes.settlements.infrastructure.rendering.debug.SettlementDebugOverlayState;
 import dev.breezes.settlements.infrastructure.rendering.debug.tuning.DebugTuningBoard;
@@ -20,6 +21,7 @@ import dev.breezes.settlements.infrastructure.rendering.debug.tuning.DebugTuning
 import dev.breezes.settlements.infrastructure.rendering.highlight.EntityHighlightRenderer;
 import dev.breezes.settlements.infrastructure.rendering.zone.CultivationLilyPlacementPreviewRenderer;
 import dev.breezes.settlements.infrastructure.rendering.zone.CultivationLilyZoneRevealRenderer;
+import dev.breezes.settlements.presentation.ui.hud.ClockHudRenderer;
 import dev.breezes.settlements.presentation.ui.hud.CrosshairHudRenderer;
 import dev.breezes.settlements.presentation.ui.sync.UiClientState;
 
@@ -54,6 +56,10 @@ public interface ClientComponent {
     EntityHighlightRenderer entityHighlightRenderer();
 
     CrosshairHudRenderer crosshairHudRenderer();
+
+    ClockHudRenderer clockHudRenderer();
+
+    VillageDayTypeClientProjection villageDayTypeClientProjection();
 
     DebugTuningBoard debugTuningBoard();
 

@@ -38,6 +38,7 @@ import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServ
 import dev.breezes.settlements.bootstrap.event.TradeSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerServerEvents;
+import dev.breezes.settlements.bootstrap.event.VillageDayTypeSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillagerZombificationServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldEventBusReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementServerEvents;
@@ -194,6 +195,8 @@ public interface ServerComponent {
     WorldgenVillagerReplacementServerEvents worldgenVillagerReplacementServerEvents();
 
     CultivationSeedSyncServerEvents cultivationSeedSyncServerEvents();
+
+    VillageDayTypeSyncServerEvents villageDayTypeSyncServerEvents();
 
     Set<VillagerSensorFactory> villagerSensorFactories();
 

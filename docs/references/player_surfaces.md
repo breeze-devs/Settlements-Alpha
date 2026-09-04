@@ -1,18 +1,22 @@
 # Player Surfaces
 
 This document covers the client-side regions that render information near the player's view without asking for input
-first — content anchored below the crosshair, and outlines drawn over entities. Both are read-only composites: several
-unrelated features may each want to draw into the same region on the same frame, and neither region has a natural owner
-unless one is assigned. **U12** governs this; this doc is where its reasoning for these two regions lives, rather than
-being restated at every call site.
+first: HUD panels anchored to the screen, and outlines drawn over entities.
+
+Two cross-cutting disciplines:
+
+- **Precedence**, wherever a region is a composite — several unrelated features may each want to draw into the same
+  region on the same frame, and such a region has no natural owner unless one is assigned (**U12**).
+- **Suppression**, for every HUD region regardless if it is a composite — one shared answer to when the mod draws
+  nothing at all.
 
 A committed surface — a screen the player opened on purpose — is out of scope here. These regions are ambient: dismissed
 by looking away, never capturing input, never blocking movement (**U7**).
 
-**Where to start reading:** the crosshair HUD region and its two provider seams (one keyed on the held item, one keyed
-on the aim target) live under `presentation/ui/hud`. Entity outlines and their provider seam live under
-`infrastructure/rendering/highlight`. Each region's owner is the only place that resolves precedence or suppression for
-that region; nothing else in the seam needs to.
+**Where to start reading:** `presentation/ui/hud` holds the suppression predicate every HUD region answers to, together
+with the crosshair region and its two provider seams (one keyed on the held item, one keyed on the aim target). Entity
+outlines and their provider seam live under `infrastructure/rendering/highlight`. A region's owner is the only place
+that resolves precedence for that region; nothing else in the seam needs to.
 
 ---
 
@@ -20,8 +24,8 @@ that region; nothing else in the seam needs to.
 
 Two contributors that can each decide to draw into the same pixels need an explicit answer to "which one,"
 or the answer becomes whichever one happens to run last in an unordered collection — a coincidence that holds only until
-a second contributor exists. Both regions resolve precedence the same way for exactly this reason, rather than each
-growing its own ad hoc fix.
+a second contributor exists. The two composite regions resolve precedence the same way for exactly this reason, rather
+than each growing its own ad hoc fix.
 
 The fix has three parts, and all three matter independently:
 
@@ -36,6 +40,16 @@ The fix has three parts, and all three matter independently:
 
 A contributor never sorts itself against its peers; it only declares where it stands, and the region's owner resolves
 the rest.
+
+## When no HUD region draws
+
+Suppression is not a per-region judgment. One shared predicate names the client states in which the mod's HUD draws
+nothing — the HUD hidden by the player, a screen open, spectator mode, nothing to draw against yet — and that predicate,
+not this list, is the authority on the set. Every HUD region consults it. Three separate things break when a region
+answers the question for itself instead.
+
+Suppression is the outermost gate — settled before precedence, before any contributor is asked, and before a region
+computes what it would otherwise have drawn.
 
 ## The crosshair HUD region
 
@@ -53,11 +67,9 @@ draw something, the aim-based content is what's shown; held-item content is the 
 contributor has declined the current frame. Within either group, ties resolve by the declared-priority-then-tiebreak
 rule above.
 
-**Suppression is the region's decision, not each contributor's.** A HUD hidden by the player, an open screen, spectator
-mode, or a missing player/level all mean the region draws nothing at all, decided once before any contributor is asked.
-Pushing that check into each contributor risks one of them disagreeing about when it's safe to draw, which is exactly
-the inconsistency **U6** exists to prevent: a gesture must never resolve to something the player could not see
-explained.
+**Suppression is the region's decision, not each contributor's.** The region consults the shared predicate once, before
+any contributor is asked; a contributor never checks for itself. That is the cross-region argument above applied one
+level down — contributors that each decide when it is safe to draw drift apart exactly as regions would.
 
 **The aim target is read the same way the game's own right-click dispatch resolves one — not a fresh raycast.**
 A contributor that raycasts independently risks disagreeing with what a right-click is actually about to hit, which
@@ -107,9 +119,9 @@ applied per entity: the highest-priority contributor to claim a given entity win
 which contributor happened to run first.
 
 This is a distinct region from the crosshair HUD (a different part of the frame, a different rendering stage, a
-different extension seam) that converges on the identical precedence discipline. A future third region should reach for
-the same shape rather than re-deriving it: declare priority, break ties deterministically, resolve once, keep
-suppression and precedence at the region's owner rather than scattered across contributors.
+different extension seam) that converges on the identical precedence discipline. A further region should reach for the
+same shape rather than re-deriving it: declare priority, break ties deterministically, resolve once, keep suppression
+and precedence at the region's owner rather than scattered across contributors.
 
 ## What a preview may claim
 

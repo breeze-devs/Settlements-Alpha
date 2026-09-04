@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.rendering.bubbles;
 
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.rendering.highlight.SupplementaryEntityPass;
+import dev.breezes.settlements.presentation.ui.ClientSurfaceSuppression;
 import lombok.CustomLog;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
@@ -36,7 +37,14 @@ public class BubbleRenderClientEvents {
             return;
         }
 
-        // Perform rendering
+        BubbleManager bubbleManager = villager.getBubbleManager();
+        bubbleManager.tick(event.getPartialTick());
+
+        // Gating after the tick: expiry has to keep advancing while bubbles are hidden
+        if (ClientSurfaceSuppression.isChatBubblesSuppressed(minecraftClient)) {
+            return;
+        }
+
         RenderParameter parameter = RenderParameter.builder()
                 .entity(villager)
                 .partialTick(event.getPartialTick())
@@ -47,9 +55,6 @@ public class BubbleRenderClientEvents {
                 .hasVisualFocus(event.getEntity() == minecraftClient.crosshairPickEntity)
                 .packedLight(event.getPackedLight())
                 .build();
-
-        BubbleManager bubbleManager = villager.getBubbleManager();
-        bubbleManager.tick(event.getPartialTick());
         bubbleManager.render(parameter);
     }
 

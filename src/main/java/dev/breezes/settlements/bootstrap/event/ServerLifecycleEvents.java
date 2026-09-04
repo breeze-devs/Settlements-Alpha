@@ -40,6 +40,7 @@ public final class ServerLifecycleEvents {
         NeoForge.EVENT_BUS.register(serverComponent.villageAnimalSpawnerServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.worldgenVillagerReplacementServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.cultivationSeedSyncServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.villageDayTypeSyncServerEvents());
 
         // Gossips fire even when inference is off, so the session reaper must run regardless
         NeoForge.EVENT_BUS.register(serverComponent.gossipSessionReaperServerEvents());
@@ -82,6 +83,7 @@ public final class ServerLifecycleEvents {
             NeoForge.EVENT_BUS.unregister(serverComponent.villageAnimalSpawnerServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.worldgenVillagerReplacementServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.cultivationSeedSyncServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.villageDayTypeSyncServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.gossipSessionReaperServerEvents());
 
             if (inferenceEnabled) {

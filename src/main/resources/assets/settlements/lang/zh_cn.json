@@ -26,6 +26,11 @@
   "ui.settlements.lily_hud.filter_set_gesture": "手持种子 %1$s 限定作物",
   "ui.settlements.lily_hud.resize_gesture": "%1$s%2$s 空手调整大小",
 
+  "ui.settlements.clock_hud.day": "第 %s 天",
+  "ui.settlements.clock_hud.day_type.work": "工作日",
+  "ui.settlements.clock_hud.day_type.rest": "休息日",
+  "ui.settlements.clock_hud.day_type.unknown": "...",
+
   "block.settlements.dormant_ore": "待生长的矿石",
   "block.settlements.dormant_deepslate_ore": "待生长的深板岩矿石",
   "block.settlements.cultivation_lily": "耕作睡莲",
