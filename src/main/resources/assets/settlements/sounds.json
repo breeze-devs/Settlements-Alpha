@@ -2,19 +2,25 @@
   "cucco_call": {
     "subtitle": "subtitles.settlements.cucco_call",
     "sounds": [
-      "settlements:cucco-call"
+      "settlements:cucco_call"
     ]
   },
   "cucco_fall": {
     "subtitle": "subtitles.settlements.cucco_fall",
     "sounds": [
-      "settlements:cucco-fall"
+      "settlements:cucco_fall"
     ]
   },
   "wololo": {
     "subtitle": "subtitles.settlements.wololo",
     "sounds": [
       "settlements:wololo"
+    ]
+  },
+  "interaction_fail": {
+    "subtitle": "subtitles.settlements.interaction_fail",
+    "sounds": [
+      "settlements:interaction_fail"
     ]
   }
 }

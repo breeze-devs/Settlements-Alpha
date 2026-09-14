@@ -4,6 +4,8 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.multibindings.IntoSet;
 import dev.breezes.settlements.di.ClientSessionResettable;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaAimController;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaAimGuideRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationSeedSetClientProjection;
 import dev.breezes.settlements.infrastructure.minecraft.data.schedule.VillageDayTypeClientProjection;
 import dev.breezes.settlements.infrastructure.rendering.debug.SettlementDebugOverlayState;
@@ -47,5 +49,13 @@ public abstract class ClientLifecycleModule {
     @Binds
     @IntoSet
     abstract ClientSessionResettable cultivationLilyZoneRevealRenderer(CultivationLilyZoneRevealRenderer implementation);
+
+    @Binds
+    @IntoSet
+    abstract ClientSessionResettable ballistaAimController(BallistaAimController implementation);
+
+    @Binds
+    @IntoSet
+    abstract ClientSessionResettable ballistaAimGuideRenderer(BallistaAimGuideRenderer implementation);
 
 }

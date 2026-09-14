@@ -16,4 +16,9 @@ public class ChainedPlayable implements IPlayable {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
+    @Override
+    public void playLocally(@Nonnull Location location, @Nonnull SoundSource soundSource) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
 }

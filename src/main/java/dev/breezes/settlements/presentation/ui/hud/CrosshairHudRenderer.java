@@ -29,10 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The single owner of the region below the crosshair, registered as its only {@link LayeredDraw.Layer}:
- * builds one {@link HudFrame} per frame, resolves it against every {@link LookTargetHudProvider} and
- * {@link HeldItemHudProvider}, and paints whichever content wins. A surface that wants the region adds a
- * provider rather than claiming a layer slot of its own.
+ * Owns the HUD region below the crosshair and renders one provider's content at a time.
  */
 @ClientSide
 @ClientScope
@@ -44,29 +41,31 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
     private static final int CROSSHAIR_GAP = 22;
 
     /**
-     * Extra pixels between lines, on top of the font's own line height. That height alone leaves no gap,
-     * packing the lines into one block a player reads as a paragraph rather than as separate facts.
+     * Extra pixels between lines to keep individual details visually separate.
      */
     private static final int LINE_LEADING = 3;
 
     private static final float FULLY_OPAQUE = 1.0F;
 
     /**
-     * The lowest alpha byte the font renderer honors; anything under it is drawn fully opaque instead.
-     * See the platform standard, P12 — the tail of a fade is the frame that trips it.
+     * Text alpha floor; see platform standard P12.
      */
     private static final int MIN_HONORED_ALPHA_BYTE = 4;
 
+    private final List<ModeHudProvider> modeProviders;
     private final List<LookTargetHudProvider> lookTargetProviders;
     private final List<HeldItemHudProvider> heldItemProviders;
     private final DwellRevealTracker lookTargetDwellTracker = new DwellRevealTracker();
 
-    // Retained so a fading frame still has content to paint once the target itself is gone
+    // Retained so content can fade out after the target is lost
     @Nullable
     private HudContent lastLookTargetContent;
 
     @Inject
-    CrosshairHudRenderer(Set<LookTargetHudProvider> lookTargetProviders, Set<HeldItemHudProvider> heldItemProviders) {
+    CrosshairHudRenderer(Set<ModeHudProvider> modeProviders,
+                         Set<LookTargetHudProvider> lookTargetProviders,
+                         Set<HeldItemHudProvider> heldItemProviders) {
+        this.modeProviders = HudPrecedence.orderedByPriority(modeProviders);
         this.lookTargetProviders = HudPrecedence.orderedByPriority(lookTargetProviders);
         this.heldItemProviders = HudPrecedence.orderedByPriority(heldItemProviders);
     }
@@ -79,7 +78,7 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
 
     @Override
     public void render(@Nonnull GuiGraphics guiGraphics, @Nonnull DeltaTracker deltaTracker) {
-        if (lookTargetProviders.isEmpty() && heldItemProviders.isEmpty()) {
+        if (modeProviders.isEmpty() && lookTargetProviders.isEmpty() && heldItemProviders.isEmpty()) {
             return;
         }
 
@@ -88,8 +87,7 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
             return;
         }
 
-        // hitResult is only assigned during a tick, so it is still null on the frames between a level
-        // loading and its first tick. That is the same "no target" the layer already handles as a miss.
+        // See platform standard P9 for ray-trace absence and miss handling
         HitResult.Type hitType = minecraft.hitResult == null ? HitResult.Type.MISS : minecraft.hitResult.getType();
         HudFrame frame = buildFrame(minecraft, deltaTracker, hitType);
         resolveContent(frame).ifPresent(resolved -> draw(guiGraphics, minecraft.font, resolved.content(), resolved.alpha()));
@@ -99,26 +97,14 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
         return HudFrame.builder()
                 .localPlayer(minecraft.player)
                 .mainHandStack(minecraft.player.getMainHandItem())
-                .blockHit(isBlockHit(hitType) ? (BlockHitResult) minecraft.hitResult : null)
+                .blockHit(hitType == HitResult.Type.BLOCK ? (BlockHitResult) minecraft.hitResult : null)
                 .aimedAtEntity(minecraft.crosshairPickEntity)
                 .partialTick(deltaTracker.getGameTimeDeltaPartialTick(false))
                 .build();
     }
 
     /**
-     * Whether the hit type names an actual block rather than a miss. A miss is reported as a
-     * BlockHitResult too, so an instanceof check alone cannot tell the two apart.
-     */
-    @VisibleForTesting
-    static boolean isBlockHit(@Nonnull HitResult.Type hitType) {
-        return hitType == HitResult.Type.BLOCK;
-    }
-
-    /**
-     * Identifies what the crosshair is aimed at this frame, or null for nothing. Level identity is part of
-     * the key because dimension travel can put an unrelated target at the same position or entity id. The
-     * position is copied because the key outlives its frame, and a block ray trace may hand back a cursor
-     * its next call moves.
+     * Target identity scoped to a level so equal positions or entity IDs in different levels remain distinct.
      */
     private sealed interface AimTargetKey permits AimTargetKey.BlockTarget, AimTargetKey.EntityTarget {
 
@@ -131,6 +117,7 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
             }
 
             BlockHitResult blockHit = frame.blockHit();
+            // Keep retained keys stable even if the hit position is mutable
             return blockHit != null ? new BlockTarget(level, blockHit.getBlockPos().immutable()) : null;
         }
 
@@ -142,35 +129,33 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
 
     }
 
-    /**
-     * The content to paint together with the opacity to paint it at.
-     */
     private record ResolvedHudContent(@Nonnull HudContent content, float alpha) {
     }
 
     /**
-     * The look-target layer wins whenever it has something to say; held-item content is the fallback.
-     * <p>
-     * Held-item content has no dwell of its own, because holding an item is already a deliberate act where
-     * a crosshair sweeping across candidates is not.
+     * Resolves mode content first, then visible look-target content, then held-item content.
      */
     private Optional<ResolvedHudContent> resolveContent(@Nonnull HudFrame frame) {
+        // Mode and held-item content need no dwell because selecting them is deliberate
+        Optional<HudContent> mode = HudPrecedence.firstPresent(modeProviders, provider -> provider.contentFor(frame));
+        if (mode.isPresent()) {
+            // Keep the look-target fade advancing while mode content hides it
+            lookTargetDwellTracker.observe(null);
+            return Optional.of(new ResolvedHudContent(mode.get(), FULLY_OPAQUE));
+        }
+
         Optional<HudContent> claimed = HudPrecedence.firstPresent(lookTargetProviders,
                 provider -> provider.contentFor(frame));
 
-        // Only a claimed target is offered to the dwell. Offering whatever the crosshair rests on lets a
-        // patch of dirt serve its own dwell and win the reveal away from the lily being read, cutting that
-        // content off mid-fade because the dirt has nothing to replace it with.
+        // Unclaimed targets must not renew the reveal and keep the previous target's content visible
         DwellReveal reveal = lookTargetDwellTracker.observe(claimed.isPresent() ? AimTargetKey.of(frame) : null);
 
-        // A claim alone must not replace what is retained, or a lily the crosshair merely crossed would
-        // paint at the opacity the previous one built up, arriving near-full without serving a dwell.
+        // A new target must earn its reveal before replacing content that is still fading
         if (reveal.revealed()) {
             claimed.ifPresent(content -> lastLookTargetContent = content);
         }
 
-        // Content that has finished fading is left retained rather than cleared: alpha alone decides
-        // whether it draws, and the next earned reveal overwrites it.
+        // Retained content needs no separate expiry; the reveal controls whether it is visible
         if (lastLookTargetContent != null && reveal.paints()) {
             return Optional.of(new ResolvedHudContent(lastLookTargetContent, reveal.alpha()));
         }
@@ -193,8 +178,8 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
     }
 
     /**
-     * Scales a packed ARGB color's alpha channel by the given fraction, leaving RGB untouched. Never
-     * returns an alpha the font renderer would misread; see {@link #MIN_HONORED_ALPHA_BYTE}.
+     * Scales a packed ARGB color's alpha by a fraction from zero to one, preserving RGB.
+     * Clamps to {@link #MIN_HONORED_ALPHA_BYTE}; callers must skip drawing fully hidden content.
      */
     @VisibleForTesting
     static int withAlpha(int argb, float alphaFraction) {

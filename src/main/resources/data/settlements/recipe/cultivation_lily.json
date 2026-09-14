@@ -1,19 +1,14 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "minecraft:crafting_shapeless",
   "category": "misc",
-  "pattern": [
-    " H ",
-    "HTH",
-    " H "
-  ],
-  "key": {
-    "H": {
-      "item": "minecraft:hay_block"
-    },
-    "T": {
+  "ingredients": [
+    {
       "item": "settlements:villager_totem"
+    },
+    {
+      "item": "minecraft:lily_pad"
     }
-  },
+  ],
   "result": {
     "id": "settlements:cultivation_lily"
   }

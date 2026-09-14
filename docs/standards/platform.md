@@ -151,6 +151,15 @@ Rotate about an offset the model reports from its own baked root bone instead of
 offset from the bone rather than restating it as a literal: a hand-copied copy is invalidated by the next export, and
 invalidated specifically by whoever is re-pivoting the rig, who has no reason to look for it (**F1**).
 
+### P16 — World game time cannot time client state that survives a world change
+
+`Level#getGameTime()` belongs to the loaded world. Joining another save or server can produce a lower value, so a
+client deadline retained from the previous world can suppress work until the new world's clock catches up.
+
+Use `ClientMonotonicClock` for client throttles and timeouts measured in real elapsed time, including those whose state
+survives disconnects. Gameplay delays measured in simulation ticks should keep using game time, with their timestamps
+scoped to that world.
+
 ## Build
 
 ### P5 — Dagger needs `javax.inject` on the runtime classpath, permanently

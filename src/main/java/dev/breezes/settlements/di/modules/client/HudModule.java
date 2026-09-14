@@ -3,6 +3,7 @@ package dev.breezes.settlements.di.modules.client;
 import dagger.Module;
 import dagger.multibindings.Multibinds;
 import dev.breezes.settlements.presentation.ui.hud.LookTargetHudProvider;
+import dev.breezes.settlements.presentation.ui.hud.ModeHudProvider;
 
 import java.util.Set;
 
@@ -15,5 +16,8 @@ public abstract class HudModule {
 
     @Multibinds
     abstract Set<LookTargetHudProvider> lookTargetHudProviders();
+
+    @Multibinds
+    abstract Set<ModeHudProvider> modeHudProviders();
 
 }

@@ -306,6 +306,17 @@ public class Location implements Cloneable {
         this.level.playSound(null, this.x, this.y, this.z, minecraftSound, soundSource, volume, pitch);
     }
 
+    /**
+     * Plays the sound for this client alone; on a server it does nothing.
+     */
+    public void playLocalSound(@Nonnull SoundEvent minecraftSound, float volume, float pitch, @Nonnull SoundSource soundSource) {
+        if (this.level == null) {
+            log.error("Attempted to play local sound from a location '{}' with no level", this.toString());
+            return;
+        }
+        this.level.playLocalSound(this.x, this.y, this.z, minecraftSound, soundSource, volume, pitch, false);
+    }
+
     public <T extends ParticleOptions> void displayParticles(@Nonnull T type, int count, double dx, double dy, double dz, double speed) {
         if (this.level == null || !(this.level instanceof ServerLevel serverLevel)) {
             log.error("Attempted to spawn particles from a location '{}' with no server level", this.toString());

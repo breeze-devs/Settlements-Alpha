@@ -6,8 +6,12 @@ import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry;
 import dev.breezes.settlements.di.ClientComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaModel;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.rendering.SettlementsCatRenderer;
+import dev.breezes.settlements.infrastructure.minecraft.entities.client.BallistaBoltModel;
+import dev.breezes.settlements.infrastructure.minecraft.entities.client.BallistaBoltRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.client.VillagerFishingHookRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.model.SettlementsVillagerModel;
@@ -64,6 +68,7 @@ public class ClientModEvents {
         EntityRenderers.register(EntityRegistry.CUCCO.get(), ChickenRenderer::new);
         EntityRenderers.register(EntityRegistry.VILLAGER_FISHING_HOOK.get(), VillagerFishingHookRenderer::new);
         EntityRenderers.register(EntityRegistry.SETTLEMENTS_EGG.get(), ThrownItemRenderer::new);
+        EntityRenderers.register(EntityRegistry.BALLISTA_BOLT.get(), BallistaBoltRenderer::new);
     }
 
     private static void registerItemProperties(FMLClientSetupEvent event) {
@@ -100,11 +105,14 @@ public class ClientModEvents {
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(SettlementsVillagerModel.LAYER, SettlementsVillagerModel::createBodyLayer);
         event.registerLayerDefinition(UmbrellaModel.LAYER, UmbrellaModel::createBodyLayer);
+        event.registerLayerDefinition(BallistaModel.LAYER, BallistaModel::createBodyLayer);
+        event.registerLayerDefinition(BallistaBoltModel.LAYER, BallistaBoltModel::createBodyLayer);
     }
 
     @SubscribeEvent
     public static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(BlockEntityTypeRegistry.CULTIVATION_LILY.get(), CultivationLilyRenderer::new);
+        event.registerBlockEntityRenderer(BlockEntityTypeRegistry.BALLISTA.get(), BallistaRenderer::new);
     }
 
     @SubscribeEvent

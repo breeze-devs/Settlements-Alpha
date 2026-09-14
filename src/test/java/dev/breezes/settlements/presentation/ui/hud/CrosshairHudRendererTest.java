@@ -1,25 +1,10 @@
 package dev.breezes.settlements.presentation.ui.hud;
 
-import net.minecraft.world.phys.HitResult;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CrosshairHudRendererTest {
-
-    @Test
-    void isBlockHit_missType_returnsFalse() {
-        // A bare `instanceof BlockHitResult` would return true here, since BlockHitResult.miss(...) is still a
-        // BlockHitResult — that instanceof-only check is the defect this predicate exists to close.
-        assertFalse(CrosshairHudRenderer.isBlockHit(HitResult.Type.MISS));
-    }
-
-    @Test
-    void isBlockHit_blockType_returnsTrue() {
-        assertTrue(CrosshairHudRenderer.isBlockHit(HitResult.Type.BLOCK));
-    }
 
     @Test
     void withAlpha_scalesOnlyTheAlphaChannel() {

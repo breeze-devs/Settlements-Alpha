@@ -2,6 +2,8 @@
   "mod.name": "Settlements",
 
   "item.settlements.base_villager_spawn_egg": "Settlements Villager Spawn Egg",
+  "item.settlements.villager_fishing_rod": "Villager Fishing Rod",
+  "item.settlements.hammer": "Hammer",
   "item.settlements.villager_totem": "Villager Totem",
   "item.settlements.villager_totem.mode.vanilla": "Vanilla",
   "item.settlements.villager_totem.mode.settlements": "Settlements",
@@ -13,6 +15,8 @@
   "item.settlements.villager_totem.already_target_type": "The villager is already the target type",
 
   "item.settlements.cultivation_lily.tooltip.place": "Place on water source to mark a cultivation zone for villagers",
+
+  "item.settlements.ballista_bolt": "Ballista Bolt",
 
   "ui.settlements.totem_hud.mode": "Mode: %s",
   "ui.settlements.totem_hud.cycle": "%1$s to cycle",
@@ -26,6 +30,25 @@
   "ui.settlements.lily_hud.filter_set_gesture": "%1$s with seed to filter crop",
   "ui.settlements.lily_hud.resize_gesture": "%1$s%2$s empty-handed to resize",
 
+  "ui.settlements.ballista_hud.unwound": "Unwound",
+  "ui.settlements.ballista_hud.winding": "Winding",
+  "ui.settlements.ballista_hud.cocked_empty": "Cocked · Empty",
+  "ui.settlements.ballista_hud.loaded": "Loaded · Redstone ready",
+  "ui.settlements.ballista_hud.firing": "Firing",
+  "ui.settlements.ballista_hud.bolt_needed": "Bolt needed",
+  "ui.settlements.ballista_hud.wind": "%s Wind",
+  "ui.settlements.ballista_hud.load": "%s Load",
+  "ui.settlements.ballista_hud.unload": "%s Unload",
+  "ui.settlements.ballista_hud.aim": "%1$s + %2$s Aim",
+  "ui.settlements.ballista_hud.rotation": "Rotation: %s",
+  "ui.settlements.ballista_hud.elevation": "Elevation: %s",
+  "ui.settlements.ballista_hud.degrees": "%s°",
+  "ui.settlements.ballista_hud.adjust": "%s Adjust",
+  "ui.settlements.ballista_hud.switch_to_rotation": "%s Rotation",
+  "ui.settlements.ballista_hud.switch_to_elevation": "%s Elevation",
+  "ui.settlements.ballista_hud.done": "%s Done",
+  "ui.settlements.ballista_hud.joined": "%1$s · %2$s",
+
   "ui.settlements.clock_hud.day": "Day %s",
   "ui.settlements.clock_hud.day_type.work": "Work Day",
   "ui.settlements.clock_hud.day_type.rest": "Rest Day",
@@ -34,23 +57,12 @@
   "block.settlements.dormant_ore": "Dormant Ore",
   "block.settlements.dormant_deepslate_ore": "Dormant Deepslate Ore",
   "block.settlements.cultivation_lily": "Cultivation Lily",
+  "block.settlements.ballista": "Ballista",
 
   "creative_tab.settlements": "Settlements",
 
   "overlay.settlements.region.enter.title": "Welcome to",
 
-  "ui.settlements.behavior.title": "BEHAVIOR CONTROLLER",
-  "ui.settlements.behavior.villager": "Villager: %s",
-  "ui.settlements.behavior.schedule": "Schedule: %s",
-  "ui.settlements.behavior.stage": "Stage: %s",
-  "ui.settlements.behavior.stage_na": "N/A",
-  "ui.settlements.behavior.cooldown": "⏳ %s",
-  "ui.settlements.behavior.enable_all": "ENABLE ALL",
-  "ui.settlements.behavior.enable_all_stub": "ENABLE ALL is not implemented in P0 Phase A",
-  "ui.settlements.behavior.back": "BACK",
-  "ui.settlements.behavior.connection_stale": "Connection lost: Behavior data unavailable",
-  "ui.settlements.behavior.unavailable": "Behavior data unavailable",
-  "ui.settlements.behavior.debug.no_villager_in_range": "No villager found in range",
   "ui.settlements.behavior.behavior.harvest_sugarcane": "Harvest Sugarcane",
   "ui.settlements.behavior.behavior.harvest_ore": "Harvest Ore",
   "ui.settlements.behavior.behavior.excavate_substrate": "Excavate Substrate",
@@ -100,6 +112,7 @@
   "ui.settlements.behavior.behavior.courtship_initiate": "Initiate Courtship",
   "ui.settlements.behavior.behavior.courtship_accept": "Accept Courtship",
   "ui.settlements.behavior.behavior.donate_emeralds": "Donate Emeralds",
+  "ui.settlements.behavior.behavior.unknown": "Unknown",
   "ui.settlements.stats.title": "VILLAGER STATS",
   "ui.settlements.stats.health": "Health: ",
   "ui.settlements.stats.hunger": "Hunger: ",
@@ -128,7 +141,6 @@
   "ui.settlements.stats.wallet": "Wallet: %s emerald(s)",
   "ui.settlements.stats.trades.offers": "Offers",
   "ui.settlements.stats.trades.demands": "Demands",
-  "ui.settlements.stats.wants": "Wants",
   "ui.settlements.stats.loading": "Loading villager stats...",
   "ui.settlements.stats.close": "CLOSE",
   "ui.settlements.stats.no_villager_in_range": "No villager found in range",
@@ -173,6 +185,9 @@
   "entity.settlements.settlements_wolf": "Wolf",
   "entity.settlements.settlements_cat": "Cat",
   "entity.settlements.cucco": "Chicken",
+  "entity.settlements.ballista_bolt": "Ballista Bolt",
+  "entity.settlements.settlements_egg": "Egg",
+  "entity.settlements.villager_fishing_hook": "Villager Fishing Hook",
 
   "entity.settlements.base_villager": "Villager",
   "entity.settlements.base_villager.armorer": "Armorer",
@@ -336,6 +351,7 @@
   "subtitles.settlements.cucco_call": "A chicken crows ominously",
   "subtitles.settlements.cucco_fall": "A chicken falls ominously",
   "subtitles.settlements.wololo": "A shepherd chants mysteriously",
+  "subtitles.settlements.interaction_fail": "Interaction fails",
 
   "action.settlements.chest.waxed": "Chest waxed, villagers will ignore it",
   "action.settlements.chest.unwaxed": "Chest unwaxed, villagers may use it again"

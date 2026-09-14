@@ -30,11 +30,17 @@ and are used within this Minecraft mod:
 
 Asset Name: `wololo.ogg`
 
-- Source: Minecraft (Evoker spellcasting sound)
+- Source: Minecraft
 - Creator: Mojang Studios
 - License: Minecraft asset, used within this Minecraft mod
 
-Asset Name: `cucco-call.ogg`, `cucco-fall.ogg`
+Asset Name: `interaction_fail.ogg`
+
+- Source: Minecraft
+- Creator: Mojang Studios
+- License: Minecraft asset, used within this Minecraft mod
+
+Asset Name: `cucco_call.ogg`, `cucco_fall.ogg`
 
 - Source: Pixabay (https://pixabay.com/)
 - Creator: DRAGON-STUDIO (https://pixabay.com/users/dragon-studio-38165424/)

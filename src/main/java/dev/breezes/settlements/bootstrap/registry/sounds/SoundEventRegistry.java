@@ -27,6 +27,13 @@ public final class SoundEventRegistry {
             "wololo",
             () -> SoundEvent.createVariableRangeEvent(ResourceLocationUtil.mod("wololo")));
 
+    /**
+     * The mod's canonical sound for a failed interaction
+     */
+    public static final Supplier<SoundEvent> INTERACTION_FAIL = REGISTRY.register(
+            "interaction_fail",
+            () -> SoundEvent.createVariableRangeEvent(ResourceLocationUtil.mod("interaction_fail")));
+
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
     }

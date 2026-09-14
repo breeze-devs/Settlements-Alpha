@@ -9,15 +9,7 @@ import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Real-elapsed clock for client cadences that belong to the process rather than to a world.
- * <p>
- * A client-side throttle or timeout must not be gated on Level#getGameTime(). That clock is per-save, so it
- * runs backwards when the player leaves one world for another with a lower game time, and a deadline stored
- * from the first world then sits permanently in the second world's future — the throttled work simply never
- * runs again for the rest of the process, silently and without an exception.
- * <p>
- * Durations stay in {@link ClockTicks}: the cadence a caller wants to express is still a domain quantity, and
- * only the instant it is measured against belongs to this clock.
+ * Monotonic real time for client timers that must remain consistent across world changes.
  */
 @ClientSide
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -25,6 +17,9 @@ public final class ClientMonotonicClock {
 
     private static final long MILLIS_PER_SECOND = 1_000L;
 
+    /**
+     * Returns milliseconds from an arbitrary origin, comparable only within the running JVM.
+     */
     public static long nowMillis() {
         return TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
     }

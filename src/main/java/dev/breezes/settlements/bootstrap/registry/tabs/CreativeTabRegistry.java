@@ -22,6 +22,8 @@ public final class CreativeTabRegistry {
                 output.accept(ItemRegistry.BASE_VILLAGER_SPAWN_EGG.get());
                 output.accept(ItemRegistry.VILLAGER_TOTEM.get());
                 output.accept(ItemRegistry.CULTIVATION_LILY.get());
+                output.accept(ItemRegistry.BALLISTA.get());
+                output.accept(ItemRegistry.BALLISTA_BOLT.get());
             }))
             .build());
 

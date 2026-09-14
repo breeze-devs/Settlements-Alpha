@@ -12,7 +12,8 @@
     "WolfMixin",
     "VillagerMixin",
     "LevelMixin",
-    "EntityMixin"
+    "EntityMixin",
+    "AbstractArrowInvoker"
   ],
   "client": [
   ],

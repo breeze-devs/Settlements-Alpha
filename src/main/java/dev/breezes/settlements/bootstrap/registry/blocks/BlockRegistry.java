@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.blocks;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.DormantOreBlock;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaBlock;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyBlock;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
@@ -52,6 +53,17 @@ public final class BlockRegistry {
                             .instabreak()
                             .sound(SoundType.WET_GRASS)
                             .pushReaction(PushReaction.DESTROY)
+            ));
+
+    public static final DeferredHolder<Block, BallistaBlock> BALLISTA = REGISTRY.register("ballista",
+            () -> new BallistaBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.WOOD)
+                            .strength(2.5F)
+                            .sound(SoundType.WOOD)
+                            // A model drawn inside an occluding block renders dark and culls its neighbors' faces
+                            .noOcclusion()
+                            .pushReaction(PushReaction.BLOCK)
             ));
 
     public static void register(IEventBus eventBus) {

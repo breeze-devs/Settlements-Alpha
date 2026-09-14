@@ -39,10 +39,16 @@ public enum SoundRegistry {
     CUCCO_CALL(SoundEventPlayable.ofLazy(SoundEventRegistry.CUCCO_CALL, 0.8f, 1.0f)),
     CUCCO_FALL(SoundEventPlayable.ofLazy(SoundEventRegistry.CUCCO_FALL, 0.5f, 1.0f)),
     WOLOLO(SoundEventPlayable.ofLazy(SoundEventRegistry.WOLOLO, 1.0f, 1.0f)),
+    INTERACTION_FAIL(SoundEventPlayable.ofLazy(SoundEventRegistry.INTERACTION_FAIL, 1.0f, 1.0f)),
     CULTIVATION_LILY_RESIZE(SoundEventPlayable.of(SoundEvents.EXPERIENCE_ORB_PICKUP, 0.6f, 1.0f)),
     CULTIVATION_LILY_FILTER_SET(SoundEventPlayable.of(SoundEvents.ITEM_FRAME_ADD_ITEM, 1.0f, 1.0f)),
     CULTIVATION_LILY_FILTER_CLEARED(SoundEventPlayable.of(SoundEvents.ITEM_FRAME_REMOVE_ITEM, 1.0f, 1.0f)),
     CULTIVATION_LILY_FILTER_ALREADY_CLEARED(SoundEventPlayable.of(SoundEvents.ITEM_FRAME_BREAK, 1.0f, 1.0f)),
+    BALLISTA_WIND_STROKE(SoundEventPlayable.of(SoundEvents.CROSSBOW_LOADING_MIDDLE.value(), 1.0f, 0.6f)),
+    BALLISTA_WIND_CATCH(SoundEventPlayable.of(SoundEvents.LEVER_CLICK, 0.5f, 0.8f)),
+    BALLISTA_COCKED(SoundEventPlayable.of(SoundEvents.CROSSBOW_LOADING_END.value(), 1.0f, 0.7f)),
+    BALLISTA_RELEASE(SoundEventPlayable.of(SoundEvents.CROSSBOW_SHOOT, 1.0f, 0.5f)),
+    BALLISTA_TURN_ARRIVES(SoundEventPlayable.of(SoundEvents.IRON_TRAPDOOR_CLOSE, 0.5f, 0.8f)),
     ;
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound
@@ -51,6 +57,13 @@ public enum SoundRegistry {
 
     public void playGlobally(@Nonnull Location location, @Nonnull SoundSource soundSource) {
         this.playable.playGlobally(location, soundSource);
+    }
+
+    /**
+     * See {@link IPlayable#playLocally}.
+     */
+    public void playLocally(@Nonnull Location location, @Nonnull SoundSource soundSource) {
+        this.playable.playLocally(location, soundSource);
     }
 
     /**

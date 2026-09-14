@@ -6,20 +6,20 @@ import javax.annotation.Nonnull;
 import java.util.Optional;
 
 /**
- * Contributes content to the crosshair HUD region for the current frame.
- * <p>
- * Not implemented directly — {@link HeldItemHudProvider} and {@link LookTargetHudProvider} extend this to key
- * their multibindings apart while sharing one contract, so {@link CrosshairHudRenderer} can order either
- * layer's contributors the same way.
+ * Shared contract for crosshair HUD content.
+ * Implement {@link ModeHudProvider}, {@link LookTargetHudProvider} or {@link HeldItemHudProvider} to select a layer.
  */
 @ClientSide
 public interface HudSurfaceProvider {
 
     /**
-     * Cross-provider precedence within this surface's layer. Larger values win.
+     * Priority within this provider's layer. Higher values take precedence.
      */
     int priority();
 
+    /**
+     * Returns content for this frame, or empty when this provider has nothing to show.
+     */
     Optional<HudContent> contentFor(@Nonnull HudFrame frame);
 
 }

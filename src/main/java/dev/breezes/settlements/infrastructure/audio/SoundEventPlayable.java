@@ -45,4 +45,9 @@ public class SoundEventPlayable implements PitchedPlayable {
         location.playSound(this.soundSupplier.get(), this.volume, pitchOverride, soundSource);
     }
 
+    @Override
+    public void playLocally(@Nonnull Location location, @Nonnull SoundSource soundSource) {
+        location.playLocalSound(this.soundSupplier.get(), this.volume, this.pitch, soundSource);
+    }
+
 }

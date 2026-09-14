@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:villager",
+    "minecraft:wandering_trader",
+    "minecraft:iron_golem",
+    "minecraft:snow_golem",
+    "settlements:base_villager",
+    "settlements:settlements_wolf",
+    "settlements:settlements_cat"
+  ]
+}

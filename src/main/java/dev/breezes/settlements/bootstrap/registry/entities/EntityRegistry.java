@@ -3,6 +3,7 @@ package dev.breezes.settlements.bootstrap.registry.entities;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.SettlementsCat;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cuccos.CuccoEntity;
+import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.BallistaBolt;
 import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.SettlementsEgg;
 import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.VillagerFishingHook;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -63,6 +64,13 @@ public class EntityRegistry {
                     .updateInterval(5)
                     .noSummon()
                     .build("villager_fishing_hook"));
+
+    public static final Supplier<EntityType<BallistaBolt>> BALLISTA_BOLT = REGISTRY.register("ballista_bolt",
+            () -> EntityType.Builder.<BallistaBolt>of(BallistaBolt::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(8)
+                    .updateInterval(20)
+                    .build("ballista_bolt"));
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

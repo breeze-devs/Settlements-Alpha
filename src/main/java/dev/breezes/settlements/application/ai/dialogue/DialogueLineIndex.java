@@ -145,7 +145,7 @@ public final class DialogueLineIndex {
         Map<VillagerProfessionKey, Map<Occasion, Map<DialogueFacet, List<String>>>> result = new LinkedHashMap<>();
         result.put(GENERIC, Map.of(
                 Occasion.IDLE, Map.of(DialogueFacet.WAS_CURED,
-                        numberedKeys("dialogue.settlements.generic.idle.cured", 6)),
+                        numberedKeys("dialogue.settlements.generic.idle.cured", 5)),
                 Occasion.REST_DAY, Map.of(DialogueFacet.WAS_CURED,
                         numberedKeys("dialogue.settlements.generic.rest_day.cured", 3))));
         return result;

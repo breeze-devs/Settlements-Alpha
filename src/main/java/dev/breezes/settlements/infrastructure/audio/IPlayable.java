@@ -11,6 +11,12 @@ public interface IPlayable {
 
     void playGlobally(@Nonnull Location location, @Nonnull SoundSource soundSource);
 
+    /**
+     * Plays for this client alone and sends nothing, so every client that should hear it plays it itself. Does nothing
+     * on a server.
+     */
+    void playLocally(@Nonnull Location location, @Nonnull SoundSource soundSource);
+
     @Deprecated
     default void playPrivately(@Nonnull List<Player> players) {
         throw new UnsupportedOperationException("Not implemented yet");

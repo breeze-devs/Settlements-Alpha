@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.blockentities;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.bootstrap.registry.blocks.BlockRegistry;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaBlockEntity;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -18,6 +19,12 @@ public final class BlockEntityTypeRegistry {
             REGISTRY.register("cultivation_lily",
                     () -> BlockEntityType.Builder
                             .of(CultivationLilyBlockEntity::new, BlockRegistry.CULTIVATION_LILY.get())
+                            .build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BallistaBlockEntity>> BALLISTA =
+            REGISTRY.register("ballista",
+                    () -> BlockEntityType.Builder
+                            .of(BallistaBlockEntity::new, BlockRegistry.BALLISTA.get())
                             .build(null));
 
     public static void register(IEventBus eventBus) {

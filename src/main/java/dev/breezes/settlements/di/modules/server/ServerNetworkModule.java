@@ -5,6 +5,8 @@ import dagger.Module;
 import dagger.multibindings.ClassKey;
 import dagger.multibindings.IntoMap;
 import dev.breezes.settlements.infrastructure.network.core.ServerSidePacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ballista.handler.ServerBoundBallistaAimPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.ballista.packet.ServerBoundBallistaAimPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ServerBoundCloseUiPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ServerBoundHeartbeatUiPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.handler.ServerBoundOpenUiPacketHandler;
@@ -29,5 +31,10 @@ public abstract class ServerNetworkModule {
     @IntoMap
     @ClassKey(ServerBoundHeartbeatUiPacket.class)
     abstract ServerSidePacketHandler<?> heartbeatUi(ServerBoundHeartbeatUiPacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ServerBoundBallistaAimPacket.class)
+    abstract ServerSidePacketHandler<?> ballistaAim(ServerBoundBallistaAimPacketHandler impl);
 
 }

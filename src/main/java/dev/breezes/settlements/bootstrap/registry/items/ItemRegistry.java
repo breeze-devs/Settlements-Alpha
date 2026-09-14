@@ -6,6 +6,7 @@ import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyItem;
 import dev.breezes.settlements.infrastructure.minecraft.items.VillagerTotemItem;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.neoforged.bus.api.IEventBus;
@@ -31,6 +32,12 @@ public final class ItemRegistry {
 
     public static final DeferredHolder<Item, CultivationLilyItem> CULTIVATION_LILY = REGISTRY.register("cultivation_lily",
             () -> new CultivationLilyItem(BlockRegistry.CULTIVATION_LILY.get(), new Item.Properties().stacksTo(16)));
+
+    public static final DeferredHolder<Item, BlockItem> BALLISTA = REGISTRY.register("ballista",
+            () -> new BlockItem(BlockRegistry.BALLISTA.get(), new Item.Properties()));
+
+    public static final DeferredHolder<Item, Item> BALLISTA_BOLT = REGISTRY.register("ballista_bolt",
+            () -> new Item(new Item.Properties()));
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

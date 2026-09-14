@@ -139,12 +139,17 @@ This trims phrasing, not reasoning: **D1**'s "why" stays — in its shortest tru
 thoroughness does not. The test is whether a sentence could be deleted with no fact lost, not whether the paragraph
 could be shorter.
 
-### D11 — A design doc has a companion roadmap
+### D11 — A roadmap is what makes a design ready
 
-Every design doc under `docs/working/` is paired with a roadmap doc beside it — `<design>.md` and
-`<design>-roadmap.md`. The design doc is the authority on *why*; the roadmap owns the order of work, the done criteria,
-and the status, and nothing else holds status for that work. A design that is not yet scheduled, or already shipped,
-still has the pair: the roadmap says so and states what has to happen before it can be filled in, or where the record of
+A design doc under `docs/working/` is in one of two states, and the roadmap is the difference. **Not ready** — a
+concept or early-stage doc that records a direction, its dependencies, and its open questions. It carries no roadmap,
+its status line says so, and nothing is implemented from it. **Ready** — the design has a companion roadmap beside it,
+`<design>.md` and `<design>-roadmap.md`, and implementation may begin. Readiness is the roadmap's existence, not the
+design's completeness: a finished design nobody has scheduled is still not ready, and work that starts without a
+roadmap has started from a doc that cannot hold its status.
+
+The design doc is the authority on *why*; the roadmap owns the order of work, the done criteria, and the status, and
+nothing else holds status for that work. A design that has shipped keeps the pair: the roadmap says where the record of
 the finished work went.
 
 A roadmap doc must tell whoever implements from it to check its items off **actively, at the moment each item is

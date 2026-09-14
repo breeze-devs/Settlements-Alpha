@@ -2,6 +2,7 @@ package dev.breezes.settlements.di;
 
 import dagger.Subcomponent;
 import dev.breezes.settlements.di.modules.client.ClientAttachmentModule;
+import dev.breezes.settlements.di.modules.client.ClientBallistaModule;
 import dev.breezes.settlements.di.modules.client.ClientCultivationLilyModule;
 import dev.breezes.settlements.di.modules.client.ClientLifecycleModule;
 import dev.breezes.settlements.di.modules.client.ClientNetworkModule;
@@ -12,6 +13,8 @@ import dev.breezes.settlements.domain.attachment.AttachmentProvider;
 import dev.breezes.settlements.domain.presentation.AttachmentDisplayProfileRegistry;
 import dev.breezes.settlements.domain.presentation.SlotAnchorRegistry;
 import dev.breezes.settlements.domain.presentation.SocketRegistry;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaAimController;
+import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaAimGuideRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationSeedSetClientProjection;
 import dev.breezes.settlements.infrastructure.minecraft.data.schedule.VillageDayTypeClientProjection;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketReceiver;
@@ -30,6 +33,7 @@ import java.util.Set;
 @ClientScope
 @Subcomponent(modules = {
         ClientAttachmentModule.class,
+        ClientBallistaModule.class,
         ClientCultivationLilyModule.class,
         ClientLifecycleModule.class,
         ClientNetworkModule.class,
@@ -70,6 +74,10 @@ public interface ClientComponent {
     CultivationLilyPlacementPreviewRenderer cultivationLilyPlacementPreviewRenderer();
 
     CultivationSeedSetClientProjection cultivationSeedSetClientProjection();
+
+    BallistaAimController ballistaAimController();
+
+    BallistaAimGuideRenderer ballistaAimGuideRenderer();
 
     Set<ClientSessionResettable> clientSessionResettables();
 
