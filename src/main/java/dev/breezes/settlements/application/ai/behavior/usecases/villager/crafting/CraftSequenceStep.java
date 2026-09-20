@@ -4,6 +4,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorCo
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.AbstractStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
@@ -18,6 +19,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -52,6 +54,7 @@ public class CraftSequenceStep extends AbstractStep<BaseVillager> {
 
     private final Supplier<CraftRecipe> currentRecipeSupplier;
     private final CraftBatchCalculator batchCalculator;
+    private final VillagerWallet wallet;
     private final Consumer<BaseVillager> experienceRewarder;
     private final StageKey endStage;
 
@@ -67,11 +70,13 @@ public class CraftSequenceStep extends AbstractStep<BaseVillager> {
     public CraftSequenceStep(@Nonnull String name,
                              @Nonnull Supplier<CraftRecipe> currentRecipeSupplier,
                              @Nonnull CraftBatchCalculator batchCalculator,
+                             @Nonnull VillagerWallet wallet,
                              @Nonnull Consumer<BaseVillager> experienceRewarder,
                              @Nonnull StageKey endStage) {
         super(name);
         this.currentRecipeSupplier = currentRecipeSupplier;
         this.batchCalculator = batchCalculator;
+        this.wallet = wallet;
         this.experienceRewarder = experienceRewarder;
         this.endStage = endStage;
         this.resetRunState();
@@ -127,7 +132,7 @@ public class CraftSequenceStep extends AbstractStep<BaseVillager> {
             inputVisuals.add(inventory.findFirst(stack -> ItemMatches.test(input.match(), stack)).orElse(ItemStack.EMPTY));
         }
 
-        Optional<RecipeCommit.Result> committed = RecipeCommit.commit(context, recipe, this.batchCalculator,
+        Optional<RecipeCommit.Result> committed = RecipeCommit.commit(context, recipe, this.batchCalculator, this.wallet,
                 WorldEventType.GOODS_CRAFTED, this.experienceRewarder);
         if (committed.isEmpty()) {
             // Inventory changed since the precondition check — end gracefully rather than crafting nothing.
@@ -144,6 +149,11 @@ public class CraftSequenceStep extends AbstractStep<BaseVillager> {
             for (int b = 0; b < beatCount; b++) {
                 this.beats.add(new Beat(INPUT_BEAT_TICKS, ctx -> this.playInputBeat(ctx, visual)));
             }
+        }
+        // Emeralds come out of the wallet rather than the inventory, so without their own beat the cost never shows
+        ItemStack emeraldVisual = new ItemStack(Items.EMERALD);
+        for (int b = 0; b < Math.min(recipe.emeralds(), MAX_BEATS_PER_INPUT); b++) {
+            this.beats.add(new Beat(INPUT_BEAT_TICKS, ctx -> this.playInputBeat(ctx, emeraldVisual)));
         }
         this.beats.add(new Beat(OUTPUT_BEAT_TICKS, this::playOutputBeat));
         return null;

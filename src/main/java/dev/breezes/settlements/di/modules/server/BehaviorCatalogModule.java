@@ -1132,7 +1132,8 @@ public final class BehaviorCatalogModule {
     static BehaviorCatalogEntry craftGoods(CraftGoodsConfig config,
                                            BehaviorSupport support,
                                            CraftCatalogRegistry craftCatalog,
-                                           TradeCatalogRegistry tradeCatalog) {
+                                           TradeCatalogRegistry tradeCatalog,
+                                           VillagerWallet wallet) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.CRAFT_GOODS)
@@ -1151,7 +1152,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.CRAFT_GOODS.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("crafting_table"))
                         .build())
-                .factory(() -> new CraftGoodsBehavior(config, support, craftCatalog, tradeCatalog))
+                .factory(() -> new CraftGoodsBehavior(config, support, craftCatalog, tradeCatalog, wallet))
                 .build();
     }
 
@@ -1160,7 +1161,8 @@ public final class BehaviorCatalogModule {
     static BehaviorCatalogEntry forgeTool(ForgeToolConfig config,
                                           BehaviorSupport support,
                                           ForgeCatalogRegistry forgeCatalog,
-                                          TradeCatalogRegistry tradeCatalog) {
+                                          TradeCatalogRegistry tradeCatalog,
+                                          VillagerWallet wallet) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.FORGE_TOOL)
@@ -1179,7 +1181,7 @@ public final class BehaviorCatalogModule {
                         .displayNameKey(BehaviorKey.FORGE_TOOL.displayNameKey())
                         .iconItemId(ResourceLocation.withDefaultNamespace("anvil"))
                         .build())
-                .factory(() -> new ForgeToolBehavior(config, support, forgeCatalog, tradeCatalog))
+                .factory(() -> new ForgeToolBehavior(config, support, forgeCatalog, tradeCatalog, wallet))
                 .build();
     }
 

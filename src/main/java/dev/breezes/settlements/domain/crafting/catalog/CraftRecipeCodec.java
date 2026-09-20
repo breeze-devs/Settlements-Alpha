@@ -6,7 +6,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 /**
- * Datapack codec for {@link CraftRecipe}. {@code priority} defaults to 0.
+ * Datapack codec for {@link CraftRecipe}. emeralds and priority default to 0.
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CraftRecipeCodec {
@@ -15,6 +15,7 @@ public final class CraftRecipeCodec {
             instance.group(
                     Codec.STRING.fieldOf("id").forGetter(CraftRecipe::id),
                     CraftIngredientCodec.CODEC.listOf().fieldOf("inputs").forGetter(CraftRecipe::inputs),
+                    Codec.INT.optionalFieldOf("emeralds", 0).forGetter(CraftRecipe::emeralds),
                     CraftOutputCodec.CODEC.fieldOf("output").forGetter(CraftRecipe::output),
                     Codec.INT.optionalFieldOf("priority", 0).forGetter(CraftRecipe::priority)
             ).apply(instance, CraftRecipe::new));

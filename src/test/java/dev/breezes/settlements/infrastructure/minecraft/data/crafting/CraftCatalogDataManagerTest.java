@@ -76,6 +76,61 @@ class CraftCatalogDataManagerTest {
     }
 
     @Test
+    void emeraldCost_parsesWhenDeclaredAndIsFreeWhenAbsent() {
+        // Arrange & Act
+        this.manager.reload(Map.of(
+                resource("settlements:craft_catalog/fletcher"),
+                JsonParser.parseString("""
+                        {
+                          "profession": "minecraft:fletcher",
+                          "recipes": [
+                            {
+                              "id": "tipped",
+                              "inputs": [ { "match": { "item": "minecraft:stick" }, "count": 1 } ],
+                              "emeralds": 3,
+                              "output": { "item": "minecraft:arrow", "count": 1 }
+                            },
+                            {
+                              "id": "plain",
+                              "inputs": [ { "match": { "item": "minecraft:stick" }, "count": 1 } ],
+                              "output": { "item": "minecraft:arrow", "count": 1 }
+                            }
+                          ]
+                        }
+                        """)
+        ));
+
+        // Assert
+        List<CraftRecipe> recipes = this.manager.recipesFor(VillagerProfessionKey.FLETCHER);
+        assertEquals(3, recipes.getFirst().emeralds());
+        assertEquals(0, recipes.get(1).emeralds(), "a recipe that declares no emeralds must cost none");
+    }
+
+    @Test
+    void negativeEmeraldCost_dropsWholeFile() {
+        // Arrange & Act — a negative cost would pay the crafter for crafting
+        this.manager.reload(Map.of(
+                resource("settlements:craft_catalog/fletcher"),
+                JsonParser.parseString("""
+                        {
+                          "profession": "minecraft:fletcher",
+                          "recipes": [
+                            {
+                              "id": "minting",
+                              "inputs": [ { "match": { "item": "minecraft:stick" }, "count": 1 } ],
+                              "emeralds": -1,
+                              "output": { "item": "minecraft:arrow", "count": 1 }
+                            }
+                          ]
+                        }
+                        """)
+        ));
+
+        // Assert
+        assertTrue(this.manager.recipesFor(VillagerProfessionKey.FLETCHER).isEmpty());
+    }
+
+    @Test
     void missingOutput_dropsWholeFile() {
         // Arrange & Act — one malformed recipe fails the whole file (per-file isolation)
         this.manager.reload(Map.of(

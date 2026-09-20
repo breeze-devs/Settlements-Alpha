@@ -245,6 +245,15 @@
       }
     },
     {
+      "id": "ballista_bolt",
+      "match": {
+        "item": "settlements:ballista_bolt"
+      },
+      "dump": {
+        "above": 64
+      }
+    },
+    {
       "id": "buy_iron",
       "match": {
         "item": "minecraft:iron_ingot"

@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
@@ -52,6 +53,7 @@ public class CraftGoodsBehavior extends VillagerStateMachineBehavior {
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     private final CraftRecipeAvailableCondition craftRecipeAvailableCondition;
     private final CraftBatchCalculator batchCalculator;
+    private final VillagerWallet wallet;
 
     @Nullable
     private PhysicalBlock jobSite;
@@ -61,11 +63,13 @@ public class CraftGoodsBehavior extends VillagerStateMachineBehavior {
     public CraftGoodsBehavior(CraftGoodsConfig config,
                               BehaviorSupport support,
                               CraftCatalogRegistry craftCatalog,
-                              TradeCatalogRegistry tradeCatalog) {
+                              TradeCatalogRegistry tradeCatalog,
+                              VillagerWallet wallet) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
-        this.batchCalculator = new CraftBatchCalculator(tradeCatalog);
+        this.batchCalculator = new CraftBatchCalculator(tradeCatalog, wallet);
+        this.wallet = wallet;
 
         // A null block predicate accepts the villager's job-site regardless of profession; the vanilla
         // brain guarantees the claimed POI already matches the profession, and the condition's canReach
@@ -133,7 +137,7 @@ public class CraftGoodsBehavior extends VillagerStateMachineBehavior {
 
     private BehaviorStep<BaseVillager> createCraftStep() {
         CraftSequenceStep craftSequence = new CraftSequenceStep("CraftGoodsBehavior.craft",
-                () -> this.currentRecipe, this.batchCalculator, this::rewardExperience, CraftStage.END);
+                () -> this.currentRecipe, this.batchCalculator, this.wallet, this::rewardExperience, CraftStage.END);
 
         return StayCloseStep.<BaseVillager>builder()
                 .closeEnoughDistance(CLOSE_ENOUGH_DISTANCE)

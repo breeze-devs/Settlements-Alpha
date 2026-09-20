@@ -107,3 +107,24 @@ stutter, and stutter trains readers to skim prefixes rather than read them.
 Apply the rule uniformly once a type meets both conditions. A rule applied only where it feels contestable is one the
 next contributor has to relitigate per type, which costs more than the longer name it saved. A uniform application that
 produces an unbearable name is evidence against the rule, not grounds for an exception.
+
+## C10 — Prefer Apache Commons Validate for preconditions
+
+Prefer [Apache Commons Lang Validate](https://commons.apache.org/proper/commons-lang/apidocs/org/apache/commons/lang3/Validate.html)
+for simple constructor and method preconditions over repetitive `if`/`throw` blocks. A consistent vocabulary makes the
+constraint and its failure semantics easier to recognize.
+
+- Use `Validate.isTrue` for argument constraints and relationships; prefer specific helpers such as `notBlank` and
+  `notEmpty` when their contracts fit.
+- Use `Validate.validState` for invalid object state.
+
+Supply messages that identify the field or parameter and required constraint, including an entity or recipe id when it
+helps locate invalid data. Keep checks at the boundary that owns the invariant; domain records enforce theirs in the
+compact constructor so direct construction, builders, and codecs share the same checks (**F1**, **F2**).
+
+Preserve accepted inputs and exception types when converting existing guards. `notBlank` and `notEmpty` throw
+`NullPointerException` for null; use `isTrue` with a null-safe predicate when the existing contract requires
+`IllegalArgumentException` instead.
+
+Keep explicit branches when failure requires a domain-specific exception, recovery, or multiple actions. Expected
+gameplay outcomes, such as being unable to afford a craft, remain ordinary control flow rather than precondition errors.

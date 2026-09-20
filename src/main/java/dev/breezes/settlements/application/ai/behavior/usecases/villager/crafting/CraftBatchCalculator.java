@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting;
 
+import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.domain.crafting.catalog.CraftIngredient;
 import dev.breezes.settlements.domain.crafting.catalog.CraftRecipe;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
@@ -22,23 +23,19 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Joins a {@link CraftRecipe} with the villager's inventory and the trade {@code StockPolicy} ladder
- * to decide how many units may be crafted this tick. Shared by the availability condition (craftable
- * iff batch >= 1) and the craft step (which recomputes live after arrival), so both agree.
- * <p>
- * The clamp is: expertise level, floored by inventory headroom above each input's economic reserve,
- * and floored by the output's overflow ceiling. An output with no {@code dump} rung has no ceiling
- * and is therefore not craftable — that is intentional (future-proof recipes ship idle).
+ * Calculates craftable batches and ranks recipes by output stock headroom.
  */
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class CraftBatchCalculator {
 
     private final TradeCatalogRegistry tradeCatalog;
+    private final VillagerWallet wallet;
 
     /**
-     * Returns the number of units craftable this tick.
+     * Returns the number of recipe executions allowed by factors like expertise, input stock above sell reserves,
+     * emerald affordability, and remaining output capacity.
      * <p>
-     * Returns 0 when the recipe is not economically or physically craftable.
+     * Returns 0 when no execution fits or no output overflow ceiling is configured.
      */
     public int computeBatch(@Nonnull BaseVillager villager, @Nonnull CraftRecipe recipe) {
         Item outputItem = BuiltInRegistries.ITEM.get(recipe.output().itemId());
@@ -46,18 +43,25 @@ public class CraftBatchCalculator {
 
         Integer ceiling = this.dumpAbove(profession, outputItem);
         if (ceiling == null) {
-            // No overflow line configured, not craftable yet
+            // Recipes are disabled until an overflow policy bounds their production
             return 0;
         }
 
         VillagerInventory inventory = villager.getSettlementsInventory();
         List<CraftIngredient> inputs = recipe.inputs();
-        int[] inputHeadrooms = new int[inputs.size()];
-        int[] inputCounts = new int[inputs.size()];
+        boolean costsEmeralds = recipe.emeralds() > 0;
+        int costCount = costsEmeralds ? inputs.size() + 1 : inputs.size();
+        int[] inputHeadrooms = new int[costCount];
+        int[] inputCounts = new int[costCount];
         for (int i = 0; i < inputs.size(); i++) {
             CraftIngredient input = inputs.get(i);
             inputHeadrooms[i] = inventory.countMatching(input.match()) - this.reserveFor(profession, input.match());
             inputCounts[i] = input.count();
+        }
+        if (costsEmeralds) {
+            // Crafting reserves no emeralds; affordability and output capacity bound spending per batch.
+            inputHeadrooms[inputs.size()] = this.wallet.getBalance(villager);
+            inputCounts[inputs.size()] = recipe.emeralds();
         }
 
         return clampBatch(villager.getExpertise().getLevel(),
@@ -68,11 +72,10 @@ public class CraftBatchCalculator {
     }
 
     /**
-     * The pure batch clamp: expertise, capped by the output's ceiling headroom and by each input's
-     * reserve headroom, all divided by their per-unit costs. Extracted so the divisor arithmetic — the
-     * error-prone part (each per-unit cost must divide its own headroom) — is unit-testable with plain
-     * ints. A non-positive headroom yields a non-positive term, so the final {@code max(.., 0)} reports
-     * "not craftable" regardless of truncation direction.
+     * Returns a nonnegative batch bounded by expertise and available input and output headroom.
+     * <p>
+     * Counts are positive quantities per recipe execution; input arrays have equal lengths and pair
+     * each headroom with its corresponding cost.
      */
     static int clampBatch(int expertiseLevel, int outputHeadroom, int outputCount,
                           @Nonnull int[] inputHeadrooms, @Nonnull int[] inputCounts) {
@@ -80,20 +83,19 @@ public class CraftBatchCalculator {
         for (int i = 0; i < inputHeadrooms.length; i++) {
             batch = Math.min(batch, inputHeadrooms[i] / inputCounts[i]);
         }
+        // Stock below reserve or above the output ceiling means no craft, never a negative batch.
         return Math.max(batch, 0);
     }
 
     /**
-     * How far the output sits below its overflow ceiling ({@code dumpAbove - held}). Used to prefer the
-     * output the village most lacks. Returns {@link Integer#MIN_VALUE} when the output has no ceiling so
-     * such recipes sort last (they are filtered out before selection anyway).
+     * Returns the output's overflow ceiling minus the villager's held stock, or
+     * {@link Integer#MIN_VALUE} when no ceiling is configured.
      */
     public int ceilingHeadroom(@Nonnull BaseVillager villager, @Nonnull CraftRecipe recipe) {
         Item outputItem = BuiltInRegistries.ITEM.get(recipe.output().itemId());
         Integer ceiling = this.dumpAbove(villager.getProfession(), outputItem);
 
         if (ceiling == null) {
-            // Unreachable: selection only runs over recipes the availability filter already proved craftable
             return Integer.MIN_VALUE;
         }
 
@@ -101,9 +103,8 @@ public class CraftBatchCalculator {
     }
 
     /**
-     * Selects the preferred recipe from a set already proven craftable: the output the village most
-     * lacks (largest {@link #ceilingHeadroom}), breaking ties by the datapack {@code priority}. The set
-     * must be non-empty — callers filter to craftable recipes before selecting.
+     * Selects the recipe with the largest {@link #ceilingHeadroom}, breaking ties by higher priority.
+     * The list must be non-empty and contain only craftable recipes.
      */
     public CraftRecipe selectPreferred(@Nonnull BaseVillager villager, @Nonnull List<CraftRecipe> craftableRecipes) {
         return craftableRecipes.stream()
@@ -114,7 +115,7 @@ public class CraftBatchCalculator {
     }
 
     /**
-     * The overflow ceiling for the output item, or {@code null} when no dump rung matches it.
+     * Returns the highest matching output overflow ceiling, or null when none is configured.
      */
     @Nullable
     private Integer dumpAbove(@Nonnull VillagerProfessionKey profession, @Nonnull Item outputItem) {
@@ -131,15 +132,11 @@ public class CraftBatchCalculator {
     }
 
     /**
-     * The quantity of the input the villager holds back from crafting: its sell buffer {@code offer.above}
-     * (0 when it does not sell the input). Reserve is deliberately <em>not</em> the restock floor: since the
-     * demand evaluator refills only up to {@code restock.below}, folding that floor into the reserve would
-     * pin a bought-only input at its buy target and the recipe would never gain headroom. Using the sell
-     * buffer instead lets a bought input craft down toward zero (restock then refills it — the normal
-     * production loop), while a self-produced-and-sold input still keeps its sell stock intact. Runaway
-     * buying is impossible because the output's {@code dump.above} ceiling caps how much is ever crafted.
+     * Returns the largest matching input sell buffer, or 0 when no offer applies.
      */
     private int reserveFor(@Nonnull VillagerProfessionKey profession, @Nonnull ItemMatch inputMatch) {
+        // Preserve sell stock, but leave bought-only inputs consumable down to zero. Reserving the
+        // restock target could strand purchased inputs at that target with no crafting headroom.
         return this.tradeCatalog.findOffers(profession, inputMatch).stream()
                 .filter(entry -> coversInput(entry.match(), inputMatch))
                 .mapToInt(OfferEntry::surplusThreshold)
@@ -148,15 +145,13 @@ public class CraftBatchCalculator {
     }
 
     /**
-     * Whether a catalog rung's match genuinely applies to the input. {@code findOffers} also returns
-     * cross-kind candidates (e.g. the universal {@code c:foods} rung against an iron input) at priority 0
-     * for a scanner to resolve; we resolve them here by real tag membership so an unrelated tag rung does
-     * not inflate the reserve.
+     * Accepts identical matches or an item/tag pair whose item belongs to the tag.
      */
     private static boolean coversInput(@Nonnull ItemMatch rungMatch, @Nonnull ItemMatch inputMatch) {
         if (rungMatch.equals(inputMatch)) {
             return true;
         }
+        // Mixed item/tag pairs need membership checks so unrelated candidates cannot inflate reserves.
         if (rungMatch instanceof ItemMatch.TagRef tagRef && inputMatch instanceof ItemMatch.ItemRef itemRef) {
             return itemInTag(itemRef, tagRef);
         }

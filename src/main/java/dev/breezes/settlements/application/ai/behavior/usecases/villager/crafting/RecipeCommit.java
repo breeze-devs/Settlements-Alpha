@@ -2,6 +2,7 @@ package dev.breezes.settlements.application.ai.behavior.usecases.villager.crafti
 
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.outcomes.BehaviorOutcome;
+import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.crafting.catalog.CraftIngredient;
 import dev.breezes.settlements.domain.crafting.catalog.CraftRecipe;
@@ -20,7 +21,7 @@ import java.util.function.Consumer;
 
 /**
  * The atomic economic transaction shared by every recipe-producing sequence step:
- * recompute the live batch, consume inputs, bank the output, record the deed, and reward XP —
+ * recompute the live batch, consume inputs and emeralds, bank the output, record the deed, and reward XP —
  * all in one commit with no cosmetic side effects in between.
  * <p>
  * Stateless and reusable across callers. The batch is recomputed here rather than trusted from the
@@ -39,6 +40,7 @@ public final class RecipeCommit {
     public static Optional<Result> commit(@Nonnull BehaviorContext<BaseVillager> context,
                                           @Nullable CraftRecipe recipe,
                                           @Nonnull CraftBatchCalculator batchCalculator,
+                                          @Nonnull VillagerWallet wallet,
                                           @Nonnull WorldEventType deedType,
                                           @Nonnull Consumer<BaseVillager> experienceRewarder) {
         if (recipe == null) {
@@ -58,6 +60,7 @@ public final class RecipeCommit {
         for (CraftIngredient input : recipe.inputs()) {
             inventory.consumeMatching(input.match(), input.count() * liveBatch);
         }
+        wallet.spend(villager, recipe.emeralds() * liveBatch);
         inventory.add(new ItemStack(outputItem, outputTotal));
 
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(deedType, null);

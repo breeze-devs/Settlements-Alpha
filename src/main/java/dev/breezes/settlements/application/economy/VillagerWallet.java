@@ -24,6 +24,23 @@ public final class VillagerWallet {
         return VillagerEmeraldAttachment.getEmeralds(villager) >= amount;
     }
 
+    /**
+     * Pays emeralds out of the villager's wallet to no one: they leave the economy.
+     *
+     * @throws IllegalArgumentException if the amount is negative or more than the villager holds
+     */
+    public void spend(@Nonnull BaseVillager villager, int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Wallet spending requires a non-negative amount");
+        }
+
+        int balance = VillagerEmeraldAttachment.getEmeralds(villager);
+        if (balance < amount) {
+            throw new IllegalArgumentException("Wallet has insufficient emeralds to spend");
+        }
+        VillagerEmeraldAttachment.setEmeralds(villager, balance - amount);
+    }
+
     public void transfer(@Nonnull BaseVillager from, @Nonnull BaseVillager to, int amount) {
         if (from == to) {
             throw new IllegalArgumentException("Wallet transfer source and target must be different villagers");

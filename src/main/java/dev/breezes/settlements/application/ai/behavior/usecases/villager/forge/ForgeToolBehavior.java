@@ -17,6 +17,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ai.targeting.BlockMemoryTargetResolver;
+import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.domain.ai.conditions.JobSiteBlockExistsCondition;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -75,6 +76,7 @@ public class ForgeToolBehavior extends VillagerStateMachineBehavior {
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
     private final CraftRecipeAvailableCondition craftRecipeAvailableCondition;
     private final CraftBatchCalculator batchCalculator;
+    private final VillagerWallet wallet;
     private final BlockMemoryTargetResolver blockMemoryTargetResolver;
 
     @Nullable
@@ -83,11 +85,13 @@ public class ForgeToolBehavior extends VillagerStateMachineBehavior {
     public ForgeToolBehavior(ForgeToolConfig config,
                              BehaviorSupport support,
                              ForgeCatalogRegistry forgeCatalog,
-                             TradeCatalogRegistry tradeCatalog) {
+                             TradeCatalogRegistry tradeCatalog,
+                             VillagerWallet wallet) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
-        this.batchCalculator = new CraftBatchCalculator(tradeCatalog);
+        this.batchCalculator = new CraftBatchCalculator(tradeCatalog, wallet);
+        this.wallet = wallet;
         this.blockMemoryTargetResolver = support.getBlockMemoryTargetResolver();
 
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.SMITHING_TABLE), JOB_SITE_COMPLETION_RANGE);
@@ -130,7 +134,7 @@ public class ForgeToolBehavior extends VillagerStateMachineBehavior {
 
         // Commit the forge transaction the moment the smith commits to the work
         CraftRecipe recipe = this.batchCalculator.selectPreferred(entity, validRecipes);
-        RecipeCommit.commit(context, recipe, this.batchCalculator, WorldEventType.TOOL_FORGED, this::rewardExperience);
+        RecipeCommit.commit(context, recipe, this.batchCalculator, this.wallet, WorldEventType.TOOL_FORGED, this::rewardExperience);
 
         boolean resolvedAnvil = this.blockMemoryTargetResolver.resolveBlockTarget(context, MemoryTypeRegistry.ANVIL_SITES,
                 BlockMatchers.ANVIL, BlockScanBox.confirm(), BlockMemorySiteConfirmer.DEFAULT_MAX_CONFIRMS, ANVIL_COMPLETION_RANGE);

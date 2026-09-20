@@ -17,10 +17,12 @@ public final class SettlementsKeyMappingEvents {
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         if (DevTooling.isEnabled()) {
-            event.register(SettlementsKeyMappings.OPEN_VILLAGER_STATS);
-            event.register(SettlementsKeyMappings.OPEN_DAY_PLAN);
             event.register(SettlementsKeyMappings.TOGGLE_DEBUG_TUNING_OVERLAY);
         }
+
+        // TODO: disable these bindings in actual release builds
+        event.register(SettlementsKeyMappings.OPEN_VILLAGER_STATS);
+        event.register(SettlementsKeyMappings.OPEN_DAY_PLAN);
     }
 
 }

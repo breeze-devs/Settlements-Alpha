@@ -26,6 +26,15 @@
         { "match": { "item": "minecraft:string" }, "count": 2 }
       ],
       "output": { "item": "minecraft:crossbow", "count": 1 }
+    },
+    {
+      "id": "ballista_bolt",
+      "inputs": [
+        { "match": { "item": "minecraft:stick" }, "count": 1 },
+        { "match": { "item": "minecraft:feather" }, "count": 1 }
+      ],
+      "emeralds": 1,
+      "output": { "item": "settlements:ballista_bolt", "count": 8 }
     }
   ]
 }
