@@ -20,8 +20,8 @@ public final class EntityPerceptionSensor extends AbstractSensor<BaseVillager> {
 
     private final EntityPerceptionSensorConfig config;
 
-    public EntityPerceptionSensor(@Nonnull EntityPerceptionSensorConfig config, @Nonnull BaseVillager villager) {
-        super(List.of(), createStaggeredCooldown(config, villager));
+    public EntityPerceptionSensor(@Nonnull EntityPerceptionSensorConfig config) {
+        super(List.of(), Tickable.staggered(ClockTicks.seconds(config.scanIntervalSeconds())));
         this.config = config;
     }
 
@@ -45,16 +45,6 @@ public final class EntityPerceptionSensor extends AbstractSensor<BaseVillager> {
         return sensed != self
                 && sensed.isAlive()
                 && !sensed.isRemoved();
-    }
-
-    private static Tickable createStaggeredCooldown(@Nonnull EntityPerceptionSensorConfig config, @Nonnull BaseVillager villager) {
-        ClockTicks scanInterval = ClockTicks.seconds(config.scanIntervalSeconds());
-        int intervalTicks = Math.max(1, scanInterval.getTicksAsInt());
-        int initialDelay = Math.floorMod(villager.getUUID().hashCode(), intervalTicks);
-
-        // Shared perception is intentionally universal, so deterministic staggering prevents large villages
-        // from concentrating every entity-section scan onto the same server tick.
-        return new Tickable(intervalTicks, initialDelay);
     }
 
 }

@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensor;
 import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensor;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
+import dev.breezes.settlements.application.ai.sensors.NearbyHostilesSensor;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.di.BaseLane;
@@ -61,14 +62,21 @@ public abstract class SensorCatalogModule {
     @IntoSet
     @BaseLane
     static VillagerSensorFactory entityPerceptionSensor(EntityPerceptionSensorConfig config) {
-        return villager -> new EntityPerceptionSensor(config, villager);
+        return villager -> new EntityPerceptionSensor(config);
+    }
+
+    @Provides
+    @IntoSet
+    @BaseLane
+    static VillagerSensorFactory nearbyHostilesSensor() {
+        return villager -> new NearbyHostilesSensor();
     }
 
     @Provides
     @IntoSet
     @BaseLane
     static VillagerSensorFactory demandedGroundItemSensor(DemandedGroundItemSensorConfig config, DemandEvaluator demandEvaluator) {
-        return villager -> new DemandedGroundItemSensor(config, demandEvaluator, villager);
+        return villager -> new DemandedGroundItemSensor(config, demandEvaluator);
     }
 
     /**

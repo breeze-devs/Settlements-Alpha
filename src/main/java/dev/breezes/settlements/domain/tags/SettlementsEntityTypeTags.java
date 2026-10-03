@@ -21,4 +21,10 @@ public final class SettlementsEntityTypeTags {
     public static final TagKey<EntityType<?>> VILLAGER_ALLIES = TagKey.create(Registries.ENTITY_TYPE,
             ResourceLocationUtil.mod("villager_allies"));
 
+    /**
+     * Entities a villager perceives as a threat.
+     */
+    public static final TagKey<EntityType<?>> VILLAGER_ENEMIES = TagKey.create(Registries.ENTITY_TYPE,
+            ResourceLocationUtil.mod("villager_enemies"));
+
 }

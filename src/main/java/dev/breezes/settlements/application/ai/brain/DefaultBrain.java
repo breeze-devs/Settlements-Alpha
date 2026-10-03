@@ -25,8 +25,13 @@ public class DefaultBrain implements IBrain {
     }
 
     @Override
-    public void tick(int delta) {
+    public void preVanillaAiStep() {
+        // No decisions to make ahead of the vanilla brain
+    }
 
+    @Override
+    public void postVanillaAiStep() {
+        // Nothing to update after the vanilla brain
     }
 
     @Override

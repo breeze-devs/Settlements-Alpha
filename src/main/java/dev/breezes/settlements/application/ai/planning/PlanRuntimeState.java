@@ -1,7 +1,6 @@
 package dev.breezes.settlements.application.ai.planning;
 
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
-import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.planning.PlanArrival;
@@ -24,30 +23,7 @@ public class PlanRuntimeState {
     private BehaviorPlanningMetadata currentDescriptor;
 
     /**
-     * Transient override slot. Non-null only while a reactive override behavior
-     * is running. Ticked by PlanRunner before the plan slot.
-     * Structured as a single slot here; the field could become a Deque later
-     * to support a small priority stack without changing callers.
-     */
-    @Nullable
-    private IBehavior<BaseVillager> overrideBehavior;
-
-    /**
-     * The catalog key of {@link #overrideBehavior}, retained for diagnostics.
-     */
-    @Nullable
-    private BehaviorKey overrideBehaviorKey;
-
-    /**
-     * Ticks the current override has been running. PlanRunner uses this as a safety-net ceiling to
-     * force-stop an override that has wedged (never reaches a terminal state). Reset to zero whenever
-     * the override slot is installed or cleared.
-     */
-    private int overrideElapsedTicks;
-
-    /**
-     * Real elapsed ticks the current plan-slot behavior has been running. Parallel to
-     * {@link #overrideElapsedTicks} but for the plan-slot path. PlanRunner uses this as
+     * Real elapsed ticks the current plan-slot behavior has been running. PlanRunner uses this as
      * a safety-net ceiling to break a wedged plan behavior that would otherwise freeze the
      * villager's entire remaining day. Reset to zero whenever a behavior is assigned, cleared,
      * or the runtime is reset.
@@ -91,9 +67,6 @@ public class PlanRuntimeState {
     public void reset() {
         this.currentBehavior = null;
         this.currentDescriptor = null;
-        this.overrideBehavior = null;
-        this.overrideBehaviorKey = null;
-        this.overrideElapsedTicks = 0;
         this.currentBehaviorElapsedTicks = 0;
         this.slotStartRetryDelayTicks = 0;
         this.clearPendingGeneration();
@@ -136,24 +109,8 @@ public class PlanRuntimeState {
         this.currentBehaviorElapsedTicks = 0;
     }
 
-    public boolean isOverrideActive() {
-        return this.overrideBehavior != null;
-    }
-
-    public void installOverride(@Nonnull IBehavior<BaseVillager> behavior, @Nonnull BehaviorKey key) {
-        this.overrideBehavior = behavior;
-        this.overrideBehaviorKey = key;
-        this.overrideElapsedTicks = 0;
-    }
-
-    public void clearOverride() {
-        this.overrideBehavior = null;
-        this.overrideBehaviorKey = null;
-        this.overrideElapsedTicks = 0;
-    }
-
-    public void incrementOverrideElapsedTicks(int delta) {
-        this.overrideElapsedTicks += delta;
+    public boolean isBehaviorActive() {
+        return this.currentBehavior != null;
     }
 
     public void incrementCurrentBehaviorElapsedTicks(int delta) {

@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": {
+    "minecraft:ravager": 3.0,
+    "minecraft:evoker": 2.5,
+    "minecraft:illusioner": 2.0,
+    "minecraft:zoglin": 2.0,
+    "minecraft:vindicator": 1.5,
+    "minecraft:vex": 1.2,
+    "minecraft:drowned": 1.0,
+    "minecraft:husk": 1.0,
+    "minecraft:pillager": 1.0,
+    "minecraft:zombie": 1.0,
+    "minecraft:zombie_villager": 1.0
+  }
+}

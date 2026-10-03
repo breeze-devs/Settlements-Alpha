@@ -2,9 +2,14 @@ package dev.breezes.settlements.infrastructure.minecraft.entities.projectiles;
 
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.particles.ParticleTypeRegistry;
+import dev.breezes.settlements.domain.tags.SettlementsEntityTypeTags;
+import dev.breezes.settlements.domain.time.ClockTicks;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
@@ -23,10 +28,16 @@ import javax.annotation.Nonnull;
  * - Never spawns chickens (no onHitEntity chicken roll).
  * - Applies knockback to any LivingEntity including players.
  * - Spawns a custom egg-splat particle + vanilla item crack spray on impact.
+ * <p>
+ * An egg thrown in combat also passes through villager allies, and slows and knocks back harder
+ * the villager enemies it strikes.
  */
 public class SettlementsEgg extends ThrowableItemProjectile {
 
-    private static final float KNOCKBACK_STRENGTH = 0.3f;
+    private static final float FRIENDLY_KNOCKBACK_STRENGTH = 0.3f;
+    private static final float ENEMY_KNOCKBACK_STRENGTH = 0.8f;
+    private static final ClockTicks ENEMY_SLOWNESS_DURATION = ClockTicks.seconds(5);
+    private static final int ENEMY_SLOWNESS_AMPLIFIER = 2; // Slowness III
 
     // Particle burst counts on impact
     private static final int EGG_SPLAT_COUNT = 1;
@@ -34,21 +45,39 @@ public class SettlementsEgg extends ThrowableItemProjectile {
     private static final double SPLAT_SPREAD = 0.2;
     private static final double CRACK_SPREAD = 0.1;
     private static final double CRACK_SPEED = 0.05;
-    // Small offset to push the splat off of the surface and avoid z-fighting with the block face
-    private static final double IMPACT_NORMAL_OFFSET = 0.1;
+
+    /**
+     * Whether this egg was thrown in combat rather than as a prank. Not saved, so an egg reloaded mid-flight lands as a
+     * prank egg, which is harmless.
+     */
+    private boolean combat;
 
     public SettlementsEgg(EntityType<? extends SettlementsEgg> type, Level level) {
         super(type, level);
     }
 
-    public SettlementsEgg(Level level, LivingEntity shooter) {
+    public SettlementsEgg(Level level, LivingEntity shooter, boolean combat) {
         super(EntityRegistry.SETTLEMENTS_EGG.get(), shooter, level);
+        this.combat = combat;
     }
 
     @Override
     @Nonnull
     protected Item getDefaultItem() {
         return Items.EGG;
+    }
+
+    @Override
+    protected boolean canHitEntity(@Nonnull Entity target) {
+        if (!super.canHitEntity(target)) {
+            return false;
+        }
+        if (!this.combat) {
+            // A prank egg is meant for anyone, villagers and players included
+            return true;
+        }
+        // An ally in the line of fire neither takes the egg nor shields the enemy behind it
+        return !target.getType().is(SettlementsEntityTypeTags.VILLAGER_ALLIES);
     }
 
     @Override
@@ -61,6 +90,12 @@ public class SettlementsEgg extends ThrowableItemProjectile {
             return;
         }
 
+        boolean hitsEnemy = this.combat && living.getType().is(SettlementsEntityTypeTags.VILLAGER_ENEMIES);
+        if (hitsEnemy) {
+            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN,
+                    ENEMY_SLOWNESS_DURATION.getTicksAsInt(), ENEMY_SLOWNESS_AMPLIFIER));
+        }
+
         // Knock the target along the egg's flight direction
         Vec3 travel = this.getDeltaMovement();
         double pushX = -travel.x;
@@ -69,7 +104,7 @@ public class SettlementsEgg extends ThrowableItemProjectile {
             pushX = this.getX() - living.getX();
             pushZ = this.getZ() - living.getZ();
         }
-        living.knockback(KNOCKBACK_STRENGTH, pushX, pushZ);
+        living.knockback(hitsEnemy ? ENEMY_KNOCKBACK_STRENGTH : FRIENDLY_KNOCKBACK_STRENGTH, pushX, pushZ);
     }
 
     @Override

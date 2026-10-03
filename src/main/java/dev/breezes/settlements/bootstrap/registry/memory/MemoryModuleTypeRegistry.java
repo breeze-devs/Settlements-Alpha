@@ -51,6 +51,18 @@ public final class MemoryModuleTypeRegistry {
             "nearby_sensed_entities",
             () -> new MemoryModuleType<>(Optional.empty()));
 
+    public static final Supplier<MemoryModuleType<PerceivedEntities>> NEARBY_HOSTILES = REGISTRY.register(
+            "nearby_hostiles",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<PerceivedEntities>> SIGHTED_HOSTILES = REGISTRY.register(
+            "sighted_hostiles",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<PerceivedEntities>> UNSEEN_HOSTILES = REGISTRY.register(
+            "unseen_hostiles",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
     public static final Supplier<MemoryModuleType<List<GlobalPos>>> CULTIVATION_SITES = REGISTRY.register(
             "cultivation_sites",
             () -> new MemoryModuleType<>(Optional.empty()));

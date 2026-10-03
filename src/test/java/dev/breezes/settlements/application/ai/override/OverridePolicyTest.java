@@ -2,28 +2,16 @@ package dev.breezes.settlements.application.ai.override;
 
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
-import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
-import org.junit.jupiter.api.BeforeEach;
+import dev.breezes.settlements.domain.ai.override.OverrideArbitrationRules;
+import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for the OverridePolicy implementations.
- * <p>
- * SocialAcceptOverridePolicy tests: verifies delegation to OverrideTriggerDetector.
- * <p>
- * All tests follow Arrange / Act / Assert. No Minecraft types are used.
- */
 @ExtendWith(MockitoExtension.class)
 class OverridePolicyTest {
 
@@ -33,82 +21,60 @@ class OverridePolicyTest {
     @Mock
     private TradeSessionRegistry tradeRegistry;
 
-    private UUID villagerId;
+    @Test
+    void combat_isAdmittedDespiteAProtectedPlan() {
+        // Counterexample: combat refused while non-interruptible day-plan work runs, so a protected chore holds off a
+        // fight.
+        OverrideTier combat = new CombatOverridePolicy().precedence().tier();
 
-    @BeforeEach
-    void setUp() {
-        this.villagerId = UUID.randomUUID();
+        assertTrue(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(combat, false));
     }
 
     @Test
-    void socialAccept_returnsEmpty_whenNoPendingInvites() {
-        // Arrange
-        when(courtshipRegistry.hasInviteFor(villagerId)).thenReturn(false);
-        when(tradeRegistry.hasInviteFor(villagerId)).thenReturn(false);
+    void combat_preemptsARunningCourtshipOrTrade() {
+        // Counterexample: combat sharing the invites' tier, so a villager mid-trade keeps trading while it is attacked.
+        OverrideTier combat = new CombatOverridePolicy().precedence().tier();
+        OverrideTier courtship = new CourtshipAcceptOverridePolicy(this.courtshipRegistry).precedence().tier();
+        OverrideTier trade = new TradeAcceptOverridePolicy(this.tradeRegistry).precedence().tier();
 
-        OverrideTriggerDetector detector = new OverrideTriggerDetector(courtshipRegistry, tradeRegistry);
-        SocialAcceptOverridePolicyTestable policy = new SocialAcceptOverridePolicyTestable(detector, villagerId);
-
-        // Act
-        Optional<OverrideRequest> result = policy.evaluateDirect();
-
-        // Assert
-        assertFalse(result.isPresent(), "No invite → policy must return empty");
+        assertTrue(combat.isAbove(courtship));
+        assertTrue(combat.isAbove(trade));
     }
 
     @Test
-    void socialAccept_returnsCourtshipKey_whenCourtshipInvitePending() {
-        // Arrange
-        when(courtshipRegistry.hasInviteFor(villagerId)).thenReturn(true);
+    void courtshipAccept_isRefusedAgainstAProtectedPlan() {
+        // Counterexample: a courtship invite pulls a villager out of a non-interruptible chore mid-craft.
+        OverrideTier courtship = new CourtshipAcceptOverridePolicy(this.courtshipRegistry).precedence().tier();
 
-        OverrideTriggerDetector detector = new OverrideTriggerDetector(courtshipRegistry, tradeRegistry);
-        SocialAcceptOverridePolicyTestable policy = new SocialAcceptOverridePolicyTestable(detector, villagerId);
-
-        // Act
-        Optional<OverrideRequest> result = policy.evaluateDirect();
-
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals(BehaviorKey.COURTSHIP_ACCEPT, result.get().getBehaviorKey());
+        assertFalse(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(courtship, false));
     }
 
     @Test
-    void socialAccept_returnsTradeKey_whenOnlyTradeInvitePending() {
-        // Arrange
-        when(courtshipRegistry.hasInviteFor(villagerId)).thenReturn(false);
-        when(tradeRegistry.hasInviteFor(villagerId)).thenReturn(true);
+    void tradeAccept_isRefusedAgainstAProtectedPlan() {
+        // Counterexample: a trade invite pulls a villager out of a non-interruptible chore mid-craft.
+        OverrideTier trade = new TradeAcceptOverridePolicy(this.tradeRegistry).precedence().tier();
 
-        OverrideTriggerDetector detector = new OverrideTriggerDetector(courtshipRegistry, tradeRegistry);
-        SocialAcceptOverridePolicyTestable policy = new SocialAcceptOverridePolicyTestable(detector, villagerId);
-
-        // Act
-        Optional<OverrideRequest> result = policy.evaluateDirect();
-
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals(BehaviorKey.TRADE_ACCEPT, result.get().getBehaviorKey());
+        assertFalse(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(trade, false));
     }
 
-    // Test-only subclasses that expose the domain-logic seam without needing Minecraft
-    /**
-     * Wraps SocialAcceptOverridePolicy with a test-friendly evaluate that doesn't need a ServerLevel.
-     */
-    static final class SocialAcceptOverridePolicyTestable {
-        private final OverrideTriggerDetector detector;
-        private final UUID villagerId;
+    @Test
+    void courtshipAccept_ordersAboveTradeAccept_soASimultaneousInviteFromBothPrefersCourtship() {
+        CourtshipAcceptOverridePolicy courtship = new CourtshipAcceptOverridePolicy(this.courtshipRegistry);
+        TradeAcceptOverridePolicy trade = new TradeAcceptOverridePolicy(this.tradeRegistry);
 
-        SocialAcceptOverridePolicyTestable(OverrideTriggerDetector detector, UUID villagerId) {
-            this.detector = detector;
-            this.villagerId = villagerId;
-        }
+        assertTrue(courtship.precedence().compareTo(trade.precedence()) < 0);
+    }
 
-        Optional<OverrideRequest> evaluateDirect() {
-            BehaviorKey behaviorKey = this.detector.detect(this.villagerId);
-            if (behaviorKey == null) {
-                return Optional.empty();
-            }
-            return Optional.of(OverrideRequest.builder().behaviorKey(behaviorKey).build());
-        }
+    @Test
+    void courtshipAccept_admittedWhenNoActivityIsActive() {
+        // With no non-core activity the villager is answering nothing reactive, so the invite must
+        // be admitted rather than refused or failing on the absent activity.
+        assertTrue(new CourtshipAcceptOverridePolicy(this.courtshipRegistry).isAdmissibleDuring(null));
+    }
+
+    @Test
+    void tradeAccept_admittedWhenNoActivityIsActive() {
+        assertTrue(new TradeAcceptOverridePolicy(this.tradeRegistry).isAdmissibleDuring(null));
     }
 
 }

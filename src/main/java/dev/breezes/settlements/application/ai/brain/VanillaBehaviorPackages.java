@@ -30,16 +30,13 @@ import net.minecraft.world.entity.ai.behavior.MoveToSkySeeingSpot;
 import net.minecraft.world.entity.ai.behavior.MoveToTargetSink;
 import net.minecraft.world.entity.ai.behavior.PlayTagWithOtherKids;
 import net.minecraft.world.entity.ai.behavior.PoiCompetitorScan;
-import net.minecraft.world.entity.ai.behavior.ReactToBell;
 import net.minecraft.world.entity.ai.behavior.ResetProfession;
-import net.minecraft.world.entity.ai.behavior.ResetRaidStatus;
 import net.minecraft.world.entity.ai.behavior.RingBell;
 import net.minecraft.world.entity.ai.behavior.RunOne;
 import net.minecraft.world.entity.ai.behavior.SetClosestHomeAsWalkTarget;
 import net.minecraft.world.entity.ai.behavior.SetEntityLookTarget;
 import net.minecraft.world.entity.ai.behavior.SetHiddenState;
 import net.minecraft.world.entity.ai.behavior.SetLookAndInteract;
-import net.minecraft.world.entity.ai.behavior.SetRaidStatus;
 import net.minecraft.world.entity.ai.behavior.SetWalkTargetAwayFrom;
 import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromBlockMemory;
 import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromLookTarget;
@@ -50,12 +47,9 @@ import net.minecraft.world.entity.ai.behavior.StrollAroundPoi;
 import net.minecraft.world.entity.ai.behavior.Swim;
 import net.minecraft.world.entity.ai.behavior.TradeWithVillager;
 import net.minecraft.world.entity.ai.behavior.TriggerGate;
-import net.minecraft.world.entity.ai.behavior.UpdateActivityFromSchedule;
 import net.minecraft.world.entity.ai.behavior.ValidateNearbyPoi;
 import net.minecraft.world.entity.ai.behavior.VillageBoundRandomStroll;
-import net.minecraft.world.entity.ai.behavior.VillagerCalmDown;
 import net.minecraft.world.entity.ai.behavior.VillagerMakeLove;
-import net.minecraft.world.entity.ai.behavior.VillagerPanicTrigger;
 import net.minecraft.world.entity.ai.behavior.WakeUp;
 import net.minecraft.world.entity.ai.behavior.YieldJobSite;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
@@ -91,10 +85,7 @@ public final class VanillaBehaviorPackages {
                 Pair.of(0, new Swim(0.8F)),
                 Pair.of(0, InteractWithBarriers.create()),
                 Pair.of(0, new LookAtTargetSink(45, 90)),
-                Pair.of(0, new VillagerPanicTrigger()),
                 Pair.of(0, WakeUp.create()),
-                Pair.of(0, ReactToBell.create()),
-                Pair.of(0, SetRaidStatus.create()),
                 Pair.of(0, ValidateNearbyPoi.create(profession.heldJobSite(), MemoryModuleType.JOB_SITE)),
                 Pair.of(0, ValidateNearbyPoi.create(profession.acquirableJobSite(), MemoryModuleType.POTENTIAL_JOB_SITE)),
                 Pair.of(1, new MoveToTargetSink()),
@@ -132,8 +123,7 @@ public final class VanillaBehaviorPackages {
                                 Pair.of(SetWalkTargetFromLookTarget.create(speed, 2), 1),
                                 Pair.of(new JumpOnBed(speed), 2),
                                 Pair.of(new DoNothing(20, 40), 2)
-                        ))),
-                Pair.of(99, UpdateActivityFromSchedule.create())
+                        )))
         );
     }
 
@@ -150,8 +140,7 @@ public final class VanillaBehaviorPackages {
                                 Pair.of(InsideBrownianWalk.create(speed), 4),
                                 Pair.of(GoToClosestVillage.create(speed, 4), 2),
                                 Pair.of(new DoNothing(20, 40), 2)
-                        ))),
-                Pair.of(99, UpdateActivityFromSchedule.create())
+                        )))
         );
     }
 
@@ -170,8 +159,7 @@ public final class VanillaBehaviorPackages {
                 Pair.of(3, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED,
                         GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new TradeWithVillager(), 1)))),
                 Pair.of(10, new ShowTradesToPlayer(400, 1600)),
-                Pair.of(10, SetLookAndInteract.create(EntityType.PLAYER, 4)),
-                Pair.of(99, UpdateActivityFromSchedule.create())
+                Pair.of(10, SetLookAndInteract.create(EntityType.PLAYER, 4))
         );
 
         return behaviors;
@@ -189,8 +177,7 @@ public final class VanillaBehaviorPackages {
                 Pair.of(3, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED,
                         GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new TradeWithVillager(), 1)))),
                 Pair.of(3, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.BREED_TARGET), GateBehavior.OrderPolicy.ORDERED,
-                        GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new VillagerMakeLove(), 1)))),
-                Pair.of(99, UpdateActivityFromSchedule.create())
+                        GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new VillagerMakeLove(), 1))))
         ));
 
         // Default behaviors that will be randomly chosen to run one
@@ -213,7 +200,6 @@ public final class VanillaBehaviorPackages {
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getPanicPackage(VillagerProfession profession, float speed) {
         return ImmutableList.of(
                 getMinimalLookBehavior(),
-                Pair.of(0, VillagerCalmDown.create()),
                 Pair.of(1, SetWalkTargetAwayFrom.entity(MemoryModuleType.NEAREST_HOSTILE, speed, 6, false)),
                 Pair.of(1, SetWalkTargetAwayFrom.entity(MemoryModuleType.HURT_BY_ENTITY, speed, 6, false)),
                 Pair.of(3, VillageBoundRandomStroll.create(speed, 2, 2))
@@ -227,27 +213,28 @@ public final class VanillaBehaviorPackages {
                 Pair.of(0, TriggerGate.triggerOneShuffled(ImmutableList.of(
                         Pair.of(SetWalkTargetFromBlockMemory.create(MemoryModuleType.MEETING_POINT, speed, 2, 150, 200), 6),
                         Pair.of(VillageBoundRandomStroll.create(speed), 2)
-                ))),
-                Pair.of(99, ResetRaidStatus.create())
+                )))
         );
     }
 
-    public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getRaidPackage(VillagerProfession profession, float speed) {
+    public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getRaidHidePackage(float speed) {
         return ImmutableList.of(
                 getMinimalLookBehavior(),
-                Pair.of(0, BehaviorBuilder.sequence(
-                        BehaviorBuilder.triggerIf(VanillaBehaviorPackages::raidWon),
-                        TriggerGate.triggerOneShuffled(ImmutableList.of(
-                                Pair.of(MoveToSkySeeingSpot.create(speed), 5),
-                                Pair.of(VillageBoundRandomStroll.create(speed), 2)
-                        ))
-                )),
-                Pair.of(0, new CelebrateVillagersSurvivedRaid(600, 600)),
                 Pair.of(2, BehaviorBuilder.sequence(
                         BehaviorBuilder.triggerIf(VanillaBehaviorPackages::hasActiveRaid),
                         LocateHidingPlace.create(24, speed, 1)
-                )),
-                Pair.of(99, ResetRaidStatus.create())
+                ))
+        );
+    }
+
+    public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getRaidCelebratePackage(float speed) {
+        return ImmutableList.of(
+                getMinimalLookBehavior(),
+                Pair.of(0, TriggerGate.triggerOneShuffled(ImmutableList.of(
+                        Pair.of(MoveToSkySeeingSpot.create(speed), 5),
+                        Pair.of(VillageBoundRandomStroll.create(speed), 2)
+                ))),
+                Pair.of(0, new CelebrateVillagersSurvivedRaid(600, 600))
         );
     }
 
@@ -291,11 +278,6 @@ public final class VanillaBehaviorPackages {
     private static boolean hasActiveRaid(ServerLevel world, LivingEntity entity) {
         Raid raid = world.getRaidAt(entity.blockPosition());
         return raid != null && raid.isActive() && !raid.isVictory() && !raid.isLoss();
-    }
-
-    private static boolean raidWon(ServerLevel world, LivingEntity entity) {
-        Raid raid = world.getRaidAt(entity.blockPosition());
-        return raid != null && raid.isVictory();
     }
 
 }

@@ -1,10 +1,8 @@
 package dev.breezes.settlements.application.ai.socialcue;
 
 import dev.breezes.settlements.application.ai.dialogue.Occasion;
-import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
-import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import dev.breezes.settlements.domain.genetics.GeneType;
@@ -23,17 +21,9 @@ import java.util.UUID;
 
 /**
  * Tick-level controller for the SocialCue lane.
+ * Admits and advances ambient social cues, with at most one active cue per villager.
  * <p>
- * On each call to {@link #tick} the arbiter:
- * <ol>
- *   <li>Advances the active cue's script (dispatching any steps whose start-tick has arrived).</li>
- *   <li>If no cue is active, scans the catalog to find and admit the first eligible cue. This
- *       admission scan is throttled to ~1 Hz; active-cue dispatch still runs every tick.</li>
- * </ol>
- * <p>
- * Admission rule: a cue's channel set must be disjoint from the currently running
- * behavior's required channels. A {@code null} behavior descriptor means no behavior
- * is running — all channels are free.
+ * Channel conflicts prevent admission; occupied channels are not rechecked during cue execution.
  */
 @ServerScope
 @CustomLog
@@ -41,10 +31,7 @@ import java.util.UUID;
 public final class SocialCueArbiter {
 
     /**
-     * Cadence for the catalog admission scan. Each scan walks every cue entry and evaluates its
-     * trigger — several of them scan perceived entities — so running it every tick while idle is
-     * pure overhead. Cue cooldowns are all stored as absolute game-ticks, so throttling the scan
-     * only delays <em>noticing</em> a trigger; it never drifts cue timing.
+     * Limits trigger polling overhead while the lane is idle.
      */
     private static final ClockTicks ADMISSION_SCAN_INTERVAL = ClockTicks.seconds(1);
 
@@ -56,8 +43,6 @@ public final class SocialCueArbiter {
 
     /**
      * Minimum gap enforced between spontaneous bubbles on the same villager, regardless of which cue key fires.
-     * <p>
-     * Reactive cues (bypassLaneRefractory) opt out since they answer something external.
      */
     private static final ClockTicks LANE_REFRACTORY = ClockTicks.seconds(12);
 
@@ -66,27 +51,26 @@ public final class SocialCueArbiter {
     private final SocialCueConfig socialCueConfig;
 
     /**
-     * Should be called from AI step
+     * Advances an active cue or attempts admission when an idle scan is due.
+     * <p>
+     * Social unavailability cancels the active cue without invoking its completion callback.
      */
     public void tick(BaseVillager villager, SocialCueRuntimeState runtimeState, long gameTime) {
-        // Suppress the entire social cue lane when the villager is unavailable (e.g. sleeping).
-        // Cancelling any in-flight cue here prevents a villager that falls asleep mid-cue from
-        // freezing with a stale gaze or gesture locked until the cue's natural finish tick.
+        // Suppress the entire social cue lane when the villager is unavailable (e.g. sleeping)
         if (!villager.isSociallyAvailable()) {
             if (runtimeState.isCueActive()) {
+                // Cancel cue to prevent stale gestures
                 runtimeState.cancelActiveCue();
             }
             return;
         }
 
-        // Active-cue dispatch must run every tick so gaze/gesture/bubble steps stay smooth.
+        // Active-cue dispatch must run every tick so gaze/gesture/bubble steps stay smooth
         if (runtimeState.isCueActive()) {
             tickActiveCue(villager, runtimeState, gameTime);
             return;
         }
 
-        // First idle visit: establish a per-villager random scan phase so a freshly-loaded crowd
-        // does not all scan — and therefore act — on the same tick.
         if (!runtimeState.isAdmissionScanInitialized()) {
             runtimeState.markAdmissionScanInitialized();
             long phase = SocialCueCadencePolicy.initialScanPhaseTicks(
@@ -95,7 +79,6 @@ public final class SocialCueArbiter {
             return;
         }
 
-        // Idle: throttle the catalog admission scan to ADMISSION_SCAN_INTERVAL.
         if (gameTime < runtimeState.getNextAdmissionScanTick()) {
             return;
         }
@@ -107,11 +90,10 @@ public final class SocialCueArbiter {
         SocialCue cue = runtimeState.getActiveCue();
         SocialCueScript script = cue.getScript();
 
-        // Dispatch all steps whose scheduled start-tick has arrived this tick.
+        // Multiple steps can share a start time; dispatching only one per tick would stretch the script.
         while (runtimeState.getNextStepIndex() < script.stepCount()) {
             int index = runtimeState.getNextStepIndex();
             if (!SocialCueTimingPolicy.isStepDue(script, index, runtimeState.getCueStartGameTime(), gameTime)) {
-                // Still waiting for this step — nothing to do this tick.
                 break;
             }
 
@@ -120,7 +102,7 @@ public final class SocialCueArbiter {
             runtimeState.advance();
         }
 
-        // Finish only once every step has been dispatched AND the full script duration has elapsed
+        // The final wait can outlast the last dispatch; do not finish the cue early.
         if (SocialCueTimingPolicy.isReadyToFinish(runtimeState.getNextStepIndex(), script.stepCount(),
                 runtimeState.getCueStartGameTime(), script.getTotalDuration().getTicks(), gameTime)) {
             SocialCueCatalogEntry entry = runtimeState.getActiveCueEntry();
@@ -137,26 +119,28 @@ public final class SocialCueArbiter {
                     this.socialCueConfig.socialCueCooldownJitterFraction(),
                     villager.getRandom().nextDouble());
             runtimeState.finish(gameTime, cooldownTicks);
-            // Set cooldown
             runtimeState.markLaneQuietUntil(gameTime + LANE_REFRACTORY.getTicks());
         }
     }
 
+    /**
+     * Attempts to admit the first eligible cue in catalog iteration order.
+     */
     private void tryAdmit(BaseVillager villager, SocialCueRuntimeState runtimeState, long gameTime) {
-        Set<BehaviorChannel> occupiedChannels = occupiedChannels(villager);
+        Set<BehaviorChannel> occupiedChannels = villager.occupiedChannels();
 
         for (SocialCueCatalogEntry entry : this.catalog) {
-            // Skip if this cue key is on per-key cooldown.
+            // Skip if this cue key is on per-key cooldown
             if (runtimeState.isCueOnCooldown(entry.getKey(), gameTime)) {
                 continue;
             }
 
-            // Non-bypass cues stay silent for a short window after any cue completes
+            // Allow reactive replies through the lane's quiet period
             if (!entry.isBypassLaneRefractory() && runtimeState.isLaneQuiet(gameTime)) {
                 continue;
             }
 
-            // Channel conflict: cue cannot run while an incompatible behavior is active.
+            // Channel conflict: cue cannot run while an incompatible behavior is active
             if (!Collections.disjoint(entry.getChannels(), occupiedChannels)) {
                 continue;
             }
@@ -167,21 +151,18 @@ public final class SocialCueArbiter {
                 continue;
             }
 
-            // Per-target cooldown: do not greet the same entity on every cycle.
+            // Per-target cooldown: do not interact with the same entity on every cycle
             if (runtimeState.isTargetOnCooldown(uuidFromKey(contextKey.get()), gameTime)) {
                 continue;
             }
 
-            // Fire-chance roll: thin out cues that are otherwise eligible on every qualifying tick
+            // A declined roll consumes the cue's cooldown so repeated scans do not defeat its fire chance
             if (entry.getFireChance() < 1.0 && villager.getRandom().nextDouble() >= entry.getFireChance()) {
                 runtimeState.recordCueDeclined(entry.getKey(), gameTime, entry.getCooldown().getTicks());
                 continue;
             }
 
-            // Build the cue — invoking the script factory exactly once — then validate the script
-            // duration against the hard cap. Building before the check keeps the factory single-
-            // invocation, which matters for factories with side effects (the dialogue chatter cue
-            // draws exactly one utterance line per build).
+            // Reuse the built cue for validation and admission: rebuilding could repeat factory side effects
             String resolvedContextKey = contextKey.get();
             SocialCue cue = entry.buildCue(villager, resolvedContextKey);
             if (cue.getScript().getTotalDuration().getTicks() > SocialCueScript.MAX_DURATION.getTicks()) {
@@ -192,32 +173,14 @@ public final class SocialCueArbiter {
 
             runtimeState.start(cue, entry, gameTime);
 
-            // Fire onAdmit exactly once, after start() — all bail-out checks are behind us.
-            // Registry mutations (e.g. sendInvite) live in onAdmit so they never run on a
-            // candidate that the per-target cooldown or duration cap would have rejected.
+            // Run admission side effects only after every rejection check has passed and the cue is active
             entry.fireOnAdmit(villager, resolvedContextKey);
 
-            // Record per-target cooldown so the same target is not immediately re-greeted.
             runtimeState.recordTargetGreeted(uuidFromKey(resolvedContextKey), gameTime,
                     entry.getPerTargetCooldown().getTicks());
 
             return;
         }
-    }
-
-    /**
-     * Returns the channels locked by the currently running behavior, or an empty set
-     * when no behavior is active (all channels free).
-     */
-    private Set<BehaviorChannel> occupiedChannels(BaseVillager villager) {
-        PlanRuntimeState planState = villager.getPlanRuntimeState();
-
-        BehaviorPlanningMetadata descriptor = planState.getCurrentDescriptor();
-        if (descriptor == null) {
-            return Collections.emptySet();
-        }
-
-        return descriptor.getRequiredChannels();
     }
 
     private Occasion resolveCooldownOccasion(BaseVillager villager) {
@@ -230,14 +193,12 @@ public final class SocialCueArbiter {
     }
 
     /**
-     * The context key for player/entity triggers is the UUID as a string.
-     * This converts it back for the per-target cooldown map.
+     * Preserves entity UUIDs and gives other context keys a stable cooldown identity.
      */
     private UUID uuidFromKey(String key) {
         try {
             return UUID.fromString(key);
         } catch (IllegalArgumentException e) {
-            // Non-UUID keys (e.g. future string-keyed triggers) get a deterministic UUID.
             return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
         }
     }

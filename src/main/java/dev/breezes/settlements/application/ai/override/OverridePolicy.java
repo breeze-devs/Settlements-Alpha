@@ -1,35 +1,41 @@
 package dev.breezes.settlements.application.ai.override;
 
+import dev.breezes.settlements.domain.ai.override.OverridePrecedence;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.schedule.Activity;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
- * A single override trigger strategy evaluated by {@link dev.breezes.settlements.application.ai.planning.PlanRunner}
- * on every tick.
+ * Declares when to request an override and which activities permit its execution.
  * <p>
- * Implementations must be stateless and pure: they read world and villager state but must
- * never mutate either. Side-effects (registry updates, behavior configuration) belong in the
- * override launcher inside {@code PlanRunner}, not here.
- * <p>
- * Return an empty Optional when the policy has no trigger to fire.
- * Return a present Optional when the policy identifies an override that should be installed.
+ * Implementations must be stateless and side-effect-free: inspecting a trigger must not consume
+ * it or mutate world, villager, or registry state.
  */
 public interface OverridePolicy {
 
     /**
-     * Cross-policy precedence for override selection. Larger values win.
+     * This policy's fixed precedence. Must be unique among registered policies.
      */
-    int priority();
+    OverridePrecedence precedence();
 
     /**
-     * Evaluates whether this policy wants to fire an override for the given villager.
+     * Whether this policy permits its override to start or remain active during the given activity.
+     *
+     * @param activity active non-core activity, or null when none is active
+     */
+    boolean isAdmissibleDuring(@Nullable Activity activity);
+
+    /**
+     * Identifies an override to request for the villager's current state.
+     * Returning a request does not guarantee admission or startup.
      *
      * @param level    current server level
-     * @param villager the villager being ticked
-     * @return a present {@link OverrideRequest} if an override should be installed, or empty
+     * @param villager villager to evaluate
+     * @return the requested override, or empty if the trigger is not satisfied
      */
     Optional<OverrideRequest> evaluate(@Nonnull ServerLevel level, @Nonnull BaseVillager villager);
 

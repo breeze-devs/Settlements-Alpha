@@ -87,6 +87,11 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         return allPassed;
     }
 
+    /**
+     * Starts the behavior.
+     * <p>
+     * If doStart throws, the behavior is torn down as a stop would and the exception propagates.
+     */
     @Override
     public final void start(@Nonnull Level world, @Nonnull T entity) {
         if (this.status != BehaviorStatus.STOPPED) {
@@ -95,7 +100,12 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         }
 
         log.behaviorStatus("Starting behavior (entity: {})", entity.getUUID().toString());
-        this.doStart(world, entity);
+        try {
+            this.doStart(world, entity);
+        } catch (RuntimeException e) {
+            this.tearDown(world, entity);
+            throw e;
+        }
         this.status = BehaviorStatus.RUNNING;
     }
 
@@ -164,9 +174,13 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         }
 
         log.behaviorStatus("Stopping behavior");
+        this.tearDown(world, entity);
+    }
+
+    private void tearDown(@Nonnull Level world, @Nonnull T entity) {
         try {
             this.doStop(world, entity);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             // stop() runs on the entity-removal chain (BaseVillager.remove -> brain.stopAll -> ...),
             // so a throw here must never escape: it would abort removal itself.
             log.behaviorError("Behavior teardown threw for entity {}: {}", entity.getUUID(), e.getMessage(), e);

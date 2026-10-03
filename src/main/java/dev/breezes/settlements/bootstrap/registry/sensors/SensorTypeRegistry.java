@@ -3,7 +3,6 @@ package dev.breezes.settlements.bootstrap.registry.sensors;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.CultivationSiteSensor;
 import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.OwnedPetsSensor;
-import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.SettlementsHurtBySensor;
 import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.SettlementsVillagerBabiesSensor;
 import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.VillageChestsSensor;
 import dev.breezes.settlements.infrastructure.minecraft.ai.sensors.WillingCourtshipPartnersSensor;
@@ -38,10 +37,6 @@ public final class SensorTypeRegistry {
     public static final Supplier<SensorType<WillingCourtshipPartnersSensor>> WILLING_COURTSHIP_PARTNERS_SENSOR = REGISTRY.register(
             "willing_courtship_partners_sensor",
             () -> new SensorType<>(WillingCourtshipPartnersSensor::new));
-
-    public static final Supplier<SensorType<SettlementsHurtBySensor>> SETTLEMENTS_HURT_BY_SENSOR = REGISTRY.register(
-            "settlements_hurt_by_sensor",
-            () -> new SensorType<>(SettlementsHurtBySensor::new));
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

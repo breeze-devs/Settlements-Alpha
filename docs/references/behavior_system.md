@@ -14,7 +14,7 @@ stateful state machine (`VillagerStateMachineBehavior`) that runs for the villag
 register its behaviors as vanilla brain `Behavior`/`Activity` entries and does **not** let vanilla `GateBehavior` pick
 them by weight. Instead it builds a **day plan** per villager and runs the plan with a **custom executor** that ticks
 the active behavior directly. The vanilla `Brain` is still ticked — but only to host that executor and to run vanilla
-reflexes (panic, raid) and gated ambient life.
+reflexes, the reactive activities' packages (panic, raid, bell) and gated ambient life.
 
 The pipeline has four stages:
 
@@ -35,7 +35,7 @@ flowchart TD
     CTX["PlanGenerationContextFactory<br/>runs OpportunityForecaster on the server thread"] --> GEN
     GEN["IPlanGenerator → DayPlanComposer<br/>bands, meal anchors, WindowPacker"] -->|DayPlan| RUN
     RUN["PlanRunner, hosted in PlanRunnerBehavior<br/>ticks the active IBehavior"]
-    PCS["PlanContextSwitcher<br/>aligns the vanilla Activity"] -.-> RUN
+    ARB["ActivityArbiter<br/>selects the vanilla Activity"] -.-> RUN
 ```
 
 Sensors complete the read/write loop around memories: sensors write memory, behaviors and the planner read it. There are
@@ -143,6 +143,8 @@ belongs in `UNIVERSAL_ENTRIES`, not copied into each pool.
 `CollectDemandedItemOverridePolicy` (see
 [`behavior_orchestration.md`](behavior_orchestration.md#reactive-override-lane)) rather than scheduled as a plan slot.
 `TRADE_ACCEPT` and `COURTSHIP_ACCEPT` follow the same pattern: an override installs them, so nothing plans them.
+Combat actions go further and have no catalog entry at all: the `CombatOption` that offers one creates it (see
+[`threat_response.md`](threat_response.md#combat)).
 
 The result is the "availability + metadata" list handed to the planner. There is no day-type filtering here — that is
 applied later as planner multipliers.
@@ -226,13 +228,17 @@ picks a Settlements behavior by weight.
 
 A vanilla `Behavior<Villager>` registered into the brain's **CORE** activity at priority 20, so it ticks every server
 tick regardless of the active non-core activity. It never self-terminates (`timedOut()` → `false`, `canStillUse()` →
-`true`) so it can suspend/resume the inner behavior across PANIC/RAID. Its `tick(...)`:
+`true`) so it can suspend the inner behavior across reactive activities. Its `tick(...)`:
 
-1. If unsafe (hurt / hostile nearby) → `planRunner.forceStop(...)`, return.
-2. `if (planRunner.tickOverride(...)) return;` — reactive overrides fire **before** the plan gate.
-3. Gate on the active non-core activity: if it is not in `MANAGED_ACTIVITIES = {WORK, MEET, IDLE}` →
-   `planRunner.suspendIfActive(...)` + `ensureValidPlan(...)`, return.
-4. Otherwise `planRunner.tick(...)`.
+1. `if (overrideArbiter.tick(...)) return;` — the override lane fires **before** the plan gate.
+2. Gate on the active non-core activity: if it is not in `DAY_PLAN_ACTIVITIES = {WORK, MEET, IDLE}` →
+   `planRunner.suspendIfActive(...)`, re-queueing the slot it interrupted, + `ensureValidPlan(...)`, return.
+3. Otherwise `planRunner.tick(...)`.
+
+Danger has no check here: it arrives as a reactive activity, which the gate in step 2 suspends the plan for.
+
+`PLAN_BEHAVIOR_ACTIVE` is recomputed after every branch above (see
+[the latch section](#the-plan_behavior_active-latch) below) rather than set by whichever lane just ran.
 
 ### The executor loop — `PlanRunner`
 
@@ -247,45 +253,47 @@ generation own progress.
 
 - **`PENDING` → `tryStartSlot`** — checks the slot window, `catalog.createBehavior(key)` for a fresh instance,
   force-completes the instance's cooldowns (cadence was already enforced at plan-gen time), runs
-  `behavior.tickPreconditions(...)`; on success `behavior.start(...)`, records it on `PlanRuntimeState`, sets the
-  `PLAN_BEHAVIOR_ACTIVE` memory, and marks the slot `ACTIVE`. A failed flexible slot is `SKIPPED`; a rigid slot arms a
-  retry.
+  `behavior.tickPreconditions(...)`; on success `behavior.start(...)`, records it on `PlanRuntimeState`, and marks the
+  slot `ACTIVE`. A failed flexible slot is `SKIPPED`; a rigid slot arms a retry.
 - **`ACTIVE` → `tickActiveSlot`** — **calls `behavior.tick(delta, level, villager)`** — the actual per-tick drive into
   the `VillagerStateMachineBehavior`. A run-duration ceiling (`descriptor.getMaxRunDuration()`, else
   `PlanRunner.DEFAULT_MAX_BEHAVIOR_RUN_TICKS`) aborts a stuck behavior, as does an exception thrown out of `tick`. When
-  `behavior.getStatus() == STOPPED`, the slot is marked `COMPLETED`, the memory cleared, and `plan.advanceSlot()` moves
-  on. Nothing is emitted here: the run's deeds stay on the behavior instance as its `BehaviorDeedLedger`, which has no
-  reader today.
-- **`COMPLETED | SKIPPED | INTERRUPTED`** → clear `PLAN_BEHAVIOR_ACTIVE`, `plan.advanceSlot()`.
+  `behavior.getStatus() == STOPPED`, the slot is marked `COMPLETED` and `plan.advanceSlot()` moves on. Nothing is
+  emitted here: the run's deeds stay on the behavior instance as its `BehaviorDeedLedger`, which has no reader today.
+- **`COMPLETED | SKIPPED | INTERRUPTED`** → `plan.advanceSlot()`.
 
-### Overrides and interruptibility
+### The override lane — `OverrideArbiter`
 
-`tickOverride(...)` runs a set of `OverridePolicy` (sorted by priority) before the plan tick — reactive behaviors like
-accepting a trade/courtship invite that can pre-empt the plan. An override may only interrupt the current behavior if
-its descriptor is `interruptible` (`canInterruptCurrentPlanBehavior`); this is where the `interruptible` metadata is
-enforced. On completion the interrupted slot is re-queued `PENDING`.
+Overrides are arbitrated outside `PlanRunner`, by `application/ai/override/OverrideArbiter` (`@ServerScope`), which
+`PlanRunnerBehavior` ticks ahead of the plan gate. This is where a behavior's `interruptible` metadata is enforced: a
+non-interruptible descriptor blocks every override tier below `EMERGENCY`. A fight runs here too, as one `EMERGENCY`
+runner that launches successive combat actions ([`threat_response.md`](threat_response.md#combat)). Tiers, preemption
+and the runner contract: [`behavior_orchestration.md`](behavior_orchestration.md#reactive-override-lane).
 
 ### The `PLAN_BEHAVIOR_ACTIVE` latch
 
-Whenever a plan slot or override is active, `PlanRunner` sets the vanilla-backed `PLAN_BEHAVIOR_ACTIVE` memory. Its
-consumer is `AmbientBehaviors.gated(...)`, which wraps every vanilla ambient behavior in a `GateBehavior` requiring
-`PLAN_BEHAVIOR_ACTIVE` to be **absent**. So the memory is the mutual-exclusion latch: while a Settlements behavior runs,
-vanilla ambient life is suppressed.
+`PLAN_BEHAVIOR_ACTIVE` is derived, never set by the lane that starts work. `PlanRunnerBehavior` recomputes it after
+every tick branch (and on `stop()`) from `BaseVillager.hasActiveExecution()` — present while a day-plan behavior runs
+or an override is installed, absent otherwise. Its consumer is
+`AmbientBehaviors.gated(...)`, which wraps every vanilla ambient behavior in a `GateBehavior` requiring
+`PLAN_BEHAVIOR_ACTIVE` to be **absent**. So the memory is the mutual-exclusion latch: while a Settlements behavior or
+override runs, vanilla ambient life is suppressed.
 
 > **Never leave a nav step uncapped.** Because a running behavior holds `PLAN_BEHAVIOR_ACTIVE`, a behavior that stalls
 > (e.g. an unreachable navigation target) freezes not just the villager but the rest of its day plan until the
-> run-duration ceiling or a PANIC frees it. Cap `StayCloseStep`/`NavigateToTargetStep` with a timeout + fail-over
-> transition.
+> run-duration ceiling frees it; a PANIC only pauses it, since the slot is retried afterward. Cap
+> `StayCloseStep`/`NavigateToTargetStep` with a timeout + fail-over transition.
 
-### Activity alignment — `PlanContextSwitcher`
+### Activity alignment — `ActivityArbiter`
 
-**File:** `infrastructure/minecraft/behavior/planning/PlanContextSwitcher.java`
+**File:** `application/ai/brain/ActivityArbiter.java`
 
-Also a vanilla CORE `Behavior<Villager>` (priority 98). On a cooldown it derives the target vanilla `Activity` from
-the active slot's `BehaviorCategory` (`WORK → WORK`, `SOCIAL → MEET`) or the `DayPlanSchedule`, and calls
-`brain.setActiveActivityIfPossible(...)`. This keeps the vanilla activity aligned so the `PlanRunnerBehavior` gate opens
-and the correct ambient package is active. The full derivation order lives in
-[`behavior_orchestration.md`](behavior_orchestration.md#plancontextswitcher).
+Not a vanilla behavior: `VillagerBrain` owns one per villager and ticks it before the vanilla brain, right after the
+threat assessment. It selects the vanilla `Activity` — the threat, raid and bell responses first, otherwise the daily
+context from the active slot's `BehaviorCategory` (`WORK → WORK`, `SOCIAL → MEET`) or the `DayPlanSchedule` — and calls
+`brain.setActiveActivityIfPossible(...)` when it differs. This keeps the vanilla activity aligned so the
+`PlanRunnerBehavior` gate opens and the correct ambient package is active. The full precedence lives in
+[`behavior_orchestration.md`](behavior_orchestration.md#activity-arbitration).
 
 ### The behavior contract
 
@@ -302,9 +310,10 @@ continue-conditions, precondition/behavior cooldown `ITickable`s, `getStatus()`,
 Brain wiring happens in `BaseVillager.registerBrainGoals(Brain<Villager>)`:
 
 - **CORE** (`brain.addActivity(Activity.CORE, ...)`) — `VanillaBehaviorPackages.getCorePackage(...)` (look-at, swim,
-  panic trigger, …) **plus** the two Settlements hosts: `PlanRunnerBehavior` @20 and `PlanContextSwitcher` @98 (adults
-  only).
-- **PANIC / PRE_RAID / RAID / HIDE** — fully vanilla packages.
+  wake-up, …) **plus** the Settlements host `PlanRunnerBehavior` @20 (adults only).
+- **Reactive activities** (`ActivityArbiter.isReactive`) — vanilla packages without vanilla's entry and exit behaviors,
+  since `ActivityArbiter` enters and leaves them. `COMBAT`'s package is empty: the combat runner in the override lane
+  does the fighting.
 - **Adult ambient WORK / MEET / IDLE / REST** — vanilla *ambient* villager life (strolling, gossip, look-at) from
   `VanillaAmbientBehaviorPackages`, mostly wrapped in `AmbientBehaviors.gated(...)` behind `PLAN_BEHAVIOR_ACTIVE`. WORK
   and MEET use `addActivityWithConditions(...)`, gated on the villager actually having a job site / meeting point; IDLE
@@ -313,16 +322,20 @@ Brain wiring happens in `BaseVillager.registerBrainGoals(Brain<Villager>)`:
 
 So `addActivityWithConditions(Activity.WORK, ...)` registers **gated vanilla ambient life**, not Settlements behaviors.
 **No Settlements behavior is ever a vanilla brain `Behavior`/`Activity` entry** — the vanilla brain contributes
-reflexes, panic/raid, and ambient filler, and provides the tick loop + activity gate that host the two plan behaviors.
-The Settlements runtime (`PlanRunner`) owns all Settlements-behavior execution.
+reflexes, the reactive packages, and ambient filler, and provides the tick loop + activity gate that host the plan
+runner. The Settlements runtime (`PlanRunner` and the override lane) owns all Settlements-behavior execution.
 
 `VanillaBehaviorPackages` is an in-repo copy of vanilla's `VillagerGoalPackages`, not the vanilla class itself — the
 packages are edited, so the vanilla one cannot be called through.
 
-The whole runtime rides inside the vanilla brain tick: `BaseVillager.customServerAiStep()` →
-`super.customServerAiStep()`
-ticks the vanilla `Brain` → CORE runs `PlanRunnerBehavior` and `PlanContextSwitcher`. There is no custom AI goal and no
-separate server-tick event.
+Vanilla's constructor wires vanilla's own goals through a private method, before the server graph exists, so the
+packages above arrive through `BaseVillager.refreshBrain`, which runs on load, when a baby grows up and on a profession
+change. A freshly spawned villager has had none of those, so `onAddedToLevel` refreshes any villager not yet refreshed;
+without it a new villager would run vanilla's goals until its first reload.
+
+The whole runtime rides inside the villager's AI step: `BaseVillager.customServerAiStep()` runs
+`VillagerBrain.preVanillaAiStep()` (the threat assessment, then `ActivityArbiter`) → `super.customServerAiStep()` ticks
+the vanilla `Brain` → CORE runs `PlanRunnerBehavior`. There is no custom AI goal and no separate server-tick event.
 
 ---
 
@@ -332,15 +345,15 @@ Sensors translate world/entity state into brain memory that behaviors and the pl
 live**, and which one a sense belongs to is decided by what it has to read, not by which is newer:
 
 - **Mod-native `AbstractSensor<BaseVillager>`** — bound as `VillagerSensorFactory` `@IntoSet @BaseLane` in
-  `SensorCatalogModule` and ticked every villager AI step by `VillagerBrain.tick(...)`
-  (`BaseVillager.customServerAiStep()` → `settlementsBrain.tick(1)`). Examples: `BlockResourceSensor`,
+  `SensorCatalogModule` and ticked every villager AI step by `VillagerBrain.postVanillaAiStep()`, which
+  `BaseVillager.customServerAiStep()` calls after the vanilla brain. Examples: `BlockResourceSensor`,
   `EntityPerceptionSensor`, `DemandedGroundItemSensor`. This is the path for new senses, and the block-resource sensor
   is the shared-index sensing spine (see
   [Add a New Block Resource](common_tasks.md#add-a-new-block-resource-villager-block-sensing)).
 - **Vanilla `Sensor<Villager>`** — registered as a `SensorType` in `SensorTypeRegistry` and listed in
   `BaseVillager.sensorTypes()` (a private static **method**, not a `SENSOR_TYPES` field), ticked by the vanilla brain.
-  Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationSiteSensor`, `WillingCourtshipPartnersSensor`,
-  `SettlementsHurtBySensor`. Used for entity and block-entity senses.
+  Examples: `OwnedPetsSensor`, `VillageChestsSensor`, `CultivationSiteSensor`, `WillingCourtshipPartnersSensor`. Used
+  for entity and block-entity senses.
 
 The mod-native set is lane-split like the social-cue catalog: `SensorCatalogModule` publishes a `@BaseLane` set and a
 `@CognitionScoped` set and merges the second in only when the SIS kill-switch is on. The cognition set is empty today,

@@ -29,8 +29,10 @@ public final class OccasionCadenceProfile {
         result.put(Occasion.REST_DAY, 0.8);
         result.put(Occasion.WORK, 1.3);
         result.put(Occasion.PANIC, 2.0);
+        result.put(Occasion.COMBAT, 2.0);
         result.put(Occasion.PRE_RAID, 2.0);
         result.put(Occasion.RAID, 2.0);
+        result.put(Occasion.RAID_CELEBRATE, 2.0);
         return Map.copyOf(result);
     }
 

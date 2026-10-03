@@ -7,6 +7,8 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,6 +100,32 @@ public final class MemoryTypeRegistry {
 
     public static final MemoryType.VanillaMemoryType<PerceivedEntities> NEARBY_SENSED_ENTITIES = MemoryType.vanillaBacked(
             "nearby_sensed_entities", MemoryModuleTypeRegistry.NEARBY_SENSED_ENTITIES);
+
+    /**
+     * Hostiles within the villager's awareness radius, nearest first.
+     */
+    public static final MemoryType.VanillaMemoryType<PerceivedEntities> NEARBY_HOSTILES = MemoryType.vanillaBacked(
+            "nearby_hostiles", MemoryModuleTypeRegistry.NEARBY_HOSTILES);
+
+    /**
+     * Those of the nearest few NEARBY_HOSTILES the villager has line of sight to, nearest first.
+     * A sighted hostile further down that list is not included.
+     */
+    public static final MemoryType.VanillaMemoryType<PerceivedEntities> SIGHTED_HOSTILES = MemoryType.vanillaBacked(
+            "sighted_hostiles", MemoryModuleTypeRegistry.SIGHTED_HOSTILES);
+
+    /**
+     * Those of the nearest few NEARBY_HOSTILES the villager has no line of sight to, nearest first.
+     * A hostile further down that list had no sight check, so it is in neither this nor SIGHTED_HOSTILES.
+     */
+    public static final MemoryType.VanillaMemoryType<PerceivedEntities> UNSEEN_HOSTILES = MemoryType.vanillaBacked(
+            "unseen_hostiles", MemoryModuleTypeRegistry.UNSEEN_HOSTILES);
+
+    /**
+     * Vanilla's own nearest-hostile memory: the nearest of NEARBY_HOSTILES.
+     */
+    public static final MemoryType.VanillaMemoryType<LivingEntity> NEAREST_HOSTILE = MemoryType.vanillaBacked(
+            "nearest_hostile", () -> MemoryModuleType.NEAREST_HOSTILE);
 
     /**
      * All decaying spatial memories, in declaration order. Used by diagnostics (e.g. the

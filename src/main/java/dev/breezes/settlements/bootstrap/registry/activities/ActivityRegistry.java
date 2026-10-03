@@ -11,13 +11,27 @@ public final class ActivityRegistry {
     public static final DeferredRegister<Activity> REGISTRY =
             DeferredRegister.create(Registries.ACTIVITY, SettlementsMod.MOD_ID);
 
-    // Create activity eagerly to be used in schedule
-    // The following is an example (delete this after having a concrete activity)
-//    public static final Activity PLAN_ACTIVITY_INSTANCE = new Activity("plan");
-//
-//    public static final Supplier<Activity> SETTLEMENTS_PLAN = REGISTRY.register(
-//            "plan",
-//            () -> PLAN_ACTIVITY_INSTANCE);
+    /**
+     * Fighting a threat, during a raid or not.
+     */
+    public static final Activity COMBAT = new Activity(SettlementsMod.MOD_ID + ":combat");
+
+    /**
+     * Sheltering during a live raid wave.
+     */
+    public static final Activity RAID_HIDE = new Activity(SettlementsMod.MOD_ID + ":raid_hide");
+
+    /**
+     * Celebrating a raid the village has won.
+     */
+    public static final Activity RAID_CELEBRATE = new Activity(SettlementsMod.MOD_ID + ":raid_celebrate");
+
+    static {
+        // Registered as the eagerly created instances above, so they can be read as constants before any registry lookup
+        REGISTRY.register("combat", () -> COMBAT);
+        REGISTRY.register("raid_hide", () -> RAID_HIDE);
+        REGISTRY.register("raid_celebrate", () -> RAID_CELEBRATE);
+    }
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);

@@ -9,6 +9,9 @@ and the package layout. For deeper dives, see the companion docs in this directo
 
 - [Dagger Guide](dagger_guide.md) — component hierarchy, modules, initialization lifecycle
 - [Behavior System](behavior_system.md) — behavior registration, resolution, and the brain pipeline
+- [Behavior Orchestration](behavior_orchestration.md) — how the day plan, overrides, social cues and ambient life share
+  a villager
+- [Threat Response](threat_response.md) — how villagers notice danger, decide to fight or flee, and fight
 - [Testing Guide](testing_guide.md) — test Dagger graph, Mockito patterns
 - [Common Tasks](common_tasks.md) — step-by-step recipes for frequent contributor workflows
 

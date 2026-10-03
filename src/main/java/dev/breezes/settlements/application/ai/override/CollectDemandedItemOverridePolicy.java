@@ -3,6 +3,8 @@ package dev.breezes.settlements.application.ai.override;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.override.OverridePrecedence;
+import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
@@ -11,25 +13,34 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.schedule.Activity;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.Set;
 
 /**
  * Override policy that fires an opportunistic item pickup when
- * {@code DemandedGroundItemSensor} has flagged a demanded item nearby and the villager is
- * genuinely idle — never a work interruption.
+ * {@link dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensor} has flagged a
+ * demanded item nearby and the villager is free.
  */
 @ServerScope
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class CollectDemandedItemOverridePolicy implements OverridePolicy {
 
-    public static final int PRIORITY = 50;
+    private static final OverridePrecedence PRECEDENCE = OverridePrecedence.builder()
+            .tier(OverrideTier.OPPORTUNISTIC)
+            .order(10)
+            .build();
 
     private static final Set<Activity> IDLE_WINDOW_ACTIVITIES = Set.of(Activity.WORK, Activity.MEET, Activity.IDLE);
 
     @Override
-    public int priority() {
-        return PRIORITY;
+    public OverridePrecedence precedence() {
+        return PRECEDENCE;
+    }
+
+    @Override
+    public boolean isAdmissibleDuring(@Nullable Activity activity) {
+        return activity != null && IDLE_WINDOW_ACTIVITIES.contains(activity);
     }
 
     @Override
@@ -40,18 +51,12 @@ public final class CollectDemandedItemOverridePolicy implements OverridePolicy {
             return Optional.empty();
         }
 
-        boolean planBehaviorActive = villager.getSettlementsBrain().getMemory(MemoryTypeRegistry.PLAN_BEHAVIOR_ACTIVE)
-                .orElse(false);
-        if (planBehaviorActive) {
+        // Pickup is idle-time only, so it yields to any running day-plan behavior
+        if (villager.getPlanRuntimeState().isBehaviorActive()) {
             return Optional.empty();
         }
 
-        Optional<Activity> activeActivity = villager.getBrain().getActiveNonCoreActivity();
-        if (activeActivity.isEmpty() || !IDLE_WINDOW_ACTIVITIES.contains(activeActivity.get())) {
-            return Optional.empty();
-        }
-
-        return Optional.of(OverrideRequest.builder().behaviorKey(BehaviorKey.COLLECT_DEMANDED_ITEM).build());
+        return Optional.of(new OverrideRequest.CatalogBehavior(BehaviorKey.COLLECT_DEMANDED_ITEM));
     }
 
 }

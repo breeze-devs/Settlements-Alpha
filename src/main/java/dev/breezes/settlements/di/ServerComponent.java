@@ -20,6 +20,7 @@ import dev.breezes.settlements.application.ai.persona.PersonaGenerationService;
 import dev.breezes.settlements.application.ai.planning.PlanRequestService;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueArbiter;
+import dev.breezes.settlements.application.ai.threat.ThreatAssessor;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
@@ -44,6 +45,7 @@ import dev.breezes.settlements.bootstrap.event.WorldEventBusReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementServerEvents;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.di.modules.server.BehaviorCatalogModule;
+import dev.breezes.settlements.di.modules.server.CombatOptionModule;
 import dev.breezes.settlements.di.modules.server.ConcurrencyModule;
 import dev.breezes.settlements.di.modules.server.DialogueServiceModule;
 import dev.breezes.settlements.di.modules.server.GossipModule;
@@ -97,12 +99,15 @@ import java.util.concurrent.ExecutorService;
         DialogueServiceModule.class,
         OverridePolicyModule.class,
         NamingModule.class,
+        CombatOptionModule.class,
 })
 public interface ServerComponent {
 
     VillagerBubbleService villagerBubbleService();
 
     SocialCueArbiter socialCueArbiter();
+
+    ThreatAssessor threatAssessor();
 
     IBehaviorCatalog behaviorCatalog();
 

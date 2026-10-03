@@ -320,6 +320,18 @@
   "dialogue.settlements.generic.zombie_sighted.2": "小心，亡灵来了！",
   "dialogue.settlements.generic.zombie_sighted.3": "铁傀儡，来这边！",
 
+  "dialogue.settlements.generic.raid_celebrate.1": "我们成功了！",
+  "dialogue.settlements.generic.raid_celebrate.2": "袭击者被赶跑了！",
+  "dialogue.settlements.generic.raid_celebrate.3": "村庄万岁！",
+  "dialogue.settlements.generic.raid_celebrate.4": "大家放烟花啦！",
+  "dialogue.settlements.generic.raid_celebrate.5": "终于安全了！",
+
+  "dialogue.settlements.generic.combat.1": "退后！",
+  "dialogue.settlements.generic.combat.2": "吃我一招！",
+  "dialogue.settlements.generic.combat.3": "别想闯进我们的村子！",
+  "dialogue.settlements.generic.combat.4": "我来拖住它们！",
+  "dialogue.settlements.generic.combat.5": "离我远点！",
+
   "dialogue.settlements.farmer.rest_day.1": "今天就让地自己喝水吧",
   "dialogue.settlements.farmer.rest_day.2": "庄稼明天再管也不迟",
   "dialogue.settlements.farmer.rest_day.3": "坐着看麦子晃来晃去，也挺好",
@@ -347,6 +359,8 @@
 
   "dialogue.settlements.social_cue.gossip.psst": "悄悄跟你说…",
   "dialogue.settlements.social_cue.gossip.listening": "（聆听中）",
+
+  "death.attack.settlements.cucco_peck": "%1$s被%2$s啄死了",
 
   "subtitles.settlements.cucco_call": "不祥的鸡鸣",
   "subtitles.settlements.cucco_fall": "鸡从天而降",

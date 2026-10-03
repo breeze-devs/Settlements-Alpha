@@ -1,11 +1,15 @@
 package dev.breezes.settlements.infrastructure.minecraft.entities.cuccos.goals;
 
+import dev.breezes.settlements.bootstrap.registry.damagetypes.DamageTypeRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cuccos.CuccoEntity;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.EnumSet;
 
 public class DiveBombGoal extends Goal {
@@ -16,6 +20,8 @@ public class DiveBombGoal extends Goal {
 
     private final CuccoEntity cucco;
     private final double diveThrust;
+    @Nullable
+    private DamageSource peckSource;
 
     public DiveBombGoal(@Nonnull CuccoEntity cucco, double diveThrust) {
         this.cucco = cucco;
@@ -59,8 +65,19 @@ public class DiveBombGoal extends Goal {
 
         if (this.cucco.distanceToSqr(target) < CONTACT_DAMAGE_DISTANCE_SQUARED) {
             target.invulnerableTime = 0;
-            target.hurt(this.cucco.damageSources().mobAttack(this.cucco), DIVE_BOMB_DAMAGE);
+            target.hurt(this.peckSource(), DIVE_BOMB_DAMAGE);
         }
+    }
+
+    private DamageSource peckSource() {
+        // Built on first contact rather than in the constructor, which runs during entity construction on
+        // both logical sides; contact can then land every tick without a registry lookup each time.
+        if (this.peckSource == null) {
+            this.peckSource = new DamageSource(this.cucco.level().registryAccess()
+                    .registryOrThrow(Registries.DAMAGE_TYPE)
+                    .getHolderOrThrow(DamageTypeRegistry.CUCCO_PECK), this.cucco);
+        }
+        return this.peckSource;
     }
 
 }

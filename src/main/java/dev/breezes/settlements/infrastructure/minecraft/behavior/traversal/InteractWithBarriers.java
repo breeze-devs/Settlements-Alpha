@@ -75,6 +75,7 @@ public final class InteractWithBarriers {
         boolean activeTraversal = false;
         Node previous = null;
         Node next = null;
+        Node lookAhead = null;
 
         if (pathOptional.isPresent() && !pathOptional.get().notStarted() && !pathOptional.get().isDone()) {
             Path path = pathOptional.get();
@@ -83,17 +84,18 @@ public final class InteractWithBarriers {
             next = path.getNextNode();
 
             int nodeIndex = path.getNextNodeIndex();
+            if (nodeIndex + 1 < path.getNodeCount()) {
+                lookAhead = path.getNode(nodeIndex + 1);
+            }
             if (throttle.shouldScan(nodeIndex)) {
                 barrierPositions = scanNode(level, entity, previous, barriersMemory, barrierPositions);
                 barrierPositions = scanNode(level, entity, next, barriersMemory, barrierPositions);
-                if (nodeIndex + 1 < path.getNodeCount()) {
-                    barrierPositions = scanNode(level, entity, path.getNode(nodeIndex + 1), barriersMemory, barrierPositions);
-                }
+                barrierPositions = scanNode(level, entity, lookAhead, barriersMemory, barrierPositions);
             }
         }
 
         // Always close barriers even when it was previously open
-        boolean anyClosed = closeBarriersTraversed(level, entity, previous, next, barrierPositions, nearestLivingEntities);
+        boolean anyClosed = closeBarriersTraversed(level, entity, previous, next, lookAhead, barrierPositions, nearestLivingEntities);
 
         return activeTraversal || anyClosed;
     }
@@ -145,6 +147,7 @@ public final class InteractWithBarriers {
                                                   LivingEntity entity,
                                                   @Nullable Node previous,
                                                   @Nullable Node next,
+                                                  @Nullable Node lookAhead,
                                                   Optional<Set<GlobalPos>> barrierPositions,
                                                   Optional<List<LivingEntity>> nearestLivingEntities) {
         if (barrierPositions.isEmpty()) {
@@ -157,8 +160,11 @@ public final class InteractWithBarriers {
             GlobalPos globalPos = iterator.next();
             BlockPos pos = globalPos.pos();
 
-            // Still the node the villager is standing between -- pos compare only, no block read
-            if ((previous != null && previous.asBlockPos().equals(pos)) || (next != null && next.asBlockPos().equals(pos))) {
+            // Keep the upcoming barrier open until traversal reaches it; closing it here would
+            // undo the look-ahead scan before the villager can pass through.
+            if ((previous != null && previous.asBlockPos().equals(pos))
+                    || (next != null && next.asBlockPos().equals(pos))
+                    || (lookAhead != null && lookAhead.asBlockPos().equals(pos))) {
                 continue;
             }
 

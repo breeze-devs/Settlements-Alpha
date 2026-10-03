@@ -25,16 +25,15 @@ public final class DemandedGroundItemSensor extends AbstractSensor<BaseVillager>
 
     /**
      * Matches CollectDemandedItemBehavior's NAVIGATION_COMPLETION_DISTANCE: 1 block is "close
-     * enough to walk up and grab it" for the purposes of the sensor's reachability check.
+     * enough to walk up and grab it" for the sensor's reachability check.
      */
     private static final int COMPLETION_RANGE = 1;
 
     private final DemandedGroundItemCondition itemCondition;
 
     public DemandedGroundItemSensor(@Nonnull DemandedGroundItemSensorConfig config,
-                                    @Nonnull DemandEvaluator demandEvaluator,
-                                    @Nonnull BaseVillager villager) {
-        super(List.of(), createStaggeredCooldown(config, villager));
+                                    @Nonnull DemandEvaluator demandEvaluator) {
+        super(List.of(), Tickable.staggered(ClockTicks.seconds(config.scanIntervalSeconds())));
         this.itemCondition = new DemandedGroundItemCondition(demandEvaluator, COMPLETION_RANGE);
     }
 
@@ -44,16 +43,6 @@ public final class DemandedGroundItemSensor extends AbstractSensor<BaseVillager>
         return List.of(resolved
                 ? MemoryWrite.of(MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY, true)
                 : MemoryWrite.clear(MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY));
-    }
-
-    private static Tickable createStaggeredCooldown(@Nonnull DemandedGroundItemSensorConfig config, @Nonnull BaseVillager villager) {
-        ClockTicks scanInterval = ClockTicks.seconds(config.scanIntervalSeconds());
-        int intervalTicks = Math.max(1, scanInterval.getTicksAsInt());
-        int initialDelay = Math.floorMod(villager.getUUID().hashCode(), intervalTicks);
-
-        // Every adult villager runs this sensor, so deterministic staggering prevents large
-        // villages from concentrating every item-demand scan onto the same server tick.
-        return new Tickable(intervalTicks, initialDelay);
     }
 
 }

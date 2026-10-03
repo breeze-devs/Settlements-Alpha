@@ -1,24 +1,30 @@
 package dev.breezes.settlements.application.ai.override;
 
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
-import lombok.Builder;
-import lombok.Getter;
+
+import javax.annotation.Nonnull;
 
 /**
- * The result of an {@link OverridePolicy} evaluation: a request to install a specific
- * behavior as the override slot.
- * <p>
- * Keeping the request as an explicit value object (rather than a raw {@link BehaviorKey})
- * lets policies attach context that the override launcher can act on — such as which tip
- * was selected — without the launcher needing to re-run the selection logic.
+ * The result of an {@link OverridePolicy} evaluation: what the policy asks to install in the override slot.
  */
-@Builder
-@Getter
-public final class OverrideRequest {
+public sealed interface OverrideRequest {
 
     /**
-     * The behavior to install in the override slot.
+     * A catalog behavior, validated against its preconditions before it is installed.
+     *
+     * @param behaviorKey the behavior to install
      */
-    private final BehaviorKey behaviorKey;
+    record CatalogBehavior(@Nonnull BehaviorKey behaviorKey) implements OverrideRequest {
+    }
+
+    /**
+     * An unstarted runner the policy built itself, installed as is.
+     * <p>
+     * Its tier must be its policy's tier, since arbitration compares the running tier to decide preemption.
+     *
+     * @param runner the runner to install
+     */
+    record PreparedRunner(@Nonnull OverrideRunner runner) implements OverrideRequest {
+    }
 
 }

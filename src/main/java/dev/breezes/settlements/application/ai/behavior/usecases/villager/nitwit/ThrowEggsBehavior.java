@@ -279,12 +279,12 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
         boolean rightHand = (this.eggsThrown % 2 == 0);
         this.eggsThrown++;
 
-        Vec3 handPosition = this.computeRaisedHandPosition(villager, rightHand);
+        Vec3 handPosition = computeRaisedHandPosition(villager, rightHand);
         Location handLocation = Location.of(handPosition.x, handPosition.y, handPosition.z, world);
         Location victimLocation = Location.fromEntity(this.victim, true);
         Vector direction = handLocation.getDirectionTo(victimLocation);
 
-        SettlementsEgg egg = new SettlementsEgg(world, villager);
+        SettlementsEgg egg = new SettlementsEgg(world, villager, false);
         egg.setPos(handPosition.x, handPosition.y, handPosition.z);
         egg.shoot(direction.getX(), direction.getY(), direction.getZ(), EGG_VELOCITY, EGG_INACCURACY);
         world.addFreshEntity(egg);
@@ -312,7 +312,7 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
      * shifted to the throwing shoulder and slightly forward — not from the villager's eye-center
      * (where the projectile's shooter constructor would otherwise place it).
      */
-    private Vec3 computeRaisedHandPosition(@Nonnull BaseVillager villager, boolean rightHand) {
+    static Vec3 computeRaisedHandPosition(@Nonnull BaseVillager villager, boolean rightHand) {
         Vec3 look = villager.getLookAngle();
         Vec3 forward = new Vec3(look.x, 0.0, look.z);
         // Fall back to body forward if the gaze is near-vertical and the horizontal component collapses

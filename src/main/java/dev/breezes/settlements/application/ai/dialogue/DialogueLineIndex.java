@@ -126,6 +126,8 @@ public final class DialogueLineIndex {
                 Occasion.IDLE, numberedKeys("dialogue.settlements.generic.idle", 10),
                 Occasion.WORK, numberedKeys("dialogue.settlements.generic.work", 10),
                 Occasion.PANIC, numberedKeys("dialogue.settlements.generic.panic", 10),
+                Occasion.COMBAT, numberedKeys("dialogue.settlements.generic.combat", 5),
+                Occasion.RAID_CELEBRATE, numberedKeys("dialogue.settlements.generic.raid_celebrate", 5),
                 Occasion.MEET, numberedKeys("dialogue.settlements.generic.meet", 10),
                 Occasion.MORNING, numberedKeys("dialogue.settlements.generic.morning", 10),
                 Occasion.EVENING, numberedKeys("dialogue.settlements.generic.evening", 10),

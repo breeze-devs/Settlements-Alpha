@@ -260,7 +260,7 @@ scanned off-thread, indexed, capped, decayed, and written into every villager's 
 ## Add a Custom Sensor (entity & block-entity senses)
 
 Reach for a bespoke sensor only when the sense is **not** a `BlockState` scan — i.e. entity senses (nearby pets,
-courtship partners, hurt-by) or block-entity senses (chests, cultivation lilies). For harvestable blocks, add a Block
+courtship partners) or block-entity senses (chests, cultivation lilies). For harvestable blocks, add a Block
 Resource (above) instead.
 
 Two sensor bases exist in the codebase:

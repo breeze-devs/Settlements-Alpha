@@ -12,15 +12,25 @@ public interface IBrain {
     /**
      * Wires up server-scoped state (e.g. sensors) for the brain's owner.
      * <p>
-     * Called once on the server when the entity spawns or loads, before the first {@link #tick(int)}.
+     * Called once on the server when the entity spawns or loads, before the first {@link #preVanillaAiStep()}.
      * The constructor cannot do this: the server graph is unavailable during entity construction and on the client.
      */
     void initialize();
 
     /**
-     * Called every delta ticks to update the brain, this should be called frequently
+     * Makes the decisions every vanilla behavior must read fresh.
+     * <p>
+     * Called once per server tick, before the entity's vanilla brain ticks and so before
+     * {@link #postVanillaAiStep()}; a decision made any later reaches vanilla behaviors a tick late.
      */
-    void tick(int delta);
+    void preVanillaAiStep();
+
+    /**
+     * Updates the brain from what the vanilla brain produced this tick.
+     * <p>
+     * Called once per server tick, after the entity's vanilla brain ticks.
+     */
+    void postVanillaAiStep();
 
     /*
      * Memory management methods

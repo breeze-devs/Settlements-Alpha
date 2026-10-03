@@ -8,10 +8,13 @@ import dev.breezes.settlements.application.ai.behavior.teardown.ITeardownLedger;
 import dev.breezes.settlements.application.ai.behavior.teardown.LedgerEntry;
 import dev.breezes.settlements.application.ai.behavior.teardown.ProvidesTeardownLedger;
 import dev.breezes.settlements.application.ai.behavior.teardown.TeardownObligation;
+import dev.breezes.settlements.application.ai.brain.IVillagerBrain;
 import dev.breezes.settlements.application.ai.brain.VanillaAmbientBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VanillaBehaviorPackages;
 import dev.breezes.settlements.application.ai.brain.VillagerBrain;
 import dev.breezes.settlements.application.ai.dialogue.Occasion;
+import dev.breezes.settlements.application.ai.override.OverrideRunner;
+import dev.breezes.settlements.application.ai.override.OverrideRuntimeState;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueRuntimeState;
 import dev.breezes.settlements.application.hunger.HungerConfig;
@@ -20,6 +23,7 @@ import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
 import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
+import dev.breezes.settlements.bootstrap.registry.activities.ActivityRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sensors.SensorTypeRegistry;
@@ -27,7 +31,8 @@ import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
-import dev.breezes.settlements.domain.ai.brain.IBrain;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
@@ -63,7 +68,6 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOrig
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonaLineageAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedger;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedgerAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanContextSwitcher;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.genetics.VillagerGeneticAttributes;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.EntityMixin;
@@ -116,6 +120,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -137,7 +142,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     // Chance a bred child is born a nitwit, echoing the profession variety of vanilla natural-spawn villages.
     private static final float NITWIT_BREED_CHANCE = 0.03F;
     private static final ItemMatch FOODS_MATCH = new ItemMatch.TagRef(Tags.Items.FOODS);
-    public static final float PANIC_DAMAGE_THRESHOLD = 0.1F;
 
     private static final ClockTicks RECONCILER_COOLDOWN_TICKS = ClockTicks.seconds(5);
     // Perception drains the WorldEventBus on a coarse cadence instead of every tick. The bus is a
@@ -183,9 +187,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             .build();
 
     private final GeneticsProfile genetics;
-    private final IBrain settlementsBrain;
+    private final IVillagerBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
     private final PlanRuntimeState planRuntimeState;
+    private final OverrideRuntimeState overrideRuntimeState;
+    private boolean brainGoalsInitialized;
 
     /**
      * Not persisted: a villager that unloads mid-day regenerates its plan on its next plan tick
@@ -221,8 +227,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private VillagerProfession cachedProfession;
     @Nullable
     private VillagerProfessionKey cachedProfessionKey;
-    private float lastHurtAmount;
-
 
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
@@ -235,6 +239,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
 
         this.planRuntimeState = new PlanRuntimeState();
+        this.overrideRuntimeState = new OverrideRuntimeState();
         EventLaneConfig eventLaneConfig = eventLaneConfigOrNull();
         int observationBufferCapacity = eventLaneConfig == null
                 ? ObservationBuffer.DEFAULT_CAPACITY
@@ -299,12 +304,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         DATA_BOBBER_DEPLOYED.define(builder);
         DATA_SOOTY.define(builder);
         DATA_EXPOSED_TO_RAIN.define(builder);
-    }
-
-    @Override
-    public boolean hurt(@Nonnull DamageSource source, float amount) {
-        this.lastHurtAmount = amount;
-        return super.hurt(source, amount);
     }
 
     /**
@@ -430,7 +429,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     public void onAddedToLevel() {
         super.onAddedToLevel();
 
-        if (!this.level().isClientSide()) {
+        if (this.level() instanceof ServerLevel serverLevel) {
+            // Initial construction uses vanilla's private goal registration. Defer replacement until
+            // join so entity state and the server graph exist; loading may already have refreshed it.
+            if (!this.brainGoalsInitialized) {
+                this.refreshBrain(serverLevel);
+            }
+
             // NBT deserializes before an entity is added to the level, so getName() is already
             // accurate here -- this is the name directory's self-healing seam: a missed write, a
             // bad prune, or a restored backup repairs itself the next time this villager loads.
@@ -679,6 +684,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     protected void customServerAiStep() {
         ServerComponent server = SettlementsDagger.serverOrThrow();
 
+        this.settlementsBrain.preVanillaAiStep();
+
         boolean cognitionEnabled = server.inferenceGate().isEnabled();
         if (cognitionEnabled) {
             // The cursor is transient, so every load starts it at zero and would otherwise replay the
@@ -688,7 +695,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         super.customServerAiStep();
 
-        this.settlementsBrain.tick(1);
+        this.settlementsBrain.postVanillaAiStep();
         this.tickSocialCue(server);
 
         if (cognitionEnabled) {
@@ -815,7 +822,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         // Stop the running behavior before entity removal so TeardownScope obligations are discharged on death/unload.
         // The chain is:
-        //   brain.stopAll → PlanRunnerBehavior.stop → planRunner.forceStop → behavior.stop → teardownAll
+        //   brain.stopAll → PlanRunnerBehavior.stop → planRunner.forceStop / overrideArbiter.forceStop → behavior.stop → teardownAll
         // Must run before super.remove so the villager is still alive when discharge resolves entities.
         if (this.level() instanceof ServerLevel serverLevel) {
             this.getBrain().stopAll(serverLevel, this);
@@ -925,6 +932,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.dayPlan = null;
         this.planRuntimeState.reset();
         this.registerBrainGoals(this.getBrain());
+        this.brainGoalsInitialized = true;
     }
 
     @Nullable
@@ -934,6 +942,30 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     public void setDayPlan(@Nonnull DayPlan dayPlan) {
         this.dayPlan = dayPlan;
+    }
+
+    /**
+     * Whether this villager has an assigned day-plan behavior or an installed override.
+     */
+    public boolean hasActiveExecution() {
+        return this.planRuntimeState.isBehaviorActive() || this.overrideRuntimeState.hasRunner();
+    }
+
+    /**
+     * Returns a snapshot of the channels declared by this villager's current day-plan descriptor
+     * and installed override. Missing sources contribute no channels.
+     */
+    public Set<BehaviorChannel> occupiedChannels() {
+        Set<BehaviorChannel> channels = new HashSet<>();
+        BehaviorPlanningMetadata planDescriptor = this.planRuntimeState.getCurrentDescriptor();
+        if (planDescriptor != null) {
+            channels.addAll(planDescriptor.getRequiredChannels());
+        }
+        OverrideRunner runner = this.overrideRuntimeState.getRunner();
+        if (runner != null) {
+            channels.addAll(runner.occupiedChannels());
+        }
+        return channels;
     }
 
     /**
@@ -950,9 +982,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                     .planRunnerBehaviorProvider()
                     .get();
             corePackage.add(Pair.of(20, planRunnerBehavior));
-
-            PlanContextSwitcher planContextSwitcher = new PlanContextSwitcher();
-            corePackage.add(Pair.of(98, planContextSwitcher));
         }
         brain.addActivity(Activity.CORE, ImmutableList.copyOf(corePackage));
 
@@ -964,9 +993,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         }
 
         // Register other activities
+        brain.addActivity(ActivityRegistry.COMBAT, ImmutableList.of()); // Empty: the fight runs in the override lane, outside the brain
         brain.addActivity(Activity.PANIC, VanillaBehaviorPackages.getPanicPackage(profession, this.navigationManager.speedFor(NavigationType.SPRINT)));
         brain.addActivity(Activity.PRE_RAID, VanillaBehaviorPackages.getPreRaidPackage(profession, this.navigationManager.speedFor(NavigationType.RUN)));
-        brain.addActivity(Activity.RAID, VanillaBehaviorPackages.getRaidPackage(profession, this.navigationManager.speedFor(NavigationType.RUN)));
+        brain.addActivity(ActivityRegistry.RAID_HIDE, VanillaBehaviorPackages.getRaidHidePackage(this.navigationManager.speedFor(NavigationType.RUN)));
+        brain.addActivity(ActivityRegistry.RAID_CELEBRATE, VanillaBehaviorPackages.getRaidCelebratePackage(this.navigationManager.speedFor(NavigationType.RUN)));
         brain.addActivity(Activity.HIDE, VanillaBehaviorPackages.getHidePackage(profession, this.navigationManager.speedFor(NavigationType.RUN)));
 
         // Core activities must be configured before the first setActiveActivityIfPossible call
@@ -1231,7 +1262,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 // behavior tracks traversed doors and gates in BARRIERS_TO_CLOSE instead.
                 MemoryModuleType.DOORS_TO_CLOSE,
                 MemoryModuleType.NEAREST_BED,
-                MemoryModuleType.HURT_BY,
                 MemoryModuleType.HURT_BY_ENTITY,
                 MemoryModuleType.NEAREST_HOSTILE,
                 MemoryModuleType.SECONDARY_JOB_SITE,
@@ -1252,6 +1282,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.VILLAGE_CHESTS.getModuleType(),
                 MemoryTypeRegistry.WILLING_COURTSHIP_PARTNERS.getModuleType(),
                 MemoryTypeRegistry.NEARBY_SENSED_ENTITIES.getModuleType(),
+                MemoryTypeRegistry.NEARBY_HOSTILES.getModuleType(),
+                MemoryTypeRegistry.SIGHTED_HOSTILES.getModuleType(),
+                MemoryTypeRegistry.UNSEEN_HOSTILES.getModuleType(),
                 MemoryTypeRegistry.CULTIVATION_SITES.getModuleType(),
                 MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY.getModuleType()
         );
@@ -1263,8 +1296,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 SensorType.NEAREST_PLAYERS,
                 SensorType.NEAREST_ITEMS,
                 SensorType.NEAREST_BED,
-                SensorTypeRegistry.SETTLEMENTS_HURT_BY_SENSOR.get(),
-                SensorType.VILLAGER_HOSTILES,
                 SensorType.SECONDARY_POIS,
                 SensorType.GOLEM_DETECTED,
                 SensorTypeRegistry.SETTLEMENTS_VILLAGER_BABIES_SENSOR.get(),

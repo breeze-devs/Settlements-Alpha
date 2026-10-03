@@ -320,6 +320,18 @@
   "dialogue.settlements.generic.zombie_sighted.2": "Look out, the undead!",
   "dialogue.settlements.generic.zombie_sighted.3": "Golem, over here!",
 
+  "dialogue.settlements.generic.raid_celebrate.1": "We did it!",
+  "dialogue.settlements.generic.raid_celebrate.2": "The raiders are gone!",
+  "dialogue.settlements.generic.raid_celebrate.3": "Hooray for the village!",
+  "dialogue.settlements.generic.raid_celebrate.4": "Fireworks, everyone!",
+  "dialogue.settlements.generic.raid_celebrate.5": "Safe at last!",
+
+  "dialogue.settlements.generic.combat.1": "Back off!",
+  "dialogue.settlements.generic.combat.2": "Take that!",
+  "dialogue.settlements.generic.combat.3": "Not in my village!",
+  "dialogue.settlements.generic.combat.4": "I'll hold them off!",
+  "dialogue.settlements.generic.combat.5": "Stay back, monster!",
+
   "dialogue.settlements.farmer.rest_day.1": "Letting the fields water themselves today",
   "dialogue.settlements.farmer.rest_day.2": "The crops can wait for tomorrow",
   "dialogue.settlements.farmer.rest_day.3": "Nice to just sit and watch the wheat sway",
@@ -347,6 +359,8 @@
 
   "dialogue.settlements.social_cue.gossip.psst": "psst...",
   "dialogue.settlements.social_cue.gossip.listening": "(listening)",
+
+  "death.attack.settlements.cucco_peck": "%1$s was pecked to death by %2$s",
 
   "subtitles.settlements.cucco_call": "A chicken crows ominously",
   "subtitles.settlements.cucco_fall": "A chicken falls ominously",

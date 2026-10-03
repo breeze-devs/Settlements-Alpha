@@ -5,6 +5,7 @@ import dev.breezes.settlements.domain.farming.CultivationLilyValidity;
 import dev.breezes.settlements.domain.farming.CultivationZone;
 import dev.breezes.settlements.domain.farming.CultivationZoneCategorizer;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.blocks.LevelBlockStateView;
 import dev.breezes.settlements.infrastructure.rendering.particles.OrbParticles;
 import lombok.Getter;
@@ -51,12 +52,12 @@ public class CultivationLilyBlockEntity extends BlockEntity {
      * Server-tick throttle for the {@code valid} flag, long enough to avoid redundant
      * full-zone scans while still reacting to structural changes quickly.
      */
-    private static final long VALIDITY_RECHECK_INTERVAL_TICKS = ClockTicks.seconds(16).getTicks();
+    private static final ClockTicks VALIDITY_RECHECK_INTERVAL_TICKS = ClockTicks.seconds(16);
 
     /**
      * Server-tick throttle for the {@code needsCultivation} flag
      */
-    private static final long NEEDS_CULTIVATION_RECHECK_INTERVAL_TICKS = ClockTicks.seconds(60).getTicks();
+    private static final ClockTicks NEEDS_CULTIVATION_RECHECK_INTERVAL_TICKS = ClockTicks.seconds(60);
 
     /**
      * Client-tick cadence for the ambient orb aura — one burst every N ticks.
@@ -121,8 +122,8 @@ public class CultivationLilyBlockEntity extends BlockEntity {
         this.cropFilterDisplayItem = null;
         this.valid = false;
         this.validityDirty = true;
-        this.validityRecheckPhaseOffset = phaseOffset(pos, VALIDITY_RECHECK_INTERVAL_TICKS);
-        this.needsCultivationRecheckPhaseOffset = phaseOffset(pos, NEEDS_CULTIVATION_RECHECK_INTERVAL_TICKS);
+        this.validityRecheckPhaseOffset = Tickable.staggeredPhase(VALIDITY_RECHECK_INTERVAL_TICKS, pos.hashCode());
+        this.needsCultivationRecheckPhaseOffset = Tickable.staggeredPhase(NEEDS_CULTIVATION_RECHECK_INTERVAL_TICKS, pos.hashCode());
         this.needsCultivation = false;
     }
 
@@ -239,12 +240,8 @@ public class CultivationLilyBlockEntity extends BlockEntity {
     /**
      * Spreads periodic zone scans across the interval so loaded lilies do not all rescan on the same global tick.
      */
-    private static boolean isPeriodicScanTick(@Nonnull Level level, long intervalTicks, long phaseOffset) {
-        return (level.getGameTime() + phaseOffset) % intervalTicks == 0L;
-    }
-
-    private static long phaseOffset(@Nonnull BlockPos pos, long intervalTicks) {
-        return Math.floorMod(pos.hashCode(), intervalTicks);
+    private static boolean isPeriodicScanTick(@Nonnull Level level, @Nonnull ClockTicks interval, long phaseOffset) {
+        return (level.getGameTime() + phaseOffset) % interval.getTicks() == 0L;
     }
 
     /**

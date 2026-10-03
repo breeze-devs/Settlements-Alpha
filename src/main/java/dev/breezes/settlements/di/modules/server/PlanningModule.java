@@ -4,10 +4,12 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import dev.breezes.settlements.application.ai.catalog.BehaviorCatalogImpl;
+import dev.breezes.settlements.application.ai.override.DayPlanHandoff;
 import dev.breezes.settlements.application.ai.planning.DefaultMealAnchorTable;
 import dev.breezes.settlements.application.ai.planning.HeuristicAsyncPlanGenerator;
 import dev.breezes.settlements.application.ai.planning.HeuristicPlanGenerator;
 import dev.breezes.settlements.application.ai.planning.MealAnchorRule;
+import dev.breezes.settlements.application.ai.planning.PlanRunner;
 import dev.breezes.settlements.application.ai.planning.WakeTickResolver;
 import dev.breezes.settlements.application.ai.planning.WeekCycleProvider;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
@@ -45,5 +47,12 @@ public abstract class PlanningModule {
 
     @Binds
     abstract IWakeTickResolver wakeTickResolver(WakeTickResolver implementation);
+
+    /**
+     * Lets the override arbiter suspend and requeue the day plan without depending on
+     * {@link PlanRunner}'s full execution surface (see {@link DayPlanHandoff}).
+     */
+    @Binds
+    abstract DayPlanHandoff dayPlanHandoff(PlanRunner implementation);
 
 }

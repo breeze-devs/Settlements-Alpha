@@ -1,13 +1,15 @@
 package dev.breezes.settlements.application.ai.brain;
 
+import dev.breezes.settlements.application.ai.threat.IThreatResponse;
+import dev.breezes.settlements.application.ai.threat.ThreatAssessmentState;
 import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry;
 import dev.breezes.settlements.di.SettlementsDagger;
-import dev.breezes.settlements.domain.ai.brain.IBrain;
 import dev.breezes.settlements.domain.ai.memory.MemoryAccess;
 import dev.breezes.settlements.domain.ai.memory.MemoryType;
 import dev.breezes.settlements.domain.ai.memory.SensedSiteReport;
 import dev.breezes.settlements.domain.ai.memory.SettlementsMemoryStore;
 import dev.breezes.settlements.domain.ai.sensors.ISensor;
+import dev.breezes.settlements.domain.ai.threat.ThreatVerdict;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -19,19 +21,24 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @CustomLog
-public class VillagerBrain implements IBrain {
+public class VillagerBrain implements IVillagerBrain {
 
     private final BaseVillager villager;
     private final MemoryAccess access;
+    private final ThreatAssessmentState threats;
+    private final ActivityArbiter activityArbiter;
 
     private List<ISensor<BaseVillager>> sensors;
 
     public VillagerBrain(@Nonnull BaseVillager villager) {
         this.villager = villager;
         this.access = new VillagerMemoryAccess(villager);
+        this.threats = new ThreatAssessmentState();
+        this.activityArbiter = new ActivityArbiter(villager);
         this.sensors = List.of();
     }
 
@@ -50,11 +57,24 @@ public class VillagerBrain implements IBrain {
     }
 
     @Override
-    public void tick(int delta) {
+    public void preVanillaAiStep() {
+        SettlementsDagger.serverOrThrow().threatAssessor().tick(this.villager, this.threats);
+        // After the assessment, so the activity answers this tick's verdict
+        this.activityArbiter.tick(Objects.requireNonNullElse(this.threats.verdict(), ThreatVerdict.HOLD));
+    }
+
+    @Override
+    public void postVanillaAiStep() {
         Level level = this.villager.level();
         for (ISensor<BaseVillager> sensor : this.sensors) {
-            sensor.tick(delta, level, this.villager);
+            // One call per server tick, so each sensor advances by exactly one
+            sensor.tick(1, level, this.villager);
         }
+    }
+
+    @Override
+    public IThreatResponse threats() {
+        return this.threats;
     }
 
     @Override
