@@ -6,10 +6,11 @@ import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.blocks.TraversableBarrier;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -30,17 +31,14 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Unified door + fence-gate traversal behavior, generalizing vanilla {@code InteractWithDoor}
- * through {@link TraversableBarrier} and fixing two leaks along the way:
- * <ul>
- *     <li>vanilla only remembers a <em>next</em>-node door inside its {@code !isOpen} branch, so an
- *     already-open traversed door is never closed -- here every scanned barrier is remembered
- *     unconditionally, open or closed;</li>
- *     <li>vanilla's close-sweep only runs while a path is present and off cooldown, so a door left
- *     open when the path ends or is replaced is stranded -- this sweep runs every tick regardless.</li>
- * </ul>
+ * Unified door + fence-gate traversal behavior, generalizing vanilla InteractWithDoor through
+ * {@link TraversableBarrier} and fixing two leaks along the way:
+ * - vanilla only remembers a next-node door inside its !isOpen branch, so an already-open traversed
+ *   door is never closed -- here every scanned barrier is remembered unconditionally, open or closed;
+ * - vanilla's close-sweep only runs while a path is present and off cooldown, so a door left open
+ *   when the path ends or is replaced is stranded -- this sweep runs every tick regardless.
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class InteractWithBarriers {
 
     private static final ClockTicks STATIONARY_RESCAN_INTERVAL = ClockTicks.seconds(0.5);
@@ -141,7 +139,7 @@ public final class InteractWithBarriers {
     }
 
     /**
-     * Ports vanilla's {@code closeDoorsThatIHaveOpenedOrPassedThrough}, generalized via {@link TraversableBarrier}.
+     * Ports vanilla's closeDoorsThatIHaveOpenedOrPassedThrough, generalized via {@link TraversableBarrier}.
      */
     private static boolean closeBarriersTraversed(ServerLevel level,
                                                   LivingEntity entity,
@@ -259,7 +257,7 @@ public final class InteractWithBarriers {
      */
     private static final class ScanThrottle {
 
-        private final ITickable stationaryRescan = STATIONARY_RESCAN_INTERVAL.asTickable();
+        private final ITickable stationaryRescan = Tickable.staggered(STATIONARY_RESCAN_INTERVAL);
         private int lastScannedNodeIndex = -1;
 
         boolean shouldScan(int nodeIndex) {

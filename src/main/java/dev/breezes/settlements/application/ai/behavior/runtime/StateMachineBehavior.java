@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.shared.logging.ILogger;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.BehaviorConfigurationCrashReport;
@@ -41,7 +42,7 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
                                    @Nonnull ITickable preconditionCheckCooldown,
                                    @Nonnull ITickable behaviorCoolDown) {
         super(log, preconditionCheckCooldown, behaviorCoolDown);
-        this.lookControlCooldown = ClockTicks.of(10).asTickable();
+        this.lookControlCooldown = Tickable.staggered(ClockTicks.of(10));
         this.lastLifecycleResult = BehaviorLifecycleResult.clean();
     }
 

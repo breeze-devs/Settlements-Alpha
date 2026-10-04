@@ -78,13 +78,11 @@ public final class VillagerZombificationServerEvents {
             return;
         }
 
-        // Read the genetics the forward handler deposited on the zombie.
+        // Read the genetics the forward handler deposited on the zombie
         GeneticsProfile preservedGenetics = new GeneticsProfile();
         boolean hadGenetics = VillagerGeneticsAttachment.loadInto(zombie, preservedGenetics);
 
-        // VillagerConversionUtil.convertToSettlements performs the NBT round-trip:
-        //   saveWithoutId → create BaseVillager → load → addFreshEntity → discard vanillaVillager
-        // The round-trip carries cure-discount gossip, profession, trades, custom name, XP, and baby age.
+        // The NBT round-trip carries cure-discount gossip, profession, trades, custom name, XP, and baby age
         BaseVillager newVillager = VillagerConversionUtil.convertToSettlements(serverLevel, vanillaVillager, OriginType.ZOMBIE_CONVERTED);
         if (newVillager == null) {
             log.warn("convertToSettlements returned null for cured zombie {} — leaving as vanilla villager", zombie.getUUID());
@@ -98,7 +96,7 @@ public final class VillagerZombificationServerEvents {
             VillagerGeneticsAttachment.saveFrom(newVillager, newVillager.getGenetics());
         }
 
-        // Durable core-memory fact: this villager survived zombification and was cured.
+        // Durable core-memory fact: this villager survived zombification and was cured
         VillagerWasCuredAttachment.markAsCured(newVillager);
 
         log.debug("Cured zombie {} restored as BaseVillager {} (genetics restored={})",

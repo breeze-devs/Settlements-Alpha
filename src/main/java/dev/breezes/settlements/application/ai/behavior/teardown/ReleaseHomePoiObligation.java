@@ -10,9 +10,9 @@ import javax.annotation.Nonnull;
 /**
  * Releases a previously claimed HOME POI ticket when the behavior ends without handing it to a child.
  * <p>
- * Non-durable because bed claims are transient — a crash during birth is unlikely to cause a permanent
- * orphaned ticket, and POI tickets reset on world reload anyway. The cost of an orphaned ticket
- * (one bed "missing" from the vacancy pool) is low and self-correcting.
+ * Non-durable, which is safe only while the bed is claimed and then handed off or released within one tick, so no
+ * save can fall between them. Ticket counts are saved with the world, so a claimed ticket saved before its handoff or
+ * release would stay held, remembered by nobody, until its bed is broken.
  */
 public record ReleaseHomePoiObligation(@Nonnull BlockPos bedPos) implements TeardownObligation {
 

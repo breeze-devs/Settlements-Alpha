@@ -17,7 +17,4 @@ public interface VillagerMixin {
     @Invoker("shouldIncreaseLevel")
     boolean invokeShouldIncreaseLevel();
 
-    @Invoker("releaseAllPois")
-    void invokeReleaseAllPois();
-
 }

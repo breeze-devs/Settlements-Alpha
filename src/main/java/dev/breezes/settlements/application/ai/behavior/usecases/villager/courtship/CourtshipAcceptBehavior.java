@@ -27,6 +27,7 @@ import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
@@ -65,7 +66,7 @@ public final class CourtshipAcceptBehavior extends VillagerStateMachineBehavior 
                                    @Nonnull CourtshipPresenter courtshipPresenter,
                                    @Nonnull CourtshipChoreographyLibrary choreographyLibrary) {
         super(log,
-                ClockTicks.seconds(2).asTickable(),
+                Tickable.staggered(ClockTicks.seconds(2)),
                 RandomRangeTickable.of(ClockTicks.seconds(30), ClockTicks.seconds(15)),
                 support);
         this.sessionRegistry = sessionRegistry;

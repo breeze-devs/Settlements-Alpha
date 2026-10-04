@@ -19,6 +19,7 @@ import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
@@ -48,7 +49,7 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
                                @Nonnull TradeSessionRegistry sessionRegistry,
                                @Nonnull TradeSessionPresenter tradeSessionPresenter) {
         super(log,
-                ClockTicks.seconds(config.acceptPreconditionCooldownSeconds()).asTickable(),
+                Tickable.staggered(ClockTicks.seconds(config.acceptPreconditionCooldownSeconds())),
                 RandomRangeTickable.of(
                         ClockTicks.seconds(config.acceptBehaviorCooldownSecondsMax()),
                         ClockTicks.seconds(config.acceptBehaviorCooldownSecondsMin())),

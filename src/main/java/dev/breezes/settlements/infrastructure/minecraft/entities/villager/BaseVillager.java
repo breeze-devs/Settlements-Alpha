@@ -258,10 +258,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         // Start with an empty ledger; load() will replace it with the NBT-backed one.
         this.teardownLedger = new VillagerTeardownLedger(List.of());
-        this.reconcilerCooldown = RECONCILER_COOLDOWN_TICKS.asTickable();
-        this.perceptionCooldown = PERCEPTION_COOLDOWN_TICKS.asTickable();
-        this.nameSyncCooldown = NAME_SYNC_COOLDOWN_TICKS.asTickable();
-        this.rainExposureCooldown = RAIN_EXPOSURE_SAMPLE_COOLDOWN_TICKS.asTickable();
+        this.reconcilerCooldown = Tickable.staggered(RECONCILER_COOLDOWN_TICKS);
+        this.perceptionCooldown = Tickable.staggered(PERCEPTION_COOLDOWN_TICKS);
+        this.nameSyncCooldown = Tickable.staggered(NAME_SYNC_COOLDOWN_TICKS);
+        this.rainExposureCooldown = Tickable.staggered(RAIN_EXPOSURE_SAMPLE_COOLDOWN_TICKS);
         this.rainExposure = new DebouncedSignal(false, RAIN_EXPOSURE_OBSERVATIONS_TO_CHANGE);
         this.sootyExpiresAtGameTime = 0L;
     }
@@ -816,14 +816,29 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.upsertNameInDirectory();
     }
 
+    /**
+     * Also forgets the POI positions vanilla's death releases, including when the death event is canceled.
+     */
+    @Override
+    public void die(@Nonnull DamageSource cause) {
+        super.die(cause);
+
+        // Vanilla POI reservation tickets don't record their holder, so a remembered position whose ticket is
+        // released can free another villager's: removal stops a job-site walk still running from before death,
+        // which releases its target again. A survivor of a canceled death must not go on claiming positions
+        // nobody holds for it either.
+        Villager.POI_MEMORIES.keySet().forEach(this.getBrain()::eraseMemory);
+    }
+
     @Override
     public void remove(@Nonnull RemovalReason reason) {
         ServerComponent server = this.level().isClientSide() ? null : SettlementsDagger.serverOrNull();
 
-        // Stop the running behavior before entity removal so TeardownScope obligations are discharged on death/unload.
+        // Stop the running behavior before entity removal so TeardownScope obligations are discharged on death and
+        // discard. Chunk unload and dimension change call setRemoved directly, so they never reach this override.
         // The chain is:
         //   brain.stopAll → PlanRunnerBehavior.stop → planRunner.forceStop / overrideArbiter.forceStop → behavior.stop → teardownAll
-        // Must run before super.remove so the villager is still alive when discharge resolves entities.
+        // Must run before super.remove so the villager is still in the level when discharge resolves entities.
         if (this.level() instanceof ServerLevel serverLevel) {
             this.getBrain().stopAll(serverLevel, this);
         }
@@ -1194,7 +1209,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         HungerConfig config = SettlementsDagger.component().hungerConfig();
 
         if (this.hungerDrainTimer == null) {
-            this.hungerDrainTimer = Tickable.of(ClockTicks.seconds(config.tickIntervalSeconds()));
+            this.hungerDrainTimer = Tickable.staggered(ClockTicks.seconds(config.tickIntervalSeconds()));
         }
 
         if (!this.hungerDrainTimer.tickCheckAndReset(1)) {

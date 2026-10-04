@@ -78,6 +78,10 @@ Express durations and cadences through the domain interfaces — `ClockTicks` fo
 world time specifically is meant. A bare `int` of ticks loses a distinction the domain draws, and the two are not
 interchangeable.
 
+A periodic cadence each entity runs — a sensor, a scan, an evaluation, a drain — starts with `Tickable.staggered`, so
+instances built on the same tick (a chunk or world load, a brain refresh) spread across the interval instead of firing
+together. `Tickable.of` stays for one-shot durations and lifetimes, where firing at the full duration is the point.
+
 ## C8 — A private constructor declares which kind of class this is
 
 A class callers never instantiate says so with a Lombok constructor annotation, and **which** annotation is

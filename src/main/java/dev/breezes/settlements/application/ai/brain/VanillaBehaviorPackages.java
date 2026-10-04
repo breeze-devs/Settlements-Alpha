@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.home.BedCompetitorScan;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.home.ValidateNearbyHome;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.traversal.InteractWithBarriers;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
@@ -90,6 +92,7 @@ public final class VanillaBehaviorPackages {
                 Pair.of(0, ValidateNearbyPoi.create(profession.acquirableJobSite(), MemoryModuleType.POTENTIAL_JOB_SITE)),
                 Pair.of(1, new MoveToTargetSink()),
                 Pair.of(2, PoiCompetitorScan.create()),
+                Pair.of(2, BedCompetitorScan.create()),
                 Pair.of(3, new LookAndFollowTradingPlayerSink(speed)),
                 Pair.of(5, GoToWantedItem.create(speed, false, 4)),
                 Pair.of(6, AcquirePoi.create(profession.acquirableJobSite(), MemoryModuleType.JOB_SITE, MemoryModuleType.POTENTIAL_JOB_SITE, true,
@@ -131,7 +134,7 @@ public final class VanillaBehaviorPackages {
         return ImmutableList.of(
                 getMinimalLookBehavior(),
                 Pair.of(2, SetWalkTargetFromBlockMemory.create(MemoryModuleType.HOME, speed, 1, 150, 1200)),
-                Pair.of(3, ValidateNearbyPoi.create((poiType) -> poiType.is(PoiTypes.HOME), MemoryModuleType.HOME)),
+                Pair.of(3, ValidateNearbyHome.create()),
                 Pair.of(3, new SleepInBed()),
                 Pair.of(5, new RunOne<>(
                         ImmutableMap.of(MemoryModuleType.HOME, MemoryStatus.VALUE_ABSENT),

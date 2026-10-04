@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.ambient.AmbientBehaviors;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.home.ValidateNearbyHome;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
@@ -76,7 +77,7 @@ public final class VanillaAmbientBehaviorPackages {
         return ImmutableList.of(
                 VanillaBehaviorPackages.getMinimalLookBehavior(),
                 Pair.of(2, SetWalkTargetFromBlockMemory.create(MemoryModuleType.HOME, speed, 1, 150, 1200)),
-                Pair.of(3, ValidateNearbyPoi.create((poiType) -> poiType.is(PoiTypes.HOME), MemoryModuleType.HOME)),
+                Pair.of(3, ValidateNearbyHome.create()),
                 Pair.of(3, new SleepInBed()),
                 Pair.of(5, new RunOne<>(
                         ImmutableMap.of(MemoryModuleType.HOME, MemoryStatus.VALUE_ABSENT),

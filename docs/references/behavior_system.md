@@ -13,7 +13,7 @@ stateful state machine (`VillagerStateMachineBehavior`) that runs for the villag
 **not**
 register its behaviors as vanilla brain `Behavior`/`Activity` entries and does **not** let vanilla `GateBehavior` pick
 them by weight. Instead it builds a **day plan** per villager and runs the plan with a **custom executor** that ticks
-the active behavior directly. The vanilla `Brain` is still ticked — but only to host that executor and to run vanilla
+the active behavior directly. The vanilla `Brain` is still ticked — but only to host that executor and to run
 reflexes, the reactive activities' packages (panic, raid, bell) and gated ambient life.
 
 The pipeline has four stages:
@@ -310,7 +310,8 @@ continue-conditions, precondition/behavior cooldown `ITickable`s, `getStatus()`,
 Brain wiring happens in `BaseVillager.registerBrainGoals(Brain<Villager>)`:
 
 - **CORE** (`brain.addActivity(Activity.CORE, ...)`) — `VanillaBehaviorPackages.getCorePackage(...)` (look-at, swim,
-  wake-up, …) **plus** the Settlements host `PlanRunnerBehavior` @20 (adults only).
+  wake-up, …, and mod-owned vanilla-style reflexes such as `InteractWithBarriers` and `BedCompetitorScan`) **plus** the
+  Settlements host `PlanRunnerBehavior` @20 (adults only).
 - **Reactive activities** (`ActivityArbiter.isReactive`) — vanilla packages without vanilla's entry and exit behaviors,
   since `ActivityArbiter` enters and leaves them. `COMBAT`'s package is empty: the combat runner in the override lane
   does the fighting.
@@ -321,9 +322,17 @@ Brain wiring happens in `BaseVillager.registerBrainGoals(Brain<Villager>)`:
 - **Babies** — vanilla IDLE / PLAY / MEET / REST packages; no plan runner.
 
 So `addActivityWithConditions(Activity.WORK, ...)` registers **gated vanilla ambient life**, not Settlements behaviors.
-**No Settlements behavior is ever a vanilla brain `Behavior`/`Activity` entry** — the vanilla brain contributes
-reflexes, the reactive packages, and ambient filler, and provides the tick loop + activity gate that host the plan
+**No Settlements behavior (an `IBehavior`) is ever a vanilla brain `Behavior`/`Activity` entry** — the vanilla brain
+contributes reflexes, the reactive packages, and ambient filler (some of those entries are mod-owned vanilla-style
+behaviors, under `infrastructure/minecraft/behavior/`), and provides the tick loop + activity gate that host the plan
 runner. The Settlements runtime (`PlanRunner` and the override lane) owns all Settlements-behavior execution.
+
+**Bed ownership** rests on two mod-owned vanilla-style behaviors, because vanilla settles a workstation two villagers
+remember (`PoiCompetitorScan`) but never a bed. `BedCompetitorScan` in CORE leaves one claimant per bed and frees
+nothing, so the bed's single reservation keeps backing the claim that remains; it edits a losing vanilla villager's HOME
+as well. Both REST packages run `ValidateNearbyHome` in place of vanilla's HOME `ValidateNearbyPoi`. Do not swap
+vanilla's back in: it forgets a bed it finds occupied and frees the bed's only reservation while the sleeper still
+claims it, so the bed reads vacant and the next homeless villager moves in.
 
 `VanillaBehaviorPackages` is an in-repo copy of vanilla's `VillagerGoalPackages`, not the vanilla class itself — the
 packages are edited, so the vanilla one cannot be called through.

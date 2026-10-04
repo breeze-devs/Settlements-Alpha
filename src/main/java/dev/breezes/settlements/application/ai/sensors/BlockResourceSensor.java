@@ -5,6 +5,7 @@ import dev.breezes.settlements.domain.settlement.model.SettlementMetadata;
 import dev.breezes.settlements.domain.settlement.query.SettlementContext;
 import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.domain.time.ClockTicks;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -29,7 +30,7 @@ public final class BlockResourceSensor extends AbstractSensor<BaseVillager> {
                                @Nonnull Set<BlockResource> resources,
                                @Nonnull WorldResourceIndex index,
                                @Nonnull SettlementQueryService settlementQueryService) {
-        super(List.of(), ClockTicks.seconds(config.scanIntervalSeconds()).asTickable());
+        super(List.of(), Tickable.staggered(ClockTicks.seconds(config.scanIntervalSeconds())));
         this.config = config;
         this.resources = Set.copyOf(resources);
         this.index = index;

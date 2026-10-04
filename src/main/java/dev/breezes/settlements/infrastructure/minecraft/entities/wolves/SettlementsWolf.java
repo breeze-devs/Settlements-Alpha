@@ -15,6 +15,7 @@ import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.exceptions.SpawnFailedException;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetReaction;
 import dev.breezes.settlements.infrastructure.minecraft.entities.pet.Pettable;
@@ -99,7 +100,7 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
         this.navigationManager = new VanillaBasicNavigationManager<>(this);
         this.wolfBehaviors = new ArrayList<>();
         this.untamedLifetime = UNTAMED_LIFETIME.asTickable();
-        this.dirtyRollTimer = DIRTY_ROLL_INTERVAL.asTickable();
+        this.dirtyRollTimer = Tickable.staggered(DIRTY_ROLL_INTERVAL);
         this.followOwnerLocks = new HashSet<>();
         this.dirty = false;
 

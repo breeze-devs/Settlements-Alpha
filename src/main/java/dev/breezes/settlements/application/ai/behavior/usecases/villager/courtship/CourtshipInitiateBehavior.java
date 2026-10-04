@@ -400,6 +400,9 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         partner.setAge(breedCooldownTicks);
     }
 
+    /**
+     * Returns the child once it is in the level, or null when it could not be created or the level refused it.
+     */
     @Nullable
     private BaseVillager spawnChild(@Nonnull ServerLevel level,
                                     @Nonnull BaseVillager parent,
@@ -412,7 +415,10 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         child.moveTo(parent.getX(), parent.getY(), parent.getZ(), 0.0F, 0.0F);
         child.setAge(-24000);
 
-        level.addFreshEntityWithPassengers(child);
+        // addFreshEntityWithPassengers would hide a refused join, and a newborn has no passengers to add
+        if (!level.addFreshEntity(child)) {
+            return null;
+        }
         return child;
     }
 

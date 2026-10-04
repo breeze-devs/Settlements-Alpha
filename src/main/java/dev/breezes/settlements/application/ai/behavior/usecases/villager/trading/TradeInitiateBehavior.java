@@ -31,6 +31,7 @@ import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
+import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -95,7 +96,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
                                  @Nonnull PartnerScanner partnerScanner,
                                  @Nonnull NegotiationEngine negotiationEngine) {
         super(log,
-                ClockTicks.seconds(config.initiatePreconditionCooldownSeconds()).asTickable(),
+                Tickable.staggered(ClockTicks.seconds(config.initiatePreconditionCooldownSeconds())),
                 RandomRangeTickable.of(
                         ClockTicks.seconds(config.initiateBehaviorCooldownSecondsMax()),
                         ClockTicks.seconds(config.initiateBehaviorCooldownSecondsMin())),
