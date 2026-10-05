@@ -18,9 +18,9 @@ public final class EquipmentLookup {
 
     public static Optional<IVillagerEquipment> find(@Nonnull BaseVillager villager) {
         // Client entities are constructed from spawn packets and never go through load() or finalizeSpawn(),
-        // so settlementsInventory is always null on the client. The bridge handles this by falling through
+        // so the client holds no Settlements inventory. The bridge handles this by falling through
         // to vanilla-synced hand slots, which are always available on both sides.
-        @Nullable VillagerInventory inventory = villager.hasSettlementsInventory() ? villager.getSettlementsInventory() : null;
+        VillagerInventory inventory = villager.hasSettlementsInventory() ? villager.getSettlementsInventory() : null;
         return Optional.of(new VanillaHandBridgedEquipment(villager, inventory));
     }
 

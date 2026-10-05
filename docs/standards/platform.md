@@ -160,6 +160,26 @@ Use `ClientMonotonicClock` for client throttles and timeouts measured in real el
 survives disconnects. Gameplay delays measured in simulation ticks should keep using game time, with their timestamps
 scoped to that world.
 
+### P17 — An entity's attachments are written before `addAdditionalSaveData`
+
+NeoForge's entity save puts the attachments into the tag first and calls `addAdditionalSaveData` afterwards. A `setData`
+made inside that hook, the obvious place to copy a field into an attachment, lands after the tag is built, so **every
+save writes the copy the previous save made**. Nothing fails, and each save looks complete. State is lost only when a
+save is the entity's last before a reload, a portal trip or a conversion, which presents as random rollback rather than
+as an ordering problem.
+
+Keep the state in the attachment itself. Hold either the live object, which `getData` returns and NeoForge serializes as
+it stands at save time, or an immutable value replaced with `setData` on every change. Never keep the authoritative copy
+in a field and mirror it into an attachment: that is two copies of one fact (**F2**), and the save order guarantees they
+disagree. A load replaces an attachment's object with a freshly read one, so code must not hold that object across
+ticks.
+
+`getData` also creates the default on first access, on whichever side it runs. A read on the client's copy creates an
+attachment there, and a debug save of that copy then writes it. Reads that must not create one use `getExistingData`.
+
+Related in kind: a `MemoryModuleType` registered without a codec is never saved with the brain, although setting and
+reading it work normally until the next load. A memory that must persist needs a codec, not an attachment carrying it.
+
 ## Build
 
 ### P5 — Dagger needs `javax.inject` on the runtime classpath, permanently

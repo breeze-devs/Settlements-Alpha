@@ -14,6 +14,10 @@ import java.util.UUID;
  * The entry's semantic type has no field here: it is a function of the event_type metadata key,
  * so persisting it would store one fact twice and let the two copies disagree.
  */
+// TODO: Delete this record by having VillagerKnowledgeAttachmentCodec encode and decode KnowledgeEntry directly, failing
+//  an entry whose event_type no longer resolves so the list codec drops it. It copies every saved field of the entry,
+//  a second shape to keep in step, only to give the save its form, which the codec can give the entry itself.
+@Deprecated(forRemoval = true)
 @Builder(toBuilder = true)
 public record KnowledgeEntryState(
         UUID originObservationId,

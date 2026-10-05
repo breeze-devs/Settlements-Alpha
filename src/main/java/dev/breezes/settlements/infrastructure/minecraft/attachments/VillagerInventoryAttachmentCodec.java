@@ -15,10 +15,7 @@ public final class VillagerInventoryAttachmentCodec {
                     Codec.INT.fieldOf("count").forGetter(BackpackEntry::count)
             ).apply(instance, BackpackEntry::new));
 
-    public static final Codec<VillagerInventoryAttachmentState> STATE_CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(
-                    Codec.BOOL.optionalFieldOf("initialized", false).forGetter(VillagerInventoryAttachmentState::initialized),
-                    ENTRY_CODEC.listOf().optionalFieldOf("entries", List.of()).forGetter(VillagerInventoryAttachmentState::entries)
-            ).apply(instance, VillagerInventoryAttachmentState::new));
+    public static final Codec<List<BackpackEntry>> STATE_CODEC =
+            ENTRY_CODEC.listOf().optionalFieldOf("entries", List.of()).codec();
 
 }

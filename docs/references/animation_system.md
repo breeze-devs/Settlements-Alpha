@@ -77,9 +77,10 @@ last because it must also survive the sleep pose, which replaces everything bene
 5. [AttachmentRenderLayer](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/model/rendering/AttachmentRenderLayer.java)
    renders every attachment from the resulting bone poses and slot targets.
 
-One animator exists per client-side
-villager. [ClientAnimatorRegistry](../../src/main/java/dev/breezes/settlements/infrastructure/rendering/animation/ClientAnimatorRegistry.java)
-owns that lifecycle.
+Each client-side villager holds its own animator, built on first render
+by [VillagerAnimatorFactory](../../src/main/java/dev/breezes/settlements/infrastructure/rendering/animation/VillagerAnimatorFactory.java).
+It lives exactly as long as the entity object, including a villager drawn without joining a level, such as a
+spawner's.
 
 ### Motion replay
 
@@ -439,3 +440,7 @@ These are design boundaries, not current-work inventories:
 - Sleep switches discretely with vanilla bed state.
 - The renderer iterates attachments rather than special-casing the main hand.
 - Target policy must agree at composition and application.
+- The animator lives on the villager, not in a table keyed by entity id. Such a table can only be cleared by asking
+  the client level which ids it still holds, and a villager drawn outside any level, such as a spawner's, is never
+  there, so every clear restarts its animation. Its id also comes from the client's own entity counter, so on a
+  dedicated server it can equal a loaded villager's server-assigned id.

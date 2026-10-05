@@ -43,9 +43,9 @@ public class VillagerBrain implements IVillagerBrain {
     }
 
     /**
-     * Builds this villager's sensors from the server graph. Deferred out of the constructor because the
-     * server component is unavailable during entity construction and on the client; the villager calls
-     * this from its server-side spawn/load hooks, before the first tick.
+     * Builds this villager's sensors from the server graph.
+     *
+     * @throws IllegalStateException if no server component exists, as on a client connected to a remote server
      */
     @Override
     public void initialize() {

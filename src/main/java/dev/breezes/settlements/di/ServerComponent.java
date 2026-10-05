@@ -63,7 +63,6 @@ import dev.breezes.settlements.di.modules.server.SpeechModule;
 import dev.breezes.settlements.di.modules.server.UiSyncModule;
 import dev.breezes.settlements.di.modules.server.WorldEventModule;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
-import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
 import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
@@ -182,8 +181,6 @@ public interface ServerComponent {
     PersonaGenerationService personaGenerationService();
 
     SensedSiteReader sensedSiteReader();
-
-    EventLaneConfig eventLaneConfig();
 
     RehearsedDialogueSweepServerEvents eveningDialoguePackSweepServerEvents();
 

@@ -14,7 +14,7 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 
 /**
- * Mojang Codec for serializing {@link VillagerKnowledgeAttachmentState} to/from NBT.
+ * Mojang Codec for serializing a villager's knowledge entries to/from NBT.
  * Mirrors the style of {@link VillagerGeneticsAttachmentCodec}.
  * <p>
  * Values that are absent on the entry — relatedEntity, pos — are encoded as absent optional fields
@@ -71,12 +71,8 @@ public final class VillagerKnowledgeAttachmentCodec {
      */
     private static final Codec<List<KnowledgeEntryState>> ENTRY_LIST_CODEC = entryListCodec();
 
-    public static final Codec<VillagerKnowledgeAttachmentState> STATE_CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(
-                    Codec.BOOL.optionalFieldOf("initialized", false).forGetter(VillagerKnowledgeAttachmentState::initialized),
-                    ENTRY_LIST_CODEC.optionalFieldOf("entries", List.of())
-                            .forGetter(VillagerKnowledgeAttachmentState::entries)
-            ).apply(instance, VillagerKnowledgeAttachmentState::new));
+    public static final Codec<List<KnowledgeEntryState>> STATE_CODEC =
+            ENTRY_LIST_CODEC.optionalFieldOf("entries", List.of()).codec();
 
     private static Codec<List<KnowledgeEntryState>> entryListCodec() {
         Codec<List<KnowledgeEntryState>> listCodec = ENTRY_CODEC.listOf();

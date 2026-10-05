@@ -10,10 +10,11 @@ import java.util.Optional;
 public interface IBrain {
 
     /**
-     * Wires up server-scoped state (e.g. sensors) for the brain's owner.
+     * Wires up server-scoped state (e.g. sensors) for an owner that has joined a server level, before its first
+     * {@link #preVanillaAiStep()}.
      * <p>
-     * Called once on the server when the entity spawns or loads, before the first {@link #preVanillaAiStep()}.
-     * The constructor cannot do this: the server graph is unavailable during entity construction and on the client.
+     * A repeat call rebuilds that state rather than adding to it. Implementations must not touch the world: the owner's
+     * chunk may still be loading, and world access there can deadlock that load.
      */
     void initialize();
 

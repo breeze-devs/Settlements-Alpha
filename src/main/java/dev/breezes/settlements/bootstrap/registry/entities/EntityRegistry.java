@@ -62,6 +62,7 @@ public class EntityRegistry {
                     .sized(0.25F, 0.25F)
                     .clientTrackingRange(4)
                     .updateInterval(5)
+                    .noSave()
                     .noSummon()
                     .build("villager_fishing_hook"));
 

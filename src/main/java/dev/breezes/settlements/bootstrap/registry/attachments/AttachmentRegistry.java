@@ -4,29 +4,28 @@ import com.mojang.serialization.Codec;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.application.economy.demand.DemandSignalCodec;
 import dev.breezes.settlements.application.economy.demand.DemandSignalState;
+import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.SettlementsMemoryStore;
+import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.personality.PersonaLineageSnapshot;
 import dev.breezes.settlements.domain.personality.VillagerPersonality;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentCodec;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentSerializer;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TotemTargetAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentCodec;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentCodec;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentState;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentCodec;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentState;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachmentCodec;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachmentState;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachmentSerializer;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachmentSerializer;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachmentSerializer;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachmentCodec;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedger;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public final class AttachmentRegistry {
@@ -52,34 +51,39 @@ public final class AttachmentRegistry {
                     .serialize(DemandSignalCodec.STATE_CODEC)
                     .build());
 
-    public static final Supplier<AttachmentType<VillagerInventoryAttachmentState>> VILLAGER_INVENTORY = REGISTRY.register(
+    /**
+     * Absent until the villager is set up, and reading it before then throws.
+     */
+    public static final Supplier<AttachmentType<VillagerInventory>> VILLAGER_INVENTORY = REGISTRY.register(
             "villager_inventory",
-            () -> AttachmentType.builder(VillagerInventoryAttachmentState::empty)
-                    .serialize(VillagerInventoryAttachmentCodec.STATE_CODEC)
+            // Never created on demand: an inventory that appeared on a read would mark a villager that was never set
+            // up as set up, and its save would make a villager recreated from the tag skip its starting food
+            () -> AttachmentType.<VillagerInventory>builder(holder -> {
+                        throw new IllegalStateException("Villager inventory read before the villager was set up");
+                    })
+                    .serialize(new VillagerInventoryAttachmentSerializer())
                     .build());
 
-    public static final Supplier<AttachmentType<VillagerBrainAttachmentState>> VILLAGER_BRAIN = REGISTRY.register(
-            "villager_brain",
-            () -> AttachmentType.builder(VillagerBrainAttachmentState::empty)
-                    .serialize(VillagerBrainAttachmentCodec.STATE_CODEC)
-                    .build());
-
-    public static final Supplier<AttachmentType<VillagerGeneticsAttachmentState>> VILLAGER_GENETICS = REGISTRY.register(
+    /**
+     * Rolled fresh on the first read when none was saved.
+     */
+    public static final Supplier<AttachmentType<GeneticsProfile>> VILLAGER_GENETICS = REGISTRY.register(
             "villager_genetics",
-            () -> AttachmentType.builder(VillagerGeneticsAttachmentState::empty)
-                    .serialize(VillagerGeneticsAttachmentCodec.STATE_CODEC)
+            () -> AttachmentType.builder(() -> new GeneticsProfile())
+                    .serialize(new VillagerGeneticsAttachmentSerializer())
+                    .copyOnDeath() // carry over when converted to other entities like zombie villagers
                     .build());
 
-    public static final Supplier<AttachmentType<TeardownLedgerAttachmentState>> VILLAGER_TEARDOWN_LEDGER = REGISTRY.register(
+    public static final Supplier<AttachmentType<VillagerTeardownLedger>> VILLAGER_TEARDOWN_LEDGER = REGISTRY.register(
             "villager_teardown_ledger",
-            () -> AttachmentType.builder(TeardownLedgerAttachmentState::empty)
-                    .serialize(TeardownLedgerAttachmentCodec.STATE_CODEC)
+            () -> AttachmentType.builder(() -> new VillagerTeardownLedger(List.of()))
+                    .serialize(new TeardownLedgerAttachmentSerializer())
                     .build());
 
-    public static final Supplier<AttachmentType<VillagerKnowledgeAttachmentState>> VILLAGER_KNOWLEDGE = REGISTRY.register(
+    public static final Supplier<AttachmentType<VillagerKnowledgeStore>> VILLAGER_KNOWLEDGE = REGISTRY.register(
             "villager_knowledge",
-            () -> AttachmentType.builder(VillagerKnowledgeAttachmentState::empty)
-                    .serialize(VillagerKnowledgeAttachmentCodec.STATE_CODEC)
+            () -> AttachmentType.builder(VillagerKnowledgeAttachmentSerializer::emptyStore)
+                    .serialize(new VillagerKnowledgeAttachmentSerializer())
                     .build());
 
     /**

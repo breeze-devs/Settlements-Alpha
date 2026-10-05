@@ -1,12 +1,11 @@
 package dev.breezes.settlements.infrastructure.minecraft.attachments;
 
-import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.ai.knowledge.KnowledgeEntry;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.observation.ObservationMetadataKeys;
 import dev.breezes.settlements.domain.ai.observation.ObservationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
-import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
@@ -17,21 +16,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Persistence helper for {@link VillagerKnowledgeStore}.
- * Converts between the domain store and its flat NBT attachment representation.
- * Follows the same pattern as {@link VillagerGeneticsAttachment}.
- * <p>
- * The entry's semantic type is not persisted (see {@link KnowledgeEntryState}); {@link #loadInto}
- * derives it from the event_type metadata key, and drops any entry whose key no longer resolves.
+ * The entry's semantic type is not persisted (see {@link KnowledgeEntryState}); reading derives it from the event_type
+ * metadata key, and drops any entry whose key no longer resolves.
  */
 @CustomLog
-public final class VillagerKnowledgeAttachment {
+public final class VillagerKnowledgeAttachmentSerializer
+        extends StateCodecAttachmentSerializer<List<KnowledgeEntryState>, VillagerKnowledgeStore> {
+
+    public VillagerKnowledgeAttachmentSerializer() {
+        super(VillagerKnowledgeAttachmentCodec.STATE_CODEC);
+    }
 
     /**
-     * Writes the villager's entire knowledge store into the entity attachment.
-     * Called from {@link BaseVillager#addAdditionalSaveData}.
+     * An empty store with the configured capacity.
      */
-    public static void saveFrom(@Nonnull BaseVillager villager, @Nonnull VillagerKnowledgeStore store) {
+    public static VillagerKnowledgeStore emptyStore() {
+        // The root graph rather than the server graph: a default is created wherever the attachment is first read,
+        // which can be the client
+        return new VillagerKnowledgeStore(SettlementsDagger.component().eventLaneConfig().knowledgeStoreMaxEntries());
+    }
+
+    @Override
+    List<KnowledgeEntryState> toState(@Nonnull VillagerKnowledgeStore store) {
         Collection<KnowledgeEntry> entries = store.entriesView();
         List<KnowledgeEntryState> states = new ArrayList<>(entries.size());
         for (KnowledgeEntry entry : entries) {
@@ -45,30 +51,17 @@ public final class VillagerKnowledgeAttachment {
                     .weight(entry.getWeight())
                     .build());
         }
-        villager.setData(AttachmentRegistry.VILLAGER_KNOWLEDGE, VillagerKnowledgeAttachmentState.of(states));
+        return states;
     }
 
-    /**
-     * Reads the attachment back into the provided {@link VillagerKnowledgeStore}.
-     * Called from {@link BaseVillager#load}.
-     * <p>
-     * Entries whose {@code event_type} metadata cannot be resolved to a known
-     * {@link WorldEventType} are dropped rather than admitted with a fallback type — this
-     * mirrors {@link dev.breezes.settlements.application.ai.inference.monologue.EpisodicEntryAssembler}'s
-     * tolerant parse and prunes data that can no longer be classified (e.g. a retired event type).
-     *
-     * @return {@code true} if persisted data was found and loaded; {@code false} on a fresh spawn
-     */
-    public static boolean loadInto(@Nonnull BaseVillager villager, @Nonnull VillagerKnowledgeStore store) {
-        VillagerKnowledgeAttachmentState state = villager.getData(AttachmentRegistry.VILLAGER_KNOWLEDGE);
-        if (!state.initialized()) {
-            return false;
-        }
-
-        for (KnowledgeEntryState entryState : state.entries()) {
+    @Override
+    VillagerKnowledgeStore fromState(@Nonnull List<KnowledgeEntryState> entryStates) {
+        VillagerKnowledgeStore store = emptyStore();
+        for (KnowledgeEntryState entryState : entryStates) {
             Map<String, String> metadata = entryState.metadata();
             ObservationType type = resolveObservationType(metadata);
             if (type == null) {
+                // Dropped: data that can no longer be classified is pruned
                 continue;
             }
 
@@ -84,11 +77,11 @@ public final class VillagerKnowledgeAttachment {
                     .build();
             store.admit(entry);
         }
-        return true;
+        return store;
     }
 
     /**
-     * Derives the {@link ObservationType} from the persisted {@code event_type} metadata key.
+     * Derives the {@link ObservationType} from the persisted event_type metadata key.
      * Returns null when the key is missing, blank, or no longer maps to a known
      * {@link WorldEventType} — callers must drop the entry in that case.
      */

@@ -1,5 +1,6 @@
 package dev.breezes.settlements.infrastructure.rendering.attachment;
 
+import dev.breezes.settlements.di.ClientSessionComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.domain.attachment.AttachmentContent;
@@ -24,9 +25,13 @@ public final class UmbrellaAttachmentProvider implements AttachmentProvider {
 
     @Override
     public List<RenderableAttachment> attachmentsFor(@Nonnull BaseVillager villager, float partialTicks) {
-        VillagerAnimator animator = SettlementsDagger.clientSessionOrThrow()
-                .clientAnimatorRegistry()
-                .getOrCreate(villager);
+        // A villager drawn without a world/client session has no animator, so the umbrella stays stowed
+        ClientSessionComponent session = SettlementsDagger.clientSessionOrNull();
+        if (session == null) {
+            return List.of();
+        }
+
+        VillagerAnimator animator = villager.getAnimator(session.villagerAnimatorFactory());
         if (!animator.isUmbrellaVisible(villager.level().getGameTime(), partialTicks)) {
             return List.of();
         }

@@ -16,10 +16,7 @@ public final class VillagerGeneticsAttachmentCodec {
                     Codec.DOUBLE.fieldOf("value").forGetter(VillagerGeneState::value)
             ).apply(instance, VillagerGeneState::new));
 
-    public static final Codec<VillagerGeneticsAttachmentState> STATE_CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(
-                    Codec.BOOL.optionalFieldOf("initialized", false).forGetter(VillagerGeneticsAttachmentState::initialized),
-                    GENE_CODEC.listOf().optionalFieldOf("genes", List.of()).forGetter(VillagerGeneticsAttachmentState::genes)
-            ).apply(instance, VillagerGeneticsAttachmentState::new));
+    public static final Codec<List<VillagerGeneState>> STATE_CODEC =
+            GENE_CODEC.listOf().optionalFieldOf("genes", List.of()).codec();
 
 }

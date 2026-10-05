@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.minecraft.entities.villager.model
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.breezes.settlements.di.ClientComponent;
+import dev.breezes.settlements.di.ClientSessionComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.AnimationFrame;
@@ -22,6 +23,7 @@ import net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
 
 public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager, SettlementsVillagerModel<BaseVillager>> {
@@ -82,8 +84,12 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
                        int packedLight) {
         long gameTime = villager.level().getGameTime();
         VillagerAnimator animator = this.getOrUpdateAnimator(villager, gameTime);
-        this.model.prepareAnimation(animator, villager.getLocomotionNavigationType(), gameTime, partialTicks,
-                villager.isExposedToRain());
+        // A villager drawn outside a world (e.g., another mod's preview screen) has no session to animate it,
+        // so it renders unanimated
+        if (animator != null) {
+            this.model.prepareAnimation(animator, villager.getLocomotionNavigationType(), gameTime, partialTicks,
+                    villager.isExposedToRain());
+        }
         try {
             super.render(villager, yaw, partialTicks, poseStack, buffer, packedLight);
         } finally {
@@ -98,11 +104,17 @@ public final class SettlementsVillagerRenderer extends MobRenderer<BaseVillager,
     /**
      * Advances the animator's motion state and returns it so the caller can sample both the
      * animation frame and the arm configuration from a single up-to-date animator instance.
+     *
+     * @return the animator, or null when no client session exists
      */
+    @Nullable
     private VillagerAnimator getOrUpdateAnimator(@Nonnull BaseVillager villager, long gameTime) {
-        VillagerAnimator animator = SettlementsDagger.clientSessionOrThrow()
-                .clientAnimatorRegistry()
-                .getOrCreate(villager);
+        ClientSessionComponent session = SettlementsDagger.clientSessionOrNull();
+        if (session == null) {
+            return null;
+        }
+
+        VillagerAnimator animator = villager.getAnimator(session.villagerAnimatorFactory());
 
         // Sleep is read straight off the vanilla-synced state; while asleep the animator plays the
         // sleep clip and suppresses the idle ambience entirely (no new sync surface needed).

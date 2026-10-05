@@ -15,9 +15,6 @@ import dev.breezes.settlements.infrastructure.config.annotations.integers.Intege
  * TODO: move the gossip knobs to {@code SocialCueConfig} ({@code general.toml}) — they tune an
  *  always-on lane, and an operator with inference off should not have to edit the inference config
  *  to change live behavior.
- * <p>
- * The Minecraft entity constructor path is not Dagger-created, so per-villager stores read
- * these values through the current server component with constant fallbacks during early bootstrap.
  */
 @BehaviorConfig(name = "event_lane", type = ConfigurationType.INFERENCE)
 public record EventLaneConfig(

@@ -11,6 +11,7 @@ import dev.breezes.settlements.di.modules.FarmingModule;
 import dev.breezes.settlements.di.modules.ReloadListenerModule;
 import dev.breezes.settlements.di.modules.SmeltingModule;
 import dev.breezes.settlements.di.modules.WorldGenerationModule;
+import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.domain.generation.pipeline.GenerationPipeline;
 import dev.breezes.settlements.infrastructure.minecraft.data.building.BuildingDefinitionDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationCropDataManager;
@@ -55,6 +56,9 @@ public interface SettlementsComponent {
     NbtTemplateResolver nbtTemplateResolver();
 
     HungerConfig hungerConfig();
+
+    // Lives on the root graph so it can be read on both logical sides, including where no server graph exists
+    EventLaneConfig eventLaneConfig();
 
     @DataReloadListeners
     Set<PreparableReloadListener> dataReloadListeners();

@@ -10,8 +10,8 @@ import java.util.List;
  * <p>
  * The live in-process {@link TeardownScope} writes durable obligations through to
  * this ledger at track-time. This keeps the ledger as the single, always-current
- * record of outstanding obligations, so the save hook ({@code addAdditionalSaveData})
- * only has to snapshot it rather than enumerate the live behavior scopes.
+ * record of outstanding obligations, so saving only has to snapshot it rather than
+ * enumerate the live behavior scopes.
  * <p>
  * Persistence itself still happens only at save-time: an obligation survives a crash
  * only if a save occurred between its creation and the crash. A hard kill before the

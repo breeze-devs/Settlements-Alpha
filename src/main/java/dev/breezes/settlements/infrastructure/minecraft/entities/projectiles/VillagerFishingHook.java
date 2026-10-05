@@ -4,6 +4,7 @@ import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.fishing.FishCatchEntry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.annotations.functional.ClientSide;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import lombok.CustomLog;
@@ -57,9 +58,20 @@ public class VillagerFishingHook extends Projectile {
         CAUGHT
     }
 
+    /**
+     * Null on the client while the hook is untied, meaning its villager is not yet loaded.
+     * That happens when the hook's add-entity packet beats the villager's as a player joins, or when the villager
+     * leaves rendering range. An untied hook stays alive but invisible, and ties itself to its villager once the
+     * villager is loaded.
+     */
     @Getter
     @Nullable
     private BaseVillager villagerOwner;
+    /**
+     * The villager's entity id from the add-entity packet, which an untied hook looks up again on every tick.
+     */
+    @ClientSide
+    private int ownerEntityId;
 
     private int lifetimeTicks;
     private final int maxLifetimeTicks;
@@ -171,20 +183,28 @@ public class VillagerFishingHook extends Projectile {
     public void tick() {
         super.tick();
 
-        if (this.villagerOwner == null || !this.villagerOwner.isAlive()) {
-            this.discard();
-            return;
-        }
+        if (this.level().isClientSide) {
+            // Attempt to resolve the villager every tick to give the fishing hook an owner
+            if (this.villagerOwner == null || this.villagerOwner.isRemoved()) {
+                this.resolveVillagerOwner();
+            }
+        } else {
+            // Only the server side discards the hook, and this removal reaches the client through packets anyway.
+            if (this.villagerOwner == null || !this.villagerOwner.isAlive()) {
+                this.discard();
+                return;
+            }
 
-        if (++this.lifetimeTicks >= this.maxLifetimeTicks) {
-            log.info("Fishing hook max lifetime reached, discarding");
-            this.discard();
-            return;
-        }
+            if (++this.lifetimeTicks >= this.maxLifetimeTicks) {
+                log.info("Fishing hook max lifetime reached, discarding");
+                this.discard();
+                return;
+            }
 
-        if (this.distanceToSqr(this.villagerOwner) > 1024.0) {
-            this.discard();
-            return;
+            if (this.distanceToSqr(this.villagerOwner) > 1024.0) {
+                this.discard();
+                return;
+            }
         }
 
         BlockPos blockPos = this.blockPosition();
@@ -204,7 +224,8 @@ public class VillagerFishingHook extends Projectile {
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.updateRotation();
 
-        if (this.state == HookState.FLYING && (this.onGround() || this.horizontalCollision)) {
+        if (!this.level().isClientSide
+                && this.state == HookState.FLYING && (this.onGround() || this.horizontalCollision)) {
             log.warn("Fishing hook missed water, discarding");
             this.missedWater = true;
             this.discard();
@@ -346,7 +367,8 @@ public class VillagerFishingHook extends Projectile {
 
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket(@Nonnull ServerEntity serverEntity) {
-        // Send villager entity ID as the data field so the client renderer can find the owner
+        // The client's copy ties itself to its villager by this id. A hook with no villager sends its own id instead,
+        // which never matches a villager, so that copy stays untied until the server discards the hook.
         int ownerId = this.villagerOwner != null ? this.villagerOwner.getId() : this.getId();
         return new ClientboundAddEntityPacket(this, serverEntity, ownerId);
     }
@@ -355,9 +377,18 @@ public class VillagerFishingHook extends Projectile {
     public void recreateFromPacket(@Nonnull ClientboundAddEntityPacket packet) {
         super.recreateFromPacket(packet);
 
-        Entity owner = this.level().getEntity(packet.getData());
-        if (owner instanceof BaseVillager baseVillager) {
-            this.villagerOwner = baseVillager;
+        this.ownerEntityId = packet.getData();
+        this.resolveVillagerOwner();
+    }
+
+    @ClientSide
+    private void resolveVillagerOwner() {
+        if (this.level().getEntity(this.ownerEntityId) instanceof BaseVillager villager) {
+            this.villagerOwner = villager;
+            // Keeps the inherited owner in agreement, as the casting constructor sets both
+            this.setOwner(villager);
+        } else {
+            this.villagerOwner = null;
         }
     }
 

@@ -2,7 +2,7 @@ package dev.breezes.settlements.di;
 
 import dagger.Subcomponent;
 import dev.breezes.settlements.di.modules.client.ClientAnimationModule;
-import dev.breezes.settlements.infrastructure.rendering.animation.ClientAnimatorRegistry;
+import dev.breezes.settlements.infrastructure.rendering.animation.VillagerAnimatorFactory;
 
 @ClientSessionScope
 @Subcomponent(modules = {
@@ -10,7 +10,7 @@ import dev.breezes.settlements.infrastructure.rendering.animation.ClientAnimator
 })
 public interface ClientSessionComponent {
 
-    ClientAnimatorRegistry clientAnimatorRegistry();
+    VillagerAnimatorFactory villagerAnimatorFactory();
 
     @Subcomponent.Factory
     interface Factory {

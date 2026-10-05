@@ -24,6 +24,7 @@ import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
 import dev.breezes.settlements.bootstrap.registry.activities.ActivityRegistry;
+import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.schedules.ScheduleRegistry;
 import dev.breezes.settlements.bootstrap.registry.sensors.SensorTypeRegistry;
@@ -40,9 +41,9 @@ import dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory;
 import dev.breezes.settlements.domain.ai.naming.VillagerNameGenerator;
 import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
-import dev.breezes.settlements.domain.ai.observation.ObservationBuffer;
 import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
+import dev.breezes.settlements.domain.animation.VillagerAnimator;
 import dev.breezes.settlements.domain.common.DebouncedSignal;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -59,22 +60,19 @@ import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.infrastructure.minecraft.ai.dialogue.ActivityOccasionMapper;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerBrainAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerGeneticsAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerInventoryAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerKnowledgeAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonaLineageAttachment;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedger;
-import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedgerAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.genetics.VillagerGeneticAttributes;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.EntityMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.VillagerMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.SettlementsGroundPathNavigation;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
+import dev.breezes.settlements.infrastructure.rendering.animation.VillagerAnimatorFactory;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
+import dev.breezes.settlements.shared.annotations.functional.ClientSide;
+import dev.breezes.settlements.shared.annotations.functional.ServerSide;
 import dev.breezes.settlements.shared.util.SyncedDataWrapper;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -186,7 +184,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             .defaultValue(false)
             .build();
 
-    private final GeneticsProfile genetics;
     private final IVillagerBrain settlementsBrain;
     private final INavigationManager<BaseVillager> navigationManager;
     private final PlanRuntimeState planRuntimeState;
@@ -200,11 +197,15 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private DayPlan dayPlan;
 
     private final SocialCueRuntimeState socialCueRuntimeState;
-    private final VillagerKnowledgeStore knowledgeStore;
-    @Nullable
-    private VillagerInventory settlementsInventory;
 
-    private final BubbleManager bubbleManager;
+    // Client render state: built on first client use and held on the entity so it lives exactly as long as this object
+    @ClientSide
+    @Nullable
+    private VillagerAnimator animator;
+    @ClientSide
+    @Nullable
+    private BubbleManager bubbleManager;
+
     private final VillagerBubbleState bubbleState;
     @Nullable
     private ITickable hungerDrainTimer;
@@ -214,7 +215,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
      */
     private final RestockReaction restockReaction;
 
-    private VillagerTeardownLedger teardownLedger;
     private final ITickable reconcilerCooldown;
     private final ITickable perceptionCooldown;
     private final ITickable nameSyncCooldown;
@@ -231,45 +231,25 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     public BaseVillager(EntityType<? extends Villager> entityType, Level level) {
         super(entityType, level);
 
-        // TODO: I think we need to check dist side? i.e. most of this should run on server side
-        this.genetics = new GeneticsProfile();
-
         this.settlementsBrain = new VillagerBrain(this);
 
         this.navigationManager = new VanillaMemoryNavigationManager<>(this);
 
         this.planRuntimeState = new PlanRuntimeState();
         this.overrideRuntimeState = new OverrideRuntimeState();
-        EventLaneConfig eventLaneConfig = eventLaneConfigOrNull();
-        int observationBufferCapacity = eventLaneConfig == null
-                ? ObservationBuffer.DEFAULT_CAPACITY
-                : eventLaneConfig.observationBufferCapacity();
-        int knowledgeStoreMaxEntries = eventLaneConfig == null
-                ? VillagerKnowledgeStore.MAX_ENTRIES
-                : eventLaneConfig.knowledgeStoreMaxEntries();
-        this.socialCueRuntimeState = new SocialCueRuntimeState(observationBufferCapacity);
+        EventLaneConfig eventLaneConfig = SettlementsDagger.component().eventLaneConfig();
+        this.socialCueRuntimeState = new SocialCueRuntimeState(eventLaneConfig.observationBufferCapacity());
 
-        this.knowledgeStore = new VillagerKnowledgeStore(knowledgeStoreMaxEntries);
-
-        this.bubbleManager = new BubbleManager();
         this.bubbleState = new VillagerBubbleState();
         this.hungerDrainTimer = null;
         this.restockReaction = new RestockReaction();
 
-        // Start with an empty ledger; load() will replace it with the NBT-backed one.
-        this.teardownLedger = new VillagerTeardownLedger(List.of());
         this.reconcilerCooldown = Tickable.staggered(RECONCILER_COOLDOWN_TICKS);
         this.perceptionCooldown = Tickable.staggered(PERCEPTION_COOLDOWN_TICKS);
         this.nameSyncCooldown = Tickable.staggered(NAME_SYNC_COOLDOWN_TICKS);
         this.rainExposureCooldown = Tickable.staggered(RAIN_EXPOSURE_SAMPLE_COOLDOWN_TICKS);
         this.rainExposure = new DebouncedSignal(false, RAIN_EXPOSURE_OBSERVATIONS_TO_CHANGE);
         this.sootyExpiresAtGameTime = 0L;
-    }
-
-    @Nullable
-    private static EventLaneConfig eventLaneConfigOrNull() {
-        ServerComponent server = SettlementsDagger.serverOrNull();
-        return server == null ? null : server.eventLaneConfig();
     }
 
     /**
@@ -384,22 +364,43 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         return DATA_EXPOSED_TO_RAIN.get(this.entityData);
     }
 
-    private void addStartingFood(@Nonnull VillagerInventory inventory) {
+    /**
+     * Gives this villager its starting food unless it already holds an inventory.
+     */
+    private void seedStartingInventoryIfAbsent() {
+        if (this.hasSettlementsInventory()) {
+            return;
+        }
+
+        VillagerInventory inventory = new VillagerInventory();
         for (int i = 0; i < STARTING_BREAD_STACKS; i++) {
             inventory.add(new ItemStack(Items.BREAD, STARTING_BREAD_PER_STACK));
         }
+        this.setData(AttachmentRegistry.VILLAGER_INVENTORY, inventory);
     }
 
+    /**
+     * @throws IllegalStateException if neither finalizeSpawn nor load has set this villager up
+     */
+    @Override
     public VillagerInventory getSettlementsInventory() {
-        if (this.settlementsInventory == null) {
-            throw new IllegalStateException("Inventory accessed before creation");
-        }
-
-        return this.settlementsInventory;
+        return this.getData(AttachmentRegistry.VILLAGER_INVENTORY);
     }
 
     public boolean hasSettlementsInventory() {
-        return this.settlementsInventory != null;
+        return this.hasData(AttachmentRegistry.VILLAGER_INVENTORY);
+    }
+
+    /**
+     * Rolls genes for a villager that has none.
+     */
+    @ServerSide
+    public GeneticsProfile getGenetics() {
+        return this.getData(AttachmentRegistry.VILLAGER_GENETICS);
+    }
+
+    public VillagerKnowledgeStore getKnowledgeStore() {
+        return this.getData(AttachmentRegistry.VILLAGER_KNOWLEDGE);
     }
 
     public VillagerProfessionKey getProfession() {
@@ -435,6 +436,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             if (!this.brainGoalsInitialized) {
                 this.refreshBrain(serverLevel);
             }
+
+            // Sensors wait for the join because it runs once on each object that goes live. finalizeSpawn and load
+            // also run on objects that never do, such as a spawner's client-side display entity, and load reruns on
+            // a live villager under /data merge.
+            this.settlementsBrain.initialize();
 
             // NBT deserializes before an entity is added to the level, so getName() is already
             // accurate here -- this is the name directory's self-healing seam: a missed write, a
@@ -493,7 +499,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         // Inherit genetics
         GeneticsProfile partnerGenetics = otherParent instanceof BaseVillager partner ? partner.getGenetics() : new GeneticsProfile();
-        child.getGenetics().replaceWith(this.genetics.crossover(partnerGenetics, this.random));
+        child.setData(AttachmentRegistry.VILLAGER_GENETICS, this.getGenetics().crossover(partnerGenetics, this.random));
 
         child.finalizeSpawn(level, level.getCurrentDifficultyAt(child.blockPosition()), MobSpawnType.BREEDING, null);
 
@@ -561,14 +567,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         SpawnGroupData finalizedSpawnData = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
         this.assignNameIfAbsent();
         VillagerGeneticAttributes.apply(this);
-
-        if (this.settlementsInventory == null) {
-            this.settlementsInventory = new VillagerInventory();
-            this.addStartingFood(this.settlementsInventory);
-        }
-
-        this.settlementsBrain.initialize();
-
+        this.seedStartingInventoryIfAbsent();
         this.stampOriginIfAbsent(spawnType);
 
         return finalizedSpawnData;
@@ -583,41 +582,23 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         VillagerOriginAttachment.stamp(this, origin);
     }
 
-    /**
-     * Only ran on the server side
-     */
-    @Override
-    public void addAdditionalSaveData(@Nonnull CompoundTag nbtTag) {
-        super.addAdditionalSaveData(nbtTag);
-
-        VillagerGeneticsAttachment.saveFrom(this, this.genetics);
-        VillagerInventoryAttachment.saveFrom(this, this.getSettlementsInventory());
-        VillagerBrainAttachment.saveFrom(this);
-        VillagerTeardownLedgerAttachment.saveFrom(this, this.teardownLedger);
-        VillagerKnowledgeAttachment.saveFrom(this, this.knowledgeStore);
-    }
-
     @Override
     public void load(@Nonnull CompoundTag nbtTag) {
         super.load(nbtTag);
         // Backfills villagers persisted before this field existed; a no-op once CustomName is set.
         this.assignNameIfAbsent();
-        VillagerGeneticsAttachment.loadInto(this, this.genetics);
-        VillagerGeneticAttributes.apply(this);
-        VillagerBrainAttachment.loadInto(this);
-        this.teardownLedger = VillagerTeardownLedgerAttachment.loadInto(this);
-        this.settlementsBrain.initialize();
 
-        // Load inventory
-        this.settlementsInventory = new VillagerInventory();
-        boolean loadedInventory = VillagerInventoryAttachment.loadInto(this, this.settlementsInventory);
-        if (!loadedInventory) {
-            // No persisted attachment state exists yet, so seed the default starting inventory.
-            this.addStartingFood(this.settlementsInventory);
+        // A load on the client builds a display copy, such as a spawner's, that is never saved. It shows only what the
+        // tag carried, whose saved attribute modifiers already hold any genetic size, and gets no genes or food the
+        // server never gave the villager.
+        if (this.level().isClientSide()) {
+            return;
         }
 
-        // Restore episodic knowledge so a villager's memory of its own past survives a restart
-        VillagerKnowledgeAttachment.loadInto(this, this.knowledgeStore);
+        // super.load has replaced every attachment the tag carried, so genes are rolled and starting food seeded only
+        // for a villager still without them
+        VillagerGeneticAttributes.apply(this);
+        this.seedStartingInventoryIfAbsent();
     }
 
     @Override
@@ -757,7 +738,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             return;
         }
 
-        List<LedgerEntry> orphans = this.teardownLedger.pendingOrphans();
+        ITeardownLedger ledger = this.getTeardownLedger();
+        List<LedgerEntry> orphans = ledger.pendingOrphans();
         if (orphans.isEmpty()) {
             return;
         }
@@ -774,14 +756,14 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 continue;
             }
 
-            if (this.teardownLedger.hasLiveObligationAt(obligation.targetPos())) {
+            if (ledger.hasLiveObligationAt(obligation.targetPos())) {
                 // A live behavior run re-acquired this resource; it owns cleanup now.
                 continue;
             }
 
             if (!obligation.stillValid(level)) {
                 // Target gone, replaced, or no longer ours — nothing to do.
-                this.teardownLedger.resolveOrphan(obligation);
+                ledger.resolveOrphan(obligation);
                 continue;
             }
 
@@ -793,13 +775,13 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
             if (!obligation.stillValid(level)) {
                 // Discharge took effect.
-                this.teardownLedger.resolveOrphan(obligation);
+                ledger.resolveOrphan(obligation);
             } else {
                 entry.incrementFailedAttempts();
                 if (entry.getFailedAttempts() >= MAX_DISCHARGE_ATTEMPTS) {
                     log.error("Abandoning crash-orphan obligation '{}' after {} failed attempts — manual cleanup may be required",
                             obligation.describe(), MAX_DISCHARGE_ATTEMPTS);
-                    this.teardownLedger.resolveOrphan(obligation);
+                    ledger.resolveOrphan(obligation);
                 }
             }
         }
@@ -1055,8 +1037,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
     @Override
     public Optional<ItemStack> getHeldItem() {
-        if (this.settlementsInventory != null && this.settlementsInventory.getMainHand().isPresent()) {
-            return this.settlementsInventory.getMainHand();
+        if (this.hasSettlementsInventory()) {
+            Optional<ItemStack> mainHand = this.getSettlementsInventory().getMainHand();
+            if (mainHand.isPresent()) {
+                return mainHand;
+            }
         }
 
         // TODO: deprecate vanilla
@@ -1068,8 +1053,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     public void setHeldItem(@Nonnull ItemStack itemStack) {
         // TODO: deprecate vanilla
         this.setItemInHand(InteractionHand.MAIN_HAND, itemStack);
-        if (this.settlementsInventory != null) {
-            this.settlementsInventory.setEquipped(EquipmentSlot.MAIN_HAND, itemStack);
+        if (this.hasSettlementsInventory()) {
+            this.getSettlementsInventory().setEquipped(EquipmentSlot.MAIN_HAND, itemStack);
         }
     }
 
@@ -1077,29 +1062,31 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     public void clearHeldItem() {
         // TODO: deprecate vanilla
         this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        if (this.settlementsInventory != null) {
-            this.settlementsInventory.setEquipped(EquipmentSlot.MAIN_HAND, ItemStack.EMPTY);
+        if (this.hasSettlementsInventory()) {
+            this.getSettlementsInventory().setEquipped(EquipmentSlot.MAIN_HAND, ItemStack.EMPTY);
         }
     }
 
     public void setOffhandItem(@Nonnull ItemStack itemStack) {
+        // TODO: deprecate vanilla
         this.setItemInHand(InteractionHand.OFF_HAND, itemStack);
-        if (this.settlementsInventory != null) {
-            this.settlementsInventory.setEquipped(EquipmentSlot.OFF_HAND, itemStack);
+        if (this.hasSettlementsInventory()) {
+            this.getSettlementsInventory().setEquipped(EquipmentSlot.OFF_HAND, itemStack);
         }
     }
 
     public void clearOffhandItem() {
+        // TODO: deprecate vanilla
         this.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
-        if (this.settlementsInventory != null) {
-            this.settlementsInventory.setEquipped(EquipmentSlot.OFF_HAND, ItemStack.EMPTY);
+        if (this.hasSettlementsInventory()) {
+            this.getSettlementsInventory().setEquipped(EquipmentSlot.OFF_HAND, ItemStack.EMPTY);
         }
     }
 
     @Override
     @Nonnull
     public ITeardownLedger getTeardownLedger() {
-        return this.teardownLedger;
+        return this.getData(AttachmentRegistry.VILLAGER_TEARDOWN_LEDGER);
     }
 
     @Override
@@ -1121,8 +1108,22 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         return this;
     }
 
-    @Override
+    /**
+     * This villager's animation state, built with the factory the first time it is asked for.
+     */
+    @ClientSide
+    public VillagerAnimator getAnimator(@Nonnull VillagerAnimatorFactory factory) {
+        if (this.animator == null) {
+            this.animator = factory.create(this.getId());
+        }
+        return this.animator;
+    }
+
+    @ClientSide
     public BubbleManager getBubbleManager() {
+        if (this.bubbleManager == null) {
+            this.bubbleManager = new BubbleManager();
+        }
         return this.bubbleManager;
     }
 

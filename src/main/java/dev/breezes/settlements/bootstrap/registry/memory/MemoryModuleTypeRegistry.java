@@ -6,6 +6,7 @@ import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.neoforged.bus.api.IEventBus;
@@ -37,7 +38,7 @@ public final class MemoryModuleTypeRegistry {
 
     public static final Supplier<MemoryModuleType<List<UUID>>> OWNED_WOLVES = REGISTRY.register(
             "owned_wolves",
-            () -> new MemoryModuleType<>(Optional.empty()));
+            () -> new MemoryModuleType<>(Optional.of(UUIDUtil.CODEC.listOf())));
 
     public static final Supplier<MemoryModuleType<List<GlobalPos>>> VILLAGE_CHESTS = REGISTRY.register(
             "village_chests",

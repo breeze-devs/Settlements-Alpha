@@ -25,7 +25,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.Wo
 import dev.breezes.settlements.infrastructure.minecraft.mixins.LevelMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.WolfMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaBasicNavigationManager;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.AccessLevel;
 import lombok.CustomLog;
@@ -105,9 +104,8 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
         this.dirty = false;
 
         if (!level.isClientSide()) {
-            // Behaviors run only on the server
+            // Goals run only on the server
             this.initGoals();
-            this.initBehaviors();
         }
     }
 
@@ -151,6 +149,13 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
 
         this.rollForDirtyState();
 
+        // Initiate behaviors lazily here than at construction time
+        // Taming and loading both set the owner after construction, and building reaches the server graph
+        if (this.wolfBehaviors.isEmpty() && this.getOwnerUUID() != null) {
+            WolfWalkConfig wolfWalkConfig = SettlementsDagger.serverOrThrow().wolfWalkConfig();
+            this.wolfBehaviors.add(new WolfWalkBehavior(wolfWalkConfig));
+        }
+
         for (IBehavior<SettlementsWolf> behavior : this.wolfBehaviors) {
             if (behavior.getStatus() == BehaviorStatus.RUNNING) {
                 behavior.tick(1, this.level(), this);
@@ -187,13 +192,14 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
 
     @Override
     public InteractionResult mobInteract(@Nonnull Player player, @Nonnull InteractionHand hand) {
-        // A villager-owned Settlements wolf stays village-bound — defer to vanilla, which won't let a
-        // non-owner player claim it. Empty-handed, though, the player can pet it.
+        // Empty main hand right-click pets; everything else we yield to vanilla
+        if (hand == InteractionHand.MAIN_HAND && player.getItemInHand(hand).isEmpty()) {
+            this.pet(player);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
+        }
+
+        // If the wolf is tame by a villager, don't let the player re-tame by deferring to vanilla
         if (this.isTame()) {
-            if (player.getItemInHand(hand).isEmpty()) {
-                this.pet(player);
-                return InteractionResult.sidedSuccess(this.level().isClientSide());
-            }
             return super.mobInteract(player, hand);
         }
 
@@ -311,16 +317,6 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
                 .forEach(enemy -> this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, enemy, true)));
     }
 
-    private void initBehaviors() {
-        // Do not initialize behaviors if the wolf is not tamed
-        if (this.getOwner() == null) {
-            return;
-        }
-
-        WolfWalkConfig wolfWalkConfig = SettlementsDagger.serverOrThrow().wolfWalkConfig();
-        this.wolfBehaviors.add(new WolfWalkBehavior(wolfWalkConfig));
-    }
-
     @Override
     @Nullable
     public BaseVillager getOwner() {
@@ -329,7 +325,6 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
         }
 
         // Try to get the owner entity
-        // TODO: THIS IS ASSUMING SERVER LEVEL
         return (BaseVillager) Optional.of(this.level())
                 .filter(level -> level instanceof LevelMixin)
                 .map(level -> (LevelMixin) level)
@@ -358,11 +353,6 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
     @Override
     public Entity getMinecraftEntity() {
         return this;
-    }
-
-    @Override
-    public BubbleManager getBubbleManager() {
-        return null;
     }
 
     @Override

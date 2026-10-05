@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -72,6 +73,15 @@ public class BallistaBlock extends BaseEntityBlock {
                                @Nonnull BlockPos pos,
                                @Nonnull CollisionContext context) {
         return SHAPE;
+    }
+
+    /**
+     * Cannot walk through the ballista block.
+     */
+    @Override
+    protected boolean isPathfindable(@Nonnull BlockState state,
+                                     @Nonnull PathComputationType pathComputationType) {
+        return false;
     }
 
     /**

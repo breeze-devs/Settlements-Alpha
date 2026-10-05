@@ -17,7 +17,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import dev.breezes.settlements.infrastructure.minecraft.mixins.CatMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.LevelMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaBasicNavigationManager;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -62,12 +61,16 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity, Pett
         this.navigationManager = new VanillaBasicNavigationManager<>(this);
         this.followOwnerLocks = new HashSet<>();
 
-        this.initGoals();
+        if (!level.isClientSide()) {
+            // Goals only run on the server
+            this.initGoals();
 
-        if (this.getOwnerUUID() == null) {
-            this.setTame(true, true);
-            this.setOwnerUUID(UUID.randomUUID());
-            this.applyCollarColor(DyeColor.WHITE);
+            // The client gets the tame flag, owner and collar through synced entity data
+            if (this.getOwnerUUID() == null) {
+                this.setTame(true, true);
+                this.setOwnerUUID(UUID.randomUUID());
+                this.applyCollarColor(DyeColor.WHITE);
+            }
         }
     }
 
@@ -137,9 +140,8 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity, Pett
 
     @Override
     public InteractionResult mobInteract(@Nonnull Player player, @Nonnull InteractionHand hand) {
-        // Empty-handed right-click is our petting gesture; everything else (food, collar dye, leash) falls
-        // through to vanilla so we don't accidentally swallow an interaction we don't own.
-        if (player.getItemInHand(hand).isEmpty()) {
+        // Empty main hand right-click pets; everything else we yield to vanilla
+        if (hand == InteractionHand.MAIN_HAND && player.getItemInHand(hand).isEmpty()) {
             this.pet(player);
             return InteractionResult.sidedSuccess(this.level().isClientSide());
         }
@@ -185,11 +187,6 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity, Pett
     @Override
     public Entity getMinecraftEntity() {
         return this;
-    }
-
-    @Override
-    public BubbleManager getBubbleManager() {
-        return null;
     }
 
     @Override

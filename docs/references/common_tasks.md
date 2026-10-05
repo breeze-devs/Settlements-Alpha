@@ -322,28 +322,27 @@ Sensors write memories; behaviors consume them later.
 
 ## Villager Memory: vanilla-backed vs decaying
 
-Villager memory comes in two flavors, and **neither is serialized by the memory system** — both are rebuilt from sensors
-after load. Anything that must persist (genetics, inventory, settlement metadata) lives in a codec-serialized attachment
-or `SettlementSavedData` instead. The day plan is likewise reload-transient: it is regenerated, not restored, after a
-load.
+Villager memory comes in two flavors, and **almost none of it is saved** — it is rebuilt from sensors after load.
+Anything else that must persist (genetics, inventory, settlement metadata) lives in an attachment that holds the live
+object, or in `SettlementSavedData` (P17). The day plan is likewise reload-transient: it is regenerated, not restored,
+after a load.
 
-The one memory that outlives a reload is `OWNED_WOLVES`, and it does so through an explicit mirror rather than through
-the memory system: `VillagerBrainAttachment` copies it out to a codec-serialized attachment on save and writes it back
-into the brain on load. Any other memory that must survive needs the same treatment — a mirror somebody writes, not a
-property of the memory type.
+The one memory that outlives a reload is `OWNED_WOLVES`, because no sensor can reconstruct it: a villager learns its
+wolves only by taming them. It persists the way vanilla's own memories do, through a codec on its memory type. A memory
+that must survive gets a codec too, never a copy kept somewhere else (P17).
 
 | | Vanilla-backed (`MemoryType.VanillaMemoryType<T>`) | Decaying (`MemoryType.DecayingSpatialMemoryType`) |
 |---|---|---|
 | Payload | any (`Boolean`, entity, `List<GlobalPos>`, …) | `List<GlobalPos>` only |
 | Storage | vanilla `Brain` map (part of villager entity NBT) | `SettlementsMemoryStore` — RAM-only entity attachment |
-| Persists reload? | **No** — all mod modules registered `new MemoryModuleType<>(Optional.empty())`, no codec, so the brain serializer skips them. (Vanilla's own `HOME`/`JOB_SITE`/etc. persist because vanilla gave *them* codecs.) | **No** — attachment built without `.serialize(...)`; store is documented "Transient: not serialized". |
+| Persists reload? | **Only with a codec** — the brain serializer saves a module whose `MemoryModuleType` has one, as vanilla's `HOME`/`JOB_SITE`/etc. do. Of the mod's modules only `OWNED_WOLVES` has one; the rest are registered `new MemoryModuleType<>(Optional.empty())`. | **No** — attachment built without `.serialize(...)`; store is documented "Transient: not serialized". |
 | Decay | none (uncapped) | per-entry TTL + stalest-first eviction at `maxEntries` |
 | Written via | `IBrain.setMemory` | `IBrain.updateSites` (site upsert + confirmed-absence purge); a direct `setMemory` **throws** |
 | Use for | flags/entities/lists the vanilla brain machinery reads, or sensor-written lists that don't need decay (`VILLAGE_CHESTS`, `CULTIVATION_SITES`) | high-cardinality block-resource sites that should self-expire and stay bounded |
 
 Both are declared in `MemoryTypeRegistry` via the `vanillaBacked(...)` / `decaying(...)` factories. Practical
 consequence: right after a restart a villager has almost no Settlements memories (no remembered crop/ore sites, no
-`PLAN_BEHAVIOR_ACTIVE`) beyond the mirrored `OWNED_WOLVES`; the next sensor scan cycle reconstructs the rest.
+`PLAN_BEHAVIOR_ACTIVE`) beyond `OWNED_WOLVES`; the next sensor scan cycle reconstructs the rest.
 
 > **A `List<GlobalPos>` site memory's identifier is a cross-repo wire contract.** `SnapshotAssembler` derives the SIS
 > monologue token from it (`_sites` stripped, uppercased), and the SIS phrasing table is keyed on the result. SIS does

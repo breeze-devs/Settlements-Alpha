@@ -70,12 +70,8 @@ public final class TeardownLedgerAttachmentCodec {
 
     // State codec (top-level, registered with the attachment)
 
-    public static final Codec<TeardownLedgerAttachmentState> STATE_CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(
-                    ENTRY_CODEC.listOf()
-                            .optionalFieldOf("entries", List.of())
-                            .forGetter(TeardownLedgerAttachmentState::entries)
-            ).apply(instance, TeardownLedgerAttachmentState::new));
+    public static final Codec<List<LedgerEntry>> STATE_CODEC =
+            ENTRY_CODEC.listOf().optionalFieldOf("entries", List.of()).codec();
 
     private TeardownLedgerAttachmentCodec() {
     }
