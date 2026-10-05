@@ -1302,7 +1302,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.SIGHTED_HOSTILES.getModuleType(),
                 MemoryTypeRegistry.UNSEEN_HOSTILES.getModuleType(),
                 MemoryTypeRegistry.CULTIVATION_SITES.getModuleType(),
-                MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY.getModuleType()
+                MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY.getModuleType(),
+                MemoryTypeRegistry.GOLEM_SUMMON_COOLDOWN.getModuleType()
         );
     }
 

@@ -4,8 +4,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.home.BedCompetitorScan;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.home.ValidateNearbyHome;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.threat.ThreatGolemSummon;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.threat.ThreatGolemSummonConfig;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.traversal.InteractWithBarriers;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AgeableMob;
@@ -87,6 +90,7 @@ public final class VanillaBehaviorPackages {
                 Pair.of(0, new Swim(0.8F)),
                 Pair.of(0, InteractWithBarriers.create()),
                 Pair.of(0, new LookAtTargetSink(45, 90)),
+                Pair.of(0, new ThreatGolemSummon(ConfigFactory.create(ThreatGolemSummonConfig.class))),
                 Pair.of(0, WakeUp.create()),
                 Pair.of(0, ValidateNearbyPoi.create(profession.heldJobSite(), MemoryModuleType.JOB_SITE)),
                 Pair.of(0, ValidateNearbyPoi.create(profession.acquirableJobSite(), MemoryModuleType.POTENTIAL_JOB_SITE)),

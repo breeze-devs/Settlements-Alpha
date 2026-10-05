@@ -19,6 +19,7 @@ public enum SoundRegistry {
     // TODO: we might want to account for chained sounds -- i.e. multiple sounds playing in sequence, such as notes
 
     REPAIR_IRON_GOLEM(SoundEventPlayable.of(SoundEvents.IRON_GOLEM_REPAIR, 1.0F, 1F)),
+    SUMMON_IRON_GOLEM(SoundEventPlayable.of(SoundEvents.ANVIL_LAND, 1.0F, 0.5F)),
     FEED_ANIMAL(SoundEventPlayable.of(SoundEvents.GENERIC_EAT, 1.0F, 1F)),
     THROW_POTION(SoundEventPlayable.of(SoundEvents.SPLASH_POTION_THROW, 1.0f, 1f)),
     STONE_CUTTER_WORKING(SoundEventPlayable.of(SoundEvents.VILLAGER_WORK_MASON, 0.3f, 2f)),

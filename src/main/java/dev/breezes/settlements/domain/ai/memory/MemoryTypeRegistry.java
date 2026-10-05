@@ -128,6 +128,13 @@ public final class MemoryTypeRegistry {
             "nearest_hostile", () -> MemoryModuleType.NEAREST_HOSTILE);
 
     /**
+     * Present while the villager takes part in no iron golem summon, after it took part in one or saw one nearby.
+     * Saved with the brain, so a reload does not cut the cooldown short.
+     */
+    public static final MemoryType.VanillaMemoryType<Boolean> GOLEM_SUMMON_COOLDOWN = MemoryType.vanillaBacked(
+            "golem_summon_cooldown", MemoryModuleTypeRegistry.GOLEM_SUMMON_COOLDOWN);
+
+    /**
      * All decaying spatial memories, in declaration order. Used by diagnostics (e.g. the
      * {@code /stest memory} dump) and any future bulk operation over the decaying store.
      */

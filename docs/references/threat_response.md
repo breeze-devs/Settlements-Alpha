@@ -19,6 +19,7 @@ flowchart LR
     ARB["ActivityArbiter"] -->|COMBAT| FIGHT["CombatOverrideRunner<br/>runs the selected option's actions"]
     ARB -->|PANIC| FLEE["vanilla PANIC package<br/>flees the nearest hostile and the attacker"]
     ARB -->|PANIC during a live raid wave| HIDE["RAID_HIDE"]
+    ASSESS -->|PANIC or COMBAT| GOLEM["ThreatGolemSummon<br/>calls an iron golem"]
 ```
 
 Each assessment produces a `ThreatVerdict` — **COMBAT**, **PANIC** or **HOLD** — and, for COMBAT, a
@@ -35,9 +36,11 @@ gates the day plan and the override lane, so one judgment of danger decides ever
 - `domain/ai/threat/` — `ThreatResponseRules`, which decides over plain scalars carried by `ThreatSituation`, and the
   hit, decision and verdict types.
 - `application/ai/override/CombatOverridePolicy.java` and `CombatOverrideRunner.java` — combat execution.
+- `infrastructure/minecraft/behavior/threat/` — `ThreatGolemSummon`, the iron golem summon, and
+  `ThreatGolemSummonConfig`, its server settings.
 
-Everything here is transient. Nothing is saved with the villager, so after a load it holds until its first assessment
-decides from scratch.
+Everything here is transient except the golem summon's cooldown. Nothing else is saved with the villager, so after a
+load it holds until its first assessment decides from scratch.
 
 ---
 
@@ -193,10 +196,8 @@ has closed by then.
 
 PANIC runs vanilla's flee from `VanillaBehaviorPackages.getPanicPackage`, fed by this response rather than by vanilla's
 sensors: it runs from `NEAREST_HOSTILE` and from the `HURT_BY_ENTITY` of a live qualifying hit. The package leaves out
-vanilla's own panic trigger and calm-down; the arbiter enters and leaves PANIC with the verdict.
-
-TODO: panicking villagers summon no iron golems; vanilla summons them from its panic trigger, which the package leaves
-out, and the summon needs to become a behavior of its own.
+vanilla's own panic trigger and calm-down; the arbiter enters and leaves PANIC with the verdict. The golem summon that
+trigger carried is a behavior of its own, under [Calling a golem](#calling-a-golem).
 
 ### Combat
 
@@ -223,11 +224,36 @@ COMBAT, so entry waits for the next policy evaluation while withdrawal waits for
 Combat options are registered in `di/modules/server/CombatOptionModule.java`, the authority on membership. Their
 actions belong to no behavior catalog entry and no day-plan pool.
 
+### Calling a golem
+
+`ThreatGolemSummon`, a CORE behavior, summons an iron golem for a villager whose verdict is PANIC or COMBAT. It reads
+the verdict rather than the activity, so a villager sheltering in `RAID_HIDE` or fighting in `COMBAT` calls for a golem
+as a fleeing one does. That matches vanilla, whose summon rides a CORE trigger that fires in any activity.
+
+Past the verdict, the villager and enough Settlements villagers near it must each want a golem: each has slept
+recently, by vanilla's rule, and none is cooling down. The summon also stops once enough members of
+`settlements:village_guardians` are near. Both counts come from the villager's vanilla nearby-entity scan rather than a
+search of the summon's own. The golem is placed as vanilla places one. Every villager in the quorum then draws a long
+cooldown for itself, and every other Settlements villager around the summon a short one, so the golems a threat earns
+arrive one after another rather than all at once. A cooldown is only ever extended, never cut short, and it is saved
+with the villager.
+
+Vanilla villagers never join the quorum, since they cannot hold the cooldown; they keep vanilla's own summons. The
+gossip summon that the meet and idle packages keep stays vanilla's too: it still waits for no golem seen lately, so only
+a threat takes a village past one golem. A threat summon marks the new golem as seen for the villagers around it, which
+holds the gossip summon off.
+
+The golem's target is the attacker in the villager's `HURT_BY_ENTITY`, so only one whose hit qualified, or without a
+live hit the nearest hostile in `SIGHTED_HOSTILES` close to the villager. It is never a player, a member of
+`settlements:villager_allies`, or a mob the golem itself refuses to fight, and with no target the golem picks its own.
+The golem is aimed at its target, and when the target stands close to the villager it is first tried beside the
+target, falling back to vanilla's placement around the villager.
+
 ---
 
 ## Extending
 
-These seams are the contract; each owning file is the authority on what is in it today. The first four are datapack
+These seams are the contract; each owning file is the authority on what is in it today. The first five are datapack
 data, so a modpack extends them without code.
 
 | To | Change |
@@ -236,6 +262,8 @@ data, so a modpack extends them without code.
 | Make it more or less dangerous | Its entry in the `settlements:threat_weights` data map; zero makes it harmless |
 | Keep a damage type from alarming villagers | The `settlements:does_not_alarm_villagers` damage type tag |
 | Let combat projectiles pass a friendly mob | The `settlements:villager_allies` entity type tag |
+| Count a mob toward the golem summon's cap | The `settlements:village_guardians` entity type tag |
+| Retune the golem summon's cap, quorum or cooldowns | `ThreatGolemSummonConfig`, the `threat_golem_summon` section of the features config |
 | Give villagers a new way to fight | A combat option, below |
 
 ### Adding a combat option
@@ -269,3 +297,10 @@ failed acquisition back to the assessment; the TODO in `CombatOverrideRunner.lau
 | A fight is one override, not one per action | `CombatOverrideRunner` holds the villager across successive actions | Releasing the villager between actions would let the day plan or a trade take it for a tick mid-fight, and a same-tier override never replaces a running one, so per-action overrides would need preemption rules of their own. |
 | Combat actions stay out of the catalog and pools | Each `CombatOption` creates its own action | A day plan must never schedule an emergency-only action, and an option's availability checks run on every assessment, so they must be read-only, which building and validating a catalog behavior is not. |
 | Combat eggs only hinder | Slowness and knockback, no damage | A nitwit cannot tell a raider from a farm zombie, so a volley that cannot kill keeps a misdirected one harmless. |
+| The golem summon reads the verdict | A CORE behavior gated on PANIC or COMBAT, not a member of the PANIC package | The arbiter turns PANIC into `RAID_HIDE` during a raid, and COMBAT is an activity of its own; a summon in the PANIC package would never fire for a sheltering villager or a fighter, both of which vanilla summons for. |
+| A summoned golem never targets a player | Players are left to vanilla's reputation-driven village defense | Aiming the golem at any player attacker makes one stray hit, such as a sweep in a crowded fight, enough to set a golem on them, where vanilla waits until the village has turned against that player. |
+| A golem is called beside its target | Placement beside a close target first, then vanilla's around the villager, from one shared budget of attempts | A golem placed among the villagers has to walk to a skeleton or pillager shooting from range. Only a hostile in sight qualifies, so none is called into a cave below the village. Close keeps the golem within the village it defends, and its placement's block reads within chunks the villager keeps loaded, where a read cannot load one. The budget is vanilla's, so a failed placement costs no more than vanilla's summon. A golem called beside a hostile outside a village wall can stay outside it. |
+| A cooldown, not golem sight, paces the threat summon | Each quorum member cools down after a summon, and a cap on nearby guardians stops it | Vanilla's no-golem-seen check holds a village at one golem, too few against a raid. The cooldown is also what limits an iron farm, deliberately well below vanilla's rate; a farm built for vanilla's rate needs vanilla villagers, whose summons stay vanilla. |
+| The summon cooldown is saved | Its memory carries a codec, unlike the rest of the threat state | Unsaved, a reload clears every cooldown, and reloading the area would buy a fresh round of golems. |
+| A summon cools down the villagers around it | A short cooldown for every Settlements villager near the summon, in the same memory as the quorum's | Without it, a crowd of willing villagers spends its quorums within seconds of a threat and the cap's golems arrive at once. One memory works because a write only ever extends the cooldown; overwriting would let a bystander's short cooldown cut a quorum member's long one short, and writing only when none is present would leave a bystander with seconds to go free to join the very next summon. |
+| The guardian cap reads the nearby-entity scan | The list the villager's vanilla scan already keeps, not a search per attempt | The list costs nothing more. It can lag the world by up to one refresh; the short cooldown outlasts that for every villager around a summon, so only one beyond the summon's reach can see room for one more and put a village one over the cap, and that overshoot is accepted. |

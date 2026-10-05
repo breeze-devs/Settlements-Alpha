@@ -27,4 +27,10 @@ public final class SettlementsEntityTypeTags {
     public static final TagKey<EntityType<?>> VILLAGER_ENEMIES = TagKey.create(Registries.ENTITY_TYPE,
             ResourceLocationUtil.mod("villager_enemies"));
 
+    /**
+     * Entities that guard a village, counted toward how many golems a threatened villager will summon.
+     */
+    public static final TagKey<EntityType<?>> VILLAGE_GUARDIANS = TagKey.create(Registries.ENTITY_TYPE,
+            ResourceLocationUtil.mod("village_guardians"));
+
 }

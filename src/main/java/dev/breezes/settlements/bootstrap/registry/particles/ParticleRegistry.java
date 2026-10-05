@@ -35,6 +35,10 @@ public class ParticleRegistry {
         location.displayParticles(ParticleTypes.WAX_OFF, 15, 0.5, 0.8, 0.5, 0.1);
     }
 
+    public static void summonIronGolem(@Nonnull Location location) {
+        location.displayParticles(ParticleTypes.WAX_OFF, 40, 0.5, 0.7, 0.5, 0.1);
+    }
+
     public static void breedHearts(@Nonnull Location location) {
         location.displayParticles(ParticleTypes.HEART, 5, 0.4, 0.4, 0.4, 1);
     }
@@ -91,7 +95,7 @@ public class ParticleRegistry {
         OrbParticleOptions orb = new OrbParticleOptions(tier.getPackedRgb(), OrbParticleOptions.MotionMode.RISE);
         double x = base.getX() + RandomUtil.randomDouble(-horizontalSpread, horizontalSpread);
         double z = base.getZ() + RandomUtil.randomDouble(-horizontalSpread, horizontalSpread);
-        
+
         Location.of(x, base.getY(), z, base.getLevel().orElse(null)).displayParticles(orb, 0, 0.0D, 1.0D, 0.0D, velocity);
     }
 

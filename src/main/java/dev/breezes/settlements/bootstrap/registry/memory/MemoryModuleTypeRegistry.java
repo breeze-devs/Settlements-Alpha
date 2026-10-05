@@ -1,5 +1,6 @@
 package dev.breezes.settlements.bootstrap.registry.memory;
 
+import com.mojang.serialization.Codec;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
@@ -71,6 +72,10 @@ public final class MemoryModuleTypeRegistry {
     public static final Supplier<MemoryModuleType<Boolean>> DEMANDED_GROUND_ITEM_NEARBY = REGISTRY.register(
             "demanded_ground_item_nearby",
             () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<Boolean>> GOLEM_SUMMON_COOLDOWN = REGISTRY.register(
+            "golem_summon_cooldown",
+            () -> new MemoryModuleType<>(Optional.of(Codec.BOOL)));
 
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
