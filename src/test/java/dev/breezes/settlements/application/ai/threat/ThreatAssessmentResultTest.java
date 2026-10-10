@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ThreatAssessmentResultTest {
 
-    private static final CombatSelection ANY_SELECTION = new CombatSelection(FakeCombatOptions.withOrder(0), null);
+    private static final CombatSelection ANY_SELECTION = new CombatSelection(FakeCombatOptions.inert(), null);
 
     @Test
     void construct_combatWithoutASelection_isRejected() {

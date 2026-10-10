@@ -33,7 +33,8 @@ have that file open.
 
 ### D1 — Explain why, not what
 
-Complex methods and logic areas must carry their reasoning. Never narrate mechanics the code already states.
+Complex methods and logic areas must explain non-obvious reasons and constraints. Inline comments must not narrate
+mechanics already clear from the code. Javadoc states the declaration's contract (**D12**).
 
 Never restate a project convention the reader can find in the conventions themselves. **State the constraint, not the
 benefit it yields under our conventions** — "a domain type must not name a Minecraft position type" is the durable
@@ -61,12 +62,12 @@ as much a violation as a Javadoc describing a distant one. A reference doc never
 
 - **D3a — tunable values.** Per **F3**, state the invariant or ordering a magnitude enforces, not the number. Values
   that are contracts rather than tunables may appear.
-- **D3b — hand-maintained inventories of instances.** Any list that must gain an entry when a feature is added is a
-  future liar, and it reads as exhaustive long after it stops being so. Point at the registry, factory, or DI module
+- **D3b — hand-maintained inventories of instances.** A list that must gain an entry when a feature is added can become
+  incomplete while still appearing exhaustive. Point at the registry, factory, or DI module
   that owns the set; that also teaches where to add one. Legitimate exceptions: a generated or mechanically validated
   inventory, a set closed by design (where adding a member is itself a design change), and checklists of *seams*, which
   are stable and are themselves the contract.
-- **D3c — field tables.** One row per field of one class is field Javadoc in exile.
+- **D3c — field tables.** Field documentation belongs on the owning fields, not in a reference-doc table.
 - **D3d — implementation narration.** A doc may name a class and give its one-line role; the moment it explains how that
   class does its job, the source has forked.
 
@@ -131,13 +132,11 @@ follow; do not link every name a sentence happens to mention.
 
 ### D10 — State a fact once
 
-A fact usually earns one sentence. A qualifier repeated in a second clause, a trailing recap, or both the class Javadoc
-and the field Javadoc it describes adds length without adding information — and costs the reader's attention on the
-second telling, not just the writer's on the first.
+Do not repeat a fact. Use multiple sentences when they make an explanation easier to follow. Check for qualifiers
+repeated in a second clause, trailing recaps, and duplication between class and field Javadoc.
 
-This trims phrasing, not reasoning: **D1**'s "why" stays — in its shortest true form. Complexity earns length;
-thoroughness does not. The test is whether a sentence could be deleted with no fact lost, not whether the paragraph
-could be shorter.
+Keep the reasoning required by **D1**. Before deleting a sentence, check whether it adds a reason, constraint, or
+qualification. There is no target sentence count or comment length.
 
 ### D11 — A roadmap is what makes a design ready
 
@@ -160,17 +159,32 @@ mirror of each roadmap's status and nothing about its phases; the roadmap's clos
 
 ### D12 — Javadoc answers the caller, the body answers the maintainer
 
-Javadoc states what a caller needs in order to call correctly: what it does, what to pass, what comes back, what it
-throws, and what it costs them to get wrong. An architectural defense of the implementation above the signature makes
-every caller read a design document to learn a signature, and it drifts besides — the next person to change the body is
-inside it, not above it.
+Javadoc states what a caller needs to use the declaration correctly: what it does, what to pass, what comes back, what
+it throws, and any relevant side effects or constraints. Implementation reasoning belongs beside the code it explains,
+where someone changing that code can see and update it.
 
 The split is mechanical. A fact that stays true after the body is rewritten is contract, and belongs in the Javadoc. A
 fact that explains the body's shape is an inline comment, on the line it defends. Rationale spanning components leaves
 the file entirely (**D6**).
 
-A hard invariant earns as many sentences as it takes. What is never earned is the same reasoning told twice, or told to
-a reader who did not ask. See *Worked examples*.
+Do not turn Javadoc into a checklist of the body's filters, branches, or helper calls. Keep conditions callers need to
+choose inputs, interpret results, or understand side effects. Selection guarantees, absence, and resource ownership
+can be part of the contract even when the code also expresses them.
+
+Moving a checklist into inline comments does not fix it (**D1**). Delete narration. Put non-obvious reasoning beside
+the relevant logic, such as why a check is required or why one check must precede another. See *Worked examples*.
+
+### D13 — Use straightforward wording
+
+State the contract or reason directly. Name the relevant object, action, and constraint. Use established technical
+terms when they are clearer than an everyday paraphrase: "firing axis," "interpolation," and "returns false" need no
+elaborate substitutes.
+
+Avoid decorative metaphors, dramatic phrasing, and vague abstractions. Use pronouns only when their referents are
+clear. Split sentences that make the reader untangle several conditions or consequences.
+
+Preserve the reasoning, qualifications, units, and exceptions. Straightforward wording does not require shorter
+explanations or less technical detail.
 
 ---
 
@@ -278,6 +292,14 @@ public enum Admission {
 ```
 
 Every line is a fact a caller needs, stated once, at the declaration that owns it.
+
+### D13 — wording examples
+
+| Wording problem | Avoid | Prefer |
+|---|---|---|
+| Indirect description | "on the line its shot leaves along" | "on the firing axis" |
+| Roundabout reasoning | "The middle of the body leaves a scattered shot the most margin every way." | "Aim at the hitbox center to maximize the margin for scatter." |
+| Personification that obscures behavior | "The default never vouches." | "The default implementation returns false." |
 
 ---
 

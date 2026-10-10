@@ -95,6 +95,16 @@ public final class MemoryTypeRegistry {
     public static final MemoryType.DecayingSpatialMemoryType ANVIL_SITES = MemoryType.decaying(
             "anvil_sites", ClockTicks.hours(2), 4);
 
+    public static final MemoryType.DecayingSpatialMemoryType BALLISTA_SITES = MemoryType.decaying(
+            "ballista_sites", ClockTicks.hours(2), 8);
+
+    /**
+     * Ballistas the villager recently failed to take up for a fight, so that it turns to another machine or another
+     * way to fight rather than straight back to the same one. Not saved, and it expires.
+     */
+    public static final MemoryType.VanillaMemoryType<Set<GlobalPos>> REFUSED_BALLISTAS = MemoryType.vanillaBacked(
+            "refused_ballistas", MemoryModuleTypeRegistry.REFUSED_BALLISTAS);
+
     public static final MemoryType.VanillaMemoryType<List<UUID>> WILLING_COURTSHIP_PARTNERS = MemoryType.vanillaBacked(
             "willing_courtship_partners", MemoryModuleTypeRegistry.WILLING_COURTSHIP_PARTNERS);
 
@@ -151,7 +161,8 @@ public final class MemoryTypeRegistry {
                 GRAVEL_SITES,
                 SAND_SITES,
                 SCAVENGEABLE_FLORA_SITES,
-                ANVIL_SITES);
+                ANVIL_SITES,
+                BALLISTA_SITES);
     }
 
     /**

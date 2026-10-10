@@ -7,12 +7,15 @@ import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nonnull;
 
 /**
- * Where a ballista's shot leaves the machine and which way it goes.
+ * Where a ballista's shot leaves the machine and which way it goes, and where its operator stands.
  * <p>
  * Positions are offsets in blocks, on world axes, from the center of the floor of the machine's block.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class BallistaLaunchPoint {
+
+    // Beyond the limbs' sweep, so a machine turning to a new heading never swings a limb through its operator
+    private static final double STATION_DISTANCE_BLOCKS = 2.0;
 
     private static final Vec3 SOCKET_IN_TURRET = BallistaGeometry.GIMBAL_OFFSET
             .add(BallistaGeometry.CRADLE_OFFSET)
@@ -59,6 +62,22 @@ public final class BallistaLaunchPoint {
         double pitch = Math.toRadians(aim.getPitch());
         double horizontal = Math.cos(pitch);
         return new Vec3(-Math.sin(yaw) * horizontal, Math.sin(pitch), Math.cos(yaw) * horizontal);
+    }
+
+    /**
+     * The heading that faces the given point seen from above.
+     */
+    public static float headingToward(@Nonnull Vec3 point) {
+        return BallistaAim.wrapDegrees((float) Math.toDegrees(Math.atan2(-point.x, point.z)));
+    }
+
+    /**
+     * Where an operator stands to work the machine on the given heading.
+     *
+     * @param yaw the heading, in degrees
+     */
+    public static Vec3 stationOffset(float yaw) {
+        return direction(BallistaAim.facing(yaw, 0.0F)).scale(-STATION_DISTANCE_BLOCKS);
     }
 
 }

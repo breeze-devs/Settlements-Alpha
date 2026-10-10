@@ -2,6 +2,11 @@ package dev.breezes.settlements.domain.economy.catalog;
 
 import lombok.Builder;
 
+/**
+ * The selling rung of a {@link StockPolicy}.
+ * A sale must leave the villager holding at least above items.
+ * It sells a whole bundle of bundleSize items at a time and asks basePrice per bundle, plus or minus up to priceJitter.
+ */
 @Builder
 public record OfferFacet(
         int above,

@@ -8,8 +8,7 @@ import java.util.UUID;
  * A villager's current combat selection: which option it fights with, and which entity it is engaging.
  *
  * @param option   the selected option
- * @param targetId the nearest engageable sighted hostile the selecting assessment found, or null when the
- *                 option is continuing with none currently in sight
+ * @param targetId the hostile the selecting assessment chose to engage, or null when the option is continuing with none
  */
 public record CombatSelection(@Nonnull CombatOption option, @Nullable UUID targetId) {
 

@@ -120,7 +120,7 @@ public final class BallistaAim {
         return Math.max(yawDeviation, pitchDeviation);
     }
 
-    private static float wrapDegrees(float degrees) {
+    static float wrapDegrees(float degrees) {
         float wrapped = degrees % FULL_TURN_DEGREES;
         if (wrapped >= HALF_TURN_DEGREES) {
             return wrapped - FULL_TURN_DEGREES;
@@ -131,7 +131,7 @@ public final class BallistaAim {
         return wrapped;
     }
 
-    private static float clampPitch(float pitch) {
+    static float clampPitch(float pitch) {
         return Math.clamp(pitch, MIN_PITCH_DEGREES, MAX_PITCH_DEGREES);
     }
 

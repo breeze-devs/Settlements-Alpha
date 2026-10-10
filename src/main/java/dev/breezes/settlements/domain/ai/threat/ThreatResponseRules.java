@@ -37,7 +37,7 @@ public final class ThreatResponseRules {
     /**
      * How long a fight may go without an engageable target before it ends.
      */
-    static final ClockTicks TARGETLESS_COMBAT_LIMIT = ClockTicks.seconds(5);
+    public static final ClockTicks TARGETLESS_COMBAT_LIMIT = ClockTicks.seconds(5);
 
     /**
      * How long a panic outlasts the last alarming assessment while a hostile is still in awareness.
@@ -75,22 +75,30 @@ public final class ThreatResponseRules {
     }
 
     /**
-     * Applies the response rules in order: continue the current fight, enter a new one, panic, linger in panic, or hold.
+     * Whether the villager continues its current fight. Reads no entering nerve: whenever this holds, {@link #decide}
+     * returns CONTINUE_COMBAT, whatever the entering nerve.
      */
-    public static ThreatDecision decide(@Nonnull ThreatSituation situation) {
-        ThreatVerdict previousVerdict = situation.previousVerdict();
+    public static boolean continues(@Nonnull ThreatSituation situation) {
         Double continuingNerve = situation.continuingNerve();
         // A panicked villager must regain enough nerve to enter combat; the lower continuation
         // threshold only applies while it is still fighting. The targetless limit binds even under a
         // live hit, so a fighter struck by an attacker it cannot engage flees instead of standing.
-        if (previousVerdict == ThreatVerdict.COMBAT
+        return situation.previousVerdict() == ThreatVerdict.COMBAT
                 && continuingNerve != null
                 && (situation.awareHostilePresent() || situation.liveHitPresent())
                 && situation.sinceEngageableTarget().getTicks() < TARGETLESS_COMBAT_LIMIT.getTicks()
-                && continuingNerve >= NERVE_CONTINUE_THRESHOLD) {
+                && continuingNerve >= NERVE_CONTINUE_THRESHOLD;
+    }
+
+    /**
+     * Applies the response rules in order: continue the current fight, enter a new one, panic, linger in panic, or hold.
+     */
+    public static ThreatDecision decide(@Nonnull ThreatSituation situation) {
+        if (continues(situation)) {
             return ThreatDecision.CONTINUE_COMBAT;
         }
 
+        ThreatVerdict previousVerdict = situation.previousVerdict();
         Double enteringNerve = situation.enteringNerve();
         if (enteringNerve != null && enteringNerve > NERVE_ENTRY_THRESHOLD) {
             return ThreatDecision.ENTER_COMBAT;

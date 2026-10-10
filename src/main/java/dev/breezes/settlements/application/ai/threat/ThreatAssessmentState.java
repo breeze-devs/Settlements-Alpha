@@ -47,11 +47,25 @@ public final class ThreatAssessmentState implements IThreatResponse {
     private ThreatAssessmentResult latestResult;
 
     /**
+     * Whether the latest result's selection was revoked. The result itself stays as recorded, revoked selection
+     * included.
+     */
+    private boolean selectionRevoked;
+
+    /**
      * Game time of the latest assessment whose combat selection had a target. Every fight enters with one, so this is
      * meaningful whenever the latest verdict is COMBAT.
      */
     @Getter(AccessLevel.PACKAGE)
     private long lastEngagedGameTime;
+
+    /**
+     * The target of the current fight: the latest target a combat selection named. Kept through assessments that name
+     * none, and null whenever the latest verdict is not COMBAT.
+     */
+    @Getter(AccessLevel.PACKAGE)
+    @Nullable
+    private UUID lockedTargetId;
 
     /**
      * Game time of the latest assessment that decided PANIC. Every panic enters through that decision, so this is
@@ -85,7 +99,13 @@ public final class ThreatAssessmentState implements IThreatResponse {
     @Override
     @Nullable
     public CombatSelection selection() {
-        return this.latestResult == null ? null : this.latestResult.selection();
+        return this.latestResult == null || this.selectionRevoked ? null : this.latestResult.selection();
+    }
+
+    @Override
+    public void revokeSelection() {
+        this.selectionRevoked = true;
+        this.assessmentDirty = true;
     }
 
     /**
@@ -123,12 +143,17 @@ public final class ThreatAssessmentState implements IThreatResponse {
                           @Nonnull PerceivedEntities assessedHostiles,
                           long gameTime) {
         this.latestResult = result;
+        this.selectionRevoked = false;
         this.lastAssessedHostiles = assessedHostiles;
         this.assessmentDirty = false;
 
         CombatSelection selection = result.selection();
         if (selection != null && selection.targetId() != null) {
             this.lastEngagedGameTime = gameTime;
+            this.lockedTargetId = selection.targetId();
+        } else if (result.verdict() != ThreatVerdict.COMBAT) {
+            // A later fight starts unlocked, so it never prefers a hostile this one gave up on
+            this.lockedTargetId = null;
         }
         // A lingering panic must not restart its own clock, or a hostile loitering in awareness would hold it forever
         if (decision == ThreatDecision.PANIC) {

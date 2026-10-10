@@ -6,6 +6,7 @@ import dev.breezes.settlements.domain.animation.AnimationFrame;
 import dev.breezes.settlements.domain.ballista.BallistaAim;
 import dev.breezes.settlements.domain.ballista.BallistaAnimator;
 import dev.breezes.settlements.domain.ballista.BallistaIntentPrediction;
+import dev.breezes.settlements.domain.ballista.BallistaLease;
 import dev.breezes.settlements.domain.ballista.BallistaStateMachine;
 import dev.breezes.settlements.domain.tags.SettlementsEntityTypeTags;
 import dev.breezes.settlements.domain.time.ClockTicks;
@@ -36,6 +37,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
+import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -107,6 +109,13 @@ public class BallistaBlockEntity extends BlockEntity {
     private boolean sparesVillagerAllies;
 
     /**
+     * Which villager is operating the machine. It keeps a second villager from converging on the machine, and none of
+     * the directives consult it. Neither saved nor sent to clients, so an unload frees the machine.
+     */
+    @ServerSide
+    private final BallistaLease lease;
+
+    /**
      * The aim's angles as of the previous tick, which a frame interpolates from.
      */
     @ClientSide
@@ -159,6 +168,7 @@ public class BallistaBlockEntity extends BlockEntity {
         this.ammunition = ItemStack.EMPTY;
         this.seaterId = null;
         this.sparesVillagerAllies = false;
+        this.lease = new BallistaLease();
         this.previousYaw = this.aim.getYaw();
         this.previousPitch = this.aim.getPitch();
         this.headingKnown = false;
@@ -178,13 +188,9 @@ public class BallistaBlockEntity extends BlockEntity {
         boolean serverSide = this.level != null && !this.level.isClientSide();
         long now = serverSide ? this.level.getGameTime() : this.clientTicks;
 
-        if (serverSide) {
-            // A machine that went unticked past its release tick would otherwise settle out of the firing below with
-            // the shot still in it, and the shot would never leave
-            this.releaseShotIfDue(now);
-        }
-
-        BallistaStateMachine currentState = this.machineState.settledAt(now);
+        BallistaStateMachine currentState = serverSide
+                ? this.releaseDueShotAndSettle(now)
+                : this.machineState.settledAt(now);
         // Read from the main hand on either pass, since the off hand's pass carries the off hand's stack, which reads
         // as an empty hand whenever that hand holds nothing
         ItemStack mainHand = player.getMainHandItem();
@@ -209,8 +215,8 @@ public class BallistaBlockEntity extends BlockEntity {
         }
 
         return switch (verb) {
-            case WIND -> this.startWinding(currentState, now);
-            case LOAD_AMMO -> this.loadAmmunition(mainHand, player, now);
+            case WIND -> this.wind() ? ItemInteractionResult.CONSUME : this.refuse();
+            case LOAD_AMMO -> this.loadFromHand(player, mainHand);
             case UNLOAD_AMMO -> this.unloadAmmunition(player, now);
             // The client holds aim mode, so entering it leaves the machine as it is
             case ENTER_AIM -> ItemInteractionResult.CONSUME;
@@ -228,30 +234,14 @@ public class BallistaBlockEntity extends BlockEntity {
     }
 
     @ServerSide
-    private ItemInteractionResult startWinding(@Nonnull BallistaStateMachine unwound, long gameTime) {
-        this.machineState = unwound.startWindingAt(gameTime);
-        this.sendUpdate(gameTime);
+    private ItemInteractionResult loadFromHand(@Nonnull Player player, @Nonnull ItemStack held) {
+        if (!this.load(player, held)) {
+            return this.refuse();
+        }
 
-        BallistaSoundPalette.playBeat(BallistaStateMachine.Beat.STROKE_BEGINS, this.soundLocation());
-        return ItemInteractionResult.CONSUME;
-    }
-
-    @ServerSide
-    private ItemInteractionResult loadAmmunition(@Nonnull ItemStack held, @Nonnull Player player, long gameTime) {
-        ItemStack ammunition = held.copyWithCount(1);
-        ammunition.remove(DataComponents.INTANGIBLE_PROJECTILE);
         if (!player.hasInfiniteMaterials()) {
             held.shrink(1);
         }
-
-        this.ammunition = ammunition;
-        this.seaterId = player.getUUID();
-        // Decided here rather than from the shot's owner, which is missing whenever the seater is not loaded at release
-        this.sparesVillagerAllies = player.getType().is(SettlementsEntityTypeTags.VILLAGER_ALLIES);
-        this.setChanged();
-        this.sendUpdate(gameTime);
-
-        BallistaSoundPalette.loadBolt(this.soundLocation());
         return ItemInteractionResult.CONSUME;
     }
 
@@ -289,24 +279,118 @@ public class BallistaBlockEntity extends BlockEntity {
             return;
         }
 
-        long gameTime = this.level.getGameTime();
-
-        this.releaseShotIfDue(gameTime);
-
-        BallistaStateMachine currentState = this.machineState.settledAt(gameTime);
-        switch (currentState.getStage()) {
-            case UNWOUND -> this.startWinding(currentState, gameTime);
-            case COCKED -> {
-                if (this.ammunition.isEmpty()) {
-                    BallistaSoundPalette.refuseInteraction(this.soundLocation());
-                    return;
-                }
-                this.machineState = currentState.fireAt(gameTime);
-                this.setChanged();
-                this.sendUpdate(gameTime);
-            }
-            case WINDING, FIRING -> BallistaSoundPalette.refuseInteraction(this.soundLocation());
+        // At most one of these acts, since a machine is never both unwound and cocked
+        if (!this.wind() && !this.tryFire(null)) {
+            BallistaSoundPalette.refuseInteraction(this.soundLocation());
         }
+    }
+
+    /**
+     * Starts winding an unwound machine.
+     *
+     * @return whether the machine started winding; a refused directive changes nothing
+     */
+    @ServerSide
+    public boolean wind() {
+        long gameTime = this.serverGameTime();
+        BallistaStateMachine current = this.releaseDueShotAndSettle(gameTime);
+        if (current.getStage() != BallistaStateMachine.Stage.UNWOUND) {
+            return false;
+        }
+
+        this.machineState = current.startWindingAt(gameTime);
+        this.sendUpdate(gameTime);
+
+        BallistaSoundPalette.playBeat(BallistaStateMachine.Beat.STROKE_BEGINS, this.soundLocation());
+        return true;
+    }
+
+    /**
+     * Seats one bolt from the given stack in a cocked, empty machine.
+     * The seater is credited with the shot and decides whether it spares villager allies.
+     *
+     * @return whether a bolt was seated; a refused directive changes nothing
+     */
+    @ServerSide
+    public boolean load(@Nonnull LivingEntity seater, @Nonnull ItemStack bolts) {
+        long gameTime = this.serverGameTime();
+        BallistaStateMachine current = this.releaseDueShotAndSettle(gameTime);
+        // A seated bolt is always real, so a stack of anything else is refused
+        if (current.getStage() != BallistaStateMachine.Stage.COCKED || !this.ammunition.isEmpty()
+                || !bolts.is(ItemRegistry.BALLISTA_BOLT.get())) {
+            return false;
+        }
+
+        ItemStack ammunition = bolts.copyWithCount(1);
+        ammunition.remove(DataComponents.INTANGIBLE_PROJECTILE);
+        this.ammunition = ammunition;
+        this.seatAs(seater);
+        this.setChanged();
+        this.sendUpdate(gameTime);
+
+        BallistaSoundPalette.loadBolt(this.soundLocation());
+        return true;
+    }
+
+    /**
+     * Fires a cocked, loaded machine.
+     * The operator becomes the seated bolt's seater of record.
+     *
+     * @return whether the machine fired; a refused directive changes nothing
+     */
+    @ServerSide
+    public boolean fire(@Nonnull LivingEntity operator) {
+        return this.tryFire(operator);
+    }
+
+    /**
+     * Fires a cocked, loaded machine.
+     *
+     * @param adopter the entity that becomes the seated bolt's seater of record, or null to keep the bolt's seater
+     * @return whether the machine fired
+     */
+    @ServerSide
+    private boolean tryFire(@Nullable LivingEntity adopter) {
+        long gameTime = this.serverGameTime();
+        BallistaStateMachine current = this.releaseDueShotAndSettle(gameTime);
+        if (current.getStage() != BallistaStateMachine.Stage.COCKED || this.ammunition.isEmpty()) {
+            return false;
+        }
+
+        if (adopter != null) {
+            // Ahead of the commit, since the release a few ticks later reads the seater and flag held here
+            this.seatAs(adopter);
+        }
+        this.machineState = current.fireAt(gameTime);
+        this.setChanged();
+        this.sendUpdate(gameTime);
+        return true;
+    }
+
+    @ServerSide
+    private void seatAs(@Nonnull LivingEntity seater) {
+        this.seaterId = seater.getUUID();
+        // Decided here rather than from the shot's owner, which is missing whenever the seater is not loaded at release
+        this.sparesVillagerAllies = seater.getType().is(SettlementsEntityTypeTags.VILLAGER_ALLIES);
+    }
+
+    /**
+     * The machine's state at the given instant, once any shot already due has left.
+     */
+    @ServerSide
+    private BallistaStateMachine releaseDueShotAndSettle(long gameTime) {
+        // A machine that went unticked past its release tick would otherwise settle out of its firing with the shot
+        // still in it, and the shot would never leave
+        this.releaseShotIfDue(gameTime);
+        return this.machineState.settledAt(gameTime);
+    }
+
+    @ServerSide
+    private long serverGameTime() {
+        // A client's copy keeps its instants on that client's own tick counter, which game time cannot be compared with
+        Validate.validState(this.level != null && !this.level.isClientSide(),
+                "A ballista's directives and reads run on the server only");
+        return this.level.getGameTime();
     }
 
     /**
@@ -362,6 +446,73 @@ public class BallistaBlockEntity extends BlockEntity {
     @ServerSide
     public ItemStack seatedAmmunitionCopy() {
         return this.ammunition.copy();
+    }
+
+    /**
+     * Whether a bolt is seated.
+     */
+    @ServerSide
+    public boolean hasSeatedAmmunition() {
+        return !this.ammunition.isEmpty();
+    }
+
+    /**
+     * The machine's stage now, with a wind or firing whose time has run out counted as finished.
+     */
+    @ServerSide
+    public BallistaStateMachine.Stage settledStage() {
+        return this.machineState.settledAt(this.serverGameTime()).getStage();
+    }
+
+    /**
+     * Takes the operator lease for the given villager when no other villager holds a live one, renewing it if this
+     * villager already does.
+     *
+     * @return whether the villager holds the lease now
+     */
+    @ServerSide
+    public boolean acquireLease(@Nonnull UUID operatorId) {
+        return this.lease.acquire(operatorId, this.serverGameTime());
+    }
+
+    /**
+     * Extends the given villager's live lease. A villager without a live lease is refused rather than given one.
+     *
+     * @return whether the villager still holds the lease
+     */
+    @ServerSide
+    public boolean renewLease(@Nonnull UUID operatorId) {
+        return this.lease.renew(operatorId, this.serverGameTime());
+    }
+
+    /**
+     * Gives up the given villager's lease. A release from a villager that does not hold it is ignored.
+     */
+    @ServerSide
+    public void releaseLease(@Nonnull UUID operatorId) {
+        this.lease.release(operatorId);
+    }
+
+    /**
+     * Whether the given villager may take the lease: no other villager holds a live one.
+     */
+    @ServerSide
+    public boolean isLeaseFreeFor(@Nonnull UUID operatorId) {
+        return this.lease.isFreeFor(operatorId, this.serverGameTime());
+    }
+
+    /**
+     * The ballista at the given position, or null when there is none or its chunk is not loaded. It never loads a
+     * chunk. A raw nullable rather than an Optional, so a check repeated on a hot path allocates nothing.
+     */
+    @ServerSide
+    @Nullable
+    public static BallistaBlockEntity inLoadedChunk(@Nonnull ServerLevel level, @Nonnull BlockPos pos) {
+        if (!level.isLoaded(pos)) {
+            return null;
+        }
+
+        return level.getBlockEntity(pos) instanceof BallistaBlockEntity ballista ? ballista : null;
     }
 
     @ServerSide

@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ThreatAssessmentStateTest {
@@ -21,6 +22,7 @@ class ThreatAssessmentStateTest {
     private static final UUID ATTACKER_A = UUID.fromString("00000000-0000-0000-0000-000000000002");
     private static final UUID ATTACKER_B = UUID.fromString("00000000-0000-0000-0000-000000000003");
     private static final UUID HOSTILE = UUID.fromString("00000000-0000-0000-0000-000000000004");
+    private static final UUID OTHER_HOSTILE = UUID.fromString("00000000-0000-0000-0000-000000000005");
     private static final ThreatAssessmentResult HOLD_RESULT = new ThreatAssessmentResult(ThreatVerdict.HOLD, null);
     private static final ThreatAssessmentResult PANIC_RESULT = new ThreatAssessmentResult(ThreatVerdict.PANIC, null);
 
@@ -213,7 +215,7 @@ class ThreatAssessmentStateTest {
         // hostile it can never engage never runs out its targetless limit; or a targeted result never
         // recorded, so every fight ends at its first moment without a target.
         ThreatAssessmentState state = new ThreatAssessmentState();
-        CombatOption option = FakeCombatOptions.withOrder(1);
+        CombatOption option = FakeCombatOptions.inert();
         long targetedTime = 100L;
         state.recordAssessment(ThreatDecision.ENTER_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, HOSTILE)),
                 PerceivedEntities.empty(), targetedTime);
@@ -224,6 +226,113 @@ class ThreatAssessmentStateTest {
 
         // Assert
         assertEquals(targetedTime, state.getLastEngagedGameTime());
+    }
+
+    @Test
+    void recordAssessment_aContinuationWithNoTarget_keepsTheLock() {
+        // Arrange -- counterexample: an assessment that cannot confirm the target dropping the lock, so a target that
+        // steps behind cover is no longer preferred when it steps back out.
+        ThreatAssessmentState state = new ThreatAssessmentState();
+        CombatOption option = FakeCombatOptions.inert();
+        state.recordAssessment(ThreatDecision.ENTER_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, HOSTILE)),
+                PerceivedEntities.empty(), 0L);
+
+        // Act
+        state.recordAssessment(ThreatDecision.CONTINUE_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, null)),
+                PerceivedEntities.empty(), 5L);
+
+        // Assert
+        assertEquals(HOSTILE, state.getLockedTargetId());
+    }
+
+    @Test
+    void recordAssessment_aNewTarget_replacesTheLock() {
+        // Arrange -- counterexample: the lock taken once per fight, so a fighter that turned on a hostile at close
+        // quarters goes back to the farther target it locked first.
+        ThreatAssessmentState state = new ThreatAssessmentState();
+        CombatOption option = FakeCombatOptions.inert();
+        state.recordAssessment(ThreatDecision.ENTER_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, HOSTILE)),
+                PerceivedEntities.empty(), 0L);
+
+        // Act
+        state.recordAssessment(ThreatDecision.CONTINUE_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, OTHER_HOSTILE)),
+                PerceivedEntities.empty(), 5L);
+
+        // Assert
+        assertEquals(OTHER_HOSTILE, state.getLockedTargetId());
+    }
+
+    @Test
+    void recordAssessment_aVerdictLeavingCombat_clearsTheLock() {
+        // Arrange -- counterexample: the lock outliving its fight, so the next fight prefers a hostile this one gave
+        // up on.
+        ThreatAssessmentState state = new ThreatAssessmentState();
+        CombatOption option = FakeCombatOptions.inert();
+        state.recordAssessment(ThreatDecision.ENTER_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, HOSTILE)),
+                PerceivedEntities.empty(), 0L);
+
+        // Act
+        state.recordAssessment(ThreatDecision.PANIC, PANIC_RESULT, PerceivedEntities.empty(), 5L);
+
+        // Assert
+        assertNull(state.getLockedTargetId());
+    }
+
+    @Test
+    void revokeSelection_hidesTheSelectionButKeepsTheVerdict() {
+        // Arrange -- counterexample: a revoked selection still offered, so the combat runner relaunches an action
+        // that was just refused on every tick; or the revocation dropping the verdict, so the villager leaves COMBAT
+        // for a tick and the day plan or a raid's shelter takes it mid-fight.
+        ThreatAssessmentState state = new ThreatAssessmentState();
+        CombatOption option = FakeCombatOptions.inert();
+        state.recordAssessment(ThreatDecision.ENTER_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, HOSTILE)),
+                PerceivedEntities.empty(), 0L);
+
+        // Act
+        state.revokeSelection();
+
+        // Assert
+        assertNull(state.selection());
+        assertEquals(ThreatVerdict.COMBAT, state.verdict());
+    }
+
+    @Test
+    void revokeSelection_makesAnAssessmentDueAtOnce() {
+        // Arrange -- counterexample: a refused choice standing until the cadence comes round, leaving the villager in
+        // COMBAT with nothing to launch for up to a full interval.
+        ThreatAssessmentState state = new ThreatAssessmentState();
+        CombatOption option = FakeCombatOptions.inert();
+        // A dirty-triggered assessment restarts the cadence, so the tick under test cannot land on its random first
+        // firing.
+        state.recordHit(ATTACKER_A, 5.0f, 0L);
+        state.isDue(PerceivedEntities.empty());
+        state.recordAssessment(ThreatDecision.ENTER_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, HOSTILE)),
+                PerceivedEntities.empty(), 0L);
+
+        // Act
+        state.revokeSelection();
+
+        // Assert
+        assertTrue(state.isDue(PerceivedEntities.empty()));
+    }
+
+    @Test
+    void recordAssessment_afterARevocation_offersTheNewSelection() {
+        // Arrange -- counterexample: a revocation outliving the assessment that replaces it, so the runner never
+        // launches again and the villager stands in COMBAT without fighting.
+        ThreatAssessmentState state = new ThreatAssessmentState();
+        CombatOption option = FakeCombatOptions.inert();
+        state.recordAssessment(ThreatDecision.ENTER_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, new CombatSelection(option, HOSTILE)),
+                PerceivedEntities.empty(), 0L);
+        state.revokeSelection();
+        CombatSelection replacement = new CombatSelection(option, HOSTILE);
+
+        // Act
+        state.recordAssessment(ThreatDecision.CONTINUE_COMBAT, new ThreatAssessmentResult(ThreatVerdict.COMBAT, replacement),
+                PerceivedEntities.empty(), 5L);
+
+        // Assert
+        assertSame(replacement, state.selection());
     }
 
     @Test

@@ -12,6 +12,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.petting.PetAnimalConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.ballista.BallistaOperationConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateConfig;
@@ -419,6 +420,12 @@ public final class ConfigModule {
     @Singleton
     static SpeechMirrorConfig speechMirrorConfig() {
         return ConfigFactory.create(SpeechMirrorConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static BallistaOperationConfig ballistaOperationConfig() {
+        return ConfigFactory.create(BallistaOperationConfig.class);
     }
 
 }

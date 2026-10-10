@@ -1,5 +1,6 @@
 package dev.breezes.settlements.domain.world.blocks;
 
+import dev.breezes.settlements.bootstrap.registry.blocks.BlockRegistry;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.Direction;
@@ -79,7 +80,9 @@ public final class BlockMatchers {
                     || state.is(Blocks.DEAD_BUSH) || state.is(BlockTags.SMALL_FLOWERS)
     );
 
-    // BlockTags.ANVIL already ANVIL + CHIPPED_ANVIL + DAMAGED_ANVIL
+    // BlockTags.ANVIL matches ANVIL + CHIPPED_ANVIL + DAMAGED_ANVIL
     public static final BlockMatcher ANVIL = new BlockMatcher(state -> state.is(BlockTags.ANVIL));
+
+    public static final BlockMatcher BALLISTA = new BlockMatcher(state -> state.is(BlockRegistry.BALLISTA));
 
 }

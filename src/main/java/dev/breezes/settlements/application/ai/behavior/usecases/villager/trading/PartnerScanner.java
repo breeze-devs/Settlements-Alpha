@@ -86,9 +86,9 @@ public final class PartnerScanner {
                 }
 
                 Item matchedItem = stack.getItem();
+                // A sale hands over a whole bundle, so the seller must still hold its surplus threshold after it
                 int sellerCount = sellerInventory.count(matchedItem);
-                int minimumStock = Math.max(offerEntry.bundleSize(), offerEntry.surplusThreshold());
-                if (sellerCount < minimumStock) {
+                if (sellerCount - offerEntry.bundleSize() < offerEntry.surplusThreshold()) {
                     continue;
                 }
 

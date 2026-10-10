@@ -23,7 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Calculates craftable batches and ranks recipes by output stock headroom.
+ * Calculates craftable batches and ranks recipes by the share of their output ceiling still free.
  */
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class CraftBatchCalculator {
@@ -88,28 +88,30 @@ public class CraftBatchCalculator {
     }
 
     /**
-     * Returns the output's overflow ceiling minus the villager's held stock, or
-     * {@link Integer#MIN_VALUE} when no ceiling is configured.
+     * Returns the share of the output's overflow ceiling the villager does not hold yet.
+     * 1 with none held, 0 at the ceiling, negative past it, and negative infinity when no ceiling is configured.
      */
-    public int ceilingHeadroom(@Nonnull BaseVillager villager, @Nonnull CraftRecipe recipe) {
+    public double ceilingHeadroomShare(@Nonnull BaseVillager villager, @Nonnull CraftRecipe recipe) {
         Item outputItem = BuiltInRegistries.ITEM.get(recipe.output().itemId());
         Integer ceiling = this.dumpAbove(villager.getProfession(), outputItem);
 
         if (ceiling == null) {
-            return Integer.MIN_VALUE;
+            return Double.NEGATIVE_INFINITY;
         }
 
-        return ceiling - villager.getSettlementsInventory().count(outputItem);
+        // Flooring the divisor at 1 keeps a zero ceiling from dividing by zero; it still leaves no headroom
+        return (double) (ceiling - villager.getSettlementsInventory().count(outputItem)) / Math.max(ceiling, 1);
     }
 
     /**
-     * Selects the recipe with the largest {@link #ceilingHeadroom}, breaking ties by higher priority.
+     * Selects the recipe with the largest {@link #ceilingHeadroomShare}, breaking ties by higher priority.
      * The list must be non-empty and contain only craftable recipes.
      */
     public CraftRecipe selectPreferred(@Nonnull BaseVillager villager, @Nonnull List<CraftRecipe> craftableRecipes) {
+        // Shares rather than counts, so an output with a large ceiling does not starve one with a small ceiling
         return craftableRecipes.stream()
                 .max(Comparator
-                        .comparingInt((CraftRecipe recipe) -> this.ceilingHeadroom(villager, recipe))
+                        .comparingDouble((CraftRecipe recipe) -> this.ceilingHeadroomShare(villager, recipe))
                         .thenComparingInt(CraftRecipe::priority))
                 .orElseThrow();
     }

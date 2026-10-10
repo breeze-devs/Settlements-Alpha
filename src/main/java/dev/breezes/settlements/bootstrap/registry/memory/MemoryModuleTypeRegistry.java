@@ -77,6 +77,10 @@ public final class MemoryModuleTypeRegistry {
             "golem_summon_cooldown",
             () -> new MemoryModuleType<>(Optional.of(Codec.BOOL)));
 
+    public static final Supplier<MemoryModuleType<Set<GlobalPos>>> REFUSED_BALLISTAS = REGISTRY.register(
+            "refused_ballistas",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
     }

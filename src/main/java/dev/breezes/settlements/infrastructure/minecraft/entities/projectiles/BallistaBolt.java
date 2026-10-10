@@ -16,6 +16,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -23,13 +24,17 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A bolt thrown by a ballista. Its position is its tip: the shaft trails behind the point that flies and strikes.
  */
 public class BallistaBolt extends AbstractArrow {
 
-    public static final float LAUNCH_SPEED_BLOCKS_PER_TICK = 5.0F;
+    // Vanilla caps each axis of a velocity it sends a client at 3.9, so a faster bolt would fly short on the client
+    public static final float LAUNCH_SPEED_BLOCKS_PER_TICK = 3.9F;
+
+    private static final double TIP_REACH_BLOCKS = BallistaBoltGeometry.TIP_REACH_PIXELS / BallistaGeometry.PIXELS_PER_BLOCK;
 
     private static final String NBT_SPARES_VILLAGER_ALLIES = "sparesVillagerAllies";
 
@@ -53,6 +58,9 @@ public class BallistaBolt extends AbstractArrow {
             .defaultValue(false)
             .build();
 
+    // Holds until the first flight tick; never saved, since a reloaded bolt is long past it
+    private boolean freshlyFired;
+
     public BallistaBolt(@Nonnull EntityType<? extends BallistaBolt> type, @Nonnull Level level) {
         super(type, level);
     }
@@ -67,6 +75,7 @@ public class BallistaBolt extends AbstractArrow {
         super(EntityRegistry.BALLISTA_BOLT.get(), tip.x, tip.y, tip.z, level, ammunition, null);
         DATA_SPARES_VILLAGER_ALLIES.set(this.entityData, sparesVillagerAllies);
         this.pickup = Pickup.ALLOWED;
+        this.freshlyFired = true;
 
         // Infinite pierce by design
         ((AbstractArrowInvoker) this).invokeSetPierceLevel(Byte.MAX_VALUE);
@@ -83,6 +92,7 @@ public class BallistaBolt extends AbstractArrow {
         Vec3 previousPosition = this.position();
         // Resolve impacts first so a bolt that lands this tick stops producing a trail.
         super.tick();
+        this.freshlyFired = false;
         if (!this.level().isClientSide() || this.inGround || this.isRemoved()) {
             return;
         }
@@ -109,6 +119,19 @@ public class BallistaBolt extends AbstractArrow {
                 && target.getType().is(SettlementsEntityTypeTags.VILLAGER_ALLIES);
         // The bolt will 'fly through' the entity if this returns false
         return super.canHitEntity(target) && !sparedAlly;
+    }
+
+    @Override
+    @Nullable
+    protected EntityHitResult findHitEntity(@Nonnull Vec3 start, @Nonnull Vec3 end) {
+        if (!this.freshlyFired) {
+            return super.findHitEntity(start, end);
+        }
+
+        // Detect and hit point-blank-ranged entities
+        Vec3 tail = start.subtract(end.subtract(start).normalize().scale(TIP_REACH_BLOCKS));
+        return ProjectileUtil.getEntityHitResult(this.level(), this, tail, end, new AABB(tail, end).inflate(1.0),
+                this::canHitEntity);
     }
 
     @Override
@@ -169,8 +192,7 @@ public class BallistaBolt extends AbstractArrow {
     @Nonnull
     public AABB getBoundingBoxForCulling() {
         // The shaft is drawn behind the tip, so a box around the tip alone culls the bolt while its shaft is on screen
-        Vec3 tipToTail = this.pointing()
-                .scale(-BallistaBoltGeometry.TIP_REACH_PIXELS / BallistaGeometry.PIXELS_PER_BLOCK);
+        Vec3 tipToTail = this.pointing().scale(-TIP_REACH_BLOCKS);
         return this.getBoundingBox().expandTowards(tipToTail);
     }
 

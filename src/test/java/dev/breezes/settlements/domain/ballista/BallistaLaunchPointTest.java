@@ -14,10 +14,21 @@ class BallistaLaunchPointTest {
     // The machine's footprint is its own block, which reaches this far from the block's center on each horizontal axis
     private static final double FOOTPRINT_HALF_WIDTH_BLOCKS = 0.5;
 
+    // A villager is this wide, so one standing at a point reaches this far from it on each horizontal axis
+    private static final double VILLAGER_HALF_WIDTH_BLOCKS = 0.3;
+
+    // Headings on either side of north, where yaw wraps, and headings given a full turn or more away from their range
+    private static final float[] SEAM_HEADINGS = {-180.0F, -179.9F, 179.9F, 180.0F, 359.9F, 540.0F, -540.0F};
+
     private static final float YAW_STEP_DEGREES = 5.0F;
     private static final float PITCH_STEP_DEGREES = 1.0F;
 
     private static final double TOLERANCE = 1.0E-6;
+
+    private static final double POINT_DISTANCE_BLOCKS = 20.0;
+    private static final double[] POINT_HEIGHTS_BLOCKS = {-6.0, 0.0, 6.0};
+    // A heading is a float, so it is exact only to a float's resolution near a half turn
+    private static final double HEADING_TOLERANCE_DEGREES = 1.0E-4;
 
     @Test
     void tipOffset_liesOutsideTheMachinesFootprint_acrossTheWholeAimRange() {
@@ -108,6 +119,60 @@ class BallistaLaunchPointTest {
         }
     }
 
+    @Test
+    void headingToward_facesThePointAnEntityLooksAt_atEveryHeadingAndHeight() {
+        for (float yaw : everyYaw()) {
+            for (double height : POINT_HEIGHTS_BLOCKS) {
+                // Arrange: a point straight ahead of an entity facing along the heading, above or below it
+                Vec3 ahead = lookOf(yaw, 0.0F).scale(POINT_DISTANCE_BLOCKS);
+                Vec3 point = new Vec3(ahead.x, height, ahead.z);
+
+                // Act
+                float heading = BallistaLaunchPoint.headingToward(point);
+
+                // Assert: a crossed sign or swapped axis faces the mirror of the heading, and a heading off its range is
+                // one the machine never holds
+                assertEquals(0.0, BallistaAim.wrapDegrees(heading - yaw), HEADING_TOLERANCE_DEGREES,
+                        "yaw " + yaw + " height " + height + " faced " + heading);
+                assertTrue(heading >= -180.0F && heading < 180.0F, "yaw " + yaw + " faced " + heading);
+            }
+        }
+    }
+
+    @Test
+    void stationOffset_liesBehindTheMuzzleOnTheLineOfFire_atEveryHeading() {
+        for (float yaw : everyHeadingAndSeam()) {
+            for (float pitch : everyPitch()) {
+                // Arrange: the machine turns to the heading as given, wrapping it as it wraps any intent
+                Vec3 direction = BallistaLaunchPoint.direction(BallistaAim.facing(yaw, pitch));
+
+                // Act
+                Vec3 station = BallistaLaunchPoint.stationOffset(yaw);
+
+                // Assert: a station beside the barrel, or ahead of the muzzle, puts the operator in the line of fire or
+                // at the wrong end of the machine to work it; one off the floor is not somewhere a villager can stand
+                double sideways = station.x * direction.z - station.z * direction.x;
+                assertEquals(0.0, sideways, TOLERANCE, "yaw " + yaw + " pitch " + pitch + " stands beside the barrel");
+                assertTrue(station.dot(direction) < 0.0,
+                        "yaw " + yaw + " pitch " + pitch + " stands in front of the muzzle at " + station);
+                assertEquals(0.0, station.y, TOLERANCE, "yaw " + yaw + " stands off the floor at " + station);
+            }
+        }
+    }
+
+    @Test
+    void stationOffset_keepsTheOperatorClearOfTheMachinesFootprint_atEveryHeading() {
+        for (float yaw : everyHeadingAndSeam()) {
+            // Act
+            Vec3 station = BallistaLaunchPoint.stationOffset(yaw);
+
+            // Assert: a villager overlapping the base block is standing inside the machine
+            double reach = Math.max(Math.abs(station.x), Math.abs(station.z));
+            assertTrue(reach - VILLAGER_HALF_WIDTH_BLOCKS > FOOTPRINT_HALF_WIDTH_BLOCKS,
+                    "yaw " + yaw + " puts the operator inside the machine at " + station);
+        }
+    }
+
     /**
      * The tip at the given aim as its distance ahead along the heading, seen from above, and its height.
      */
@@ -156,6 +221,14 @@ class BallistaLaunchPointTest {
             yaws.add(yaw);
         }
         return yaws;
+    }
+
+    private static List<Float> everyHeadingAndSeam() {
+        List<Float> headings = everyYaw();
+        for (float heading : SEAM_HEADINGS) {
+            headings.add(heading);
+        }
+        return headings;
     }
 
     /**

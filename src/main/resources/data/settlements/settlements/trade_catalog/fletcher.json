@@ -249,8 +249,14 @@
       "match": {
         "item": "settlements:ballista_bolt"
       },
+      "offer": {
+        "above": 32,
+        "basePrice": 8,
+        "priceJitter": 0,
+        "bundleSize": 8
+      },
       "dump": {
-        "above": 64
+        "above": 128
       }
     },
     {

@@ -16,12 +16,15 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.ZombieVillager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Runs one villager's threat assessment against the live world and records the outcome.
@@ -38,10 +41,15 @@ public final class ThreatAssessor {
      */
     private static final double UNSEEN_THREAT_FRACTION = 0.2;
 
+    /**
+     * The distance from the villager within which an engageable hostile outranks a locked-on target farther away.
+     */
+    private static final double CLOSE_QUARTERS_BLOCKS = 5.0;
+
     private static final ThreatAssessmentResult PANIC_RESULT = new ThreatAssessmentResult(ThreatVerdict.PANIC, null);
     private static final ThreatAssessmentResult HOLD_RESULT = new ThreatAssessmentResult(ThreatVerdict.HOLD, null);
 
-    private final CombatOptionCatalog catalog;
+    private final List<CombatOption> combatOptions;
 
     /**
      * Runs the villager's threat assessment when due, and records its outcome in the given state.
@@ -97,40 +105,51 @@ public final class ThreatAssessor {
                 .getMemory(MemoryTypeRegistry.SIGHTED_HOSTILES)
                 .orElse(PerceivedEntities.empty());
         CombatSelection previousSelection = previousAssessment == null ? null : previousAssessment.selection();
-        CombatOption continuingOption = previousSelection != null && previousSelection.option().canContinue(villager)
-                ? previousSelection.option()
-                : null;
+        CombatReadiness continuingReadiness = previousSelection == null ? null : previousSelection.option().prepare(villager);
+        CombatOption continuingOption = continuingReadiness == null ? null : previousSelection.option();
+        LivingEntity lock = resolveLock(villager, state.getLockedTargetId());
         // Searched before deciding, because how long the fight has gone without a target decides whether it continues
-        LivingEntity continuationTarget = continuingOption == null ? null
-                : findNearestEngageableHostile(villager, continuingOption, sightedHostiles);
+        LivingEntity continuationTarget = null;
+        boolean lockHeld = false;
+        if (continuingOption != null) {
+            double reachBlocks = continuingOption.reachBlocks();
+            lockHeld = lock != null && (continuingReadiness.canStayLockedOn(lock)
+                    || canEngageSighted(continuingReadiness, reachBlocks, sightedHostiles, lock));
+            continuationTarget = chooseTarget(villager, continuingReadiness, reachBlocks, sightedHostiles, lockHeld ? lock : null);
+        }
         ClockTicks sinceEngageableTarget = continuationTarget != null ? ClockTicks.ZERO
                 : ClockTicks.of(gameTime - state.getLastEngagedGameTime());
-
-        // A brain with no combat runner has nothing to launch a selected option with
-        CombatSelection entryCandidate = villager.isBaby() ? null : findFirstCombatCandidate(villager, sightedHostiles);
 
         double willGeneValue = villager.getGenetics().getGeneValue(GeneType.WILL);
         double healthFraction = villager.getHealth() / villager.getMaxHealth();
         Double continuingNerve = continuingOption == null ? null
                 : ThreatResponseRules.nerve(willGeneValue, healthFraction, continuingOption.nerveContribution(), totalHostileThreat);
-        Double enteringNerve = entryCandidate == null ? null
-                : ThreatResponseRules.nerve(willGeneValue, healthFraction, entryCandidate.option().nerveContribution(), totalHostileThreat);
-        ThreatSituation situation = ThreatSituation.builder()
+        ThreatSituation.ThreatSituationBuilder situation = ThreatSituation.builder()
                 .previousVerdict(previousVerdict)
                 .danger(danger)
-                .awareHostilePresent(awareHostilePresent)
+                // A locked target beyond awareness adds nothing to danger or nerve, which weigh what is near, but it
+                // keeps the fight going as a hostile in awareness would
+                .awareHostilePresent(awareHostilePresent || lockHeld)
                 .liveHitPresent(wasHitRecently)
                 .continuingNerve(continuingNerve)
                 .sinceEngageableTarget(sinceEngageableTarget)
-                .enteringNerve(enteringNerve)
-                .sinceAlarmed(ClockTicks.of(gameTime - state.getLastAlarmedGameTime()))
-                .build();
+                .sinceAlarmed(ClockTicks.of(gameTime - state.getLastAlarmedGameTime()));
 
-        ThreatDecision decision = ThreatResponseRules.decide(situation);
+        ThreatDecision decision;
+        CombatSelection entryCandidate = null;
+        if (ThreatResponseRules.continues(situation.build())) {
+            decision = ThreatDecision.CONTINUE_COMBAT;
+        } else {
+            // Entry is searched only when the fight does not continue, since no entering option can change that.
+            // A brain with no combat runner has nothing to launch a selected option with
+            entryCandidate = villager.isBaby() ? null
+                    : findFirstCombatCandidate(villager, sightedHostiles, lock, continuingOption, continuingReadiness);
+            Double enteringNerve = entryCandidate == null ? null
+                    : ThreatResponseRules.nerve(willGeneValue, healthFraction, entryCandidate.option().nerveContribution(), totalHostileThreat);
+            decision = ThreatResponseRules.decide(situation.enteringNerve(enteringNerve).build());
+        }
+
         ThreatAssessmentResult result = switch (decision) {
-            // The target is this assessment's own engagement scan, never carried over from the previous
-            // selection: a fighter that kills its target while a second hostile waits behind a wall fights on
-            // with no target, until the targetless limit, rather than chasing a dead entity's id
             case CONTINUE_COMBAT -> new ThreatAssessmentResult(ThreatVerdict.COMBAT,
                     new CombatSelection(continuingOption, continuationTarget == null ? null : continuationTarget.getUUID()));
             case ENTER_COMBAT -> new ThreatAssessmentResult(ThreatVerdict.COMBAT, entryCandidate);
@@ -142,12 +161,29 @@ public final class ThreatAssessor {
     }
 
     /**
-     * The first option in precedence order that can engage a sighted hostile; or null when none can.
+     * The first option in precedence order that can engage a sighted hostile, with the target it would choose; or null
+     * when none can.
+     *
+     * @param lock                the villager's locked target, or null
+     * @param continuingOption    the option the villager is fighting with, or null
+     * @param continuingReadiness the continuing option's readiness this assessment, reused rather than prepared again;
+     *                            null exactly when continuingOption is
      */
     @Nullable
-    private CombatSelection findFirstCombatCandidate(@Nonnull BaseVillager villager, @Nonnull PerceivedEntities sightedHostiles) {
-        for (CombatOption option : this.catalog.orderedOptions()) {
-            LivingEntity target = findNearestEngageableHostile(villager, option, sightedHostiles);
+    private CombatSelection findFirstCombatCandidate(@Nonnull BaseVillager villager,
+                                                     @Nonnull PerceivedEntities sightedHostiles,
+                                                     @Nullable LivingEntity lock,
+                                                     @Nullable CombatOption continuingOption,
+                                                     @Nullable CombatReadiness continuingReadiness) {
+        for (CombatOption option : this.combatOptions) {
+            CombatReadiness readiness = option == continuingOption ? continuingReadiness : option.prepare(villager);
+            if (readiness == null) {
+                continue;
+            }
+
+            double reachBlocks = option.reachBlocks();
+            LivingEntity engageableLock = lock != null && canEngageSighted(readiness, reachBlocks, sightedHostiles, lock) ? lock : null;
+            LivingEntity target = chooseTarget(villager, readiness, reachBlocks, sightedHostiles, engageableLock);
             if (target != null) {
                 return new CombatSelection(option, target.getUUID());
             }
@@ -156,32 +192,96 @@ public final class ThreatAssessor {
     }
 
     /**
-     * The nearest sighted, live hostile this option could engage within its reach, or null.
-     * A zombie villager being cured is never a candidate.
-     * <p>
-     * Sighted hostiles are nearest-first, so once one falls outside reach every later one does too.
+     * The hostile the option should engage. Null when there is none.
+     *
+     * @param reachBlocks the option's reach
+     * @param lock        the villager's locked target when the option can engage it, or null
      */
     @Nullable
-    private static LivingEntity findNearestEngageableHostile(@Nonnull BaseVillager villager,
-                                                             @Nonnull CombatOption option,
-                                                             @Nonnull PerceivedEntities sightedHostiles) {
+    private static LivingEntity chooseTarget(@Nonnull BaseVillager villager,
+                                             @Nonnull CombatReadiness readiness,
+                                             double reachBlocks,
+                                             @Nonnull PerceivedEntities sightedHostiles,
+                                             @Nullable LivingEntity lock) {
+        if (lock == null) {
+            return findNearestEngageableHostile(readiness, sightedHostiles, reachBlocks);
+        } else if (villager.distanceToSqr(lock) > CLOSE_QUARTERS_BLOCKS * CLOSE_QUARTERS_BLOCKS) {
+            // A lock farther than close quarters yields to an engageable hostile within them
+            LivingEntity closeHostile = findNearestEngageableHostile(readiness, sightedHostiles,
+                    Math.min(CLOSE_QUARTERS_BLOCKS, reachBlocks));
+            return closeHostile != null ? closeHostile : lock;
+        } else {
+            // A lock already within close quarters is kept
+            return lock;
+        }
+    }
+
+    /**
+     * The nearest sighted, live hostile within the given distance of the villager that the option could engage; or
+     * null. A zombie villager being cured is never a candidate.
+     * <p>
+     * Sighted hostiles are nearest-first, so once one falls outside the distance every later one does too.
+     *
+     * @param withinBlocks the distance limit, never beyond the option's reach
+     */
+    @Nullable
+    private static LivingEntity findNearestEngageableHostile(@Nonnull CombatReadiness readiness,
+                                                             @Nonnull PerceivedEntities sightedHostiles,
+                                                             double withinBlocks) {
         for (SensedEntity sensed : sightedHostiles.entities()) {
             LivingEntity candidate = sensed.entity();
             if (!candidate.isAlive()) {
                 continue;
             }
-            if (sensed.distance() > option.reachBlocks()) {
+            if (sensed.distance() > withinBlocks) {
                 break;
             }
-            // The patient is a villager in the making, so no option may fight it, whatever its weapon
-            if (candidate instanceof ZombieVillager patient && patient.isConverting()) {
+            if (isBeingCured(candidate)) {
                 continue;
             }
-            if (option.canEngage(villager, candidate)) {
+            if (readiness.canEngage(candidate)) {
                 return candidate;
             }
         }
         return null;
+    }
+
+    /**
+     * Whether the villager has sighted this hostile within the option's reach, and the option could engage it.
+     *
+     * @param reachBlocks the option's reach
+     */
+    private static boolean canEngageSighted(@Nonnull CombatReadiness readiness,
+                                            double reachBlocks,
+                                            @Nonnull PerceivedEntities sightedHostiles,
+                                            @Nonnull LivingEntity hostile) {
+        for (SensedEntity sensed : sightedHostiles.entities()) {
+            if (sensed.entity() == hostile) {
+                return sensed.distance() <= reachBlocks && readiness.canEngage(hostile);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The locked target with the given id when it still lives; or null. A zombie villager being cured is never
+     * returned.
+     */
+    @Nullable
+    private static LivingEntity resolveLock(@Nonnull BaseVillager villager, @Nullable UUID lockedTargetId) {
+        if (lockedTargetId == null || !(villager.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        // Resolved and checked afresh, so a target that died since is never chased by its id
+        if (!(level.getEntity(lockedTargetId) instanceof LivingEntity target) || !target.isAlive() || isBeingCured(target)) {
+            return null;
+        }
+        return target;
+    }
+
+    private static boolean isBeingCured(@Nonnull LivingEntity hostile) {
+        // The patient is a villager in the making, so no option may fight it, whatever its weapon
+        return hostile instanceof ZombieVillager patient && patient.isConverting();
     }
 
     private static boolean contains(@Nonnull PerceivedEntities perceived, @Nonnull LivingEntity entity) {

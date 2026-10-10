@@ -151,6 +151,17 @@
       "dump": {
         "above": 16
       }
+    },
+    {
+      "id": "ballista_bolt",
+      "match": {
+        "item": "settlements:ballista_bolt"
+      },
+      "restock": {
+        "below": 16,
+        "buyPricePerUnit": 1,
+        "priority": 20
+      }
     }
   ]
 }

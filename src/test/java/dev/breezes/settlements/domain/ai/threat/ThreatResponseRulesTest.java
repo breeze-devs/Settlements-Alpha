@@ -5,6 +5,7 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ThreatResponseRulesTest {
 
@@ -566,6 +567,24 @@ class ThreatResponseRulesTest {
 
         // Assert
         assertEquals(ThreatDecision.CONTINUE_COMBAT, decision);
+    }
+
+    @Test
+    void continues_aFightThatHolds_continuesWithNoEnteringNerveJudged() {
+        // Arrange -- a fight that holds, judged before any entering option has been searched for.
+        ThreatSituation situation = ThreatSituation.builder()
+                .previousVerdict(ThreatVerdict.COMBAT)
+                .awareHostilePresent(true)
+                .continuingNerve(ThreatResponseRules.NERVE_CONTINUE_THRESHOLD)
+                .sinceEngageableTarget(ClockTicks.ZERO)
+                .build();
+
+        // Act -- counterexample: continuation that depends on the entering nerve, so a fight judged before entry is
+        // searched never continues.
+        boolean continues = ThreatResponseRules.continues(situation);
+
+        // Assert
+        assertTrue(continues);
     }
 
     @Test

@@ -5,6 +5,7 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import net.minecraft.world.entity.LivingEntity;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A combat capability a villager may fight with.
@@ -12,37 +13,24 @@ import javax.annotation.Nonnull;
 public interface CombatOption {
 
     /**
-     * This option's precedence among registered options, lowest first.
-     * Unique among every option {@link CombatOptionCatalog} registers.
-     */
-    int order();
-
-    /**
      * This option's contribution to the villager's willingness to fight when selected.
      */
     double nerveContribution();
 
     /**
-     * The distance, in blocks, within which this option can engage a hostile.
+     * The farthest, in blocks, a hostile can be from the villager for this option to engage it or stay locked on to it.
+     * An option that fights from somewhere else, such as a machine, covers the walk there as well.
      */
     double reachBlocks();
 
     /**
-     * Whether this option could engage the given hostile right now, were it selected.
+     * Whether the villager can fight with this option, and if so, what answers for each hostile; null when it cannot.
      * <p>
-     * Called only for a hostile already confirmed sighted, within {@link #reachBlocks()}, and not a zombie villager
-     * being cured.
+     * A cooldown between attacks or a reload in progress is not a loss of capability.
+     * Readiness is a property of the villager and the option, not of a specific target.
      */
-    boolean canEngage(@Nonnull BaseVillager villager, @Nonnull LivingEntity hostile);
-
-    /**
-     * Whether this option, as the villager's current selection, can keep fighting.
-     * <p>
-     * A cooldown between attacks or a reload in progress is not a loss of capability; only losing the
-     * resource this option depends on is. Continuation is a property of the option itself, not of a
-     * specific target: a hostile still in awareness is what the assessment separately requires.
-     */
-    boolean canContinue(@Nonnull BaseVillager villager);
+    @Nullable
+    CombatReadiness prepare(@Nonnull BaseVillager villager);
 
     /**
      * Creates a fresh, unstarted combat action aimed at the given hostile.

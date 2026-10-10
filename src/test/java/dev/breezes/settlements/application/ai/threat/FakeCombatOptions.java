@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import net.minecraft.world.entity.LivingEntity;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Combat options that decline every check, for tests that need a distinct option but none of its behavior.
@@ -14,13 +15,8 @@ import javax.annotation.Nonnull;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class FakeCombatOptions {
 
-    static CombatOption withOrder(int order) {
+    static CombatOption inert() {
         return new CombatOption() {
-            @Override
-            public int order() {
-                return order;
-            }
-
             @Override
             public double nerveContribution() {
                 return 0.0;
@@ -32,13 +28,9 @@ final class FakeCombatOptions {
             }
 
             @Override
-            public boolean canEngage(@Nonnull BaseVillager villager, @Nonnull LivingEntity hostile) {
-                return false;
-            }
-
-            @Override
-            public boolean canContinue(@Nonnull BaseVillager villager) {
-                return false;
+            @Nullable
+            public CombatReadiness prepare(@Nonnull BaseVillager villager) {
+                return null;
             }
 
             @Override

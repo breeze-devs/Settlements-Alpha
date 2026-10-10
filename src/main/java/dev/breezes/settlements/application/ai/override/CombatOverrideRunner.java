@@ -2,6 +2,7 @@ package dev.breezes.settlements.application.ai.override;
 
 import dev.breezes.settlements.application.ai.threat.CombatOption;
 import dev.breezes.settlements.application.ai.threat.CombatSelection;
+import dev.breezes.settlements.application.ai.threat.IThreatResponse;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
@@ -9,6 +10,7 @@ import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
 import dev.breezes.settlements.domain.ai.perception.SensedEntity;
+import dev.breezes.settlements.domain.ai.threat.ThreatVerdict;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -37,7 +39,7 @@ final class CombatOverrideRunner implements OverrideRunner {
     /**
      * Bounds one combat action, so a wedged action is replaced instead of holding the fight.
      */
-    private static final ClockTicks ACTION_MAX_DURATION = ClockTicks.seconds(30);
+    private static final ClockTicks ACTION_MAX_DURATION = ClockTicks.seconds(60);
 
     // Villagers can keep talking while they fight, so SOCIAL and COGNITION stay free
     private static final Set<BehaviorChannel> OCCUPIED_CHANNELS =
@@ -53,6 +55,12 @@ final class CombatOverrideRunner implements OverrideRunner {
      */
     @Nullable
     private CombatOption actionOption;
+
+    /**
+     * The target the running action was launched against; null exactly when no action runs.
+     */
+    @Nullable
+    private UUID actionTargetId;
 
     private int actionElapsedTicks;
 
@@ -83,9 +91,15 @@ final class CombatOverrideRunner implements OverrideRunner {
             return;
         }
 
-        CombatSelection selection = villager.getSettlementsBrain().threats().selection();
+        IThreatResponse threats = villager.getSettlementsBrain().threats();
+        CombatSelection selection = threats.selection();
         if (selection == null) {
-            this.ended = true;
+            if (threats.verdict() == ThreatVerdict.COMBAT) {
+                // A revoked selection, whose replacement is already due; relaunching it would only be refused again
+                this.lookAtNearestAwareHostile(villager);
+            } else {
+                this.ended = true;
+            }
             return;
         }
 
@@ -144,15 +158,20 @@ final class CombatOverrideRunner implements OverrideRunner {
         if (this.action.getStatus() == BehaviorStatus.STOPPED) {
             return true;
         }
-        // Only the assessment's approved option may act, so a changed selection retires the running action
-        if (selection.option() != this.actionOption) {
+
+        // Only the assessment's approved option may act against its approved target, so a changed selection retires the
+        // running action
+        if (selection.option() != this.actionOption
+                || (selection.targetId() != null && !selection.targetId().equals(this.actionTargetId))) {
             return true;
         }
+
         if (this.actionElapsedTicks >= ACTION_MAX_DURATION.getTicksAsInt()) {
             log.behaviorWarn("Combat action exceeded max duration ({} ticks) for villager {}; replacing it",
                     ACTION_MAX_DURATION.getTicksAsInt(), villager.getUUID());
             return true;
         }
+
         return false;
     }
 
@@ -171,12 +190,17 @@ final class CombatOverrideRunner implements OverrideRunner {
                               @Nonnull BaseVillager villager,
                               @Nonnull CombatOption option,
                               @Nonnull LivingEntity target) {
-        // TODO: an option that acquires a resource at launch, such as a ballista lease, must invalidate the selection
-        //  and trigger reassessment when acquisition fails, rather than relaunch a stale choice. Eggs are conjured, so
-        //  no registered option acquires anything.
         IBehavior<BaseVillager> next;
         try {
             next = option.createBehavior(target);
+            // A fresh action's cooldowns guard nothing, and left armed they would read as a refusal
+            next.getBehaviorCoolDown().forceComplete();
+            next.getPreconditionCheckCooldown().forceComplete();
+            if (!next.tickPreconditions(1, level, villager)) {
+                // The action could not take what it needs, such as a shared weapon, so the choice is stale
+                villager.getSettlementsBrain().threats().revokeSelection();
+                return;
+            }
             next.start(level, villager);
         } catch (Exception e) {
             log.behaviorError("Combat action threw during start for villager {}; ending combat execution", villager.getUUID(), e);
@@ -188,6 +212,7 @@ final class CombatOverrideRunner implements OverrideRunner {
         this.facedHostile = null;
         this.action = next;
         this.actionOption = option;
+        this.actionTargetId = target.getUUID();
         this.actionElapsedTicks = 0;
     }
 
@@ -198,6 +223,7 @@ final class CombatOverrideRunner implements OverrideRunner {
         }
         this.action = null;
         this.actionOption = null;
+        this.actionTargetId = null;
     }
 
     /**

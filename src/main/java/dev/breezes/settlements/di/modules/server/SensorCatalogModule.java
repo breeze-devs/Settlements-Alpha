@@ -174,6 +174,12 @@ public abstract class SensorCatalogModule {
         return new BlockResource(BlockMatchers.ANVIL, MemoryTypeRegistry.ANVIL_SITES);
     }
 
+    @Provides
+    @IntoSet
+    static BlockResource ballista() {
+        return new BlockResource(BlockMatchers.BALLISTA, MemoryTypeRegistry.BALLISTA_SITES);
+    }
+
     // Cultivation lilies are discovered by the dedicated CultivationSiteSensor (block-entity scan at a
     // larger range), not the generic block-resource sensor — so there is no BlockResource entry here.
 
