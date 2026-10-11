@@ -10,6 +10,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -79,6 +80,10 @@ public final class MemoryModuleTypeRegistry {
 
     public static final Supplier<MemoryModuleType<Set<GlobalPos>>> REFUSED_BALLISTAS = REGISTRY.register(
             "refused_ballistas",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<List<AbstractArrow>>> RETRIEVABLE_PROJECTILES = REGISTRY.register(
+            "retrievable_projectiles",
             () -> new MemoryModuleType<>(Optional.empty()));
 
     public static void register(IEventBus eventBus) {

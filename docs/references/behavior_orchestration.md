@@ -357,6 +357,10 @@ for staying installed. A policy below `EMERGENCY` must refuse every reactive act
 is what keeps ordinary overrides from running through danger, a raid or a bell. A prepared runner must be unstarted
 and report its policy's tier, because preemption compares the running runner's tier.
 
+Every policy is evaluated for every villager, since nothing binds one to a profession. A policy meant for one profession
+returns early on any other, as fletcher projectile retrieval does, and so does any sensor that feeds only it, so other
+villagers never pay for its scan.
+
 A policy must never read `PLAN_BEHAVIOR_ACTIVE` to decide whether to fire. The memory also reports installed overrides,
 so it is this lane's output, not an input. A policy that must yield to running day-plan work, as demanded-item pickup
 does, reads `PlanRuntimeState.isBehaviorActive()`.

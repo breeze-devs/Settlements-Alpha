@@ -8,6 +8,7 @@ import dev.breezes.settlements.application.ai.override.CollectDemandedItemOverri
 import dev.breezes.settlements.application.ai.override.CombatOverridePolicy;
 import dev.breezes.settlements.application.ai.override.CourtshipAcceptOverridePolicy;
 import dev.breezes.settlements.application.ai.override.OverridePolicy;
+import dev.breezes.settlements.application.ai.override.RetrieveProjectilesOverridePolicy;
 import dev.breezes.settlements.application.ai.override.TradeAcceptOverridePolicy;
 
 import java.util.Set;
@@ -38,5 +39,9 @@ public abstract class OverridePolicyModule {
     @Binds
     @IntoSet
     abstract OverridePolicy collectDemandedItemPolicy(CollectDemandedItemOverridePolicy impl);
+
+    @Binds
+    @IntoSet
+    abstract OverridePolicy retrieveProjectilesPolicy(RetrieveProjectilesOverridePolicy impl);
 
 }

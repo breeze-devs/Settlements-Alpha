@@ -108,6 +108,7 @@
   "ui.settlements.behavior.behavior.chase_chickens": "Chase Chickens",
   "ui.settlements.behavior.behavior.scavenge": "Scavenge",
   "ui.settlements.behavior.behavior.collect_demanded_item": "Collect Items",
+  "ui.settlements.behavior.behavior.retrieve_projectiles": "Retrieve Projectiles",
   "ui.settlements.behavior.behavior.survey_landscape": "Survey Landscape",
   "ui.settlements.behavior.behavior.courtship_initiate": "Initiate Courtship",
   "ui.settlements.behavior.behavior.courtship_accept": "Accept Courtship",

@@ -79,6 +79,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.logisti
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.ManageChestsBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.ManageChestsConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.RetrieveProjectilesBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.RetrieveProjectilesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensBehavior;
@@ -204,6 +206,31 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("hopper"))
                         .build())
                 .factory(() -> new CollectDemandedItemBehavior(config, support))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry retrieveProjectiles(RetrieveProjectilesConfig config, BehaviorSupport support) {
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.RETRIEVE_PROJECTILES)
+                        .displayName("Retrieve Projectiles")
+                        .description("Collect stuck arrows and bolts nearby")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(ClockTicks.seconds(30).asGameTicks())
+                        .maxRunDuration(ClockTicks.minutes(2))
+                        .cooldown(CooldownRange.ofSeconds(config.behaviorCooldownMin(), config.behaviorCooldownMax()))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.RETRIEVE_PROJECTILES.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("arrow"))
+                        .build())
+                .factory(() -> new RetrieveProjectilesBehavior(config, support))
                 .build();
     }
 

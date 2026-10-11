@@ -37,6 +37,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.leather
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.leatherworking.washleather.WashLeatherConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.CollectDemandedItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.ManageChestsConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.logistics.RetrieveProjectilesConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.mason.ExcavateSubstrateConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.ChaseChickensConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.nitwit.RingBellConfig;
@@ -54,6 +55,7 @@ import dev.breezes.settlements.application.ai.persona.PersonaConfig;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
+import dev.breezes.settlements.application.ai.sensors.RetrievableProjectileSensorConfig;
 import dev.breezes.settlements.application.ai.socialcue.SocialCueConfig;
 import dev.breezes.settlements.application.ai.speech.SpeechMirrorConfig;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
@@ -360,6 +362,18 @@ public final class ConfigModule {
     @Singleton
     static DemandedGroundItemSensorConfig demandedGroundItemSensorConfig() {
         return ConfigFactory.create(DemandedGroundItemSensorConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static RetrieveProjectilesConfig retrieveProjectilesConfig() {
+        return ConfigFactory.create(RetrieveProjectilesConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static RetrievableProjectileSensorConfig retrievableProjectileSensorConfig() {
+        return ConfigFactory.create(RetrievableProjectileSensorConfig.class);
     }
 
     @Provides

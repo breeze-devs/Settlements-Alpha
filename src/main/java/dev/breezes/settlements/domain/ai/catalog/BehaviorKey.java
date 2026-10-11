@@ -81,6 +81,9 @@ public record BehaviorKey(String id) {
     // Fishing
     public static final BehaviorKey FISHING = new BehaviorKey("fishing");
 
+    // Fletching
+    public static final BehaviorKey RETRIEVE_PROJECTILES = new BehaviorKey("retrieve_projectiles");
+
     // Crafting
     public static final BehaviorKey CUT_STONE = new BehaviorKey("cut_stone");
     public static final BehaviorKey CRAFT_GOODS = new BehaviorKey("craft_goods");

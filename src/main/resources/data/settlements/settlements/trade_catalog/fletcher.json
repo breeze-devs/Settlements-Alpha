@@ -215,6 +215,24 @@
       }
     },
     {
+      "id": "tipped_arrow",
+      "match": {
+        "item": "minecraft:tipped_arrow"
+      },
+      "dump": {
+        "above": 0
+      }
+    },
+    {
+      "id": "spectral_arrow",
+      "match": {
+        "item": "minecraft:spectral_arrow"
+      },
+      "dump": {
+        "above": 0
+      }
+    },
+    {
       "id": "bow",
       "match": {
         "item": "minecraft:bow"

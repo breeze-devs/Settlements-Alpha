@@ -33,4 +33,10 @@ public final class SettlementsEntityTypeTags {
     public static final TagKey<EntityType<?>> VILLAGE_GUARDIANS = TagKey.create(Registries.ENTITY_TYPE,
             ResourceLocationUtil.mod("village_guardians"));
 
+    /**
+     * Arrow-type projectiles a fletcher collects once they are stuck in a block.
+     */
+    public static final TagKey<EntityType<?>> RETRIEVABLE_PROJECTILES = TagKey.create(Registries.ENTITY_TYPE,
+            ResourceLocationUtil.mod("retrievable_projectiles"));
+
 }

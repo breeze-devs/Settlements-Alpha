@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,10 +101,16 @@ public final class MemoryTypeRegistry {
 
     /**
      * Ballistas the villager recently failed to take up for a fight, so that it turns to another machine or another
-     * way to fight rather than straight back to the same one. Not saved, and it expires.
+     * way to fight rather than straight back to the same one.
      */
     public static final MemoryType.VanillaMemoryType<Set<GlobalPos>> REFUSED_BALLISTAS = MemoryType.vanillaBacked(
             "refused_ballistas", MemoryModuleTypeRegistry.REFUSED_BALLISTAS);
+
+    /**
+     * Stuck projectiles nearby that the villager could walk to and retrieve.
+     */
+    public static final MemoryType.VanillaMemoryType<List<AbstractArrow>> RETRIEVABLE_PROJECTILES = MemoryType.vanillaBacked(
+            "retrievable_projectiles", MemoryModuleTypeRegistry.RETRIEVABLE_PROJECTILES);
 
     public static final MemoryType.VanillaMemoryType<List<UUID>> WILLING_COURTSHIP_PARTNERS = MemoryType.vanillaBacked(
             "willing_courtship_partners", MemoryModuleTypeRegistry.WILLING_COURTSHIP_PARTNERS);

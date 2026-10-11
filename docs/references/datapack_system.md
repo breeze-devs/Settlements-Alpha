@@ -261,7 +261,7 @@ public interface ReloadListenerModule {
     PreparableReloadListener craftCatalog(CraftCatalogDataManager m);
     // … one line per loader …
     @Binds @IntoSet @PostReloadListeners
-    PreparableReloadListener craftCatalogValidation(CraftCatalogValidationReloadListener l);
+    PreparableReloadListener craftCatalogValidation(RecipeCatalogValidationReloadListener l);
 }
 ```
 
@@ -360,8 +360,8 @@ guarantees. There are two validators today, both in [`bootstrap/event`](../../sr
   (delegates to [GenerationDataValidator](../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/data/validation/GenerationDataValidator.java)):
   takes the trait catalog as the known-trait set, reads the **raw** scorer and building snapshots, drops
   any entry referencing an unknown trait, and **writes back** the pruned active snapshots. It *mutates*.
-- **[CraftCatalogValidationReloadListener](../../src/main/java/dev/breezes/settlements/bootstrap/event/CraftCatalogValidationReloadListener.java)**:
-  reads `CraftCatalogDataManager.loadedRecipes()` and the trade catalog's supply projection, and **warns**
+- **[RecipeCatalogValidationReloadListener](../../src/main/java/dev/breezes/settlements/bootstrap/event/RecipeCatalogValidationReloadListener.java)**:
+  reads the craft and forge catalogs' `loadedRecipes()` and the trade catalog's supply projection, and **warns**
   about any recipe whose output has no `dump` rung (it would silently never craft). It only *diagnoses*.
 
 Validators that mutate require the producer to expose a **two-phase hook** — a raw getter and an active

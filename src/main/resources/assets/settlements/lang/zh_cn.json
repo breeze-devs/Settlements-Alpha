@@ -108,6 +108,7 @@
   "ui.settlements.behavior.behavior.chase_chickens": "捉鸡",
   "ui.settlements.behavior.behavior.scavenge": "翻找草丛",
   "ui.settlements.behavior.behavior.collect_demanded_item": "收集所需物品",
+  "ui.settlements.behavior.behavior.retrieve_projectiles": "回收箭",
   "ui.settlements.behavior.behavior.survey_landscape": "探查地形",
   "ui.settlements.behavior.behavior.courtship_initiate": "主动示爱",
   "ui.settlements.behavior.behavior.courtship_accept": "接受示爱",

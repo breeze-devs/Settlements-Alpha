@@ -40,7 +40,7 @@ public class BallistaBolt extends AbstractArrow {
 
     private static final int TRAIL_PARTICLES_PER_TICK = 4;
 
-    private static final ClockTicks STUCK_LIFETIME = ClockTicks.minutes(5);
+    private static final ClockTicks STUCK_LIFETIME = ClockTicks.minutes(20);
 
     // At full speed, one bolt kills any raider short of a ravager
     private static final int MIN_FULL_SPEED_DAMAGE = 40;
