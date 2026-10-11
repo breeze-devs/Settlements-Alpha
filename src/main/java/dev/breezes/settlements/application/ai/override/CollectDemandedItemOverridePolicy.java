@@ -3,7 +3,6 @@ package dev.breezes.settlements.application.ai.override;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
-import dev.breezes.settlements.domain.ai.override.OverridePrecedence;
 import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import jakarta.inject.Inject;
@@ -26,16 +25,11 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class CollectDemandedItemOverridePolicy implements OverridePolicy {
 
-    private static final OverridePrecedence PRECEDENCE = OverridePrecedence.builder()
-            .tier(OverrideTier.OPPORTUNISTIC)
-            .order(10)
-            .build();
-
     private static final Set<Activity> IDLE_WINDOW_ACTIVITIES = Set.of(Activity.WORK, Activity.MEET, Activity.IDLE);
 
     @Override
-    public OverridePrecedence precedence() {
-        return PRECEDENCE;
+    public OverrideTier tier() {
+        return OverrideTier.OPPORTUNISTIC;
     }
 
     @Override

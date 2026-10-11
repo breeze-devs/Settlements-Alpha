@@ -3,7 +3,6 @@ package dev.breezes.settlements.application.ai.override;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
-import dev.breezes.settlements.domain.ai.override.OverridePrecedence;
 import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.domain.time.GameTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -16,8 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,25 +33,25 @@ class OverrideArbiterTest {
     private DayPlanHandoff dayPlanHandoff;
 
     @Test
-    void constructor_rejectsTwoPoliciesDeclaringTheSamePrecedence() {
-        // Arrange — counterexample: two policies both claim (REACTIVE, 0), and nothing catches it,
-        // leaving their relative evaluation order to depend on incidental Set iteration order.
-        OverridePolicy first = fakePolicy(new OverridePrecedence(OverrideTier.REACTIVE, 0));
-        OverridePolicy second = fakePolicy(new OverridePrecedence(OverrideTier.REACTIVE, 0));
+    void constructor_rejectsAPolicyRankedBehindALowerTier() {
+        // Arrange — counterexample: an opportunistic policy ranked ahead of a reactive one goes unnoticed,
+        // so an idle pickup is asked first and wins over a pending invite.
+        OverridePolicy opportunistic = fakePolicy(OverrideTier.OPPORTUNISTIC);
+        OverridePolicy reactive = fakePolicy(OverrideTier.REACTIVE);
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class,
-                () -> new OverrideArbiter(Set.of(first, second), this.catalog, this.dayPlanHandoff));
+                () -> new OverrideArbiter(List.of(opportunistic, reactive), this.catalog, this.dayPlanHandoff));
     }
 
     @Test
-    void constructor_acceptsPoliciesWithDistinctPrecedences() {
-        // Arrange
-        OverridePolicy first = fakePolicy(new OverridePrecedence(OverrideTier.REACTIVE, 0));
-        OverridePolicy second = fakePolicy(new OverridePrecedence(OverrideTier.REACTIVE, 1));
+    void constructor_acceptsPoliciesSharingATier() {
+        // Arrange — counterexample: two policies in one tier rejected, leaving no way to rank within a tier.
+        OverridePolicy first = fakePolicy(OverrideTier.REACTIVE);
+        OverridePolicy second = fakePolicy(OverrideTier.REACTIVE);
 
         // Act & Assert
-        assertDoesNotThrow(() -> new OverrideArbiter(Set.of(first, second), this.catalog, this.dayPlanHandoff));
+        assertDoesNotThrow(() -> new OverrideArbiter(List.of(first, second), this.catalog, this.dayPlanHandoff));
     }
 
     @Test
@@ -83,11 +82,11 @@ class OverrideArbiterTest {
                 .build();
     }
 
-    private static OverridePolicy fakePolicy(OverridePrecedence precedence) {
+    private static OverridePolicy fakePolicy(OverrideTier tier) {
         return new OverridePolicy() {
             @Override
-            public OverridePrecedence precedence() {
-                return precedence;
+            public OverrideTier tier() {
+                return tier;
             }
 
             @Override

@@ -311,8 +311,8 @@ day-plan seam the arbiter depends on, implemented by `PlanRunner`). The tier and
 
 ### Tiers and precedence
 
-Every `OverridePolicy` declares an `OverridePrecedence`: a tier, then an explicit order within that tier. The tiers are a
-closed set, high to low; adding one is a design change.
+Every `OverridePolicy` declares an `OverrideTier`, and `OverridePolicyModule` ranks all policies in one list, highest tier
+first. The tiers are a closed set, high to low; adding one is a design change.
 
 | Tier | Meaning |
 |------|---------|
@@ -320,8 +320,8 @@ closed set, high to low; adding one is a design change.
 | `REACTIVE` | Answering another party's request, such as an invite. |
 | `OPPORTUNISTIC` | Idle-time work the villager can take or leave. |
 
-A precedence must be unique across policies. `OverrideArbiter` rejects a collision at construction, so relative order
-never falls to `Set` iteration order.
+Within a tier, list position is the only precedence; a policy declares no rank of its own. `OverrideArbiter` rejects a
+list that ranks a policy behind a lower tier at construction, so the list always reads as the order that runs.
 
 ### Arbitration
 
@@ -329,7 +329,7 @@ Policy evaluation runs on a per-villager cadence (`OverrideRuntimeState.EVALUATI
 village does not evaluate on one tick. The installed runner still ticks every server tick, so running execution
 never lags.
 
-- **Nothing installed.** Policies are evaluated in precedence order. A non-interruptible day-plan descriptor excludes
+- **Nothing installed.** Policies are evaluated in list order. A non-interruptible day-plan descriptor excludes
   `REACTIVE` and `OPPORTUNISTIC`; `EMERGENCY` ignores that protection. The first policy that returns a request is the
   only candidate: if the catalog behavior it names fails validation, lower policies wait for the next evaluation. A
   validated request suspends the running day-plan behavior and re-queues its slot to `PENDING` *before* the runner
@@ -350,10 +350,9 @@ as a fight, enters the lane.
 
 ### Override policies
 
-Registered as a Dagger multibinding in `di/modules/server/OverridePolicyModule.java`, the authority on membership. A
-policy is `@ServerScope` and stateless: `evaluate(level, villager)` reads state and returns an
-`Optional<OverrideRequest>`, and `isAdmissibleDuring(activity)` declares which activities admit it, both for starting and
-for staying installed. A policy below `EMERGENCY` must refuse every reactive activity; that refusal, not a safety check,
+Listed in `di/modules/server/OverridePolicyModule.java`, the authority on membership and ranking. A policy is
+`@ServerScope` and stateless: `evaluate(level, villager)` reads state and returns an `Optional<OverrideRequest>`, and
+`isAdmissibleDuring(activity)` declares which activities admit it, both for starting and for staying installed. A policy below `EMERGENCY` must refuse every reactive activity; that refusal, not a safety check,
 is what keeps ordinary overrides from running through danger, a raid or a bell. A prepared runner must be unstarted
 and report its policy's tier, because preemption compares the running runner's tier.
 
@@ -510,7 +509,7 @@ a plan mid-slot.
 | `PlanRunnerBehavior` location | `Activity.CORE` | Must survive activity transitions without stop/start; CORE always ticks regardless of active activity. Placing it in each activity would restart it on every transition, interrupting mid-slot execution. |
 | Reactive override rides inside `PlanRunnerBehavior` | Not a new activity, not a vanilla brain override | `OverrideArbiter` needs to know whether a plan behavior is running and interruptible, and must hand the body over cleanly (suspend → install → resume) under any day-plan activity. A brain-priority behavior could not coordinate that. |
 | Arbitration is a separate component from execution | `OverrideArbiter` vs. `OverrideRunner` | Tier/order/admission/preemption decisions and one runner's own bookkeeping (elapsed ticks, its ceiling, exception containment) change for different reasons; combined, every new kind of execution would have to edit arbitration. |
-| Override precedence is tier-then-order | `OverridePrecedence` (`OverrideTier` + explicit order) | A flat priority number cannot express "only strictly higher tiers may preempt a running one" without also encoding every pairwise comparison by hand. Duplicate precedence is rejected at construction rather than left to `Set` iteration order. |
+| Override precedence is a tier, then a list position | Each policy declares its `OverrideTier`; `OverridePolicyModule` lists the policies highest tier first | A single ranking cannot express "only strictly higher tiers may preempt a running one". The tier carries that rule and protected-plan admission, so it stays on the policy whose nature it describes. Order within a tier only compares policies, so no one policy can state it: a rank number on each means nothing until read against every sibling's, and two equal numbers leave the order to chance. A list ranked out of tier order is rejected at construction rather than re-sorted, so the list never shows an order that does not run. |
 | Every override runner is bounded in time | Per-behavior ceiling, a fixed fallback for a key with no descriptor; per action for combat | Overrides are reactive and short-lived; a wedged one (e.g. mirroring a session that never closes) must not freeze the villager. On trip, the runner reports complete and the arbiter stops it and re-queues the interrupted slot — identically to a natural finish. A fight's length is the verdict's to decide, so the combat runner bounds each action instead ([`threat_response.md`](threat_response.md#combat)). |
 | Policy evaluation is throttled and staggered | `OverrideRuntimeState.EVALUATION_INTERVAL`, random per-villager phase | Evaluating every policy every tick for every villager is pure overhead on the peaceful path; ticking whatever is already installed still happens every tick so a running override never feels laggy. |
 | Opportunity requirements down-weight, not filter | `PlannerPolicy.LOW_OPPORTUNITY_MULTIPLIER` | Keeps starved behaviors in the pool so plans stay resilient; the packer prunes only zero-weight entries, so the multiplier must stay above zero. Forecast is computed on the server thread before the async handoff (decaying-memory reads aren't thread-safe). |
@@ -542,14 +541,13 @@ a plan mid-slot.
 
 ### Adding a reactive override
 
-1. Implement `OverridePolicy` (`@ServerScope`, stateless): `precedence()` returning a unique
-   `OverridePrecedence` (pick the right `OverrideTier` and an order that does not collide with a sibling in the same
-   tier — the arbiter rejects a collision at construction), `isAdmissibleDuring(activity)` declaring which activities
-   admit it, and `evaluate(level, villager)` returning an `Optional<OverrideRequest>`: the catalog `BehaviorKey` to
-   install, or an unstarted runner it prepared. Keep `evaluate` cheap — it is polled on the arbiter's evaluation
-   cadence, not every tick — and short-circuit early (as `CourtshipAcceptOverridePolicy` does when no invite is
-   pending).
-2. Bind it `@Binds @IntoSet` in `OverridePolicyModule`.
+1. Implement `OverridePolicy` (`@ServerScope`, stateless): `tier()` returning the right `OverrideTier`,
+   `isAdmissibleDuring(activity)` declaring which activities admit it, and `evaluate(level, villager)` returning an
+   `Optional<OverrideRequest>`: the catalog `BehaviorKey` to install, or an unstarted runner it prepared. Keep `evaluate`
+   cheap — it is polled on the arbiter's evaluation cadence, not every tick — and short-circuit early (as
+   `CourtshipAcceptOverridePolicy` does when no invite is pending).
+2. Add it to `OverridePolicyModule`'s list, within its tier and ahead of any sibling it should win over — the arbiter
+   rejects a list ranked out of tier order at construction.
 3. For a catalog request, ensure the target behavior exists in the catalog. Either way, check that the behaviors it may
    interrupt declare `isInterruptible()` appropriately (only checked for `REACTIVE`/`OPPORTUNISTIC` tiers —
    `EMERGENCY` ignores it).

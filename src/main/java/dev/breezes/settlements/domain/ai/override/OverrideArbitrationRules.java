@@ -3,13 +3,11 @@ package dev.breezes.settlements.domain.ai.override;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.OptionalInt;
 
 /**
- * Override admission rules and precedence conflict detection.
+ * Override admission rules and policy ranking validation.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class OverrideArbitrationRules {
@@ -23,17 +21,16 @@ public final class OverrideArbitrationRules {
     }
 
     /**
-     * Returns the precedence whose second occurrence appears earliest in the list, or empty if
-     * every precedence is unique.
+     * Returns the index of the first tier ranked behind a lower one, or empty if the tiers are ranked
+     * highest first.
      */
-    public static Optional<OverridePrecedence> firstDuplicate(List<OverridePrecedence> precedences) {
-        Set<OverridePrecedence> seen = new HashSet<>();
-        for (OverridePrecedence precedence : precedences) {
-            if (!seen.add(precedence)) {
-                return Optional.of(precedence);
+    public static OptionalInt firstOutOfTierOrder(List<OverrideTier> rankedTiers) {
+        for (int i = 1; i < rankedTiers.size(); i++) {
+            if (rankedTiers.get(i).isAbove(rankedTiers.get(i - 1))) {
+                return OptionalInt.of(i);
             }
         }
-        return Optional.empty();
+        return OptionalInt.empty();
     }
 
 }

@@ -3,14 +3,14 @@ package dev.breezes.settlements.domain.ai.override;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for the pure precedence rules the override arbiter applies.
+ * Unit tests for the pure admission and ranking rules the override arbiter applies.
  */
 class OverrideArbitrationRulesTest {
 
@@ -39,25 +39,23 @@ class OverrideArbitrationRulesTest {
     }
 
     @Test
-    void firstDuplicate_returnsEmptyWhenEveryPrecedenceIsUnique() {
-        List<OverridePrecedence> precedences = List.of(
-                new OverridePrecedence(OverrideTier.REACTIVE, 0),
-                new OverridePrecedence(OverrideTier.REACTIVE, 1),
-                new OverridePrecedence(OverrideTier.OPPORTUNISTIC, 0));
+    void firstOutOfTierOrder_returnsEmptyWhenTiersAreRankedHighestFirst() {
+        // Counterexample: two policies sharing a tier flagged as out of order, leaving no way to rank within a tier.
+        List<OverrideTier> rankedTiers = List.of(
+                OverrideTier.EMERGENCY, OverrideTier.REACTIVE, OverrideTier.REACTIVE, OverrideTier.OPPORTUNISTIC);
 
-        assertTrue(OverrideArbitrationRules.firstDuplicate(precedences).isEmpty());
+        assertTrue(OverrideArbitrationRules.firstOutOfTierOrder(rankedTiers).isEmpty());
     }
 
     @Test
-    void firstDuplicate_returnsTheRepeatedPrecedence() {
-        // Counterexample: two policies both declared REACTIVE order 0 and nothing caught it, leaving
-        // their relative evaluation order to depend on incidental Set iteration order.
-        OverridePrecedence collision = new OverridePrecedence(OverrideTier.REACTIVE, 0);
-        List<OverridePrecedence> precedences = List.of(collision, new OverridePrecedence(OverrideTier.OPPORTUNISTIC, 0), collision);
+    void firstOutOfTierOrder_returnsTheIndexOfATierRankedBehindALowerOne() {
+        // Counterexample: an opportunistic pickup ranked ahead of a trade invite goes unnoticed, so the pickup is
+        // asked first and wins whenever both fire.
+        List<OverrideTier> rankedTiers = List.of(OverrideTier.EMERGENCY, OverrideTier.OPPORTUNISTIC, OverrideTier.REACTIVE);
 
-        Optional<OverridePrecedence> duplicate = OverrideArbitrationRules.firstDuplicate(precedences);
+        OptionalInt outOfOrder = OverrideArbitrationRules.firstOutOfTierOrder(rankedTiers);
 
-        assertEquals(Optional.of(collision), duplicate);
+        assertEquals(OptionalInt.of(2), outOfOrder);
     }
 
 }

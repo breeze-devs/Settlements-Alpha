@@ -2,7 +2,6 @@ package dev.breezes.settlements.application.ai.override;
 
 import dev.breezes.settlements.bootstrap.registry.activities.ActivityRegistry;
 import dev.breezes.settlements.di.ServerScope;
-import dev.breezes.settlements.domain.ai.override.OverridePrecedence;
 import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.domain.ai.threat.ThreatVerdict;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -23,14 +22,9 @@ import java.util.Optional;
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class CombatOverridePolicy implements OverridePolicy {
 
-    private static final OverridePrecedence PRECEDENCE = OverridePrecedence.builder()
-            .tier(OverrideTier.EMERGENCY)
-            .order(0)
-            .build();
-
     @Override
-    public OverridePrecedence precedence() {
-        return PRECEDENCE;
+    public OverrideTier tier() {
+        return OverrideTier.EMERGENCY;
     }
 
     @Override
@@ -44,7 +38,7 @@ public final class CombatOverridePolicy implements OverridePolicy {
             return Optional.empty();
         }
 
-        return Optional.of(new OverrideRequest.PreparedRunner(new CombatOverrideRunner(PRECEDENCE.tier())));
+        return Optional.of(new OverrideRequest.PreparedRunner(new CombatOverrideRunner(this.tier())));
     }
 
 }

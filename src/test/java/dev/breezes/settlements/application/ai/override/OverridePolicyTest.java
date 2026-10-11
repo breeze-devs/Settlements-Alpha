@@ -25,7 +25,7 @@ class OverridePolicyTest {
     void combat_isAdmittedDespiteAProtectedPlan() {
         // Counterexample: combat refused while non-interruptible day-plan work runs, so a protected chore holds off a
         // fight.
-        OverrideTier combat = new CombatOverridePolicy().precedence().tier();
+        OverrideTier combat = new CombatOverridePolicy().tier();
 
         assertTrue(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(combat, false));
     }
@@ -33,9 +33,9 @@ class OverridePolicyTest {
     @Test
     void combat_preemptsARunningCourtshipOrTrade() {
         // Counterexample: combat sharing the invites' tier, so a villager mid-trade keeps trading while it is attacked.
-        OverrideTier combat = new CombatOverridePolicy().precedence().tier();
-        OverrideTier courtship = new CourtshipAcceptOverridePolicy(this.courtshipRegistry).precedence().tier();
-        OverrideTier trade = new TradeAcceptOverridePolicy(this.tradeRegistry).precedence().tier();
+        OverrideTier combat = new CombatOverridePolicy().tier();
+        OverrideTier courtship = new CourtshipAcceptOverridePolicy(this.courtshipRegistry).tier();
+        OverrideTier trade = new TradeAcceptOverridePolicy(this.tradeRegistry).tier();
 
         assertTrue(combat.isAbove(courtship));
         assertTrue(combat.isAbove(trade));
@@ -44,7 +44,7 @@ class OverridePolicyTest {
     @Test
     void courtshipAccept_isRefusedAgainstAProtectedPlan() {
         // Counterexample: a courtship invite pulls a villager out of a non-interruptible chore mid-craft.
-        OverrideTier courtship = new CourtshipAcceptOverridePolicy(this.courtshipRegistry).precedence().tier();
+        OverrideTier courtship = new CourtshipAcceptOverridePolicy(this.courtshipRegistry).tier();
 
         assertFalse(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(courtship, false));
     }
@@ -52,17 +52,9 @@ class OverridePolicyTest {
     @Test
     void tradeAccept_isRefusedAgainstAProtectedPlan() {
         // Counterexample: a trade invite pulls a villager out of a non-interruptible chore mid-craft.
-        OverrideTier trade = new TradeAcceptOverridePolicy(this.tradeRegistry).precedence().tier();
+        OverrideTier trade = new TradeAcceptOverridePolicy(this.tradeRegistry).tier();
 
         assertFalse(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(trade, false));
-    }
-
-    @Test
-    void courtshipAccept_ordersAboveTradeAccept_soASimultaneousInviteFromBothPrefersCourtship() {
-        CourtshipAcceptOverridePolicy courtship = new CourtshipAcceptOverridePolicy(this.courtshipRegistry);
-        TradeAcceptOverridePolicy trade = new TradeAcceptOverridePolicy(this.tradeRegistry);
-
-        assertTrue(courtship.precedence().compareTo(trade.precedence()) < 0);
     }
 
     @Test

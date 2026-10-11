@@ -1,6 +1,6 @@
 package dev.breezes.settlements.application.ai.override;
 
-import dev.breezes.settlements.domain.ai.override.OverridePrecedence;
+import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.schedule.Activity;
@@ -18,9 +18,9 @@ import java.util.Optional;
 public interface OverridePolicy {
 
     /**
-     * This policy's fixed precedence. Must be unique among registered policies.
+     * This policy's fixed tier.
      */
-    OverridePrecedence precedence();
+    OverrideTier tier();
 
     /**
      * Whether this policy permits its override to start or remain active during the given activity.

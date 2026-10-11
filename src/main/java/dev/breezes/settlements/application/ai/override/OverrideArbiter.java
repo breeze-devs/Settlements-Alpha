@@ -6,7 +6,6 @@ import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
 import dev.breezes.settlements.domain.ai.override.OverrideArbitrationRules;
-import dev.breezes.settlements.domain.ai.override.OverridePrecedence;
 import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
@@ -18,10 +17,9 @@ import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+import java.util.OptionalInt;
 import java.util.function.Predicate;
 
 /**
@@ -38,22 +36,21 @@ public final class OverrideArbiter {
     private final DayPlanHandoff dayPlanHandoff;
 
     /**
-     * Creates an arbiter with policies ordered by precedence.
+     * Creates an arbiter that evaluates policies in the given order.
      *
-     * @throws IllegalArgumentException if two policies declare the same precedence
+     * @param policies every override policy, highest tier first, then in order of preference within a tier
+     * @throws IllegalArgumentException if a policy is ranked behind one of a lower tier
      */
     @Inject
-    OverrideArbiter(@Nonnull Set<OverridePolicy> policies,
+    OverrideArbiter(@Nonnull List<OverridePolicy> policies,
                     @Nonnull IBehaviorCatalog catalog,
                     @Nonnull DayPlanHandoff dayPlanHandoff) {
-        List<OverridePolicy> ordered = policies.stream()
-                .sorted(Comparator.comparing(OverridePolicy::precedence))
-                .toList();
-        Optional<OverridePrecedence> duplicate = OverrideArbitrationRules.firstDuplicate(
-                ordered.stream().map(OverridePolicy::precedence).toList());
-        Validate.isTrue(duplicate.isEmpty(), "Duplicate override precedence %s declared by more than one OverridePolicy", duplicate.orElse(null));
+        List<OverrideTier> rankedTiers = policies.stream().map(OverridePolicy::tier).toList();
+        OptionalInt outOfOrder = OverrideArbitrationRules.firstOutOfTierOrder(rankedTiers);
+        Validate.isTrue(outOfOrder.isEmpty(), "Override policy at index %d is ranked behind a lower tier; ranked tiers: %s",
+                outOfOrder.orElse(-1), rankedTiers);
 
-        this.orderedPolicies = ordered;
+        this.orderedPolicies = List.copyOf(policies);
         this.catalog = catalog;
         this.dayPlanHandoff = dayPlanHandoff;
     }
@@ -113,7 +110,7 @@ public final class OverrideArbiter {
         OverrideTier runningTier = runtime.getRunner().tier();
         Activity activity = currentActivity(villager);
         Optional<Installed> candidate = this.prepareFirstRequestedOverride(level, villager,
-                policy -> policy.precedence().tier().isAbove(runningTier) && policy.isAdmissibleDuring(activity));
+                policy -> policy.tier().isAbove(runningTier) && policy.isAdmissibleDuring(activity));
         if (candidate.isEmpty()) {
             return false;
         }
@@ -161,7 +158,7 @@ public final class OverrideArbiter {
         boolean planInterruptible = isPlanInterruptible(villager.getPlanRuntimeState().getCurrentDescriptor());
         Activity activity = currentActivity(villager);
         Optional<Installed> candidate = this.prepareFirstRequestedOverride(level, villager,
-                policy -> OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(policy.precedence().tier(), planInterruptible)
+                policy -> OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(policy.tier(), planInterruptible)
                         && policy.isAdmissibleDuring(activity));
         if (candidate.isEmpty()) {
             return false;
@@ -211,7 +208,7 @@ public final class OverrideArbiter {
     }
 
     /**
-     * Builds an unstarted runner for the first request among eligible policies, in precedence order.
+     * Builds an unstarted runner for the first request among eligible policies, in ranked order.
      * Later policies are not evaluated once a request is found.
      *
      * @param eligible which policies may request an override
@@ -238,7 +235,7 @@ public final class OverrideArbiter {
                 }
                 case OverrideRequest.CatalogBehavior catalogBehavior -> {
                     BehaviorKey key = catalogBehavior.behaviorKey();
-                    OverrideTier tier = policy.precedence().tier();
+                    OverrideTier tier = policy.tier();
                     // Validation failure must not hand the override to a request of lower precedence.
                     return this.validate(level, villager, key)
                             .map(behavior -> new Installed(
