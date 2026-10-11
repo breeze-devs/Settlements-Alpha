@@ -101,6 +101,11 @@ public class OpportunityForecaster {
             }
 
             @Override
+            public boolean itemRequirementsBypassed() {
+                return villager.getSettlementsInventory().requirementsBypassed();
+            }
+
+            @Override
             public boolean hasJobSiteBlock(Block block) {
                 Optional<GlobalPos> jobSite = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE);
                 if (jobSite.isEmpty()) {

@@ -31,6 +31,11 @@ public interface OpportunityProbe {
     boolean holdsAnyItem(Set<Item> items);
 
     /**
+     * Returns true if the villager's item requirements are bypassed.
+     */
+    boolean itemRequirementsBypassed();
+
+    /**
      * Returns true if the villager's JOB_SITE memory points at a block matching the given type.
      * <p>
      * A leveled villager retains its profession when its station is removed, so this can

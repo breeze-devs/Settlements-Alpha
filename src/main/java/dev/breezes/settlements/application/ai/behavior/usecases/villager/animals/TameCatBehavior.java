@@ -25,9 +25,9 @@ import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.SettlementsCat;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
@@ -136,8 +136,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                     }
 
                     // Consume a cod for each attempt
-                    if (!ctx.getInitiator().getMinecraftEntity().getSettlementsInventory()
-                            .consumeIfRequired(Items.COD, 1, GeneralConfig.bypassInventoryRequirements)) {
+                    if (!ctx.getInitiator().getMinecraftEntity().getSettlementsInventory().consumeOrBypassed(Items.COD, 1)) {
                         return StepResult.complete();
                     }
 
@@ -221,10 +220,10 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
             return;
         }
         context.setState(BehaviorStateType.TARGET, TargetState.of(List.of(Targetable.fromEntity(chosenCat.get()))));
-        int codAvailable = villager.getSettlementsInventory().count(Items.COD);
-        this.attemptsRemaining = GeneralConfig.bypassInventoryRequirements
+        VillagerInventory inventory = villager.getSettlementsInventory();
+        this.attemptsRemaining = inventory.requirementsBypassed()
                 ? MAX_TAME_ATTEMPTS
-                : Math.min(MAX_TAME_ATTEMPTS, codAvailable);
+                : Math.min(MAX_TAME_ATTEMPTS, inventory.count(Items.COD));
         if (this.attemptsRemaining <= 0) {
             this.requestStop("No cod available at behavior start");
             return;

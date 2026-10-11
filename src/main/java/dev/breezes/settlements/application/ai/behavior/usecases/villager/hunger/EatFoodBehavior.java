@@ -13,7 +13,6 @@ import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.component.DataComponents;
@@ -52,8 +51,8 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
     private static final ClockTicks CHEW_SOUND_INTERVAL = ClockTicks.of(4);
 
     /**
-     * The default meal item where {@link GeneralConfig#bypassInventoryRequirements} waives food the
-     * villager does not own.
+     * The meal eaten when the villager owns no food and {@link VillagerInventory#requirementsBypassed()}
+     * waives the requirement.
      */
     private static final Item CANONICAL_BYPASS_FOOD = Items.BREAD;
 
@@ -168,7 +167,7 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
      * Applies the meal's nutrition effects.
      */
     private void swallowSelectedFood(@Nonnull BaseVillager villager) {
-        if (!villager.getSettlementsInventory().consumeIfRequired(this.selectedFood, 1, GeneralConfig.bypassInventoryRequirements)) {
+        if (!villager.getSettlementsInventory().consumeOrBypassed(this.selectedFood, 1)) {
             log.behaviorTrace("Meal for villager {} found nothing left of its chosen food to swallow",
                     villager.getUUID());
             return;
@@ -189,8 +188,9 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
     }
 
     private Optional<ItemStack> selectMeal(@Nonnull BaseVillager villager) {
-        Optional<ItemStack> owned = this.findFirstFoodRepresentative(villager.getSettlementsInventory());
-        if (owned.isPresent() || !GeneralConfig.bypassInventoryRequirements) {
+        VillagerInventory inventory = villager.getSettlementsInventory();
+        Optional<ItemStack> owned = this.findFirstFoodRepresentative(inventory);
+        if (owned.isPresent() || !inventory.requirementsBypassed()) {
             return owned;
         }
         return Optional.of(new ItemStack(CANONICAL_BYPASS_FOOD));

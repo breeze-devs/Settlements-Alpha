@@ -4,8 +4,8 @@ import dev.breezes.settlements.bootstrap.registry.attachments.AttachmentRegistry
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
@@ -64,7 +64,7 @@ public final class DemandSignalService {
     /**
      * Returns a precondition that passes when the villager holds enough of the matched item.
      * Emits a demand signal when the villager is short so behaviors can procure it.
-     * The gate and signal are suppressed entirely when bypassInventoryRequirements is on.
+     * The gate and signal are suppressed entirely while the villager's item requirements are bypassed.
      */
     public ICondition<BaseVillager> requireItem(@Nonnull ItemMatch match,
                                                 int quantity,
@@ -78,10 +78,11 @@ public final class DemandSignalService {
             if (villager == null) {
                 return false;
             }
-            if (GeneralConfig.bypassInventoryRequirements) {
+            VillagerInventory inventory = villager.getSettlementsInventory();
+            if (inventory.requirementsBypassed()) {
                 return true;
             }
-            if (villager.getSettlementsInventory().countMatching(match) >= quantity) {
+            if (inventory.countMatching(match) >= quantity) {
                 // Clear any signal previously emitted for this match so chest/trade stop procuring
                 this.remove(villager, match);
                 return true;
@@ -112,11 +113,12 @@ public final class DemandSignalService {
             if (villager == null) {
                 return false;
             }
-            if (GeneralConfig.bypassInventoryRequirements) {
+            VillagerInventory inventory = villager.getSettlementsInventory();
+            if (inventory.requirementsBypassed()) {
                 return true;
             }
             for (ItemMatch match : matches) {
-                if (villager.getSettlementsInventory().countMatching(match) >= quantity) {
+                if (inventory.countMatching(match) >= quantity) {
                     // Any-of satisfied — clear signals for all alternatives, not just the satisfied one
                     for (ItemMatch m : matches) {
                         this.remove(villager, m);

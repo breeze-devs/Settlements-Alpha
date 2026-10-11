@@ -1,12 +1,11 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting;
 
 import dev.breezes.settlements.application.economy.VillagerWallet;
+import dev.breezes.settlements.application.economy.supply.SupplyEvaluator;
 import dev.breezes.settlements.domain.crafting.catalog.CraftIngredient;
 import dev.breezes.settlements.domain.crafting.catalog.CraftRecipe;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
-import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.domain.economy.catalog.OfferEntry;
-import dev.breezes.settlements.domain.economy.catalog.SupplyEntry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
@@ -18,9 +17,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.List;
+import java.util.OptionalInt;
 
 /**
  * Calculates craftable batches and ranks recipes by the share of their output ceiling still free.
@@ -29,25 +28,26 @@ import java.util.List;
 public class CraftBatchCalculator {
 
     private final TradeCatalogRegistry tradeCatalog;
+    private final SupplyEvaluator supplyEvaluator;
     private final VillagerWallet wallet;
 
     /**
      * Returns the number of recipe executions allowed by factors like expertise, input stock above sell reserves,
-     * emerald affordability, and remaining output capacity.
+     * emerald affordability, and remaining output capacity. Input stock sets no limit while the villager's item
+     * requirements are bypassed.
      * <p>
      * Returns 0 when no execution fits or no output overflow ceiling is configured.
      */
     public int computeBatch(@Nonnull BaseVillager villager, @Nonnull CraftRecipe recipe) {
         Item outputItem = BuiltInRegistries.ITEM.get(recipe.output().itemId());
-        VillagerProfessionKey profession = villager.getProfession();
-
-        Integer ceiling = this.dumpAbove(profession, outputItem);
-        if (ceiling == null) {
+        OptionalInt ceiling = this.supplyEvaluator.dumpThreshold(villager.getProfession(), outputItem);
+        if (ceiling.isEmpty()) {
             // Recipes are disabled until an overflow policy bounds their production
             return 0;
         }
 
         VillagerInventory inventory = villager.getSettlementsInventory();
+        boolean bypassed = inventory.requirementsBypassed();
         List<CraftIngredient> inputs = recipe.inputs();
         boolean costsEmeralds = recipe.emeralds() > 0;
         int costCount = costsEmeralds ? inputs.size() + 1 : inputs.size();
@@ -55,7 +55,7 @@ public class CraftBatchCalculator {
         int[] inputCounts = new int[costCount];
         for (int i = 0; i < inputs.size(); i++) {
             CraftIngredient input = inputs.get(i);
-            inputHeadrooms[i] = inventory.countMatching(input.match()) - this.reserveFor(profession, input.match());
+            inputHeadrooms[i] = bypassed ? Integer.MAX_VALUE : this.spendableInput(villager, input.match());
             inputCounts[i] = input.count();
         }
         if (costsEmeralds) {
@@ -65,7 +65,7 @@ public class CraftBatchCalculator {
         }
 
         return clampBatch(villager.getExpertise().getLevel(),
-                ceiling - inventory.count(outputItem),
+                ceiling.getAsInt() - inventory.count(outputItem),
                 recipe.output().count(),
                 inputHeadrooms,
                 inputCounts);
@@ -93,14 +93,15 @@ public class CraftBatchCalculator {
      */
     public double ceilingHeadroomShare(@Nonnull BaseVillager villager, @Nonnull CraftRecipe recipe) {
         Item outputItem = BuiltInRegistries.ITEM.get(recipe.output().itemId());
-        Integer ceiling = this.dumpAbove(villager.getProfession(), outputItem);
+        OptionalInt ceiling = this.supplyEvaluator.dumpThreshold(villager.getProfession(), outputItem);
 
-        if (ceiling == null) {
+        if (ceiling.isEmpty()) {
             return Double.NEGATIVE_INFINITY;
         }
 
         // Flooring the divisor at 1 keeps a zero ceiling from dividing by zero; it still leaves no headroom
-        return (double) (ceiling - villager.getSettlementsInventory().count(outputItem)) / Math.max(ceiling, 1);
+        int threshold = ceiling.getAsInt();
+        return (double) (threshold - villager.getSettlementsInventory().count(outputItem)) / Math.max(threshold, 1);
     }
 
     /**
@@ -117,20 +118,12 @@ public class CraftBatchCalculator {
     }
 
     /**
-     * Returns the highest matching output overflow ceiling, or null when none is configured.
+     * Returns how much of the matched input the villager may spend: its stock above the input's sell reserve, or 0
+     * when it holds no more than the reserve.
      */
-    @Nullable
-    private Integer dumpAbove(@Nonnull VillagerProfessionKey profession, @Nonnull Item outputItem) {
-        ItemStack outputStack = new ItemStack(outputItem);
-        Integer ceiling = null;
-
-        for (SupplyEntry entry : this.tradeCatalog.supplyFor(profession)) {
-            if (ItemMatches.test(entry.match(), outputStack)) {
-                ceiling = ceiling == null ? entry.dumpAbove() : Math.max(ceiling, entry.dumpAbove());
-            }
-        }
-
-        return ceiling;
+    public int spendableInput(@Nonnull BaseVillager villager, @Nonnull ItemMatch inputMatch) {
+        int held = villager.getSettlementsInventory().countMatching(inputMatch);
+        return Math.max(held - this.reserveFor(villager.getProfession(), inputMatch), 0);
     }
 
     /**

@@ -9,7 +9,7 @@ import dev.breezes.settlements.domain.crafting.catalog.CraftRecipe;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  * precondition check because the villager's inventory may have changed between behavior-start
  * selection and arrival at the station.
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RecipeCommit {
 
     /**
@@ -58,7 +58,9 @@ public final class RecipeCommit {
 
         VillagerInventory inventory = villager.getSettlementsInventory();
         for (CraftIngredient input : recipe.inputs()) {
-            inventory.consumeMatching(input.match(), input.count() * liveBatch);
+            // A bypassed batch can outgrow the spendable stock; the shortfall is waived rather than taken from the sell reserve
+            int spent = Math.min(input.count() * liveBatch, batchCalculator.spendableInput(villager, input.match()));
+            inventory.consumeMatching(input.match(), spent);
         }
         wallet.spend(villager, recipe.emeralds() * liveBatch);
         inventory.add(new ItemStack(outputItem, outputTotal));

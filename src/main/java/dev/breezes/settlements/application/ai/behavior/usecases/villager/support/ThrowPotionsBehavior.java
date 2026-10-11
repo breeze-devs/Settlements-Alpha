@@ -19,7 +19,6 @@ import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.domain.world.location.Vector;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.Holder;
@@ -109,8 +108,8 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
                     potionEntity.shoot(direction.getX(), direction.getY(), direction.getZ(), 1, 4.0F);
 
                     villager.level().addFreshEntity(potionEntity);
-                    if (!GeneralConfig.bypassInventoryRequirements && this.potionHolder != null) {
-                        this.consumeMatchingSplashPotion(villager, this.potionHolder);
+                    if (this.potionHolder != null) {
+                        consumeMatchingSplashPotion(villager, this.potionHolder);
                     }
                     villager.clearHeldItem();
                     this.rewardExperience(villager);
@@ -156,7 +155,7 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
 
         Holder<Potion> potionNeeded = friendlyNeedsPotionMap.get(this.targetToThrow).getPotion();
         Optional<ItemStack> foundPotion = findMatchingSplashPotionInInventory(villager, potionNeeded);
-        if (GeneralConfig.bypassInventoryRequirements) {
+        if (villager.getSettlementsInventory().requirementsBypassed()) {
             this.potionToThrow = foundPotion.orElseGet(() -> PotionContents.createItemStack(Items.SPLASH_POTION, potionNeeded));
         } else {
             if (foundPotion.isEmpty()) {

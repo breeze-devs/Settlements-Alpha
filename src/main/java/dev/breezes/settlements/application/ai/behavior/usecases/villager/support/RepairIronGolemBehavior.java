@@ -27,9 +27,9 @@ import dev.breezes.settlements.domain.animation.RepairIronGolemAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.core.Holder;
@@ -116,8 +116,7 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    if (!ctx.getInitiator().getSettlementsInventory()
-                            .consumeIfRequired(Items.IRON_INGOT, 1, GeneralConfig.bypassInventoryRequirements)) {
+                    if (!ctx.getInitiator().getSettlementsInventory().consumeOrBypassed(Items.IRON_INGOT, 1)) {
                         // Ran out of ingots mid-task — stop gracefully
                         return StepResult.complete();
                     }
@@ -163,10 +162,10 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
         this.targetToRepair = targetCandidate.get();
         Expertise expertise = villager.getMinecraftEntity().getExpertise();
         int maxAttempts = this.config.expertiseRepairLimit().getOrDefault(expertise.getConfigName(), DEFAULT_REPAIR_ATTEMPTS);
-        int ingotsAvailable = villager.getSettlementsInventory().count(Items.IRON_INGOT);
-        this.remainingRepairAttempts = GeneralConfig.bypassInventoryRequirements
+        VillagerInventory inventory = villager.getSettlementsInventory();
+        this.remainingRepairAttempts = inventory.requirementsBypassed()
                 ? maxAttempts
-                : Math.min(maxAttempts, ingotsAvailable);
+                : Math.min(maxAttempts, inventory.count(Items.IRON_INGOT));
         if (this.remainingRepairAttempts <= 0) {
             this.requestStop("No iron ingots available at behavior start");
             return;

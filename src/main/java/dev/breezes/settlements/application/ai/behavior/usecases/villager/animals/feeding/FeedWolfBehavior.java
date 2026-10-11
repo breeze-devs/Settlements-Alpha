@@ -24,7 +24,6 @@ import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import lombok.CustomLog;
@@ -128,8 +127,9 @@ public class FeedWolfBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        this.selectedMeat = findFirstMeatRepresentative(villager.getSettlementsInventory()).orElse(null);
-        if (this.selectedMeat == null && !GeneralConfig.bypassInventoryRequirements) {
+        VillagerInventory inventory = villager.getSettlementsInventory();
+        this.selectedMeat = findFirstMeatRepresentative(inventory).orElse(null);
+        if (this.selectedMeat == null && !inventory.requirementsBypassed()) {
             this.requestStop("No meat found in inventory at behavior start");
             return;
         }

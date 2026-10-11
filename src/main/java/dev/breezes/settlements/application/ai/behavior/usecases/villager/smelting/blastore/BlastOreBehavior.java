@@ -50,6 +50,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 
 @CustomLog
 public class BlastOreBehavior extends VillagerStateMachineBehavior {
@@ -103,7 +104,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE), 1);
-        this.blastRecipeAvailableCondition = new BlastRecipeAvailableCondition(this.recipeRegistry);
+        this.blastRecipeAvailableCondition = new BlastRecipeAvailableCondition(this.recipeRegistry, support.getSupplyEvaluator());
         this.preconditions.add(this.jobSiteBlockExistsCondition);
         this.preconditions.add(this.blastRecipeAvailableCondition);
 
@@ -158,12 +159,19 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        // Integer floor division is intentional: partial batches are allowed, but a partial ore is not.
-        // For the shipped 1:1 recipes inputCount == 1, so this reduces to min(BATCH_SIZE, available).
-        int available = entity.getSettlementsInventory().count(inputItem);
-        int batch = Math.min(BATCH_SIZE, available / recipe.inputCount());
+        VillagerInventory inventory = entity.getSettlementsInventory();
+        OptionalInt ceiling = this.getSupport().getSupplyEvaluator().dumpThreshold(entity.getProfession(), outputItem);
+        // A bypass lifts the ore limit only for a capped output; with no dump threshold the held ore is the only bound
+        int oreBatch = ceiling.isPresent() && inventory.requirementsBypassed()
+                ? BATCH_SIZE
+                : inventory.count(inputItem) / recipe.inputCount();
+        int ceilingBatch = ceiling.isPresent()
+                ? (ceiling.getAsInt() - inventory.count(outputItem)) / recipe.outputCount()
+                : BATCH_SIZE;
+        // Floor division: a batch may come up short, but never splits an ore or overshoots the dump threshold
+        int batch = Math.min(BATCH_SIZE, Math.min(oreBatch, ceilingBatch));
         if (batch < 1) {
-            this.requestStop("Not enough ore in inventory to smelt a full batch");
+            this.requestStop("No ore to smelt or no room below the output's dump threshold");
             return;
         }
 
@@ -172,10 +180,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         this.currentOutputItem = outputItem;
         this.currentBatchCount = batch;
 
-        // Settle the entire economic outcome up front — consume the ore, bank the ingots, record the
-        // deeds, decide the misfire, and pay experience — before any navigation or animation runs.
-        // Everything afterward is pure theatre replaying a decided result, so an unreachable furnace or
-        // an interrupted animation can never strand consumed ore or skip a reward that already happened.
+        // Commit the outcome up front, everything afterward is pure theater replaying a decided result
         if (!this.commitSmelt(entity, context)) {
             this.requestStop("Blast-ore batch could not be consumed from inventory");
             return;
@@ -361,11 +366,7 @@ public class BlastOreBehavior extends VillagerStateMachineBehavior {
         }
 
         int requested = recipe.inputCount() * this.currentBatchCount;
-        VillagerInventory inventory = villager.getSettlementsInventory();
-        if (inventory.count(this.currentInputItem) < requested) {
-            return false;
-        }
-        return inventory.consume(this.currentInputItem, requested) == requested;
+        return villager.getSettlementsInventory().consumeOrBypassed(this.currentInputItem, requested);
     }
 
     private void setFurnaceLitState(boolean lit) {

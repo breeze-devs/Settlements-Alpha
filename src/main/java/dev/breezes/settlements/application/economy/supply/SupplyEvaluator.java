@@ -10,10 +10,13 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVi
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
@@ -61,6 +64,18 @@ public final class SupplyEvaluator {
         }
 
         return List.copyOf(activeSupply);
+    }
+
+    /**
+     * Returns the highest dump threshold among the profession's supply entries that match the item, or empty when
+     * none matches.
+     */
+    public OptionalInt dumpThreshold(@Nonnull VillagerProfessionKey profession, @Nonnull Item item) {
+        ItemStack stack = new ItemStack(item);
+        return this.tradeCatalogRegistry.supplyFor(profession).stream()
+                .filter(entry -> ItemMatches.test(entry.match(), stack))
+                .mapToInt(SupplyEntry::dumpAbove)
+                .max();
     }
 
 }

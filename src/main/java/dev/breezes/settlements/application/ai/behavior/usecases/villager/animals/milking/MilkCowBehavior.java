@@ -26,7 +26,6 @@ import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.resources.ResourceLocation;
@@ -105,7 +104,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
                     }
 
                     VillagerInventory inventory = context.getInitiator().getMinecraftEntity().getSettlementsInventory();
-                    if (!inventory.containsOrBypassed(Items.BUCKET, GeneralConfig.bypassInventoryRequirements)) {
+                    if (!inventory.containsOrBypassed(Items.BUCKET)) {
                         return StepResult.complete();
                     }
 
@@ -139,7 +138,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
             return;
         }
 
-        if (!villager.getSettlementsInventory().containsOrBypassed(Items.BUCKET, GeneralConfig.bypassInventoryRequirements)) {
+        if (!villager.getSettlementsInventory().containsOrBypassed(Items.BUCKET)) {
             this.requestStop("Not enough buckets in inventory");
             return;
         }
@@ -183,7 +182,7 @@ public class MilkCowBehavior extends VillagerStateMachineBehavior {
         VillagerInventory inventory = context.getInitiator().getMinecraftEntity().getSettlementsInventory();
         ItemStack milkBucketStack = new ItemStack(Items.MILK_BUCKET);
 
-        if (!inventory.consumeIfRequired(Items.BUCKET, 1, GeneralConfig.bypassInventoryRequirements)) {
+        if (!inventory.consumeOrBypassed(Items.BUCKET, 1)) {
             this.milkCountRemaining = 0;
             return StepResult.noOp();
         }

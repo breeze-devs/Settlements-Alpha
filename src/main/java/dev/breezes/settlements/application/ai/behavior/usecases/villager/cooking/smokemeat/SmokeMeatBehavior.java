@@ -85,7 +85,7 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.SMOKER), 1);
-        this.smokeRecipeAvailableCondition = new SmokeRecipeAvailableCondition(RECIPES);
+        this.smokeRecipeAvailableCondition = new SmokeRecipeAvailableCondition(RECIPES, support.getSupplyEvaluator());
         this.preconditions.add(this.jobSiteBlockExistsCondition);
         this.preconditions.add(this.smokeRecipeAvailableCondition);
 
@@ -237,7 +237,7 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
 
     private boolean consumeRecipeInput(@Nonnull BaseVillager villager,
                                        @Nonnull SmokeMeatRecipe recipe) {
-        return villager.getSettlementsInventory().consume(recipe.getInput(), recipe.getInputCount()) == recipe.getInputCount();
+        return villager.getSettlementsInventory().consumeOrBypassed(recipe.getInput(), recipe.getInputCount());
     }
 
     private void setSmokerLitState(boolean lit) {

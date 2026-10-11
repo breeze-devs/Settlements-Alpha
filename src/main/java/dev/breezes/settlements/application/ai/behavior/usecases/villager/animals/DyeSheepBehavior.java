@@ -26,10 +26,10 @@ import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.InteractAnimations;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
@@ -228,7 +228,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         DyeColor color = colorOptional.get();
         // Wololo is an easter egg, so it stays free even when normal dyeing requires inventory.
         if (!isWololoTrigger(sheep) && !villager.getSettlementsInventory()
-                .consumeIfRequired(DyeItem.byColor(color), 1, GeneralConfig.bypassInventoryRequirements)) {
+                .consumeOrBypassed(DyeItem.byColor(color), 1)) {
             return false;
         }
 
@@ -300,7 +300,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         }
 
         if (!villager.getSettlementsInventory()
-                .containsOrBypassed(DyeItem.byColor(this.selectedDyeColor), GeneralConfig.bypassInventoryRequirements)) {
+                .containsOrBypassed(DyeItem.byColor(this.selectedDyeColor))) {
             return Optional.empty();
         }
 
@@ -310,7 +310,7 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
     private Optional<DyeColor> chooseBehaviorDyeColor(@Nonnull BaseVillager villager) {
         Map<DyeColor, Double> weightedChoices = Arrays.stream(DyeColor.values())
                 .filter(color -> villager.getSettlementsInventory()
-                        .containsOrBypassed(DyeItem.byColor(color), GeneralConfig.bypassInventoryRequirements))
+                        .containsOrBypassed(DyeItem.byColor(color)))
                 .filter(color -> this.hasEligibleSheepForColor(villager, color))
                 .collect(Collectors.toMap(
                         color -> color,
@@ -326,12 +326,12 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
     }
 
     private boolean canChooseDyeColorForSheep(@Nonnull BaseVillager villager, @Nonnull Sheep sheep) {
-        if (GeneralConfig.bypassInventoryRequirements) {
+        VillagerInventory inventory = villager.getSettlementsInventory();
+        if (inventory.requirementsBypassed()) {
             return true;
         }
-        // One inventory pass instead of a contains() scan per dye colour keeps this precondition hot path cheap.
-        return villager.getSettlementsInventory()
-                .anyMatch(stack -> stack.getItem() instanceof DyeItem dye && dye.getDyeColor() != sheep.getColor());
+        // One inventory pass instead of a contains() scan per dye color keeps this precondition hot path cheap.
+        return inventory.anyMatch(stack -> stack.getItem() instanceof DyeItem dye && dye.getDyeColor() != sheep.getColor());
     }
 
     private boolean hasEligibleSheepForColor(@Nonnull BaseVillager villager, @Nonnull DyeColor color) {

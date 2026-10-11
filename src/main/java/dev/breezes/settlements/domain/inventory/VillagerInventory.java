@@ -14,19 +14,26 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 public class VillagerInventory implements IVillagerEquipment {
 
     private final IVillagerBackpack backpack;
     private final EnumMap<EquipmentSlot, ItemStack> equipped;
+    private final BooleanSupplier bypassRequirements;
 
     @Getter
     private int inventoryVersion;
 
-    public VillagerInventory() {
+    /**
+     * @param bypassRequirements whether item requirements are bypassed, polled on every requirement check rather than
+     *                           captured at construction
+     */
+    public VillagerInventory(@Nonnull BooleanSupplier bypassRequirements) {
         this.backpack = new StackLedger();
         this.equipped = new EnumMap<>(EquipmentSlot.class);
+        this.bypassRequirements = bypassRequirements;
         this.inventoryVersion = 0;
     }
 
@@ -134,28 +141,34 @@ public class VillagerInventory implements IVillagerEquipment {
         return this.backpack.distinctKinds();
     }
 
-    // Bypass helpers (config concern, not the ledger's job)
+    // Requirement bypass
 
-    public boolean containsOrBypassed(@Nonnull Item item, boolean bypass) {
-        return bypass || this.contains(item);
+    /**
+     * Whether behaviors may run without holding the items they require.
+     */
+    public boolean requirementsBypassed() {
+        return this.bypassRequirements.getAsBoolean();
     }
 
-    public boolean consumeIfRequired(@Nonnull Item item, int amount, boolean bypass) {
-        if (bypass) {
-            return true;
-        }
-        return this.consume(item, amount) == amount;
+    public boolean containsOrBypassed(@Nonnull Item item) {
+        return this.requirementsBypassed() || this.contains(item);
     }
 
     /**
-     * The variant-matched counterpart of {@link #consumeIfRequired(Item, int, boolean)}, for a
-     * caller holding the exact stack it chose rather than the item kind it needs.
+     * Consumes up to the given amount of the item and returns whether the requirement is met.
+     * Held items are consumed even when requirements are bypassed, and a partial holding is consumed even
+     * when this returns false.
      */
-    public boolean consumeIfRequired(@Nonnull ItemStack variant, int amount, boolean bypass) {
-        if (bypass) {
-            return true;
-        }
-        return this.consume(variant, amount) == amount;
+    public boolean consumeOrBypassed(@Nonnull Item item, int amount) {
+        // Consume first: a bypass waives only the shortfall
+        return this.consume(item, amount) == amount || this.requirementsBypassed();
+    }
+
+    /**
+     * The variant-matched counterpart of {@link #consumeOrBypassed(Item, int)}.
+     */
+    public boolean consumeOrBypassed(@Nonnull ItemStack variant, int amount) {
+        return this.consume(variant, amount) == amount || this.requirementsBypassed();
     }
 
     // Equipment

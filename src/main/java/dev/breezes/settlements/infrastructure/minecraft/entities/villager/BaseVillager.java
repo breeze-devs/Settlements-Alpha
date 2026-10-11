@@ -58,6 +58,7 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.infrastructure.minecraft.ai.dialogue.ActivityOccasionMapper;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerHungerAttachment;
@@ -372,7 +373,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             return;
         }
 
-        VillagerInventory inventory = new VillagerInventory();
+        VillagerInventory inventory = new VillagerInventory(() -> GeneralConfig.bypassInventoryRequirements);
         for (int i = 0; i < STARTING_BREAD_STACKS; i++) {
             inventory.add(new ItemStack(Items.BREAD, STARTING_BREAD_PER_STACK));
         }
@@ -527,7 +528,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             return false;
         }
 
-        return this.getSettlementsInventory().countMatching(FOODS_MATCH) >= BREED_FOOD_REQUIREMENT;
+        VillagerInventory inventory = this.getSettlementsInventory();
+        return inventory.requirementsBypassed() || inventory.countMatching(FOODS_MATCH) >= BREED_FOOD_REQUIREMENT;
     }
 
     /**

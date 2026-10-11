@@ -29,7 +29,6 @@ import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.entities.Expertise;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
@@ -219,7 +218,7 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
         this.shouldRewardExperience = false;
         log.behaviorStatus("Villager is '{}' level, maximum shear count is {}", expertise.toString(), limit);
 
-        if (!villager.getSettlementsInventory().containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements)) {
+        if (!villager.getSettlementsInventory().containsOrBypassed(Items.SHEARS)) {
             this.requestStop("No shears available");
             return;
         }

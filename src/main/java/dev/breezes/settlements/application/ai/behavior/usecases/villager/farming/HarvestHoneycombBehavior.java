@@ -34,7 +34,6 @@ import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
 import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.HarvestHoneycombYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -201,7 +200,7 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
     private boolean canHarvest(@Nonnull BaseVillager villager) {
         VillagerInventory inventory = villager.getSettlementsInventory();
-        return inventory.containsOrBypassed(Items.SHEARS, GeneralConfig.bypassInventoryRequirements);
+        return inventory.containsOrBypassed(Items.SHEARS);
     }
 
     private StepResult performHarvest(@Nonnull BehaviorContext<BaseVillager> context) {

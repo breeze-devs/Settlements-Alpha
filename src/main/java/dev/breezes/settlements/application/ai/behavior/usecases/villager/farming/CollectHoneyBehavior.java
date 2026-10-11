@@ -34,7 +34,6 @@ import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 import dev.breezes.settlements.domain.world.blocks.BlockMemorySiteConfirmer;
 import dev.breezes.settlements.domain.world.blocks.BlockScanBox;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.hive.CollectHoneyYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -200,7 +199,7 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
 
     private boolean canHarvest(@Nonnull BaseVillager villager) {
         VillagerInventory inventory = villager.getSettlementsInventory();
-        return inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements);
+        return inventory.containsOrBypassed(Items.GLASS_BOTTLE);
     }
 
     private StepResult performHarvest(@Nonnull BehaviorContext<BaseVillager> context) {
@@ -220,10 +219,10 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
         }
 
         VillagerInventory inventory = villager.getSettlementsInventory();
-        if (!inventory.containsOrBypassed(Items.GLASS_BOTTLE, GeneralConfig.bypassInventoryRequirements)) {
+        if (!inventory.containsOrBypassed(Items.GLASS_BOTTLE)) {
             return StepResult.noOp();
         }
-        if (!inventory.consumeIfRequired(Items.GLASS_BOTTLE, 1, GeneralConfig.bypassInventoryRequirements)) {
+        if (!inventory.consumeOrBypassed(Items.GLASS_BOTTLE, 1)) {
             return StepResult.noOp();
         }
 

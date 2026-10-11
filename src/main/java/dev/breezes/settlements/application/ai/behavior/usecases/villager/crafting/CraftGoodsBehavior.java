@@ -68,7 +68,7 @@ public class CraftGoodsBehavior extends VillagerStateMachineBehavior {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support,
                 config.experienceReward());
 
-        this.batchCalculator = new CraftBatchCalculator(tradeCatalog, wallet);
+        this.batchCalculator = new CraftBatchCalculator(tradeCatalog, support.getSupplyEvaluator(), wallet);
         this.wallet = wallet;
 
         // A null block predicate accepts the villager's job-site regardless of profession; the vanilla

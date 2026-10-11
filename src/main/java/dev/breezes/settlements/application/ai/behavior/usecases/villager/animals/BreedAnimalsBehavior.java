@@ -25,7 +25,6 @@ import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import dev.breezes.settlements.domain.tags.EntityTag;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
 import net.minecraft.sounds.SoundSource;
@@ -130,7 +129,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         Optional<ItemStack> foundFood = findFirstMatchingFood(villager);
         if (foundFood.isPresent()) {
             this.heldItem = foundFood.get().copyWithCount(1);
-        } else if (GeneralConfig.bypassInventoryRequirements) {
+        } else if (villager.getSettlementsInventory().requirementsBypassed()) {
             this.heldItem = new ItemStack(this.species.getCanonicalFood());
         } else {
             this.requestStop("No food available for breeding at behavior start");
@@ -265,7 +264,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
         log.behaviorStatus("Feeding {} animal: '{}'", label, target);
 
-        if (!villager.getSettlementsInventory().consumeIfRequired(this.heldItem.getItem(), 1, GeneralConfig.bypassInventoryRequirements)) {
+        if (!villager.getSettlementsInventory().consumeOrBypassed(this.heldItem.getItem(), 1)) {
             return StepResult.complete();
         }
 

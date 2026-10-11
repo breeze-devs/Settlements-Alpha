@@ -94,7 +94,7 @@ class OpportunityRequirementTest {
     /**
      * Builds a fake probe that only implements hasAnySite.
      * hasAnySite returns true when at least one memory in {@code memories} is also in {@code presentSites}.
-     * holdsAnyItem and hasJobSiteBlock always return false — not under test here.
+     * holdsAnyItem, itemRequirementsBypassed, and hasJobSiteBlock always return false — not under test here.
      */
     private static OpportunityProbe fakeSiteProbe(Set<MemoryType<List<GlobalPos>>> presentSites) {
         return new OpportunityProbe() {
@@ -111,6 +111,11 @@ class OpportunityRequirementTest {
 
             @Override
             public boolean holdsAnyItem(Set<Item> items) {
+                return false;
+            }
+
+            @Override
+            public boolean itemRequirementsBypassed() {
                 return false;
             }
 

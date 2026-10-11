@@ -16,11 +16,10 @@ import java.util.Set;
  * A behavior with multiple requirements is "lacking" when ANY of them is unavailable (AND-combined).
  * <p>
  * Three kinds map to the three cheap, plan-time-readable signals:
- * <ul>
- *   <li>{@link KnownSiteOpportunity} — any named memory holds a live site</li>
- *   <li>{@link InventoryItemOpportunity} — the villager holds any of the listed items</li>
- *   <li>{@link JobSiteBlockOpportunity} — the JOB_SITE block matches the declared type</li>
- * </ul>
+ * - {@link KnownSiteOpportunity} — any named memory holds a live site
+ * - {@link InventoryItemOpportunity} — the villager holds any of the listed items, or its item requirements are bypassed
+ * - {@link JobSiteBlockOpportunity} — the JOB_SITE block matches the declared type
+ * <p>
  * Each variant self-evaluates by delegating to {@link OpportunityProbe}, keeping the
  * Minecraft-bound read confined to the forecaster's live probe.
  */
@@ -55,7 +54,8 @@ public sealed interface OpportunityRequirement permits
     }
 
     /**
-     * Available when the villager's settlements inventory contains at least one of the listed items.
+     * Available when the villager's inventory contains at least one of the listed items, or its item
+     * requirements are bypassed.
      */
     record InventoryItemOpportunity(Set<Item> items) implements OpportunityRequirement {
 
@@ -70,7 +70,7 @@ public sealed interface OpportunityRequirement permits
 
         @Override
         public boolean isAvailable(OpportunityProbe probe) {
-            return probe.holdsAnyItem(this.items);
+            return probe.itemRequirementsBypassed() || probe.holdsAnyItem(this.items);
         }
 
     }

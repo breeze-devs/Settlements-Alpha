@@ -11,7 +11,6 @@ import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.Gene;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.time.ClockTicks;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaBlockEntity;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import jakarta.inject.Inject;
@@ -135,8 +134,7 @@ public final class BallistaCombatOption implements CombatOption {
      * True if the villager carries a bolt or inventory requirements are bypassed.
      */
     static boolean hasBoltInInventory(@Nonnull BaseVillager villager) {
-        return villager.getSettlementsInventory()
-                .containsOrBypassed(ItemRegistry.BALLISTA_BOLT.get(), GeneralConfig.bypassInventoryRequirements);
+        return villager.getSettlementsInventory().containsOrBypassed(ItemRegistry.BALLISTA_BOLT.get());
     }
 
     /**

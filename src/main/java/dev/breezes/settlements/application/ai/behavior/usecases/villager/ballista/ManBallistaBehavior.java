@@ -21,11 +21,11 @@ import dev.breezes.settlements.domain.ballista.BallistaLaunchPoint;
 import dev.breezes.settlements.domain.ballista.BallistaLease;
 import dev.breezes.settlements.domain.ballista.BallistaOperatorSkill;
 import dev.breezes.settlements.domain.ballista.BallistaStateMachine;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaBlockEntity;
 import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.BallistaBolt;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -364,8 +364,9 @@ public class ManBallistaBehavior extends VillagerStateMachineBehavior {
 
     private static ItemStack boltToLoad(@Nonnull BaseVillager villager) {
         Item bolt = ItemRegistry.BALLISTA_BOLT.get();
-        return villager.getSettlementsInventory().findFirst(stack -> stack.is(bolt))
-                .orElseGet(() -> GeneralConfig.bypassInventoryRequirements ? new ItemStack(bolt) : ItemStack.EMPTY);
+        VillagerInventory inventory = villager.getSettlementsInventory();
+        return inventory.findFirst(stack -> stack.is(bolt))
+                .orElseGet(() -> inventory.requirementsBypassed() ? new ItemStack(bolt) : ItemStack.EMPTY);
     }
 
     private final class ApproachStep extends AbstractStep<BaseVillager> {
@@ -447,7 +448,7 @@ public class ManBallistaBehavior extends VillagerStateMachineBehavior {
             ItemStack bolt = boltToLoad(villager);
             // Seated before it is paid for, so a refused load costs the villager nothing
             if (machine.load(villager, bolt)) {
-                villager.getSettlementsInventory().consumeIfRequired(bolt, 1, GeneralConfig.bypassInventoryRequirements);
+                villager.getSettlementsInventory().consumeOrBypassed(bolt, 1);
                 if (!BallistaCombatOption.hasBoltInInventory(villager)) {
                     villager.clearHeldItem();
                 }

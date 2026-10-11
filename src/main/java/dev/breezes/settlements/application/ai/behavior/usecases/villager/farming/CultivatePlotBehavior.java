@@ -41,7 +41,6 @@ import dev.breezes.settlements.domain.world.blocks.LevelBlockStateView;
 import dev.breezes.settlements.domain.world.blocks.LiveBlockSiteMatcher;
 import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationLilyBlockEntity;
 import dev.breezes.settlements.infrastructure.minecraft.blocks.cultivation.CultivationSiteMatchers;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -317,8 +316,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                     }
 
                     Item seedItem = BuiltInRegistries.ITEM.get(def.seedItem());
-                    boolean consumed = villager.getSettlementsInventory().consumeIfRequired(
-                            seedItem, 1, GeneralConfig.bypassInventoryRequirements);
+                    boolean consumed = villager.getSettlementsInventory().consumeOrBypassed(seedItem, 1);
                     if (!consumed) {
                         log.behaviorStatus("Could not consume seed, skipping plant");
                         return StepResult.noOp();
@@ -388,13 +386,13 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
      * Resolves which crop the villager should plant on the given lily, or empty if it cannot plant.
      * <p>
      * Filter set: the filter crop, gated on the villager carrying that seed (bypass lifts the gate).
-     * No filter: the first registered seed the villager carries; under bypass there is no carried
-     * seed to imply a crop, so we default to wheat ({@link #CANONICAL_CROP}).
+     * No filter: the first registered seed the villager carries; when it carries none and requirements
+     * are bypassed, wheat ({@link #CANONICAL_CROP}).
      * The returned definition supplies both the crop block to place and the seed item to consume.
      */
     private Optional<CultivationCropDefinition> resolveCropToPlant(@Nonnull BaseVillager villager,
                                                                    @Nonnull CultivationLilyBlockEntity lily) {
-        boolean bypass = GeneralConfig.bypassInventoryRequirements;
+        boolean bypass = villager.getSettlementsInventory().requirementsBypassed();
         ResourceLocation filterCrop = lily.getCropFilter();
 
         if (filterCrop != null) {
@@ -408,21 +406,15 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
             return Optional.empty();
         }
 
-        if (bypass) {
-            return defaultBypassCrop();
-        }
+        // Held seeds come before the bypass default, so a villager spends what it carries instead of planting for free
         for (CultivationCropDefinition def : this.cropRegistry.all()) {
             if (villagerHasSeed(villager, def.seedItem())) {
                 return Optional.of(def);
             }
         }
-        return Optional.empty();
+        return bypass ? defaultBypassCrop() : Optional.empty();
     }
 
-    /**
-     * The crop planted under inventory bypass when no filter narrows the choice — wheat if the
-     * datapack defines it, otherwise any configured crop so bypass planting still functions.
-     */
     private Optional<CultivationCropDefinition> defaultBypassCrop() {
         Optional<CultivationCropDefinition> wheat = this.cropRegistry.resolveByCropBlock(CANONICAL_CROP);
         if (wheat.isPresent()) {
