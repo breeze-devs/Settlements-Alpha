@@ -152,6 +152,13 @@ public final class MemoryTypeRegistry {
             "golem_summon_cooldown", MemoryModuleTypeRegistry.GOLEM_SUMMON_COOLDOWN);
 
     /**
+     * Present while a cartographer waits before its next raid-charting pulse. Not saved with the brain, so a reload
+     * ends the wait.
+     */
+    public static final MemoryType.VanillaMemoryType<Boolean> CHART_RAIDERS_COOLDOWN = MemoryType.vanillaBacked(
+            "chart_raiders_cooldown", MemoryModuleTypeRegistry.CHART_RAIDERS_COOLDOWN);
+
+    /**
      * All decaying spatial memories, in declaration order. Used by diagnostics (e.g. the
      * {@code /stest memory} dump) and any future bulk operation over the decaying store.
      */

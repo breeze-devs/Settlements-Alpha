@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ai.override;
 
+import dev.breezes.settlements.application.ai.brain.ActivityArbiter;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
@@ -87,7 +88,8 @@ public final class OverrideArbiter {
 
     private void tickRunning(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, @Nonnull OverrideRuntimeState runtime) {
         if (runtime.getEvaluationCooldown().tickCheckAndReset(1)) {
-            if (!runtime.getOwningPolicy().isAdmissibleDuring(currentActivity(villager))) {
+            Activity activity = currentActivity(villager);
+            if (!isAdmissible(runtime.getOwningPolicy(), activity, isReactive(activity))) {
                 this.stopAndRequeue(level, villager, runtime);
                 return;
             }
@@ -109,8 +111,9 @@ public final class OverrideArbiter {
     private boolean tryPreempt(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, @Nonnull OverrideRuntimeState runtime) {
         OverrideTier runningTier = runtime.getRunner().tier();
         Activity activity = currentActivity(villager);
+        boolean activityReactive = isReactive(activity);
         Optional<Installed> candidate = this.prepareFirstRequestedOverride(level, villager,
-                policy -> policy.tier().isAbove(runningTier) && policy.isAdmissibleDuring(activity));
+                policy -> policy.tier().isAbove(runningTier) && isAdmissible(policy, activity, activityReactive));
         if (candidate.isEmpty()) {
             return false;
         }
@@ -157,9 +160,10 @@ public final class OverrideArbiter {
 
         boolean planInterruptible = isPlanInterruptible(villager.getPlanRuntimeState().getCurrentDescriptor());
         Activity activity = currentActivity(villager);
+        boolean activityReactive = isReactive(activity);
         Optional<Installed> candidate = this.prepareFirstRequestedOverride(level, villager,
                 policy -> OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(policy.tier(), planInterruptible)
-                        && policy.isAdmissibleDuring(activity));
+                        && isAdmissible(policy, activity, activityReactive));
         if (candidate.isEmpty()) {
             return false;
         }
@@ -276,6 +280,23 @@ public final class OverrideArbiter {
     @Nullable
     private static Activity currentActivity(@Nonnull BaseVillager villager) {
         return villager.getBrain().getActiveNonCoreActivity().orElse(null);
+    }
+
+    /**
+     * Whether the activity is reactive; no active non-core activity counts as not reactive.
+     */
+    private static boolean isReactive(@Nullable Activity activity) {
+        return activity != null && ActivityArbiter.isReactive(activity);
+    }
+
+    /**
+     * Whether the policy may start, or stay installed, during the activity: both its tier's admission
+     * rule and the policy itself must admit the activity.
+     */
+    @VisibleForTesting
+    static boolean isAdmissible(@Nonnull OverridePolicy policy, @Nullable Activity activity, boolean activityReactive) {
+        return OverrideArbitrationRules.isAdmittedDuringActivity(policy.tier(), activityReactive)
+                && policy.isAdmissibleDuring(activity);
     }
 
     /**

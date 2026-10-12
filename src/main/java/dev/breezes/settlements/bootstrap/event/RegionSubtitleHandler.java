@@ -1,5 +1,6 @@
 package dev.breezes.settlements.bootstrap.event;
 
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.SettlementEnterEvent;
 import jakarta.inject.Inject;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ import javax.annotation.Nonnull;
  * We keep this handler server-side and event-driven so future consumers can
  * adjust presentation without touching the tracking/query layers.
  */
+@ServerScope
 @NoArgsConstructor(onConstructor_ = @Inject)
 public final class RegionSubtitleHandler {
 

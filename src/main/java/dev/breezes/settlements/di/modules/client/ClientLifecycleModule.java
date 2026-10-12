@@ -9,6 +9,7 @@ import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.Ballista
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationSeedSetClientProjection;
 import dev.breezes.settlements.infrastructure.minecraft.data.schedule.VillageDayTypeClientProjection;
 import dev.breezes.settlements.infrastructure.rendering.debug.SettlementDebugOverlayState;
+import dev.breezes.settlements.infrastructure.rendering.flare.FlarePlayback;
 import dev.breezes.settlements.infrastructure.rendering.highlight.TotemHighlightProvider;
 import dev.breezes.settlements.infrastructure.rendering.zone.CultivationLilyZoneRevealRenderer;
 import dev.breezes.settlements.presentation.ui.hud.ClockHudRenderer;
@@ -57,5 +58,9 @@ public abstract class ClientLifecycleModule {
     @Binds
     @IntoSet
     abstract ClientSessionResettable ballistaAimGuideRenderer(BallistaAimGuideRenderer implementation);
+
+    @Binds
+    @IntoSet
+    abstract ClientSessionResettable flarePlayback(FlarePlayback implementation);
 
 }

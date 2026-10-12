@@ -33,9 +33,38 @@ class OverrideArbitrationRulesTest {
     }
 
     @Test
+    void isAdmittedDespiteProtectedPlan_blocksDutyRequestsAgainstANonInterruptiblePlan() {
+        // Counterexample: a duty given EMERGENCY's exemption, so it pulls a villager out of a non-interruptible chore
+        // in any activity its policy admits.
+        assertFalse(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(OverrideTier.DUTY, false));
+    }
+
+    @Test
     void isAdmittedDespiteProtectedPlan_admitsEveryTierAgainstAnInterruptiblePlan() {
         assertTrue(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(OverrideTier.REACTIVE, true));
         assertTrue(OverrideArbitrationRules.isAdmittedDespiteProtectedPlan(OverrideTier.OPPORTUNISTIC, true));
+    }
+
+    @Test
+    void isAdmittedDuringActivity_refusesTiersBelowDutyDuringAReactiveActivity() {
+        // Counterexample: a trade invite or an item pickup admitted while the villager shelters from a raid.
+        assertFalse(OverrideArbitrationRules.isAdmittedDuringActivity(OverrideTier.REACTIVE, true));
+        assertFalse(OverrideArbitrationRules.isAdmittedDuringActivity(OverrideTier.OPPORTUNISTIC, true));
+    }
+
+    @Test
+    void isAdmittedDuringActivity_admitsDutyAndAboveDuringAReactiveActivity() {
+        // Counterexample: the boundary set one tier too high, so a raid duty is refused during the raid it serves.
+        assertTrue(OverrideArbitrationRules.isAdmittedDuringActivity(OverrideTier.DUTY, true));
+        assertTrue(OverrideArbitrationRules.isAdmittedDuringActivity(OverrideTier.EMERGENCY, true));
+    }
+
+    @Test
+    void isAdmittedDuringActivity_admitsEveryTierDuringANonReactiveActivity() {
+        // Counterexample: tiers below DUTY refused regardless of the activity, so no invite or pickup ever runs.
+        for (OverrideTier tier : OverrideTier.values()) {
+            assertTrue(OverrideArbitrationRules.isAdmittedDuringActivity(tier, false), tier.name());
+        }
     }
 
     @Test

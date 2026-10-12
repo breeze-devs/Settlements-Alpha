@@ -18,6 +18,28 @@ class OverrideTierTest {
     }
 
     @Test
+    void outranksDuty_whenEmergency() {
+        // Counterexample: DUTY declared above EMERGENCY, so combat never preempts a running raid duty.
+        OverrideTier candidate = OverrideTier.EMERGENCY;
+        OverrideTier current = OverrideTier.DUTY;
+
+        boolean outranks = candidate.isAbove(current);
+
+        assertTrue(outranks);
+    }
+
+    @Test
+    void outranksReactive_whenDuty() {
+        // Counterexample: DUTY declared below REACTIVE, so the reactive-activity rule admits a trade invite mid-raid.
+        OverrideTier candidate = OverrideTier.DUTY;
+        OverrideTier current = OverrideTier.REACTIVE;
+
+        boolean outranks = candidate.isAbove(current);
+
+        assertTrue(outranks);
+    }
+
+    @Test
     void outranksOpportunistic_whenReactive() {
         OverrideTier candidate = OverrideTier.REACTIVE;
         OverrideTier current = OverrideTier.OPPORTUNISTIC;

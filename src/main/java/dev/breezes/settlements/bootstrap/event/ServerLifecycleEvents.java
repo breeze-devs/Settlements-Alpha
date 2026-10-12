@@ -71,7 +71,8 @@ public final class ServerLifecycleEvents {
                 closeInferenceTransport(serverComponent.inferenceTransport());
             }
 
-            // Because they are @ServerScoped, Dagger returns the exact instances we registered earlier
+            // Each handler is @ServerScope, so its accessor returns the instance registered at start
+            // An unscoped handler's accessor would build a new instance, and unregistering that would do nothing
             NeoForge.EVENT_BUS.unregister(serverComponent.playerSettlementTracker());
             NeoForge.EVENT_BUS.unregister(serverComponent.regionSubtitleHandler());
             NeoForge.EVENT_BUS.unregister(serverComponent.settlementMetadataPersistenceServerEvents());

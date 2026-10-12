@@ -1,144 +1,109 @@
 # Architecture Overview
 
-Settlements is a NeoForge Minecraft mod that enhances vanilla villager mechanics for immersion. Villagers gain
-profession-specific behaviors (fishing, smelting, enchanting, animal husbandry, etc.), custom AI scheduling, speech
-bubbles, procedural settlement generation, etc.
+Settlements is a NeoForge Minecraft mod that extends villager life and settlement generation. This is the contributor's
+entry point for package ownership, architectural boundaries, and the subsystem guides that own extension recipes.
 
-This document is the starting point for contributors. It covers the guiding principles, the layer structure,
-and the package layout. For deeper dives, see the companion docs in this directory:
+[SettlementsMod][mod-entry] is the mod entry point. The standards in [docs/standards](../standards/) own Java, testing,
+documentation, platform, and UX conventions.
 
-- [Dagger Guide](dagger_guide.md) — component hierarchy, modules, initialization lifecycle
-- [Behavior System](behavior_system.md) — behavior registration, resolution, and the brain pipeline
-- [Behavior Orchestration](behavior_orchestration.md) — how the day plan, overrides, social cues and ambient life share
-  a villager
-- [Threat Response](threat_response.md) — how villagers notice danger, decide to fight or flee, and fight
-- [Testing Guide](testing_guide.md) — test Dagger graph, Mockito patterns
-- [Common Tasks](common_tasks.md) — step-by-step recipes for frequent contributor workflows
+## Intended dependency direction
 
-These are living documents; please ensure the architectural documentation is updated after implementing a
-feature or making a design decision.
+Design toward a pure Java domain, with dependencies pointing inward. Minecraft and NeoForge adaptation belongs at the
+outer boundary so domain rules and values remain independent of engine
+APIs. [C1](../standards/code.md#c1--dependency-inversion-wired-by-dagger)
+owns interface placement and dependency inversion; the diagram expresses the intended direction for new work.
 
----
-
-## Dependency Injection & Dependency Inversion
-
-**Dependency Inversion Principle (DIP):** High-level modules should not depend on low-level modules. Both should depend
-on abstractions. In practice, this means the `domain` layer defines interfaces (e.g., `BuildingRegistry`) and the
-`infrastructure` layer provides concrete implementations (e.g., `BuildingDefinitionDataManager`). The domain never
-imports infrastructure code.
-
-**Dependency Injection (DI):** Instead of a class creating or locating its own dependencies (`new FooService()` or
-`FooService.getInstance()`), dependencies are provided to the class from the outside — typically via constructor
-parameters. This makes classes easier to test (swap in mocks) and easier to reason about (all dependencies are visible
-in the constructor signature).
-
-**Dagger 2** is the DI framework used in this project. Unlike Spring or Guice, Dagger generates all wiring code at
-compile time — there is no runtime reflection, no classpath scanning, and no allocation overhead on the hot path. This
-matters because villager behaviors tick every server tick; any per-tick DI overhead is unacceptable. Dagger generates
-plain Java factory classes equivalent to hand-written `new Foo(dep1, dep2)` calls.
-
----
-
-## Clean Architecture Layers
-
-The project follows a layered architecture where **inner layers never reference outer layers**. Dependencies point
-inward: `infrastructure` depends on `domain`, but `domain` never imports from `infrastructure`.
-
-- **bootstrap**
-    - NeoForge mod entry, event bus wiring, and registry setup for items, entities, and sounds.
-- **di**
-    - Dagger components, modules, scopes, and the static accessor (SettlementsDagger).
-- **presentation**
-    - Screens, client state, client utilities, commands, and keybindings.
-- **infrastructure**
-    - Minecraft/NeoForge adapters: entities, data managers, networking, config, rendering, and world generation.
-- **application**
-    - Use cases: behaviors, brain, UI services, enchanting engine, sensors, and sessions.
-- **domain**
-    - Pure Java: interfaces, models, conditions, and value objects — zero Minecraft imports.
-
-### Layer Responsibilities
-
-| Layer              | Package                                  | What goes here                                                                                                                                                                                                                  |
-|--------------------|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **domain**         | `dev.breezes.settlements.domain`         | Interfaces (`IBehavior`, `IBrain`, `BuildingRegistry`), models (`BehaviorDefinition`, `SettlementProfile`), conditions, value objects. No Minecraft or NeoForge imports.                                                        |
-| **application**    | `dev.breezes.settlements.application`    | Use-case implementations: behavior classes (e.g., `FishingBehavior`), brain logic (`DefaultBrain`), UI services (`VillagerBubbleService`), enchanting engine, sensors. Depends on domain interfaces.                            |
-| **infrastructure** | `dev.breezes.settlements.infrastructure` | Minecraft/NeoForge adapters: `BaseVillager`, data managers (`FishCatchDataManager`), network packet handlers, config annotation processing, world generation (`SettlementsStructure`), rendering. Implements domain interfaces. |
-| **presentation**   | `dev.breezes.settlements.presentation`   | Client-only code: screens (`VillagerStatsScreen`, `BehaviorControllerScreen`), client state holders, keybindings, commands.                                                                                                     |
-| **bootstrap**      | `dev.breezes.settlements.bootstrap`      | Mod initialization: `SettlementsMod` entry point, NeoForge event subscribers (`CommonModEvents`, `ServerLifecycleEvents`), deferred registries (items, entities, sounds, structures).                                           |
-| **di**             | `dev.breezes.settlements.di`             | Dagger components, modules, custom scopes, the `SettlementsDagger` static accessor, and the behavior registration/resolution system.                                                                                            |
-| **shared**         | `dev.breezes.settlements.shared`         | Cross-cutting utilities: logging (`@CustomLog`, `LoggerFactory`), annotations (`@ClientSide`, `@ServerSide`, `@FieldsAreNonnullByDefault`), math/string/entity utilities, crash reporting.                                      |
-
-### Key Conventions
-
-- **`@ClientSide` / `@ServerSide`** annotations mark methods and fields that must only be accessed on the respective
-  logical side. Violations cause classloading crashes in dedicated server or client environments.
-- **`@FieldsAreNonnullByDefault` / `@MethodsReturnNonnullByDefault`** are applied at the package level via
-  `package-info.java`. Fields and return values are non-null unless explicitly annotated `@Nullable`.
-- **Lombok** is used extensively: `@CustomLog` for logging, `@Builder` for construction, `@Getter` for accessors.
-  Records are used for pure data carriers; Lombok classes are used when behavior or builder patterns are needed.
-
----
-
-## Package Map
-
-Below is a condensed view of the top-level packages under `dev.breezes.settlements`:
-
+```mermaid
+flowchart LR
+    PRESENTATION["presentation"] --> APPLICATION["application"]
+    INFRASTRUCTURE["infrastructure"] --> APPLICATION
+    APPLICATION --> DOMAIN["domain"]
+    INFRASTRUCTURE --> DOMAIN
+    PRESENTATION --> DOMAIN
 ```
-settlements/
-├── SettlementsMod.java              # @Mod entry point
-├── package-info.java                # Package-level nullability defaults
-│
-├── domain/                          # Pure interfaces & models
-│   ├── ai/                          #   Behavior contracts, conditions, memory, schedule, sensors
-│   ├── entities/                    #   ISettlementsVillager, VillagerProfessionKey, Expertise
-│   ├── generation/                  #   Building, layout, history, scoring, survey models
-│   ├── enchanting/                  #   Enchanting domain models
-│   ├── fishing/                     #   FishCatchEntry
-│   └── ...                          #   genetics, inventory, skills, tags, time, world
-│
-├── application/                     # Use-case implementations
-│   ├── ai/
-│   │   ├── behavior/
-│   │   │   ├── runtime/             #     AbstractBehavior, BaseVillagerBehavior, StateMachineBehavior
-│   │   │   ├── usecases/villager/   #     All concrete behaviors (fishing, farming, animals, etc.)
-│   │   │   └── workflow/            #     State machine: steps, stages, context
-│   │   ├── brain/                   #     DefaultBrain, VanillaBehaviorPackages
-│   │   └── sensors/                 #     Custom sensors (e.g., NearestSugarcaneSensor)
-│   ├── enchanting/engine/           #   EnchantmentEngine, selection logic
-│   └── ui/                          #   Bubble service, behavior/stats sessions & snapshots
-│
-├── infrastructure/                  # Minecraft/NeoForge adapters
-│   ├── config/                      #   ConfigFactory, annotation processors
-│   ├── minecraft/
-│   │   ├── data/                    #     JSON data managers (fish, enchanting, buildings, etc.)
-│   │   ├── entities/villager/       #     BaseVillager — the core entity class
-│   │   └── worldgen/                #     Settlement structure generation
-│   ├── network/                     #   Packet handlers, codecs, packet registry
-│   └── rendering/                   #   Speech bubbles, particle rendering
-│
-├── presentation/                    # Client-only
-│   ├── ui/                          #   Screens, client state, UI framework
-│   └── commands/                    #   In-game commands
-│
-├── bootstrap/                       # Mod initialization
-│   ├── event/                       #   CommonModEvents, ServerLifecycleEvents, etc.
-│   └── registry/                    #   Deferred registries (items, entities, sounds, etc.)
-│
-├── di/                              # Dagger DI
-│   ├── SettlementsComponent.java    #   Root @Singleton component
-│   ├── ServerComponent.java         #   @ServerScope subcomponent
-│   ├── ClientComponent.java         #   @ClientScope subcomponent
-│   ├── SettlementsDagger.java       #   Static accessor (bridge for non-injectable code)
-│   ├── ServerScope.java             #   Custom scope annotation
-│   ├── ClientScope.java             #   Custom scope annotation
-│   ├── behavior/                    #   BehaviorRegistration, BehaviorPackageResolver
-│   └── modules/                     #   ConfigModule, DataManagerModule, GenerationModule,
-│                                    #   server/ (BehaviorModule, ServerNetworkModule, etc.)
-│                                    #   client/ (ClientNetworkModule, ClientStateModule)
-│
-└── shared/                          # Cross-cutting utilities
-    ├── annotations/                 #   @ClientSide, @ServerSide, nullability defaults
-    ├── logging/                     #   @CustomLog, LoggerFactory, ILogger
-    └── util/                        #   Math, entity, string, crash utilities
-```
+
+A representative boundary is [BuildingRegistry][building-registry], supplied by
+[BuildingDefinitionDataManager][building-data] through [WorldGenerationModule][worldgen-module]. Generation consumes
+the registry contract while the adapter owns datapack loading. Ports also belong in application when that is the
+consuming layer; [InferenceTransport][inference-transport] is an example.
+
+## Package responsibilities
+
+All package links below are under `dev.breezes.settlements`. This map describes ownership; subsystem guides link to
+the current implementations and registration seams.
+
+| Package | Responsibility | Entry point |
+|---|---|---|
+| [domain][domain-package] | Gameplay rules, contracts, models, and value objects. | [BuildingRegistry][building-registry] |
+| [application][application-package] | Feature orchestration: behavior execution, catalog resolution, sensing, sessions, and server UI services. | [VillagerBrain][villager-brain], [BehaviorPoolResolver][pool-resolver] |
+| [infrastructure][infrastructure-package] | Minecraft and NeoForge adapters, entities, datapack loading, config, networking, rendering, and world-generation integration. | [BaseVillager][base-villager], [BuildingDefinitionDataManager][building-data] |
+| [presentation][presentation-package] | Player-facing entry points, including client screens and HUDs, client state, and server commands. | [UI][ui-package], [commands][command-package] |
+| [bootstrap][bootstrap-package] | Lifecycle and event integration, platform registration, and deferred registries. | [events][event-package], [registries][registry-package] |
+| [di][di-package] | Component composition, bindings, scopes, and the bridge for objects constructed outside Dagger. | [SettlementsDagger][dagger-bridge] |
+| [shared][shared-package] | Utilities and annotations used across features. | [logging][logging-package], [utilities][utilities-package] |
+
+Package placement does not determine logical side, execution thread, or object lifetime.
+
+## Runtime boundaries
+
+**Server state and client presentation.** Gameplay state is authoritative on the server. Client screens and renderers
+consume synchronized projections rather than resolving server-owned services. The behavior-status UI is a representative
+[snapshot boundary](behavior_system.md#behavior-status-ui). Root-graph placement does not make server-loaded datapack
+data
+available on the client; [P2](../standards/platform.md#p2--datapack-backed-registries-do-not-exist-on-the-client) owns
+that trap.
+
+**Live world and worker inputs.** Planning and resource-scanning workers consume snapshots captured on the server
+thread.
+Keep live-world access at that boundary; the [planning and sensing guide](behavior_system.md#opportunity-forecasting)
+explains the constraints. Moving work to a worker requires deciding what can be captured safely before dispatch.
+
+**Process, world, and connection lifetimes.** The [Dagger Guide](dagger_guide.md) owns graph construction, scope
+selection,
+and cleanup. Entity construction has additional timing and logical-side restrictions under
+[P1](../standards/platform.md#p1--entity-constructors-run-on-both-logical-sides).
+Custom side annotations document intent; platform entry points still need the appropriate side guards.
+
+Nullability and constructor conventions belong to the [Code Standard](../standards/code.md), including
+[C4](../standards/code.md#c4--absence-contracts). Tool defaults require their own configuration to reflect those
+conventions.
+
+## Find the guide for your change
+
+| Change | Guide |
+|---|---|
+| Dependency bindings, configs, packets, or graph lifecycle | [Dagger Guide](dagger_guide.md) |
+| Behavior registration, planning, sensors, or memory | [Behavior System](behavior_system.md) |
+| Day-plan execution, overrides, social cues, or vanilla activity arbitration | [Behavior Orchestration](behavior_orchestration.md) |
+| Danger assessment, fighting, or fleeing | [Threat Response](threat_response.md) |
+| Datapack loaders and their validation boundaries | [Datapack System](datapack_system.md) |
+| Settlement generation | [Generation Overview](generation/overview.md), [Pipeline](generation/pipeline.md), [Minecraft Integration](generation/minecraft_integration.md) |
+| Animation, locomotion, models, or rendered attachments | [Animation System](animation_system.md), [Animation Import](animation_import_blockbench.md), [Model Tuning](animation_model_tuning.md) |
+| HUD regions, previews, or entity highlights | [Player Surfaces](player_surfaces.md) |
+| Test graph setup and test construction | [Testing Guide](testing_guide.md) |
+
+Extension recipes belong in the subsystem guide beside the boundaries they connect. Follow its source links to the
+registry or module that owns the current set of implementations.
+
+[mod-entry]: ../../src/main/java/dev/breezes/settlements/SettlementsMod.java
+[domain-package]: ../../src/main/java/dev/breezes/settlements/domain/
+[application-package]: ../../src/main/java/dev/breezes/settlements/application/
+[infrastructure-package]: ../../src/main/java/dev/breezes/settlements/infrastructure/
+[presentation-package]: ../../src/main/java/dev/breezes/settlements/presentation/
+[bootstrap-package]: ../../src/main/java/dev/breezes/settlements/bootstrap/
+[di-package]: ../../src/main/java/dev/breezes/settlements/di/
+[shared-package]: ../../src/main/java/dev/breezes/settlements/shared/
+[building-registry]: ../../src/main/java/dev/breezes/settlements/domain/generation/building/BuildingRegistry.java
+[building-data]: ../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/data/building/BuildingDefinitionDataManager.java
+[worldgen-module]: ../../src/main/java/dev/breezes/settlements/di/modules/WorldGenerationModule.java
+[inference-transport]: ../../src/main/java/dev/breezes/settlements/application/ai/inference/InferenceTransport.java
+[villager-brain]: ../../src/main/java/dev/breezes/settlements/application/ai/brain/VillagerBrain.java
+[pool-resolver]: ../../src/main/java/dev/breezes/settlements/application/ai/catalog/BehaviorPoolResolver.java
+[base-villager]: ../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/entities/villager/BaseVillager.java
+[ui-package]: ../../src/main/java/dev/breezes/settlements/presentation/ui/
+[command-package]: ../../src/main/java/dev/breezes/settlements/presentation/commands/
+[event-package]: ../../src/main/java/dev/breezes/settlements/bootstrap/event/
+[registry-package]: ../../src/main/java/dev/breezes/settlements/bootstrap/registry/
+[dagger-bridge]: ../../src/main/java/dev/breezes/settlements/di/SettlementsDagger.java
+[logging-package]: ../../src/main/java/dev/breezes/settlements/shared/logging/
+[utilities-package]: ../../src/main/java/dev/breezes/settlements/shared/util/

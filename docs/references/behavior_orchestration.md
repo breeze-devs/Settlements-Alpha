@@ -68,7 +68,7 @@ flowchart TD
     ACT{"Active non-core activity"}
     ACT --> MANAGED["WORK · MEET · IDLE<br/>gated vanilla ambient life; PlanRunner active"]
     ACT --> REST["REST<br/>ungated vanilla ambient life; PlanRunner suspended"]
-    ACT --> REACTIVE["Reactive activities<br/>vanilla packages; PlanRunner suspended;<br/>trade and courtship refused"]
+    ACT --> REACTIVE["Reactive activities<br/>vanilla packages; PlanRunner suspended;<br/>overrides below DUTY refused"]
 ```
 
 Ambient behavior membership per activity lives in `VanillaAmbientBehaviorPackages`; the reactive activities' packages
@@ -110,7 +110,8 @@ the `OverrideArbiter` and drives both on every server tick. It is only registere
 
 1. **Override gate.** `overrideArbiter.tick(level, villager)` — evaluates and advances the override lane. If it returns
    `true`, the lane occupied the villager this tick and the plan tick is skipped entirely (return). This runs *before*
-   the activity gate so reactive accepts fire ahead of normal plan execution, under any activity their policies admit.
+   the activity gate so reactive accepts fire ahead of normal plan execution, under any activity their policies and
+   tiers admit.
    See [Reactive Override Lane](#reactive-override-lane).
 2. **Activity gate.** If the active non-core activity is absent *or* not in `DAY_PLAN_ACTIVITIES`
    `{WORK, MEET, IDLE}` → `planRunner.suspendIfActive()`, then `planRunner.ensureValidPlan()`, and return. The
@@ -119,9 +120,9 @@ the `OverrideArbiter` and drives both on every server tick. It is only registere
 3. Otherwise → `planRunner.tick()`.
 
 There is no safety check of its own. Danger reaches the runner only as a reactive activity: the activity gate suspends
-the day plan, and no non-emergency override policy admits a reactive activity, so a running override is stopped at its
-next admission check. A separate hurt-or-hostile check would be a second opinion on danger that disagrees with the
-threat assessment, for example about damage the assessment deliberately ignores.
+the day plan, and the override arbiter stops a running override the activity does not admit at its next admission check
+(see [Tiers and precedence](#tiers-and-precedence)). A separate hurt-or-hostile check would be a second opinion on
+danger that disagrees with the threat assessment, for example about damage the assessment deliberately ignores.
 
 `PlanRunnerBehavior` is retrieved from an **unscoped** `Provider<PlanRunnerBehavior>` inside
 `BaseVillager.registerBrainGoals()`. Unscoped is load-bearing: a vanilla `Behavior` holds per-entity status, so every
@@ -260,7 +261,9 @@ public static <T extends LivingEntity> BehaviorControl<T> gated(@Nonnull Behavio
 
 Ambient behaviors under `Activity.WORK`, `Activity.MEET`, and `Activity.IDLE` go through this wrapper, with a small
 deliberate exception set. `Activity.REST` behaviors are registered directly without gating, because `PlanRunner` is
-always suspended during REST and there is nothing to exclude.
+always suspended during REST and there is nothing to exclude. The movement behaviors of `PRE_RAID` and `RAID_HIDE` go
+through it too, although the day plan is suspended there as well: a `DUTY` override can run in those activities, and
+the gate keeps vanilla from re-targeting it (see [Reactive and Baby Activities](#reactive-and-baby-activities)).
 
 Three kinds of entry are ungated under WORK / MEET / IDLE. `ShowTradesToPlayer` is ungated on purpose: player-initiated
 trading must be able to preempt plan slot execution, and gating it would stop the trade GUI from opening while a
@@ -275,7 +278,8 @@ For the ambient behaviors registered under each activity, see `VanillaAmbientBeh
 
 `PlanRunnerBehavior.DAY_PLAN_ACTIVITIES` — `{Activity.WORK, Activity.MEET, Activity.IDLE}` — defines where `PlanRunner`
 ticks the day plan. These are stock vanilla `Activity` values. This set governs day-plan ticking only; the override
-lane below is not gated by it, and each policy declares the activities it admits.
+lane below is not gated by it. An override is admitted by its policy together with its tier's rule (see
+[Tiers and precedence](#tiers-and-precedence)).
 
 Adults are still given a `Schedule` — `ScheduleRegistry.SETTLEMENTS_SCHEDULE`, a stub that asserts
 `Activity.IDLE` at noon and nothing else — only because the vanilla brain requires a non-null one. It drives no
@@ -293,16 +297,15 @@ biological schedule concern, not a task the planner decides.
 
 The override lane lets a stimulus install execution in place of the day plan *without* being a vanilla brain override
 and *without* registering a new activity. It rides inside `PlanRunnerBehavior` (the priority-20 CORE behavior), so it
-can fire under any activity its policies admit, and every runner it installs bounds its own work in time so a wedged
-one never freezes the villager.
+can fire under any activity that a policy and its tier's rule admit, and every runner it installs bounds its own work in
+time so a wedged one never freezes the villager.
 
 ### Where it runs
 
 `PlanRunnerBehavior.tick()` calls `overrideArbiter.tick(level, villager)` *before* the activity gate (step 1 of the tick
-logic above). If it returns `true`, the plan tick is skipped. Danger reaches the lane only through the activity: no
-policy below `EMERGENCY` admits a reactive activity (`ActivityArbiter.isReactive`), so a running override is
-stopped at its next admission check once the arbiter selects one. Combat, an `EMERGENCY` policy, is admitted only
-during `COMBAT`.
+logic above). If it returns `true`, the plan tick is skipped. Danger reaches the lane only through the activity: once
+the activity arbiter selects a reactive activity, a running override that the activity no longer admits
+([Tiers and precedence](#tiers-and-precedence)) is stopped at its next admission check.
 
 **Files:** `application/ai/override/` holds `OverrideArbiter` (arbitration), `OverrideRunner` and its implementations
 (installed execution), `OverrideRuntimeState` (per-villager lane state, held on `BaseVillager`) and `DayPlanHandoff` (the
@@ -317,11 +320,19 @@ first. The tiers are a closed set, high to low; adding one is a design change.
 | Tier | Meaning |
 |------|---------|
 | `EMERGENCY` | Execution that must win over everything, protected day-plan work included. |
+| `DUTY` | A role the villager performs during a reactive activity, such as a raid. |
 | `REACTIVE` | Answering another party's request, such as an invite. |
 | `OPPORTUNISTIC` | Idle-time work the villager can take or leave. |
 
 Within a tier, list position is the only precedence; a policy declares no rank of its own. `OverrideArbiter` rejects a
 list that ranks a policy behind a lower tier at construction, so the list always reads as the order that runs.
+
+A tier below `DUTY` is never admitted during a reactive activity (`ActivityArbiter.isReactive`). The rule lives in
+`OverrideArbitrationRules`, and `OverrideArbiter` applies it together with the policy's own `isAdmissibleDuring`, for
+starting and for staying installed alike, so no policy restates it. That rule, not a safety check, keeps ordinary
+overrides from running through danger, a raid or a bell. A policy's `isAdmissibleDuring` can only narrow admission
+further. A `DUTY` policy must narrow it to the reactive activities it serves, because its tier is admitted during all of
+them, `COMBAT` and `PANIC` included.
 
 ### Arbitration
 
@@ -329,15 +340,18 @@ Policy evaluation runs on a per-villager cadence (`OverrideRuntimeState.EVALUATI
 village does not evaluate on one tick. The installed runner still ticks every server tick, so running execution
 never lags.
 
-- **Nothing installed.** Policies are evaluated in list order. A non-interruptible day-plan descriptor excludes
-  `REACTIVE` and `OPPORTUNISTIC`; `EMERGENCY` ignores that protection. The first policy that returns a request is the
-  only candidate: if the catalog behavior it names fails validation, lower policies wait for the next evaluation. A
-  validated request suspends the running day-plan behavior and re-queues its slot to `PENDING` *before* the runner
-  starts, so a start failure still leaves the day resumable.
+- **Nothing installed.** Policies are evaluated in list order. A non-interruptible day-plan descriptor excludes every
+  tier below `EMERGENCY`; only `EMERGENCY` ignores that protection. `DUTY` needs no exemption: during a reactive
+  activity the activity gate suspends the day plan, which clears its descriptor, so a duty starts at most one
+  evaluation late. The delay exists because the override arbiter runs before that gate: an evaluation on the
+  activity's first tick still sees the plan. The first policy that returns a request is the only candidate: if the
+  catalog behavior it names fails validation, lower policies wait for the next evaluation. A validated request suspends
+  the running day-plan behavior and re-queues its slot to `PENDING` *before* the runner starts, so a start failure still
+  leaves the day resumable.
 - **Something installed.** Only tiers strictly above the running one are evaluated; the same or a lower tier never
   displaces it. A firing higher tier is validated first, then the running runner is stopped completely, then the new one
-  starts. The running override's own policy is re-asked `isAdmissibleDuring` on the same cadence, so an activity change
-  alone, such as a villager falling asleep mid-pickup, ends it.
+  starts. The running override is re-checked on the same cadence against its policy's `isAdmissibleDuring` and the
+  reactive-activity rule, so an activity change alone, such as a villager falling asleep mid-pickup, ends it.
 - **Completion.** Once `OverrideRunner.isComplete()`, whether finished or wedged past its ceiling, the arbiter stops the
   runner and re-queues the interrupted slot. A natural finish and a wedge take the same path.
 - **`forceStop`** (removal, a brain refresh) stops the installed runner without requeuing anything.
@@ -345,16 +359,18 @@ never lags.
 A runner owns its execution — start, tick, teardown and its duration ceiling — and never arbitrates; every comparison
 above belongs to `OverrideArbiter`. An `OverrideRequest` takes one of two forms. A catalog behavior is validated and
 wrapped in `SimpleBehaviorOverrideRunner`, which runs that one `IBehavior` under the behavior's own run-duration
-ceiling. A runner the policy prepared is installed as is; that is how execution that is not one catalog behavior, such
+ceiling. The behavior is built fresh for every request, with its cooldowns force-completed, so its own cooldown never
+spans two runs: an override that repeats keeps its cadence in a brain memory instead ([Raid duties](#raid-duties)).
+A runner the policy prepared is installed as is; that is how execution that is not one catalog behavior, such
 as a fight, enters the lane.
 
 ### Override policies
 
 Listed in `di/modules/server/OverridePolicyModule.java`, the authority on membership and ranking. A policy is
 `@ServerScope` and stateless: `evaluate(level, villager)` reads state and returns an `Optional<OverrideRequest>`, and
-`isAdmissibleDuring(activity)` declares which activities admit it, both for starting and for staying installed. A policy below `EMERGENCY` must refuse every reactive activity; that refusal, not a safety check,
-is what keeps ordinary overrides from running through danger, a raid or a bell. A prepared runner must be unstarted
-and report its policy's tier, because preemption compares the running runner's tier.
+`isAdmissibleDuring(activity)` declares which activities admit it, both for starting and for staying installed, within
+the bound its tier's rule sets ([Tiers and precedence](#tiers-and-precedence)). A prepared runner must be unstarted and
+report its policy's tier, because preemption compares the running runner's tier.
 
 Every policy is evaluated for every villager, since nothing binds one to a profession. A policy meant for one profession
 returns early on any other, as fletcher projectile retrieval does, and so does any sensor that feeds only it, so other
@@ -368,8 +384,9 @@ does, reads `PlanRuntimeState.isBehaviorActive()`.
 
 Stimuli are pollable state, never broadcasts. The invite-accept policies read the courtship and trade session registries,
 which the matching initiate behavior writes when it sends its invite; demanded-item pickup reads a sensor memory; combat
-reads the villager's threat verdict. A registry is the state of record for a first-accept-wins offer, and a broadcast
-log cannot be one, because two readers of the same announcement both believe they have the offer.
+reads the villager's threat verdict; a raid duty reads the raid at the villager's position. A registry is the state of
+record for a first-accept-wins offer, and a broadcast log cannot be one, because two readers of the same announcement
+both believe they have the offer.
 
 TODO: add player-requested overrides through debug commands and dialogue so a player can direct a villager to perform a
 specific behavior immediately, such as asking a farmer to harvest pumpkins.
@@ -379,6 +396,21 @@ specific behavior immediately, such as asking a farmer to harvest pumpkins.
 A fight is this lane's one `EMERGENCY` policy: `CombatOverridePolicy` hands a villager whose verdict is COMBAT a
 prepared `CombatOverrideRunner`, which holds the villager across successive combat actions for as long as the verdict
 lasts. The runner, its actions and the combat options are in [`threat_response.md`](threat_response.md#combat).
+
+### Raid duties
+
+A raid duty is a `DUTY` policy narrowed to the raid activity it serves, with one policy per duty.
+`isAdmissibleDuring` sees the activity but not the villager, so a single policy dispatching every profession's duty
+could not keep a pre-raid duty out of the wave. `ChartRaidersOverridePolicy` is one, and `OverridePolicyModule` holds
+the set.
+
+A duty decides whether a wave is on with `ActivityArbiter.isRaidWaveLive`, the predicate behind `RAID_HIDE`, but it reads
+the raid at a different moment. The arbiter re-derives the activity on its own cadence, while a duty reads the raid
+when it evaluates and again when it acts. Around a wave's start and end the two can differ for a moment, so a duty
+re-checks the raid when it acts rather than trusting that its admitting activity still holds.
+
+A duty that stands still depends on the raid packages' gated movement as much as one that moves (see
+[Reactive and Baby Activities](#reactive-and-baby-activities)).
 
 ---
 
@@ -509,7 +541,7 @@ a plan mid-slot.
 | `PlanRunnerBehavior` location | `Activity.CORE` | Must survive activity transitions without stop/start; CORE always ticks regardless of active activity. Placing it in each activity would restart it on every transition, interrupting mid-slot execution. |
 | Reactive override rides inside `PlanRunnerBehavior` | Not a new activity, not a vanilla brain override | `OverrideArbiter` needs to know whether a plan behavior is running and interruptible, and must hand the body over cleanly (suspend → install → resume) under any day-plan activity. A brain-priority behavior could not coordinate that. |
 | Arbitration is a separate component from execution | `OverrideArbiter` vs. `OverrideRunner` | Tier/order/admission/preemption decisions and one runner's own bookkeeping (elapsed ticks, its ceiling, exception containment) change for different reasons; combined, every new kind of execution would have to edit arbitration. |
-| Override precedence is a tier, then a list position | Each policy declares its `OverrideTier`; `OverridePolicyModule` lists the policies highest tier first | A single ranking cannot express "only strictly higher tiers may preempt a running one". The tier carries that rule and protected-plan admission, so it stays on the policy whose nature it describes. Order within a tier only compares policies, so no one policy can state it: a rank number on each means nothing until read against every sibling's, and two equal numbers leave the order to chance. A list ranked out of tier order is rejected at construction rather than re-sorted, so the list never shows an order that does not run. |
+| Override precedence is a tier, then a list position | Each policy declares its `OverrideTier`; `OverridePolicyModule` lists the policies highest tier first | A single ranking cannot express "only strictly higher tiers may preempt a running one". The tier carries that rule, protected-plan admission and reactive-activity admission, so it stays on the policy whose nature it describes. Order within a tier only compares policies, so no one policy can state it: a rank number on each means nothing until read against every sibling's, and two equal numbers leave the order to chance. A list ranked out of tier order is rejected at construction rather than re-sorted, so the list never shows an order that does not run. |
 | Every override runner is bounded in time | Per-behavior ceiling, a fixed fallback for a key with no descriptor; per action for combat | Overrides are reactive and short-lived; a wedged one (e.g. mirroring a session that never closes) must not freeze the villager. On trip, the runner reports complete and the arbiter stops it and re-queues the interrupted slot — identically to a natural finish. A fight's length is the verdict's to decide, so the combat runner bounds each action instead ([`threat_response.md`](threat_response.md#combat)). |
 | Policy evaluation is throttled and staggered | `OverrideRuntimeState.EVALUATION_INTERVAL`, random per-villager phase | Evaluating every policy every tick for every villager is pure overhead on the peaceful path; ticking whatever is already installed still happens every tick so a running override never feels laggy. |
 | Opportunity requirements down-weight, not filter | `PlannerPolicy.LOW_OPPORTUNITY_MULTIPLIER` | Keeps starved behaviors in the pool so plans stay resilient; the packer prunes only zero-weight entries, so the multiplier must stay above zero. Forecast is computed on the server thread before the async handoff (decaying-memory reads aren't thread-safe). |
@@ -543,14 +575,17 @@ a plan mid-slot.
 
 1. Implement `OverridePolicy` (`@ServerScope`, stateless): `tier()` returning the right `OverrideTier`,
    `isAdmissibleDuring(activity)` declaring which activities admit it, and `evaluate(level, villager)` returning an
-   `Optional<OverrideRequest>`: the catalog `BehaviorKey` to install, or an unstarted runner it prepared. Keep `evaluate`
-   cheap — it is polled on the arbiter's evaluation cadence, not every tick — and short-circuit early (as
-   `CourtshipAcceptOverridePolicy` does when no invite is pending).
+   `Optional<OverrideRequest>`: the catalog `BehaviorKey` to install, or an unstarted runner it prepared. Narrow
+   `isAdmissibleDuring` only beyond what the tier's rule already decides, and for a `DUTY` policy to the reactive
+   activities it serves ([Tiers and precedence](#tiers-and-precedence)). Keep `evaluate` cheap — it is polled on the
+   arbiter's evaluation cadence, not every tick — and short-circuit early (as `CourtshipAcceptOverridePolicy` does
+   when no invite is pending).
 2. Add it to `OverridePolicyModule`'s list, within its tier and ahead of any sibling it should win over — the arbiter
-   rejects a list ranked out of tier order at construction.
+   rejects a list ranked out of tier order at construction. A `DUTY` policy goes after the `EMERGENCY` policies and
+   ahead of every `REACTIVE` one.
 3. For a catalog request, ensure the target behavior exists in the catalog. Either way, check that the behaviors it may
-   interrupt declare `isInterruptible()` appropriately (only checked for `REACTIVE`/`OPPORTUNISTIC` tiers —
-   `EMERGENCY` ignores it).
+   interrupt declare `isInterruptible()` appropriately (checked for every tier below `EMERGENCY`, `DUTY` included —
+   only `EMERGENCY` ignores it).
 4. If the trigger depends on a new stimulus, give it a source the policy can poll cheaply — a sensor memory or a session
    registry. There is no live stimulus broadcast to hook into:
    `WorldEventBus` has no producers.
@@ -573,8 +608,8 @@ Example: a future festival or ceremony activity.
 3. Add the activity to `PlanRunnerBehavior.DAY_PLAN_ACTIVITIES` if plan slots should execute during it. Omitting it
    gives the suspend behavior for free.
 4. Give `ActivityArbiter` a case for it: a daily-context case if it follows the time or plan phase, or a precedence row
-   if it answers a condition. A reactive activity must also be one `ActivityArbiter.isReactive` accepts, so ordinary
-   overrides refuse it.
+   if it answers a condition. A reactive activity must also be one `ActivityArbiter.isReactive` accepts, so the
+   override tiers' reactive-activity rule applies during it ([Tiers and precedence](#tiers-and-precedence)).
 5. Update this document.
 
 ### Adding a plan-driven (foreground) behavior
@@ -593,6 +628,13 @@ enters and leaves them. `RAID_HIDE` holds only the search for shelter; the celeb
 `RAID_CELEBRATE`, which needs no raid-won gate because the arbiter selects it only for a won raid. `COMBAT` runs no
 vanilla behavior at all; the combat runner in the override lane does the fighting. What feeds `PANIC`'s flee is in
 [`threat_response.md`](threat_response.md#panic).
+
+The raid packages' movement behaviors — `RAID_HIDE`'s shelter search, and `PRE_RAID`'s walk to the meeting point and
+stroll — are wrapped in `AmbientBehaviors.gated(...)`, so they yield to a `DUTY` override installed during a raid. The
+shelter search re-targets the villager whenever it has no walk target, so ungated it would overrule a duty. When the
+duty ends, `PLAN_BEHAVIOR_ACTIVE` clears and shelter-seeking resumes; every override is bounded in time, so the gate
+cannot strand a villager. The look behaviors and `RingBell` move nothing and stay ungated. Babies share these packages
+but run no override lane, so the gate never holds them back.
 
 `PlanRunnerBehavior` is not registered for baby villagers. Babies are set to `Schedule.VILLAGER_BABY` and given IDLE,
 PLAY, MEET, and REST packages from `VanillaBehaviorPackages`; `ActivityArbiter` serves them like adults and derives

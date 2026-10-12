@@ -3,6 +3,7 @@ package dev.breezes.settlements.bootstrap.event;
 import dev.breezes.settlements.application.ui.sync.UiServerChannelDefinition;
 import dev.breezes.settlements.application.ui.sync.session.UiSession;
 import dev.breezes.settlements.application.ui.sync.session.UiSessionRegistry;
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
@@ -21,6 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Map;
 
+@ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 @CustomLog
 public final class UiSyncServerEvents {

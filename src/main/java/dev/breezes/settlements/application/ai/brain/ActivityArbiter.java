@@ -76,6 +76,15 @@ public final class ActivityArbiter {
     }
 
     /**
+     * Whether the raid has an active invasion wave in progress.
+     *
+     * @param raid the raid at the villager's position, or null when there is none
+     */
+    public static boolean isRaidWaveLive(@Nullable Raid raid) {
+        return determineRaidActivity(raid) == ActivityRegistry.RAID_HIDE;
+    }
+
+    /**
      * Re-derives and asserts the villager's activity if needed.
      * Must be called once per server tick.
      *

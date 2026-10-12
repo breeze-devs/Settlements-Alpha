@@ -1,6 +1,5 @@
 package dev.breezes.settlements.application.ai.override;
 
-import dev.breezes.settlements.application.ai.brain.ActivityArbiter;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
@@ -32,8 +31,7 @@ public final class TradeAcceptOverridePolicy implements OverridePolicy {
 
     @Override
     public boolean isAdmissibleDuring(@Nullable Activity activity) {
-        // A villager answering danger, a raid or a bell does not stop to trade
-        return activity == null || !ActivityArbiter.isReactive(activity);
+        return true;
     }
 
     @Override

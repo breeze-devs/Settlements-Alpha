@@ -14,7 +14,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
-import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
@@ -28,7 +27,6 @@ import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -167,42 +165,24 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
     }
 
     private BehaviorStep<BaseVillager> createMarkMapStep() {
-        return TimeBasedStep.<BaseVillager>builder()
-                .withTickable(ClockTicks.of(CartographerAnimations.MARK_DURATION_TICKS).asTickable())
-                .onStart(context -> {
-                    BaseVillager villager = context.getInitiator();
-                    villager.getNavigationManager().stop();
-                    villager.setHeldItem(Items.MAP.getDefaultInstance());
-                    SoundRegistry.MAP_FLAP.playGlobally(Location.fromEntity(context.getInitiator(), false), SoundSource.NEUTRAL);
+        return MapSketch.step(context -> {
+            this.shouldRewardExperience = true;
 
-                    villager.triggerMotion(AnimationArchetype.WRITE_TO_MAP);
-                    return StepResult.noOp();
-                })
-                .addKeyFrame(ClockTicks.of(CartographerAnimations.MARK_DURATION_TICKS / 2), context -> {
-                    context.getInitiator().setHeldItem(Items.FILLED_MAP.getDefaultInstance());
-                    SoundRegistry.MAP_SCRIBBLE.playGlobally(Location.fromEntity(context.getInitiator(), false), SoundSource.NEUTRAL);
-                    return StepResult.noOp();
-                })
-                .onEnd(context -> {
-                    context.getInitiator().clearHeldItem();
-                    this.shouldRewardExperience = true;
+            if (context.primaryDeed().isEmpty()) {
+                BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LANDSCAPE_SURVEYED, null);
+                outcome.markSucceeded();
+                context.declarePrimaryDeed(outcome);
+            }
 
-                    if (context.primaryDeed().isEmpty()) {
-                        BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LANDSCAPE_SURVEYED, null);
-                        outcome.markSucceeded();
-                        context.declarePrimaryDeed(outcome);
-                    }
+            if (this.remainingPoints.isEmpty()) {
+                // All points surveyed
+                return StepResult.transition(SurveyStage.END);
+            }
 
-                    if (this.remainingPoints.isEmpty()) {
-                        // All points surveyed
-                        return StepResult.transition(SurveyStage.END);
-                    }
-
-                    Location nextPoint = this.remainingPoints.poll();
-                    context.setState(BehaviorStateType.TARGET, TargetState.of(this.toTargetable(nextPoint)));
-                    return StepResult.transition(SurveyStage.NAVIGATE_TO_POINT);
-                })
-                .build();
+            Location nextPoint = this.remainingPoints.poll();
+            context.setState(BehaviorStateType.TARGET, TargetState.of(this.toTargetable(nextPoint)));
+            return StepResult.transition(SurveyStage.NAVIGATE_TO_POINT);
+        });
     }
 
     private void sampleSurveyPoints(@Nonnull BaseVillager villager, @Nonnull Level world) {

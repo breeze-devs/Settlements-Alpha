@@ -25,6 +25,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.petting.PetAnimalConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.ChartRaidersBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.ChartRaidersConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatBehavior;
@@ -122,6 +124,7 @@ import dev.breezes.settlements.domain.ai.catalog.CooldownRange;
 import dev.breezes.settlements.domain.ai.catalog.WorkIntensity;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.planning.OpportunityRequirement;
+import dev.breezes.settlements.domain.animation.CartographerAnimations;
 import dev.breezes.settlements.domain.crafting.catalog.CraftCatalogRegistry;
 import dev.breezes.settlements.domain.economy.catalog.TradeCatalogRegistry;
 import dev.breezes.settlements.domain.farming.CultivationCropRegistry;
@@ -1098,6 +1101,31 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("map"))
                         .build())
                 .factory(() -> new SurveyLandscapeBehavior(config, support))
+                .build();
+    }
+
+    @Provides
+    @IntoSet
+    static BehaviorCatalogEntry chartRaiders(ChartRaidersConfig config, BehaviorSupport support) {
+        ClockTicks sketch = ClockTicks.of(CartographerAnimations.MARK_DURATION_TICKS);
+        return BehaviorCatalogEntry.builder()
+                .descriptor(BehaviorPlanningMetadata.builder()
+                        .key(BehaviorKey.CHART_RAIDERS)
+                        .displayName("Chart Raiders")
+                        .description("Sketch the raid's raiders onto a map so they glow")
+                        .category(BehaviorCategory.WORK)
+                        .intensity(WorkIntensity.LIGHT)
+                        .requiredChannel(BehaviorChannel.MOVEMENT)
+                        .requiredChannel(BehaviorChannel.INTERACTION)
+                        .estimatedDuration(sketch.asGameTicks())
+                        .maxRunDuration(ClockTicks.of(sketch.getTicks() * 2))
+                        .interruptible(true)
+                        .build())
+                .displayInfo(BehaviorDisplayMetadata.builder()
+                        .displayNameKey(BehaviorKey.CHART_RAIDERS.displayNameKey())
+                        .iconItemId(ResourceLocation.withDefaultNamespace("compass"))
+                        .build())
+                .factory(() -> new ChartRaidersBehavior(config, support))
                 .build();
     }
 

@@ -110,6 +110,7 @@
   "ui.settlements.behavior.behavior.collect_demanded_item": "收集所需物品",
   "ui.settlements.behavior.behavior.retrieve_projectiles": "回收箭",
   "ui.settlements.behavior.behavior.survey_landscape": "探查地形",
+  "ui.settlements.behavior.behavior.chart_raiders": "标记袭击者",
   "ui.settlements.behavior.behavior.courtship_initiate": "主动示爱",
   "ui.settlements.behavior.behavior.courtship_accept": "接受示爱",
   "ui.settlements.behavior.behavior.donate_emeralds": "捐赠绿宝石",

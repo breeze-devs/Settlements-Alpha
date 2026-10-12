@@ -21,6 +21,14 @@ public final class OverrideArbitrationRules {
     }
 
     /**
+     * Whether the candidate tier may run during an activity: a reactive activity admits only
+     * {@link OverrideTier#DUTY} and above; any other activity admits every tier.
+     */
+    public static boolean isAdmittedDuringActivity(OverrideTier tier, boolean activityReactive) {
+        return !activityReactive || tier == OverrideTier.DUTY || tier.isAbove(OverrideTier.DUTY);
+    }
+
+    /**
      * Returns the index of the first tier ranked behind a lower one, or empty if the tiers are ranked
      * highest first.
      */

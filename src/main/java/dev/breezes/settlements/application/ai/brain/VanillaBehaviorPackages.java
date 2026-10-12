@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.ambient.AmbientBehaviors;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.home.BedCompetitorScan;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.home.ValidateNearbyHome;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.threat.ThreatGolemSummon;
@@ -217,20 +218,22 @@ public final class VanillaBehaviorPackages {
         return ImmutableList.of(
                 getMinimalLookBehavior(),
                 Pair.of(0, RingBell.create()),
-                Pair.of(0, TriggerGate.triggerOneShuffled(ImmutableList.of(
+                // Gated so the vanilla behaviors do not set a walk target under an installed override
+                Pair.of(0, AmbientBehaviors.gated(TriggerGate.triggerOneShuffled(ImmutableList.of(
                         Pair.of(SetWalkTargetFromBlockMemory.create(MemoryModuleType.MEETING_POINT, speed, 2, 150, 200), 6),
                         Pair.of(VillageBoundRandomStroll.create(speed), 2)
-                )))
+                ))))
         );
     }
 
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getRaidHidePackage(float speed) {
         return ImmutableList.of(
                 getMinimalLookBehavior(),
-                Pair.of(2, BehaviorBuilder.sequence(
+                // Gated so the vanilla behaviors do not set a walk target under an installed override
+                Pair.of(2, AmbientBehaviors.gated(BehaviorBuilder.sequence(
                         BehaviorBuilder.triggerIf(VanillaBehaviorPackages::hasActiveRaid),
                         LocateHidingPlace.create(24, speed, 1)
-                ))
+                )))
         );
     }
 

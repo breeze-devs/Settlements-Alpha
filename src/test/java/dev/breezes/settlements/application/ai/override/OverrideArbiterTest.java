@@ -71,6 +71,46 @@ class OverrideArbiterTest {
         assertFalse(OverrideArbiter.isPlanInterruptible(descriptor(false)));
     }
 
+    @Test
+    void isAdmissible_refusesATierBelowDutyDuringAReactiveActivity() {
+        // Arrange — counterexample: the arbiter asks only the policy, so a trade invite whose policy admits every
+        // activity is accepted while the villager shelters from a raid. The fake ignores the activity, so none is
+        // needed.
+        OverridePolicy invite = fakePolicy(OverrideTier.REACTIVE, true);
+
+        // Act
+        boolean admitted = OverrideArbiter.isAdmissible(invite, null, true);
+
+        // Assert
+        assertFalse(admitted);
+    }
+
+    @Test
+    void isAdmissible_admitsATierBelowDutyOutsideAReactiveActivity() {
+        // Arrange — counterexample: the reactivity flag ignored or forced on, so every invite and pickup is refused
+        // during day activities as well.
+        OverridePolicy invite = fakePolicy(OverrideTier.REACTIVE, true);
+
+        // Act
+        boolean admitted = OverrideArbiter.isAdmissible(invite, null, false);
+
+        // Assert
+        assertTrue(admitted);
+    }
+
+    @Test
+    void isAdmissible_refusesWhenThePolicyRefusesTheActivity() {
+        // Arrange — counterexample: only the tier rule is applied, so a policy's own narrowing, such as combat's
+        // COMBAT-only admission, is ignored and its override starts or stays installed outside its activities.
+        OverridePolicy narrowed = fakePolicy(OverrideTier.EMERGENCY, false);
+
+        // Act
+        boolean admitted = OverrideArbiter.isAdmissible(narrowed, null, false);
+
+        // Assert
+        assertFalse(admitted);
+    }
+
     private static BehaviorPlanningMetadata descriptor(boolean interruptible) {
         return BehaviorPlanningMetadata.builder()
                 .key(BehaviorKey.HARVEST_MELON)
@@ -83,6 +123,10 @@ class OverrideArbiterTest {
     }
 
     private static OverridePolicy fakePolicy(OverrideTier tier) {
+        return fakePolicy(tier, true);
+    }
+
+    private static OverridePolicy fakePolicy(OverrideTier tier, boolean admitsActivity) {
         return new OverridePolicy() {
             @Override
             public OverrideTier tier() {
@@ -91,7 +135,7 @@ class OverrideArbiterTest {
 
             @Override
             public boolean isAdmissibleDuring(@Nullable Activity activity) {
-                return true;
+                return admitsActivity;
             }
 
             @Override

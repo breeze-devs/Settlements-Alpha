@@ -1,323 +1,228 @@
 # Dagger Dependency Injection Guide
 
-This document covers the Dagger 2 component hierarchy, all modules, the static accessor, the initialization lifecycle,
-and how implicit bindings work. For the big-picture layer overview, see
-[Architecture Overview](architecture_overview.md).
+How the Dagger graph is shaped, where a new binding belongs, how code that Minecraft constructs reaches the graph, and
+what each part of the graph's lifetime obliges. For the layers the graph wires together, see
+[Architecture Overview](architecture_overview.md); for the test graph, see [Testing Guide](testing_guide.md).
 
 ---
 
-## Component Hierarchy
+## Component hierarchy
 
-The Dagger graph is a three-level tree: one root component and two scoped subcomponents.
+One root component and three subcomponents separate process, world, and connection lifetimes. The component interfaces
+linked in [Lifecycle](#lifecycle) own their installed modules and external entry points.
 
-```
-@Singleton SettlementsComponent               (common — lives for the entire mod session)
-│
-│   Modules:
-│   ├── ConfigModule           — config records via ConfigFactory
-│   ├── DataManagerModule      — data managers
-│   ├── BehaviorServicesModule — application-layer behavior services
-│   └── GenerationModule       — domain registry interfaces + GenerationPipeline
-│
-├── @ServerScope ServerComponent              (created per server start, cleared on server stop)
-│   │
-│   │   Modules:
-│   │   ├── BehaviorModule        — Set<BehaviorRegistration> via @IntoSet multibinding
-│   │   └── ServerNetworkModule   — Map<Class, ServerSidePacketHandler> via @IntoMap multibinding
-│   │
-│   │   Implicit bindings (@Inject constructors, no module needed):
-│   │   ├── BehaviorControllerSessionService
-│   │   ├── VillagerStatsSessionService
-│   │   ├── VillagerBubbleService
-│   │   ├── BehaviorControllerSnapshotBuilder
-│   │   ├── VillagerStatsSnapshotBuilder
-│   │   ├── BehaviorPackageResolver
-│   │   ├── ServerSidePacketReceiver
-│   │   ├── BehaviorControllerServerEvents
-│   │   └── VillagerStatsServerEvents
-│   │
-│
-└── @ClientScope ClientComponent              (created once on client dist, lives for the session)
-    │
-    │   Modules:
-    │   └── ClientNetworkModule   — Map<Class, ClientSidePacketHandler> via @IntoMap multibinding
-    │
-    │   Implicit bindings:
-    │   ├── ClientSidePacketReceiver
-    │   ├── BehaviorControllerClientState
-    │   └── VillagerStatsClientState
+```mermaid
+flowchart TD
+    ROOT["SettlementsComponent · @Singleton<br/>the whole process"]
+    SERVER["ServerComponent · @ServerScope<br/>one world"]
+    CLIENT["ClientComponent · @ClientScope<br/>the whole process, client dist only"]
+    SESSION["ClientSessionComponent · @ClientSessionScope<br/>one connection to a server"]
+    ROOT --> SERVER
+    ROOT --> CLIENT
+    CLIENT --> SESSION
 ```
 
-### What each component owns
+A dedicated server never builds a `ClientComponent`, and a client connected to a remote server has no `ServerComponent`.
 
-**SettlementsComponent** (`di/SettlementsComponent.java`)
+Scoped bindings share one instance within their owning component instance. Server and client-session components are
+recreated with their world or connection; references held elsewhere still need [cleanup](#what-server-stop-must-undo).
 
-- Scope: `@Singleton` — created once during `FMLLoadCompleteEvent`, never destroyed.
-- Owns all configs, data managers, generation pipeline, and reload listeners.
-- Exposes factory methods for both subcomponents: `serverComponentFactory()`, `clientComponentFactory()`.
+### Choosing a scope
 
-**ServerComponent** (`di/ServerComponent.java`)
+Keep shared state in the shortest-lived component that covers its intended users.
 
-- Scope: `@ServerScope` — created on `ServerAboutToStartEvent`, cleared on `ServerStoppedEvent`.
-- Owns server-only services: session management, bubble service, snapshot builders, behavior resolution, server-side
-  packet dispatch, and server event handlers.
-- In single-player, this is created and destroyed each time the player opens/closes a world.
+- **Root** — services used on both logical sides or needed before a world loads, such as config bindings and reload
+  listeners. Placement here does not make server-loaded datapack data available on the client; see
+  [P2](../standards/platform.md#p2--datapack-backed-registries-do-not-exist-on-the-client).
+- **Server** — services shared by one world's gameplay, such as planning, session registries, and server event handlers.
+- **Client** — process-lived client services, such as renderers and client-bound packet handlers.
+- **Client session** — objects used within one connection.
 
-**ClientComponent** (`di/ClientComponent.java`)
+A parent component cannot inject its subcomponent's bindings. A renderer or packet handler owned by `ClientComponent`
+therefore cannot constructor-inject a session-scoped object; it must resolve that object
+[at the point of use](#reaching-the-graph-from-code-minecraft-constructs).
 
-- Scope: `@ClientScope` — created once during `FMLLoadCompleteEvent` (client dist only), never destroyed.
-- Owns client-only state holders and client-side packet dispatch.
-- Never instantiated on a dedicated server.
-
-### Custom Scope Annotations
-
-```
-di/ServerScope.java    — @Scope annotation for ServerComponent bindings
-di/ClientScope.java    — @Scope annotation for ClientComponent bindings
-```
-
-Scopes ensure that within a given component instance, each scoped binding produces exactly one instance. When the
-`ServerComponent` is destroyed and re-created (world change), all `@ServerScope` instances are fresh.
+Per-connection state retained by a client-scoped service needs an explicit reset. Such a service implements
+[ClientSessionResettable][session-resettable] and contributes to the set in [ClientLifecycleModule][client-lifecycle].
+Discarding the session component does not clear state held by client singletons, so omitting that contribution carries
+one server's state into the next connection.
 
 ---
 
-## Implicit Bindings
+## Bindings
 
-Not every class that Dagger provides needs a `@Module` entry. If a class has an `@Inject` constructor, Dagger can
-create it automatically — this is called an **implicit binding**. The class just needs to be reachable from the
-component that exposes it.
+### Implicit bindings
 
-In this project, Lombok generates the `@Inject` constructor via `onConstructor_`:
+A class with an `@Inject` constructor needs no module entry for its unqualified concrete binding. Constructor conventions
+belong to [C3](../standards/code.md#c3--constructor-injection).
 
-```
-// No-arg example (no dependencies):
-@NoArgsConstructor(onConstructor_ = @Inject)
-public final class BehaviorControllerSessionService { ... }
+State alone does not justify a component scope. An unscoped constructor binding creates a fresh object when requested,
+which is appropriate for state owned by one entity or execution. [PlanRunnerBehavior][plan-runner-behavior], for example,
+is obtained per villager through the provider exposed by [ServerComponent][server-component].
 
-// All-args example (dependencies injected via constructor params):
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
-public final class ServerSidePacketReceiver {
-    private final Map<Class<?>, ServerSidePacketHandler<?>> handlers;  // injected by Dagger
-}
-```
+### Modules
 
-The component interface exposes the binding via an accessor method:
+Use `@Provides` for factory-created values or external types, and `@Binds` for interface or qualified aliases. Both can
+carry qualifiers. For library semantics, see [Dagger's binding guide](https://dagger.dev/dev-guide/basic-usage).
 
-```
-// In ServerComponent.java — no module needed, Dagger finds the @Inject constructor
-BehaviorControllerSessionService behaviorControllerSessionService();
-```
+Modules live under `di/modules/`, with `server/` and `client/` holding the subcomponents' modules. The root graph has a
+module per domain area that exposes datapack loaders through the domain registry interfaces they implement, while
+[DataManagerModule][data-manager-module] provides the concrete loaders; the
+[Datapack System](datapack_system.md#adding-a-new-loader) recipe walks both.
 
-**When to use implicit bindings vs. modules:**
+Install a module in its owning component, directly or through an installed module's `includes`. An omitted multibinding
+module can leave contributions silently missing even when the graph still compiles.
 
-- Use implicit bindings when the class has a straightforward constructor and no special factory logic.
-- Use a `@Module` with `@Provides` when construction requires calling a factory method (e.g., `ConfigFactory.create()`),
-  when the return type is an interface (dependency inversion), or when the instance needs to be added to a multibinding
-  collection.
+### Multibindings are the extension points
 
----
+Multibindings let modules contribute `@IntoSet` or `@IntoMap` entries without changing the consumer. Subsystem recipes
+name the owning module. Two patterns need special care:
 
-## Modules Reference
+- **Qualified sets.** Some sets are split by a qualifier — a base set and a set that applies only with inference on,
+  for instance — and a `@Provides` method joins them into the unqualified set consumers inject. Contribute with the
+  qualifier the owning module uses; the merged binding centralizes the inference gate. An unqualified `@IntoSet`
+  contribution collides with that provider. [SensorCatalogModule][sensor-catalog] is an example.
+- **Ranked lists.** Where order carries meaning, the module provides an ordered `List` rather than a set, and a new
+  member is placed by hand at its rank. [OverridePolicyModule][override-policies] is an example.
 
-### ConfigModule
+### Qualifiers and Lombok
 
-**File:** `di/modules/ConfigModule.java`
-**Installed in:** `SettlementsComponent`
-
-Bridges NeoForge config records into the Dagger graph. Each method calls `ConfigFactory.create(ConfigClass.class)` and
-returns the materialized config record as a `@Singleton`.
-
-NeoForge still owns config discovery and TOML loading. This module only wraps the already-materialized records. Config
-values are **restart-only** — changes require a server restart.
-
-Current configs:
-
-- FishingConfig
-- ShearSheepConfig
-- TameCatConfig
-- TameWolfConfig
-- BreedAnimalsConfig
-- ButcherLivestockConfig
-- MilkCowConfig
-- SmokeMeatConfig
-- BlastOreConfig
-- CutStoneConfig
-- EnchantItemConfig
-- HarvestSugarCaneConfig
-- CollectHoneyConfig
-- HarvestHoneycombConfig
-- HarvestSoulSandConfig
-- HarvestOreConfig
-- RepairIronGolemConfig
-- ThrowPotionsConfig
-- HungerConfig
-
-### DataManagerModule
-
-**File:** `di/modules/DataManagerModule.java`
-**Installed in:** `SettlementsComponent`
-
-Provides `@Singleton` instances of all JSON data managers. Data managers extend
-`SimpleJsonResourceReloadListener` — they load data from resource packs on initial load and on `/reload`.
-
-Current data managers:
-
-- FishCatchDataManager
-- EnchantmentCostDataManager
-- SpecializationDataManager
-- BuildingDefinitionDataManager
-- BiomeSurveyDataManager
-- TraitScorerDataManager
-- TraitDefinitionDataManager
-- HistoryEventDataManager
-- CollectHoneyYieldDataManager
-- HarvestHoneycombYieldDataManager
-
-### BehaviorServicesModule
-
-**File:** `di/modules/BehaviorServicesModule.java`
-**Installed in:** `SettlementsComponent`
-
-Holds application-layer services consumed by behaviors. This module exists to keep the root graph organized:
-behavior services live here, while raw reloadable data managers stay in `DataManagerModule`.
-
-Current members: `EnchantmentEngine`.
-
-Convention: if a service performs behavior-facing orchestration or computation and is not itself a behavior, it belongs
-here rather than in `DataManagerModule`.
-
-### GenerationModule
-
-**File:** `di/modules/GenerationModule.java`
-**Installed in:** `SettlementsComponent`
-
-Applies the **Dependency Inversion Principle**: exposes concrete data managers through their domain-layer interfaces so
-that callers depend on stable abstractions rather than infrastructure details.
-
-| Concrete data manager           | Exposed as domain interface |
-|---------------------------------|-----------------------------|
-| `BuildingDefinitionDataManager` | `BuildingRegistry`          |
-| `BiomeSurveyDataManager`        | `BiomeSurveyLookup`         |
-| `TraitScorerDataManager`        | `TraitScorerRegistry`       |
-| `TraitDefinitionDataManager`    | `TraitRegistry`             |
-| `HistoryEventDataManager`       | `HistoryEventRegistry`      |
-
-Also constructs the `GenerationPipeline` from all five registry interfaces.
-
-### BehaviorModule
-
-**File:** `di/modules/server/BehaviorModule.java`
-**Installed in:** `ServerComponent`
-
-The central behavior catalog. Each `@Provides @IntoSet` method creates a `BehaviorRegistration` and adds it to the
-injected `Set<BehaviorRegistration>`. See [Behavior System](behavior_system.md) for full details.
-
-### ServerNetworkModule
-
-**File:** `di/modules/server/ServerNetworkModule.java`
-**Installed in:** `ServerComponent`
-
-An abstract module using `@Binds @IntoMap @ClassKey` to map server-bound packet classes to their handler
-implementations. The resulting `Map<Class<?>, ServerSidePacketHandler<?>>` is injected into
-`ServerSidePacketReceiver`.
-
-Each handler class has an `@Inject` constructor and implements `ServerSidePacketHandler<T>`. To add a new handler,
-add a `@Binds` method mapping the packet class to the handler class.
-
-### ClientNetworkModule
-
-**File:** `di/modules/client/ClientNetworkModule.java`
-**Installed in:** `ClientComponent`
-
-Same pattern as `ServerNetworkModule`, but for client-bound packets. Maps packet classes to
-`ClientSidePacketHandler<T>` implementations, injected into `ClientSidePacketReceiver`.
+[C1](../standards/code.md#c1--dependency-inversion-wired-by-dagger) owns qualifier propagation rules, their exceptions,
+and the silent misbinding trap. [lombok.config][lombok-config] owns the copied-annotation list; qualifier declarations
+live in `di/`.
 
 ---
 
-## The Static Accessor: SettlementsDagger
+## Recipes
 
-**File:** `di/SettlementsDagger.java`
+### Adding a service
 
-A single static access point that bridges non-injectable code into the Dagger graph. This exists because
-Minecraft/NeoForge controls the lifecycle of certain objects (entities, structures, event subscribers) and does not
-support constructor injection for them.
+1. Add its constructor binding and choose shared or per-use identity
+   ([Choosing a scope](#choosing-a-scope), [Implicit bindings](#implicit-bindings)).
+2. If it implements a domain interface that callers should depend on, `@Binds` the interface to it in a module of the
+   same component.
+3. If code outside the graph needs it, add an accessor to the component interface.
 
-### What it holds
+### Adding a config
 
-```
-@Nullable
-private static SettlementsComponent component;       // root — set once, never cleared
-@Nullable
-private static ServerComponent serverComponent;      // server — set on start, cleared on stop
-@Nullable
-private static ClientComponent clientComponent;      // client — set once (client dist only)
-```
+1. Define a record annotated `@BehaviorConfig` for discovery by [ConfigAnnotationProcessor][config-discovery].
+   [RecordConfigProcessor][record-config] and the [config annotations][config-annotations] own supported component
+   annotations. `ConfigurationType` selects the TOML file; `name` selects the section within it.
+2. Add a root binding in [ConfigModule][config-module] that obtains the record from [ConfigFactory][config-factory],
+   following an adjacent provider.
 
-### Access methods
+Runtime config registration and Dagger binding are separate seams: discovery does not add a graph binding, and a provider
+does not register a config. Config records are startup snapshots shared by the graph, so TOML edits require a new launch.
+[ConfigFactory][config-factory] is the starting point for missing-config diagnostics. Behavior configs also follow
+[Adding a new behavior](behavior_system.md#adding-a-new-behavior).
 
-| Method            | Returns                     | Throws if null? |
-|-------------------|-----------------------------|-----------------|
-| `component()`     | `SettlementsComponent`      | Yes             |
-| `serverOrThrow()` | `ServerComponent`           | Yes             |
-| `serverOrNull()`  | `ServerComponent` or `null` | No              |
-| `client()`        | `ClientComponent`           | Yes             |
+### Adding a packet
 
-### When to use SettlementsDagger vs. @Inject
+1. Define a record implementing [ServerBoundPacket][server-bound-packet] or [ClientBoundPacket][client-bound-packet],
+   with `ID` and `CODEC`, following the layout of a sibling feature.
+2. Add its injectable handler using [ServerSidePacketHandler][server-packet-handler] or
+   [ClientSidePacketHandler][client-packet-handler].
+3. Contribute the class-keyed handler binding in [ServerNetworkModule][server-network] or
+   [ClientNetworkModule][client-network], following the module's existing entries.
+4. Register the payload and codec in [PacketRegistry][packet-registry].
 
-**Prefer `@Inject`** whenever possible. Most application-layer and infrastructure-layer classes receive their
-dependencies through constructor injection — this is the standard path.
+NeoForge payload registration and the Dagger dispatch map must agree; neither registers the other. A missing handler
+triggers a disconnect. [ServerSidePacketReceiver][server-receiver] and [ClientSidePacketReceiver][client-receiver]
+own dispatch diagnostics.
 
-**Use `SettlementsDagger`** only when Minecraft/NeoForge creates the object and you cannot control its constructor:
+Client-bound handlers may use client classes. Both sides load the shared payload types, so keep client classes and
+handler references out of packet records.
 
-| Call site               | Why                                                   |
-|-------------------------|-------------------------------------------------------|
-| `BaseVillager`          | Entity created by Minecraft's entity spawning system  |
-| `SettlementsStructure`  | World generation structure created by Minecraft       |
-| `ServerLifecycleEvents` | Static NeoForge event subscriber — cannot be injected |
-| `CommonModEvents`       | Static NeoForge event subscriber — cannot be injected |
-| Packet receivers        | Registered from static event code                     |
+### Adding a server event handler
 
-If you find yourself adding a new `SettlementsDagger` call site, consider whether the class can be restructured to
-receive its dependencies via `@Inject` instead.
+1. Make the handler `@ServerScope` with an `@Inject` constructor, and add an accessor to
+   [ServerComponent][server-component].
+2. Register and unregister it in [ServerLifecycleEvents][server-lifecycle]. A handler that belongs to the inference graph
+   goes inside the inference-gate branch in both places.
+
+Why both the scope and the unregister are required is in [What server stop must undo](#what-server-stop-must-undo).
 
 ---
 
-## Initialization Lifecycle
+## Reaching the graph from code Minecraft constructs
 
-The Dagger graph is initialized in phases, tied to NeoForge's mod loading events:
+[SettlementsDagger][dagger-bridge] exposes the live graphs to Minecraft-owned objects and static platform callbacks.
+Graph-owned services use constructor injection; a bridge lookup is reserved for a dependency the graph cannot hand them,
+such as a client-owned service resolving a session-owned object. Expose each externally requested binding through its
+component interface.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  1. FMLLoadCompleteEvent (CommonModEvents.java)             │
-│     └── LOAD_COMPLETE_TASKS run (config factories populate) │
-│     └── DaggerSettlementsComponent.create()                 │
-│     └── SettlementsDagger.initialize(component)             │
-│     └── registerReloadListeners(component)                  │
-│     └── [CLIENT dist only]                                  │
-│         └── component.clientComponentFactory().create()     │
-│         └── SettlementsDagger.initializeClient(client)      │
-├─────────────────────────────────────────────────────────────┤
-│  2. ServerAboutToStartEvent (ServerLifecycleEvents.java)    │
-│     └── component.serverComponentFactory().create()         │
-│     └── SettlementsDagger.initializeServer(server)          │
-│     └── NeoForge.EVENT_BUS.register(server event handlers)  │
-├─────────────────────────────────────────────────────────────┤
-│  3. ServerStoppedEvent (ServerLifecycleEvents.java)         │
-│     └── NeoForge.EVENT_BUS.unregister(server event handlers)│
-│     └── SettlementsDagger.clearServer()                     │
-│     (If player opens another world, step 2 repeats)         │
-└─────────────────────────────────────────────────────────────┘
-```
+The bridge owns its accessor API. Choose a throwing lookup when absence is a bug, and a nullable lookup when the path
+legitimately runs without that graph, including defensive cleanup.
 
-### Key timing details
+Resolve world and connection components at the point of use. Caching them in longer-lived objects retains a previous
+world or connection; entity construction also has the timing and side restrictions in
+[P1](../standards/platform.md#p1--entity-constructors-run-on-both-logical-sides). Root and client graphs remain available
+after bootstrap, so constructors reached after that point can use them. Payload registration precedes graph bootstrap,
+so registering a callback cannot require a live receiver.
 
-- **Root component is created after load-complete tasks** because `ConfigFactory` populates config records during those
-  tasks. The root component must observe the finalized startup state.
-- **Reload listeners are registered from the root component** because `AddReloadListenerEvent` fires before the server
-  subcomponent exists for a given world/session.
-- **Server component is re-created per world/session.** In single-player, closing and reopening a world triggers
-  `ServerStoppedEvent` → `ServerAboutToStartEvent`, creating a fresh `ServerComponent` with fresh `@ServerScope`
-  instances.
-- **Server event handlers are unregistered on server stop** to prevent stale references and memory leaks. Because they
-  are `@ServerScope`, Dagger returns the exact same instances that were registered, so `unregister()` works correctly.
-- **Client component is created once** and never destroyed. Client state persists across world changes.
+---
+
+## Lifecycle
+
+| Component | Built on | Discarded on | Handler |
+|---|---|---|---|
+| [SettlementsComponent][root-component] | `FMLLoadCompleteEvent` | never | [CommonModEvents][common-lifecycle] |
+| [ClientComponent][client-component] | `FMLLoadCompleteEvent` | never | [CommonModEvents][common-lifecycle] |
+| [ServerComponent][server-component] | `ServerAboutToStartEvent` | `ServerStoppedEvent` | [ServerLifecycleEvents][server-lifecycle] |
+| [ClientSessionComponent][session-component] | `ClientPlayerNetworkEvent.LoggingIn` | `ClientPlayerNetworkEvent.LoggingOut` | [ClientSessionLifecycleEvents][session-lifecycle] |
+
+### Ordering that matters
+
+- **Config initialization precedes the root graph; the client graph follows the root.** Load-complete tasks populate
+  the factory before the graph can resolve config bindings.
+- **Reload listeners come from the root component.** When a world loads, `AddReloadListenerEvent` fires before that
+  world's `ServerComponent` exists. How the listeners are phased is in
+  [Datapack System](datapack_system.md#registration--the-two-phase-intoset-multibinding).
+- **Logout resets state held by client-scoped services before discarding the session component.** The client component
+  remains alive; [Choosing a scope](#choosing-a-scope) explains why those services need a reset contribution.
+
+### What server stop must undo
+
+The server component is discarded at `ServerStoppedEvent`, but anything it handed to something longer-lived outlives
+it unless the stop handler takes it back.
+
+- **Event handlers.** A `@ServerScope` object registered on `NeoForge.EVENT_BUS` at start must be unregistered at
+  stop. Left registered, the previous world's instance keeps receiving events alongside the next world's. Unregistering
+  works only because the scope makes the accessor return the instance that was registered: an unscoped handler's
+  accessor builds a new one, so the unregister call silently does nothing.
+- **Executors.** Every server-scoped `ExecutorService` also contributes to the managed-executor set in
+  [ConcurrencyModule][concurrency-module], and stop shuts down the whole set. A new pool needs that contribution and no
+  lifecycle edit; a pool without it keeps its threads after the world closes.
+- **In-flight inference.** With inference on, stop cancels outstanding inference requests before it closes the
+  transport they run on.
+
+[root-component]: ../../src/main/java/dev/breezes/settlements/di/SettlementsComponent.java
+[server-component]: ../../src/main/java/dev/breezes/settlements/di/ServerComponent.java
+[client-component]: ../../src/main/java/dev/breezes/settlements/di/ClientComponent.java
+[session-component]: ../../src/main/java/dev/breezes/settlements/di/ClientSessionComponent.java
+[dagger-bridge]: ../../src/main/java/dev/breezes/settlements/di/SettlementsDagger.java
+[session-resettable]: ../../src/main/java/dev/breezes/settlements/di/ClientSessionResettable.java
+[client-lifecycle]: ../../src/main/java/dev/breezes/settlements/di/modules/client/ClientLifecycleModule.java
+[plan-runner-behavior]: ../../src/main/java/dev/breezes/settlements/infrastructure/minecraft/behavior/planning/PlanRunnerBehavior.java
+[data-manager-module]: ../../src/main/java/dev/breezes/settlements/di/modules/DataManagerModule.java
+[sensor-catalog]: ../../src/main/java/dev/breezes/settlements/di/modules/server/SensorCatalogModule.java
+[override-policies]: ../../src/main/java/dev/breezes/settlements/di/modules/server/OverridePolicyModule.java
+[lombok-config]: ../../lombok.config
+[config-discovery]: ../../src/main/java/dev/breezes/settlements/infrastructure/config/annotations/ConfigAnnotationProcessor.java
+[record-config]: ../../src/main/java/dev/breezes/settlements/infrastructure/config/annotations/RecordConfigProcessor.java
+[config-annotations]: ../../src/main/java/dev/breezes/settlements/infrastructure/config/annotations/
+[config-module]: ../../src/main/java/dev/breezes/settlements/di/modules/ConfigModule.java
+[config-factory]: ../../src/main/java/dev/breezes/settlements/infrastructure/config/factory/ConfigFactory.java
+[server-bound-packet]: ../../src/main/java/dev/breezes/settlements/infrastructure/network/core/ServerBoundPacket.java
+[client-bound-packet]: ../../src/main/java/dev/breezes/settlements/infrastructure/network/core/ClientBoundPacket.java
+[server-packet-handler]: ../../src/main/java/dev/breezes/settlements/infrastructure/network/core/ServerSidePacketHandler.java
+[client-packet-handler]: ../../src/main/java/dev/breezes/settlements/infrastructure/network/core/ClientSidePacketHandler.java
+[server-network]: ../../src/main/java/dev/breezes/settlements/di/modules/server/ServerNetworkModule.java
+[client-network]: ../../src/main/java/dev/breezes/settlements/di/modules/client/ClientNetworkModule.java
+[packet-registry]: ../../src/main/java/dev/breezes/settlements/infrastructure/network/core/PacketRegistry.java
+[server-receiver]: ../../src/main/java/dev/breezes/settlements/infrastructure/network/core/ServerSidePacketReceiver.java
+[client-receiver]: ../../src/main/java/dev/breezes/settlements/infrastructure/network/core/ClientSidePacketReceiver.java
+[common-lifecycle]: ../../src/main/java/dev/breezes/settlements/bootstrap/event/CommonModEvents.java
+[server-lifecycle]: ../../src/main/java/dev/breezes/settlements/bootstrap/event/ServerLifecycleEvents.java
+[session-lifecycle]: ../../src/main/java/dev/breezes/settlements/bootstrap/event/ClientSessionLifecycleEvents.java
+[concurrency-module]: ../../src/main/java/dev/breezes/settlements/di/modules/server/ConcurrencyModule.java

@@ -110,6 +110,7 @@
   "ui.settlements.behavior.behavior.collect_demanded_item": "Collect Items",
   "ui.settlements.behavior.behavior.retrieve_projectiles": "Retrieve Projectiles",
   "ui.settlements.behavior.behavior.survey_landscape": "Survey Landscape",
+  "ui.settlements.behavior.behavior.chart_raiders": "Chart Raiders",
   "ui.settlements.behavior.behavior.courtship_initiate": "Initiate Courtship",
   "ui.settlements.behavior.behavior.courtship_accept": "Accept Courtship",
   "ui.settlements.behavior.behavior.donate_emeralds": "Donate Emeralds",

@@ -6,6 +6,7 @@ package dev.breezes.settlements.domain.ai.override;
 public enum OverrideTier {
 
     EMERGENCY,
+    DUTY,
     REACTIVE,
     OPPORTUNISTIC;
 

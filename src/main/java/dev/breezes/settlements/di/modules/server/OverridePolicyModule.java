@@ -2,6 +2,7 @@ package dev.breezes.settlements.di.modules.server;
 
 import dagger.Module;
 import dagger.Provides;
+import dev.breezes.settlements.application.ai.override.ChartRaidersOverridePolicy;
 import dev.breezes.settlements.application.ai.override.CollectDemandedItemOverridePolicy;
 import dev.breezes.settlements.application.ai.override.CombatOverridePolicy;
 import dev.breezes.settlements.application.ai.override.CourtshipAcceptOverridePolicy;
@@ -20,12 +21,14 @@ public abstract class OverridePolicyModule {
      */
     @Provides
     static List<OverridePolicy> overridePolicies(CombatOverridePolicy combat,
+                                                 ChartRaidersOverridePolicy chartRaiders,
                                                  CourtshipAcceptOverridePolicy courtshipAccept,
                                                  TradeAcceptOverridePolicy tradeAccept,
                                                  CollectDemandedItemOverridePolicy collectDemandedItem,
                                                  RetrieveProjectilesOverridePolicy retrieveProjectiles) {
         return List.of(
                 combat,
+                chartRaiders,
                 courtshipAccept,
                 tradeAccept,
                 collectDemandedItem,

@@ -9,6 +9,8 @@ import dev.breezes.settlements.infrastructure.network.features.debug.handler.Cli
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.infrastructure.network.features.farming.handler.ClientBoundCultivationSeedSetPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.farming.packet.ClientBoundCultivationSeedSetPacket;
+import dev.breezes.settlements.infrastructure.network.features.flare.handler.ClientBoundFlarePacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.flare.packet.ClientBoundFlarePacket;
 import dev.breezes.settlements.infrastructure.network.features.schedule.handler.ClientBoundVillageDayTypePacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.schedule.packet.ClientBoundVillageDayTypePacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.handler.ClientBoundBubbleSnapshotPacketHandler;
@@ -92,5 +94,10 @@ public abstract class ClientNetworkModule {
     @IntoMap
     @ClassKey(ClientBoundVillageDayTypePacket.class)
     abstract ClientSidePacketHandler<?> villageDayType(ClientBoundVillageDayTypePacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundFlarePacket.class)
+    abstract ClientSidePacketHandler<?> flare(ClientBoundFlarePacketHandler impl);
 
 }

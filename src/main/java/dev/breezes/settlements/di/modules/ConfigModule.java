@@ -13,6 +13,7 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.petting.PetAnimalConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.washing.WashWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.ballista.BallistaOperationConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.ChartRaidersConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cartographer.SurveyLandscapeConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.courtship.CourtshipInitiateConfig;
@@ -80,6 +81,12 @@ public final class ConfigModule {
     @Singleton
     static SurveyLandscapeConfig cartographerSurveyConfig() {
         return ConfigFactory.create(SurveyLandscapeConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static ChartRaidersConfig chartRaidersConfig() {
+        return ConfigFactory.create(ChartRaidersConfig.class);
     }
 
     @Provides
