@@ -1,6 +1,5 @@
 package dev.breezes.settlements.infrastructure.network.core;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.network.features.ballista.packet.ServerBoundBallistaAimPacket;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
@@ -29,8 +28,14 @@ import javax.annotation.Nonnull;
 
 public class PacketRegistry {
 
+    /**
+     * Wire-format version of all Settlements payloads.
+     * Prevents clients from joining servers compiled with a different version.
+     */
+    private static final String NETWORK_VERSION = "1";
+
     public static void bindPacketHandlers(@Nonnull RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar(SettlementsMod.MOD_ID).optional();
+        PayloadRegistrar registrar = event.registrar(NETWORK_VERSION).optional();
 
         registerClient(registrar, ClientBoundSettlementDebugPacket.ID, ClientBoundSettlementDebugPacket.CODEC);
         registerClient(registrar, ClientBoundBubbleSnapshotPacket.ID, ClientBoundBubbleSnapshotPacket.CODEC);

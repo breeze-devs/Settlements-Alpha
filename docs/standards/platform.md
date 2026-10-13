@@ -180,6 +180,23 @@ attachment there, and a debug save of that copy then writes it. Reads that must 
 Related in kind: a `MemoryModuleType` registered without a codec is never saved with the brain, although setting and
 reading it work normally until the next load. A memory that must persist needs a codec, not an attachment carrying it.
 
+### P18 — Payload negotiation compares a version string, never the codecs
+
+When a client connects, NeoForge compares the version string each shared payload channel was registered under, and
+refuses the join on a mismatch. It never inspects the codecs. **Two builds whose codecs differ under one version string
+therefore connect cleanly** and fail at the first packet one side encodes differently from how the other decodes. The
+result is a decode error that disconnects the player mid-game, or, where the bytes still parse, values that land in the
+wrong fields with no error at all. Two swapped fields of the same type are enough. A payload only one side has fails
+another way: an optional channel is dropped silently at negotiation, and the side that still sends it throws when it
+does.
+
+The version is therefore a hand-kept promise that the wire format has not changed. Bump it with any change to what a
+payload's codec writes or reads, and whenever a payload is added or removed. Ours is `PacketRegistry`'s
+`NETWORK_VERSION`.
+
+`RegisterPayloadHandlersEvent#registrar(String)` takes that version, not a namespace. Passing the mod id, which reads
+naturally there, keeps the check wired up while making every pair of builds pass it.
+
 ## Build
 
 ### P5 — Dagger needs `javax.inject` on the runtime classpath, permanently
