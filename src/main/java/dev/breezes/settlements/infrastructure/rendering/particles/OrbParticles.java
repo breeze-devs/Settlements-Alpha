@@ -3,15 +3,15 @@ package dev.breezes.settlements.infrastructure.rendering.particles;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 
 /**
- * Stateless helper that spawns the two orb bursts for the Cultivation Lily ambient aura, called
- * from the block entity's client ticker. Keeping spawn logic here rather than inline in the BE
- * keeps the ticker method lean and the spawn math independently readable.
+ * Stateless helper that spawns the Cultivation Lily's orb effects. The ambient aura and the bloom
+ * ring spawn on the client; the growth trail is sent from the server.
  * <p>
  * All positions are in world space. The caller is responsible for rate-gating.
  */
@@ -38,6 +38,21 @@ public final class OrbParticles {
     private static final double BLOOM_RING_RADIUS = 0.8;
     private static final double BLOOM_RING_OUTWARD_SPEED = 0.02;
     private static final double BLOOM_RING_RISE_VELOCITY_Y = 0.02;
+
+    /**
+     * Growth-trail orbs per block of distance from the floating mesh to the crop, so long and short
+     * trails read with the same density.
+     */
+    private static final double GROWTH_TRAIL_ORBS_PER_BLOCK = 1.0;
+    /**
+     * Maximum horizontal offset of each growth-trail orb's resting point, so the trail reads as a
+     * loose strand rather than a ruled line.
+     */
+    private static final double GROWTH_TRAIL_JITTER = 0.15;
+    /**
+     * Height above the crop block's base where the growth trail ends, low enough to land on a seedling.
+     */
+    private static final double GROWTH_TRAIL_END_HEIGHT = 0.3;
 
     /**
      * Spawns a single white RISE orb near the lily-pad base, drifting upward.
@@ -118,6 +133,42 @@ public final class OrbParticles {
             double dz = sin * BLOOM_RING_OUTWARD_SPEED;
 
             level.addParticle(OrbParticleOptions.SCATTER_LIME, x, centerY, z, dx, BLOOM_RING_RISE_VELOCITY_Y, dz);
+        }
+    }
+
+    /**
+     * Sends a strand of lime-green orbs from the floating mesh to a crop the lily just grew, to every
+     * player in vanilla particle range. All orbs launch together from the mesh and come to rest at
+     * evenly spaced points along the way, so the strand extends from the mesh and ends on the crop.
+     */
+    public static void spawnGrowthTrail(@Nonnull ServerLevel level,
+                                        @Nonnull BlockPos lilyPos,
+                                        float floatHeight,
+                                        @Nonnull BlockPos cropPos,
+                                        @Nonnull RandomSource random) {
+        double startX = lilyPos.getX() + 0.5;
+        double startY = lilyPos.getY() + floatHeight;
+        double startZ = lilyPos.getZ() + 0.5;
+
+        double offsetX = cropPos.getX() + 0.5 - startX;
+        double offsetY = cropPos.getY() + GROWTH_TRAIL_END_HEIGHT - startY;
+        double offsetZ = cropPos.getZ() + 0.5 - startZ;
+
+        double distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ);
+        int orbCount = Math.max(1, (int) Math.ceil(distance * GROWTH_TRAIL_ORBS_PER_BLOCK));
+
+        for (int i = 1; i <= orbCount; i++) {
+            double fraction = (double) i / orbCount;
+            double restX = offsetX * fraction + (random.nextDouble() * 2.0 - 1.0) * GROWTH_TRAIL_JITTER;
+            double restY = offsetY * fraction;
+            double restZ = offsetZ * fraction + (random.nextDouble() * 2.0 - 1.0) * GROWTH_TRAIL_JITTER;
+
+            // A zero count makes the client spawn exactly one orb and read the three offsets as its velocity
+            level.sendParticles(OrbParticleOptions.DRIFT_LIME, startX, startY, startZ, 0,
+                    OrbParticleOptions.driftVelocityToRestAt(restX),
+                    OrbParticleOptions.driftVelocityToRestAt(restY),
+                    OrbParticleOptions.driftVelocityToRestAt(restZ),
+                    1.0);
         }
     }
 

@@ -116,6 +116,7 @@ public class OrbParticle extends TextureSheetParticle {
         switch (this.motionMode) {
             case RISE -> applyRiseMotion();
             case SCATTER -> applyScatterMotion();
+            case DRIFT -> applyDriftMotion();
         }
     }
 
@@ -147,6 +148,16 @@ public class OrbParticle extends TextureSheetParticle {
     }
 
     /**
+     * DRIFT: drag alone, so the orb comes to rest where its emitter aimed it.
+     */
+    private void applyDriftMotion() {
+        // Any added force, or moving this drag after the integration step, shifts where an aimed orb comes to rest
+        this.xd *= OrbParticleOptions.DRIFT_DRAG;
+        this.yd *= OrbParticleOptions.DRIFT_DRAG;
+        this.zd *= OrbParticleOptions.DRIFT_DRAG;
+    }
+
+    /**
      * Smooth fade-in / fade-out alpha envelope keyed to normalized lifetime progress.
      * The ramp shape keeps particles from popping harshly into or out of existence.
      */
@@ -162,7 +173,7 @@ public class OrbParticle extends TextureSheetParticle {
 
     /**
      * NeoForge/Minecraft calls this factory to construct orb particles from the
-     * registered sprite set. Handles both client-emitted and any future server-emitted cases.
+     * registered sprite set. Handles both client-emitted and server-sent orbs.
      */
     public static class Provider implements ParticleProvider<OrbParticleOptions> {
 

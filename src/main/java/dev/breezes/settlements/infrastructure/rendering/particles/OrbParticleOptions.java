@@ -17,14 +17,15 @@ import javax.annotation.Nonnull;
  * <p>
  * This follows the vanilla {@code DustParticleOptions} pattern for a colorable, data-carrying
  * particle type: a {@link MapCodec} for datapack / command use and a {@link StreamCodec} for
- * the network sync path that the {@link ParticleType} abstract API requires regardless of
- * whether server emission is in use today.
+ * orbs the server sends.
  * <p>
  * The grayscale orb texture is tinted at render time via
  * {@link net.minecraft.client.particle.TextureSheetParticle#setColor}, so one texture covers
  * every color/mode combination.
  */
 public record OrbParticleOptions(int packedRgb, MotionMode motionMode) implements ParticleOptions {
+
+    private static final int LIME_RGB = 0x55E028;
 
     /**
      * Convenient white-rise preset for the ascending aura orbs.
@@ -34,7 +35,19 @@ public record OrbParticleOptions(int packedRgb, MotionMode motionMode) implement
     /**
      * Convenient lime-green scatter preset for the descending field orbs.
      */
-    public static final OrbParticleOptions SCATTER_LIME = new OrbParticleOptions(0x55E028, MotionMode.SCATTER);
+    public static final OrbParticleOptions SCATTER_LIME = new OrbParticleOptions(LIME_RGB, MotionMode.SCATTER);
+
+    /**
+     * Convenient lime-green drift preset for orbs aimed at a resting point.
+     */
+    public static final OrbParticleOptions DRIFT_LIME = new OrbParticleOptions(LIME_RGB, MotionMode.DRIFT);
+
+    /**
+     * Per-tick velocity retention of a {@link MotionMode#DRIFT} orb. The orb's velocity is multiplied by this before
+     * each tick's move, so an orb launched at velocity v comes to rest v * DRIFT_DRAG / (1 - DRIFT_DRAG) from its
+     * spawn point on each axis.
+     */
+    public static final double DRIFT_DRAG = 0.85;
 
     /**
      * Controls the per-tick motion strategy applied inside {@link OrbParticle#tick()}.
@@ -49,7 +62,20 @@ public record OrbParticleOptions(int packedRgb, MotionMode motionMode) implement
         /**
          * Orbs scatter downward and outward from the floating totem position into the farm zone.
          */
-        SCATTER
+        SCATTER,
+        /**
+         * Orbs coast along their launch velocity under {@link #DRIFT_DRAG} alone, with no gravity, so an emitter can
+         * aim where each one comes to rest with {@link #driftVelocityToRestAt}.
+         */
+        DRIFT
+    }
+
+    /**
+     * Returns the launch velocity, on one axis, at which a {@link MotionMode#DRIFT} orb comes to rest the given
+     * displacement from its spawn point.
+     */
+    public static double driftVelocityToRestAt(double displacement) {
+        return displacement * (1.0 - DRIFT_DRAG) / DRIFT_DRAG;
     }
 
     // MapCodec used by the ParticleType codec() contract (datapack / /particle command support).

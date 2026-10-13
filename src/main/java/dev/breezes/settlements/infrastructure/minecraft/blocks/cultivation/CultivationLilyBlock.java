@@ -4,11 +4,19 @@ import com.mojang.serialization.MapCodec;
 import dev.breezes.settlements.bootstrap.registry.blockentities.BlockEntityTypeRegistry;
 import dev.breezes.settlements.di.ClientComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
+import dev.breezes.settlements.domain.farming.CultivationCellCategory;
 import dev.breezes.settlements.domain.farming.CultivationCropDefinition;
 import dev.breezes.settlements.domain.farming.CultivationCropRegistry;
+import dev.breezes.settlements.domain.farming.CultivationZoneCategorizer;
+import dev.breezes.settlements.domain.world.blocks.LevelBlockStateView;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
+import dev.breezes.settlements.infrastructure.rendering.particles.OrbParticles;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -20,6 +28,7 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -33,16 +42,19 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.CommonHooks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
- * The Cultivation Lily is a lily-pad-style block that designates a managed farm zone.
+ * The Cultivation Lily is a lily-pad-style block that designates a villager-managed farm zone.
  * <p>
- * The base is physically identical to a vanilla lily pad — same hitbox, walkable, instabreak.
- * The floating spinning mesh is render-only, handled separately by {@link CultivationLilyRenderer}.
+ * The base is physically identical to a vanilla lily pad.
+ * The floating spinning mesh is render-only, handled by {@link CultivationLilyRenderer}.
  * The block entity (CultivationLilyBlockEntity) holds all zone configuration.
  */
 public class CultivationLilyBlock extends BaseEntityBlock {
@@ -50,6 +62,12 @@ public class CultivationLilyBlock extends BaseEntityBlock {
     public static final MapCodec<CultivationLilyBlock> CODEC = simpleCodec(CultivationLilyBlock::new);
 
     private static final int ACTIVE_LIGHT_LEVEL = 15;
+
+    /**
+     * Inclusive range of stages one growth boost adds to a crop, before capping at maturity.
+     */
+    private static final int MIN_BOOST_STAGES = 2;
+    private static final int MAX_BOOST_STAGES = 5;
 
     /**
      * Lily-pad hit box.
@@ -68,8 +86,7 @@ public class CultivationLilyBlock extends BaseEntityBlock {
     }
 
     /**
-     * The lily only radiates light while lit, i.e. while it is an active, valid farm zone.
-     * The {@link BlockStateProperties#LIT} flag is authored by the block entity's validity recompute.
+     * The lily only emits light while there is a valid farm zone.
      */
     public static int lightEmission(@Nonnull BlockState state) {
         return state.getValue(BlockStateProperties.LIT) ? ACTIVE_LIGHT_LEVEL : 0;
@@ -313,6 +330,70 @@ public class CultivationLilyBlock extends BaseEntityBlock {
         if (level.getBlockEntity(pos) instanceof CultivationLilyBlockEntity lily) {
             lily.markValidityDirty();
         }
+    }
+
+    /**
+     * Only an active lily receives random ticks.
+     */
+    @Override
+    protected boolean isRandomlyTicking(@Nonnull BlockState state) {
+        return state.getValue(BlockStateProperties.LIT);
+    }
+
+    /**
+     * Grows not-yet-mature crops, picked at random, by a random number of stages each, capped at maturity.
+     */
+    @Override
+    protected void randomTick(@Nonnull BlockState state,
+                              @Nonnull ServerLevel level,
+                              @Nonnull BlockPos pos,
+                              @Nonnull RandomSource random) {
+        int cropCount = ConfigFactory.create(CultivationLilyConfig.class).cropsGrownPerRandomTick();
+        if (cropCount <= 0) {
+            return;
+        }
+
+        if (!(level.getBlockEntity(pos) instanceof CultivationLilyBlockEntity lily)) {
+            return;
+        }
+
+        LevelBlockStateView view = new LevelBlockStateView(level);
+        List<BlockPos> growableCropPositions = new ArrayList<>(lily.getZone().streamCells()
+                // Only OCCUPIED cells hold a crop the zone accepts; a crop that fails the filter will be replanted
+                .filter(cell -> CultivationZoneCategorizer.categorizeCell(view, cell, lily.getCropFilter()) == CultivationCellCategory.OCCUPIED)
+                .map(BlockPos::above)
+                .filter(cropPos -> canGrow(level.getBlockState(cropPos)))
+                .toList());
+        Util.shuffle(growableCropPositions, random);
+
+        growableCropPositions.stream()
+                .limit(cropCount)
+                .forEach(cropPos -> boostGrowth(level, pos, cropPos, random));
+    }
+
+    private static boolean canGrow(@Nonnull BlockState cropState) {
+        return cropState.getBlock() instanceof CropBlock crop && !crop.isMaxAge(cropState);
+    }
+
+    private static void boostGrowth(@Nonnull ServerLevel level,
+                                    @Nonnull BlockPos lilyPos,
+                                    @Nonnull BlockPos cropPos,
+                                    @Nonnull RandomSource random) {
+        BlockState cropState = level.getBlockState(cropPos);
+        if (!(cropState.getBlock() instanceof CropBlock crop)) {
+            return;
+        }
+
+        // See if any other mods veto this growth boost
+        if (!CommonHooks.canCropGrow(level, cropPos, cropState, true)) {
+            return;
+        }
+
+        int boostedAge = Math.min(crop.getAge(cropState) + random.nextIntBetweenInclusive(MIN_BOOST_STAGES, MAX_BOOST_STAGES),
+                crop.getMaxAge());
+        level.setBlock(cropPos, crop.getStateForAge(boostedAge), Block.UPDATE_CLIENTS);
+        CommonHooks.fireCropGrowPost(level, cropPos, cropState);
+        OrbParticles.spawnGrowthTrail(level, lilyPos, CultivationLilyBlockEntity.FLOAT_HEIGHT_BLOCKS, cropPos, random);
     }
 
     @Override
