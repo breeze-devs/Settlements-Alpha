@@ -64,7 +64,7 @@ public record SurveyLandscapeConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "min_point_distance",
                 description = "Minimum horizontal distance (in blocks) from the villager's start position to a valid survey point.",
-                defaultValue = 30,
+                defaultValue = 16,
                 min = 10,
                 max = 256)
         int minPointDistance,
@@ -73,7 +73,7 @@ public record SurveyLandscapeConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "max_point_distance",
                 description = "Maximum horizontal distance (in blocks) from the villager's start position to a valid survey point.",
-                defaultValue = 256,
+                defaultValue = 40,
                 min = 20,
                 max = 512)
         int maxPointDistance,

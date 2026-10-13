@@ -171,6 +171,9 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok:1.18.34'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
 
+    // Nullability defaults are editor metadata, so the annotation library is compile-only.
+    compileOnly 'org.checkerframework:checker-qual:4.2.3'
+
     // Dagger 2
     jarJar(implementation('com.google.dagger:dagger:2.60.1')) {
         version {

@@ -50,6 +50,10 @@ on one. Restating the default on every declaration is what makes the marked case
 the only one a reader has to act on. A return that can be null carries `@Nullable`, on the declaration and on every
 override. Parameters are unaffected — they carry their explicit annotations as the surrounding code already does.
 
+The root package's `package-info.java` declares the non-null default for returns and fields once, with Checker
+Framework's `@DefaultQualifier`, which IntelliJ applies to every subpackage. A JSR-305 or JSpecify package default would
+cover only its own package.
+
 Prefer `Optional<T>` for interface and method return contracts where absence is meaningful — that is where an explicit
 absence contract earns its keep.
 

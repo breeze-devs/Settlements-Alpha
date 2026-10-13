@@ -8,6 +8,7 @@ import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.ambient.AmbientBehaviors;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.home.BedCompetitorScan;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.home.ValidateNearbyHome;
+import dev.breezes.settlements.infrastructure.minecraft.behavior.threat.FleeTowardVillage;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.threat.ThreatGolemSummon;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.threat.ThreatGolemSummonConfig;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.traversal.InteractWithBarriers;
@@ -43,7 +44,6 @@ import net.minecraft.world.entity.ai.behavior.SetClosestHomeAsWalkTarget;
 import net.minecraft.world.entity.ai.behavior.SetEntityLookTarget;
 import net.minecraft.world.entity.ai.behavior.SetHiddenState;
 import net.minecraft.world.entity.ai.behavior.SetLookAndInteract;
-import net.minecraft.world.entity.ai.behavior.SetWalkTargetAwayFrom;
 import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromBlockMemory;
 import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromLookTarget;
 import net.minecraft.world.entity.ai.behavior.ShowTradesToPlayer;
@@ -208,8 +208,8 @@ public final class VanillaBehaviorPackages {
     public static ImmutableList<Pair<Integer, ? extends BehaviorControl<? super Villager>>> getPanicPackage(VillagerProfession profession, float speed) {
         return ImmutableList.of(
                 getMinimalLookBehavior(),
-                Pair.of(1, SetWalkTargetAwayFrom.entity(MemoryModuleType.NEAREST_HOSTILE, speed, 6, false)),
-                Pair.of(1, SetWalkTargetAwayFrom.entity(MemoryModuleType.HURT_BY_ENTITY, speed, 6, false)),
+                Pair.of(1, FleeTowardVillage.create(MemoryModuleType.NEAREST_HOSTILE, speed, 6)),
+                Pair.of(1, FleeTowardVillage.create(MemoryModuleType.HURT_BY_ENTITY, speed, 6)),
                 Pair.of(3, VillageBoundRandomStroll.create(speed, 2, 2))
         );
     }

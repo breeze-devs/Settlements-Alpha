@@ -121,6 +121,7 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                 .navigationType(NavigationType.WALK)
                 .completionDistance(NAVIGATION_COMPLETION_DISTANCE)
                 .reachabilityGated(false)
+                .unreachableTransition(SurveyStage.SURVEY)
                 .build();
 
         ICondition<BehaviorContext<BaseVillager>> closeEnoughHorizontally = ICondition.named(

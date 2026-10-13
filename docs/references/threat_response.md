@@ -17,7 +17,7 @@ flowchart LR
     DAMAGE["VillagerDamageObservationServerEvents<br/>qualifying hits"] --> ASSESS
     ASSESS["ThreatAssessor + ThreatResponseRules<br/>verdict and combat selection"] --> ARB
     ARB["ActivityArbiter"] -->|COMBAT| FIGHT["CombatOverrideRunner<br/>runs the selected option's actions"]
-    ARB -->|PANIC| FLEE["vanilla PANIC package<br/>flees the nearest hostile and the attacker"]
+    ARB -->|PANIC| FLEE["PANIC package<br/>flees the nearest hostile and the attacker"]
     ARB -->|PANIC during a live raid wave| HIDE["RAID_HIDE"]
     ASSESS -->|PANIC or COMBAT| GOLEM["ThreatGolemSummon<br/>calls an iron golem"]
 ```
@@ -36,8 +36,8 @@ gates the day plan and the override lane, so one judgment of danger decides ever
 - `domain/ai/threat/` — `ThreatResponseRules`, which decides over plain scalars carried by `ThreatSituation`, and the
   hit, decision and verdict types.
 - `application/ai/override/CombatOverridePolicy.java` and `CombatOverrideRunner.java` — combat execution.
-- `infrastructure/minecraft/behavior/threat/` — `ThreatGolemSummon`, the iron golem summon, and
-  `ThreatGolemSummonConfig`, its server settings.
+- `infrastructure/minecraft/behavior/threat/` — `ThreatGolemSummon`, the iron golem summon,
+  `ThreatGolemSummonConfig`, its server settings, and `FleeTowardVillage`, the panic flee.
 
 Everything here is transient except the golem summon's cooldown. Nothing else is saved with the villager, so after a
 load it holds until its first assessment decides from scratch.
@@ -221,10 +221,12 @@ has closed by then.
 
 ### Panic
 
-PANIC runs vanilla's flee from `VanillaBehaviorPackages.getPanicPackage`, fed by this response rather than by vanilla's
-sensors: it runs from `NEAREST_HOSTILE` and from the `HURT_BY_ENTITY` of a live qualifying hit. The package leaves out
-vanilla's own panic trigger and calm-down; the arbiter enters and leaves PANIC with the verdict. The golem summon that
-trigger carried is a behavior of its own, under [Calling a golem](#calling-a-golem).
+PANIC runs the flee in `VanillaBehaviorPackages.getPanicPackage`, fed by this response rather than by vanilla's
+sensors: it runs from `NEAREST_HOSTILE` and from the `HURT_BY_ENTITY` of a live qualifying hit. Each flight heads
+toward the village in any direction but straight at the threat, passing a threat that stands in the way: fleeing
+straight away, as vanilla's flee does, lets a slower chaser herd the villager out of the village. `FleeTowardVillage` replaces vanilla's flee for that preference. The package leaves out vanilla's
+own panic trigger and calm-down; the arbiter enters and leaves PANIC with the verdict. The golem summon that trigger
+carried is a behavior of its own, under [Calling a golem](#calling-a-golem).
 
 ### Combat
 

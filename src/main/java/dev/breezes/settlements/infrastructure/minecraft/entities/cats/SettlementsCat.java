@@ -9,9 +9,10 @@ import dev.breezes.settlements.domain.animal.PetSquish;
 import dev.breezes.settlements.domain.exceptions.SpawnFailedException;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
-import dev.breezes.settlements.infrastructure.minecraft.entities.cats.goals.CatFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cats.goals.CatSitWhenOrderedToGoal;
+import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetReaction;
+import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetVillageBoundStrollGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.pet.Pettable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.CatMixin;
@@ -28,6 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.animal.Cat;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
@@ -106,9 +108,14 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity, Pett
     }
 
     private void initGoals() {
-        this.goalSelector.removeAllGoals(goal -> goal instanceof SitWhenOrderedToGoal || goal instanceof FollowOwnerGoal);
+        this.goalSelector.removeAllGoals(goal -> goal instanceof SitWhenOrderedToGoal
+                || goal instanceof FollowOwnerGoal
+                || goal instanceof WaterAvoidingRandomStrollGoal);
         this.goalSelector.addGoal(1, new CatSitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(6, new CatFollowOwnerGoal(this, 1.0D, 25.0F, 2.0F));
+        // TODO: let cats roam further from their owner than vanilla does, without raising the follow start distance past
+        //  vanilla's teleport distance, which turns every follow into a teleport
+        this.goalSelector.addGoal(6, new PetFollowOwnerGoal(this, this::isFollowOwnerLocked, 1.0D, 10.0F, 5.0F));
+        this.goalSelector.addGoal(11, new PetVillageBoundStrollGoal(this, 0.8D));
     }
 
     @Override

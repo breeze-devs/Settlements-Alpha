@@ -17,10 +17,11 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetReaction;
+import dev.breezes.settlements.infrastructure.minecraft.entities.pet.PetVillageBoundStrollGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.pet.Pettable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfFollowOwnerGoal;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.goals.WolfSitWhenOrderedToGoal;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.LevelMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.WolfMixin;
@@ -44,6 +45,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NonTameRandomTargetGoal;
 import net.minecraft.world.entity.animal.Wolf;
@@ -303,10 +305,13 @@ public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pe
     }
 
     private void initGoals() {
-        // Replace default standby & follow goals
-        this.goalSelector.removeAllGoals((goal -> goal instanceof SitWhenOrderedToGoal || goal instanceof FollowOwnerGoal));
+        // Replace default standby, follow & stroll goals
+        this.goalSelector.removeAllGoals((goal -> goal instanceof SitWhenOrderedToGoal
+                || goal instanceof FollowOwnerGoal
+                || goal instanceof WaterAvoidingRandomStrollGoal));
         this.goalSelector.addGoal(2, new WolfSitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(6, new WolfFollowOwnerGoal(this, 1.0D, 15.0F, 2.0F));
+        this.goalSelector.addGoal(6, new PetFollowOwnerGoal(this, this::isFollowOwnerLocked, 1.0D, 10.0F, 2.0F));
+        this.goalSelector.addGoal(8, new PetVillageBoundStrollGoal(this, 1.0D));
 
         // Strip vanilla prey-hunting goals: wolves hunt sheep/rabbits/turtles when untamed by default,
         // but Settlements wolves coexist peacefully with passive animals in village environments.
