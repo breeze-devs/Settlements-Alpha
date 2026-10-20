@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.domain.ai.threat.QualifyingHit;
 import dev.breezes.settlements.domain.tags.SettlementsDamageTypeTags;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -22,7 +21,7 @@ import java.util.UUID;
  * <p>
  * No behavior starts and nothing is scanned inside the event.
  */
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber
 @CustomLog
 public final class VillagerDamageObservationServerEvents {
 

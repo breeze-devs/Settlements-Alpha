@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.application.settlement.bell.SettlementBellRules;
 import dev.breezes.settlements.di.ServerComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
@@ -33,7 +32,7 @@ import java.util.UUID;
  * <p>
  * A successful rename consumes one tag. Unclaimed bells and unchanged names leave the interaction unhandled.
  */
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SettlementNameTagEvents {
 

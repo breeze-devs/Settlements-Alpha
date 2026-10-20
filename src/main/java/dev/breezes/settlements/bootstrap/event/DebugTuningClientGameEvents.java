@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.di.ClientComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.rendering.debug.DevTooling;
@@ -24,7 +23,7 @@ import javax.annotation.Nullable;
  * Drives the debug tuning board from the keyboard while its overlay is open. Only the overlay toggle is a bound
  * key mapping; the adjustment keys are read raw and are live only while the overlay is showing.
  */
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DebugTuningClientGameEvents {
 

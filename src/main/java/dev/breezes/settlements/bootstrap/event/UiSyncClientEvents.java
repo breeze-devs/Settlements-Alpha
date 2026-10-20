@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.di.ClientComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
@@ -16,7 +15,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
 
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 public final class UiSyncClientEvents {
 
     @SubscribeEvent

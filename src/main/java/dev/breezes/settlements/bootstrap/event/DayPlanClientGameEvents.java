@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.packet.ServerBoundOpenUiPacket;
 import dev.breezes.settlements.presentation.ui.keybindings.SettlementsKeyMappings;
@@ -19,7 +18,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DayPlanClientGameEvents {
 

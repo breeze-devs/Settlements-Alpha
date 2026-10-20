@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.di.ClientComponent;
 import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
@@ -18,7 +17,7 @@ import javax.annotation.Nonnull;
  * Bootstrap wiring between NeoForge's client event bus and the settlement arrival HUD.
  */
 @ClientSide
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SettlementArrivalClientEvents {
 

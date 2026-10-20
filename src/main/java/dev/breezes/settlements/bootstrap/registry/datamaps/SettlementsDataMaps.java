@@ -1,7 +1,6 @@
 package dev.breezes.settlements.bootstrap.registry.datamaps;
 
 import com.mojang.serialization.Codec;
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 import lombok.AccessLevel;
@@ -18,7 +17,7 @@ import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
  * JSON lives under data/settlements/data_maps/.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber
 public final class SettlementsDataMaps {
 
     /**

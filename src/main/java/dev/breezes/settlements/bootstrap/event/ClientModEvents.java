@@ -51,7 +51,7 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 import javax.annotation.Nullable;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 public class ClientModEvents {
 
     @SubscribeEvent

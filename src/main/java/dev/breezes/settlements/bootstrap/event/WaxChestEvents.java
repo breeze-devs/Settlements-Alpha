@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.chest.ChestWaxService;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -39,7 +38,7 @@ import java.util.Optional;
  * that same redundant-or-not call — {@code CHEST_WAXED} has no sync channel, so a client-side read
  * would always report unwaxed — so it claims both wax gestures unconditionally instead of guessing.
  */
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber
 public final class WaxChestEvents {
 
     private static final String KEY_WAXED = "action.settlements.chest.waxed";

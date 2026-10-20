@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.rendering.debug.DevTooling;
 import dev.breezes.settlements.presentation.ui.keybindings.SettlementsKeyMappings;
 import net.neoforged.api.distmarker.Dist;
@@ -11,7 +10,7 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 /**
  * Central registration point for all Settlements key mappings.
  */
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 public final class SettlementsKeyMappingEvents {
 
     @SubscribeEvent

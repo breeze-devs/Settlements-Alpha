@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * This class is unused for now.
  */
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber
 public class DataGenerators {
 
     @SubscribeEvent

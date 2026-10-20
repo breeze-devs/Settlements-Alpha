@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.SleepingZEmitter;
 import lombok.AccessLevel;
@@ -19,7 +18,7 @@ import javax.annotation.Nonnull;
 /**
  * Drives the "Zzz" streams rising off sleeping villagers near the player.
  */
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SleepingZClientEvents {
 

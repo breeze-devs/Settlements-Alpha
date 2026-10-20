@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import lombok.CustomLog;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
  * Binds the data packs' dimension tags to the dimensions the server runs, before any level loads, so that a dimension
  * tag reads the same on every start (platform standard P19).
  */
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber
 @CustomLog
 public final class DimensionTagBindingServerEvents {
 

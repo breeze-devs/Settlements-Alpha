@@ -1,6 +1,5 @@
 package dev.breezes.settlements.bootstrap.event;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.di.ServerComponent;
@@ -15,7 +14,7 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber
 @CustomLog
 public final class ServerLifecycleEvents {
 

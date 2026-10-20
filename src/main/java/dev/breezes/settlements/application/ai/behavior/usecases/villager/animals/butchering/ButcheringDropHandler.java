@@ -1,6 +1,5 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering;
 
-import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import lombok.CustomLog;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -10,7 +9,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 import java.util.UUID;
 
-@EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber
 @CustomLog
 public class ButcheringDropHandler {
 
