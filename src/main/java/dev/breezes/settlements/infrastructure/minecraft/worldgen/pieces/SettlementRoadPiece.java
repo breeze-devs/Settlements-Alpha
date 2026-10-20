@@ -21,6 +21,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class SettlementRoadPiece extends StructurePiece {
 
@@ -39,13 +40,13 @@ public class SettlementRoadPiece extends StructurePiece {
     private final RoadType roadType;
     private final float wealthLevel;
     @Nullable
-    private final String settlementId;
+    private final UUID settlementId;
 
     public SettlementRoadPiece(@Nonnull BlockPos start,
                                @Nonnull BlockPos end,
                                @Nonnull RoadType roadType,
                                float wealthLevel,
-                               @Nullable String settlementId) {
+                               @Nullable UUID settlementId) {
         super(StructureRegistry.SETTLEMENT_ROAD_PIECE_TYPE.get(), 0, createBoundingBox(start, end, roadType));
         this.start = start;
         this.end = end;
@@ -59,7 +60,8 @@ public class SettlementRoadPiece extends StructurePiece {
                 new BlockPos(tag.getInt(END_X_TAG), tag.getInt(END_Y_TAG), tag.getInt(END_Z_TAG)),
                 RoadType.values()[tag.getInt(ROAD_TYPE_TAG)],
                 tag.getFloat(WEALTH_LEVEL_TAG),
-                tag.contains(SETTLEMENT_ID_TAG) ? tag.getString(SETTLEMENT_ID_TAG) : null);
+                // An id saved in another form, such as a string, names no stored settlement and reads as none
+                tag.hasUUID(SETTLEMENT_ID_TAG) ? tag.getUUID(SETTLEMENT_ID_TAG) : null);
     }
 
     public static SettlementRoadPiece deserialize(@Nonnull StructurePieceSerializationContext context,
@@ -79,12 +81,12 @@ public class SettlementRoadPiece extends StructurePiece {
         tag.putInt(ROAD_TYPE_TAG, this.roadType.ordinal());
         tag.putFloat(WEALTH_LEVEL_TAG, this.wealthLevel);
         if (this.settlementId != null) {
-            tag.putString(SETTLEMENT_ID_TAG, this.settlementId);
+            tag.putUUID(SETTLEMENT_ID_TAG, this.settlementId);
         }
     }
 
     @Nullable
-    public String getSettlementId() {
+    public UUID getSettlementId() {
         return this.settlementId;
     }
 

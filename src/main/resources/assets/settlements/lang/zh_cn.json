@@ -54,14 +54,33 @@
   "ui.settlements.clock_hud.day_type.rest": "休息日",
   "ui.settlements.clock_hud.day_type.unknown": "...",
 
+  "ui.settlements.bell_hud.no_settlement": "尚未形成【万家烟火】村庄",
+  "ui.settlements.bell_hud.founding_cue": "村民在此聚集后，即可建立村庄",
+  "ui.settlements.bell_hud.name_taken": "已有其他村庄使用了“%s”这个名字",
+  "ui.settlements.bell_hud.founding_excluded": "此维度无法建立【万家烟火】村庄",
+  "ui.settlements.bell_hud.needs_residents.one": "还需 1 位居民",
+  "ui.settlements.bell_hud.needs_residents.many": "还需 %s 位居民",
+  "ui.settlements.bell_hud.recovering": "恢复生机中",
+  "ui.settlements.bell_hud.rename_hint": "使用命名牌即可为其改名",
+  "ui.settlements.bell_hud.rename": "%1$s %2$s → %3$s",
+  "ui.settlements.bell_hud.already_named": "名字已经是“%s”了",
+
+  "ui.settlements.settlement_status.falling.one": "即将荒废 · 剩余 1 天",
+  "ui.settlements.settlement_status.falling.many": "日渐荒废 · 剩余 %s 天",
+
+  "ui.settlements.arrival.discovery": "新发现！",
+  "ui.settlements.arrival.founded": "新成立",
+  "ui.settlements.arrival.renamed": "已改名",
+  "ui.settlements.arrival.formerly": "原名“%s”",
+  "ui.settlements.arrival.leaving": "离开了",
+  "ui.settlements.arrival.disbanded": "已彻底荒废",
+
   "block.settlements.dormant_ore": "待生长的矿石",
   "block.settlements.dormant_deepslate_ore": "待生长的深板岩矿石",
   "block.settlements.cultivation_lily": "耕作睡莲",
   "block.settlements.ballista": "弩炮",
 
   "creative_tab.settlements": "万家烟火",
-
-  "overlay.settlements.region.enter.title": "欢迎来到",
 
   "ui.settlements.behavior.behavior.harvest_sugarcane": "收甘蔗",
   "ui.settlements.behavior.behavior.harvest_ore": "采矿石",
@@ -263,6 +282,15 @@
   "dialogue.settlements.nitwit.idle.9": "草地软乎乎的…",
   "dialogue.settlements.nitwit.idle.10": "要不我去敲下钟？",
 
+  "dialogue.settlements.cartographer.idle.1": "我拿着指南针丈量这片土地，你也试试吧",
+  "dialogue.settlements.cartographer.idle.2": "手里拿着指南针，就能看出村子的地界到哪儿",
+  "dialogue.settlements.cartographer.idle.3": "出门可别忘了带指南针，它能告诉你脚下是谁家的地",
+  "dialogue.settlements.cartographer.idle.4": "我地图上的每一条路，都是我亲自走过的",
+  "dialogue.settlements.cartographer.idle.5": "图纸好像又快用完了",
+  "dialogue.settlements.cartographer.idle.6": "我的地图上还有一角是空白的",
+  "dialogue.settlements.cartographer.idle.7": "一张好地图，胜过问一百次路",
+  "dialogue.settlements.cartographer.idle.8": "小心，地图上的墨水还没干",
+
   "dialogue.settlements.generic.panic.1": "快跑！",
   "dialogue.settlements.generic.panic.2": "救命！",
   "dialogue.settlements.generic.panic.3": "别过来！",
@@ -278,7 +306,7 @@
   "dialogue.settlements.generic.meet.2": "有啥新鲜事吗？",
   "dialogue.settlements.generic.meet.3": "*吃瓜中*",
   "dialogue.settlements.generic.meet.4": "跟你聊聊挺好",
-  "dialogue.settlements.generic.meet.5": "今天开张没？赚了几个绿宝石啊？",
+  "dialogue.settlements.generic.meet.5": "今天赚了几个绿宝石啊？",
   "dialogue.settlements.generic.meet.6": "哈，又见着你了！",
   "dialogue.settlements.generic.meet.7": "哎，你听说了吗？隔壁村那谁…",
   "dialogue.settlements.generic.meet.8": "去井边歇会儿？",
@@ -368,6 +396,8 @@
   "subtitles.settlements.cucco_fall": "鸡从天而降",
   "subtitles.settlements.wololo": "牧羊人神秘地吟唱",
   "subtitles.settlements.interaction_fail": "操作失败",
+  "subtitles.settlements.settlement_enter": "村庄钟声响起",
+  "subtitles.settlements.settlement_discovery": "村庄乐曲奏响",
 
   "action.settlements.chest.waxed": "箱子已涂蜡，村民不会使用它",
   "action.settlements.chest.unwaxed": "箱子已除蜡，村民可以使用它"

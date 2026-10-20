@@ -5,6 +5,7 @@ import dagger.Provides;
 import dagger.multibindings.IntoSet;
 import dev.breezes.settlements.di.PlanGenerationExecutor;
 import dev.breezes.settlements.di.ServerScope;
+import dev.breezes.settlements.di.SettlementFoundingExecutor;
 import dev.breezes.settlements.di.WorldScanExecutor;
 import lombok.CustomLog;
 
@@ -46,6 +47,15 @@ public final class ConcurrencyModule {
     }
 
     @Provides
+    @ServerScope
+    @SettlementFoundingExecutor
+    static ExecutorService settlementFoundingExecutor() {
+        // A founding's terrain survey takes seconds and foundings are rare, so one thread runs them in turn: a burst of
+        // them queues here instead of holding the other pools' threads or competing with world-gen for cores
+        return fixedDaemonPool("settlements-founding", 1);
+    }
+
+    @Provides
     @IntoSet
     static ExecutorService planGenerationManagedExecutor(@PlanGenerationExecutor ExecutorService executor) {
         return executor;
@@ -54,6 +64,12 @@ public final class ConcurrencyModule {
     @Provides
     @IntoSet
     static ExecutorService worldScanManagedExecutor(@WorldScanExecutor ExecutorService executor) {
+        return executor;
+    }
+
+    @Provides
+    @IntoSet
+    static ExecutorService settlementFoundingManagedExecutor(@SettlementFoundingExecutor ExecutorService executor) {
         return executor;
     }
 

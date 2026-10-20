@@ -85,7 +85,9 @@ Custom traits can be added by third-party datapacks by providing a definition fi
 **Path:** `data/<namespace>/settlements/history/events/<event>.json`
 
 Defines a history event. Time horizon bands: founding era 100–199, mid-life 200–299. Values below
-100 are reserved for modpack/datapack use.
+100 are reserved for modpack/datapack use. An event rolled below 200 is dated at the settlement's
+founding. One rolled at 200 or above is dated between the founding and the start of the
+settlement's record, keeping horizon order.
 
 ```json
 {
@@ -103,7 +105,8 @@ Defines a history event. Time horizon bands: founding era 100–199, mid-life 20
     },
     "required_resource_tags": [],
     "required_water_features": [],
-    "min_population": 0
+    "min_population": 0,
+    "founding": "established"
   },
   "trait_modifiers": {
     "settlements:settlement_traits/lumber": -0.3
@@ -121,13 +124,18 @@ Defines a history event. Time horizon bands: founding era 100–199, mid-life 20
 |------------------------|--------------------------------------------------------------------------------------------|
 | `id`                   | Unique namespaced identifier                                                               |
 | `category`             | Grouping label (e.g., `"disaster"`, `"discovery"`)                                         |
-| `time_horizon_min/max` | Integer range defining the event's era. Used for chronological ordering.                   |
+| `time_horizon_min/max` | Integer range for the event's era, which orders events and dates them (see above)          |
 | `exclusive_tags`       | Events sharing an exclusive tag are mutually exclusive; earlier event (lower horizon) wins |
 | `probability_weight`   | Relative draw weight during weighted sampling                                              |
 | `preconditions`        | Conditions evaluated against the current profile and site before the event can fire        |
 | `trait_modifiers`      | Additive float deltas applied to `adjustedWeights`, clamped to [0.0, 1.0]                  |
 | `visual_markers`       | Opaque string tags deposited into `VisualMarkerSet`; interpretation is a content decision  |
 | `narrative_text`       | Human-readable flavor string, display purposes only                                        |
+
+Every precondition is optional. `founding` is `established` (the default) or `new`, and any other
+value rejects the event. A settlement is new when it is founded in play with no village standing
+around it: it draws only events marked `new`, and an established settlement never draws them. Every
+event a new settlement draws is dated at the start of its record, whatever its time horizon.
 
 ---
 

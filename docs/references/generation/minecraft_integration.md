@@ -101,7 +101,9 @@ The settlement is registered as a proper NeoForge structure set:
 When Minecraft's world-gen triggers settlement placement:
 
 1. Derive seed from `worldSeed XOR hash(chunkPosition)`.
-2. Build `SurveyBounds` from chunk position and default radius.
+2. Build the survey area with `SurveyBounds.aroundSettlementAt`, centered on the start chunk. A
+   settlement founded at a bell is surveyed over the same area around its bell, so the two kinds
+   score alike.
 3. Create `TerrainGrid` via `TerrainGridFactory.fromGenerationContext()`.
 4. Fetch registry singletons (biome survey data, trait scorers, building definitions).
 5. Run `GenerationPipeline.generate()` to produce `GenerationResult`.
@@ -110,3 +112,13 @@ When Minecraft's world-gen triggers settlement placement:
 7. Resolve templates for each `BuildingAssignment` via the warmed `NbtTemplateResolver`.
 8. Emit `SettlementBuildingPiece` for each resolved assignment.
 9. Emit `SettlementRoadPiece` for each road segment.
+10. Emit one `SettlementRecordPiece`, which places nothing and carries the settlement's id, claimed
+    chunks, profile, and drawn history. A start that placed no building or road emits nothing.
+
+When the start chunk loads, [GeneratedSettlementRecordServerEvents][record-events] hands its
+generated metadata to [GeneratedSettlementRecorder][recorder] for server-side record admission.
+[Settlement Identity and Lifecycle](../settlements.md) owns the store's admission, recovery, and
+disbanding guarantees.
+
+[record-events]: ../../../src/main/java/dev/breezes/settlements/bootstrap/event/GeneratedSettlementRecordServerEvents.java
+[recorder]: ../../../src/main/java/dev/breezes/settlements/application/settlement/persistence/GeneratedSettlementRecorder.java

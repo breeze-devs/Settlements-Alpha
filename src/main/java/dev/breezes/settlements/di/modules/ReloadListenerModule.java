@@ -20,6 +20,7 @@ import dev.breezes.settlements.infrastructure.minecraft.data.forge.ForgeCatalogD
 import dev.breezes.settlements.infrastructure.minecraft.data.history.HistoryEventDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mason.ExcavateSubstrateYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
+import dev.breezes.settlements.infrastructure.minecraft.data.naming.SettlementNamePoolDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scavenge.ScavengeYieldDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.scoring.TraitScorerDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.smelting.BlastOreRecipeDataManager;
@@ -72,6 +73,11 @@ public interface ReloadListenerModule {
     @IntoSet
     @DataReloadListeners
     PreparableReloadListener historyEventDataManager(HistoryEventDataManager dataManager);
+
+    @Binds
+    @IntoSet
+    @DataReloadListeners
+    PreparableReloadListener settlementNamePoolDataManager(SettlementNamePoolDataManager dataManager);
 
     @Binds
     @IntoSet

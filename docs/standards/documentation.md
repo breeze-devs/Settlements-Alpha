@@ -135,6 +135,10 @@ follow; do not link every name a sentence happens to mention.
 Do not repeat a fact. Use multiple sentences when they make an explanation easier to follow. Check for qualifiers
 repeated in a second clause, trailing recaps, and duplication between class and field Javadoc.
 
+A type's Javadoc does not list its fields, record components, or constants. The declarations are that list, and a prose
+copy goes incomplete when a member is added while still reading as complete. State what the type is and the invariants
+that span its members; each member's own Javadoc carries its detail.
+
 Keep the reasoning required by **D1**. Before deleting a sentence, check whether it adds a reason, constraint, or
 qualification. There is no target sentence count or comment length.
 

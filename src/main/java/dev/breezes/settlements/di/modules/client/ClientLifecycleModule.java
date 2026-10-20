@@ -8,12 +8,14 @@ import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.Ballista
 import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.BallistaAimGuideRenderer;
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationSeedSetClientProjection;
 import dev.breezes.settlements.infrastructure.minecraft.data.schedule.VillageDayTypeClientProjection;
+import dev.breezes.settlements.infrastructure.rendering.border.SettlementBorderRenderer;
 import dev.breezes.settlements.infrastructure.rendering.debug.SettlementDebugOverlayState;
 import dev.breezes.settlements.infrastructure.rendering.flare.FlarePlayback;
 import dev.breezes.settlements.infrastructure.rendering.highlight.TotemHighlightProvider;
 import dev.breezes.settlements.infrastructure.rendering.zone.CultivationLilyZoneRevealRenderer;
 import dev.breezes.settlements.presentation.ui.hud.ClockHudRenderer;
 import dev.breezes.settlements.presentation.ui.hud.CrosshairHudRenderer;
+import dev.breezes.settlements.presentation.ui.hud.SettlementAnnouncementQueue;
 import dev.breezes.settlements.presentation.ui.sync.UiClientState;
 
 @Module
@@ -53,6 +55,10 @@ public abstract class ClientLifecycleModule {
 
     @Binds
     @IntoSet
+    abstract ClientSessionResettable settlementBorderRenderer(SettlementBorderRenderer implementation);
+
+    @Binds
+    @IntoSet
     abstract ClientSessionResettable ballistaAimController(BallistaAimController implementation);
 
     @Binds
@@ -62,5 +68,9 @@ public abstract class ClientLifecycleModule {
     @Binds
     @IntoSet
     abstract ClientSessionResettable flarePlayback(FlarePlayback implementation);
+
+    @Binds
+    @IntoSet
+    abstract ClientSessionResettable settlementAnnouncementQueue(SettlementAnnouncementQueue implementation);
 
 }

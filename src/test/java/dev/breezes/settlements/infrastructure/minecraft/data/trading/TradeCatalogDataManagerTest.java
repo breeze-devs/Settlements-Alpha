@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TradeCatalogDataManagerTest {
 
-    // One bundled JSON per profession; filename matches the VillagerProfessionKey id.
+    // One bundled JSON per profession; filename matches the vanilla profession's path.
     private static final String[] DEFAULT_PROFESSION_FILES = {
             "none", "armorer", "butcher", "cartographer", "cleric", "farmer",
             "fisherman", "fletcher", "leatherworker", "librarian", "mason",
@@ -34,7 +34,7 @@ class TradeCatalogDataManagerTest {
     private final TradeCatalogDataManager manager = new TradeCatalogDataManager();
 
     @Test
-    void validJson_loadsAndNormalizesProfessionIds() {
+    void validJson_loadsStockForItsProfession() {
         this.manager.reload(Map.of(
                 resource("settlements:trade_catalog/farmer"),
                 JsonParser.parseString("""
@@ -142,13 +142,44 @@ class TradeCatalogDataManagerTest {
     }
 
     @Test
+    void moddedProfessionCatalog_doesNotReachTheVanillaProfessionOfTheSamePath() {
+        VillagerProfessionKey moddedFarmer = new VillagerProfessionKey(ResourceLocation.fromNamespaceAndPath("othermod", "farmer"));
+
+        this.manager.reload(Map.of(
+                resource("othermod:trade_catalog/farmer"),
+                JsonParser.parseString("""
+                        {
+                          "profession": "othermod:farmer",
+                          "stock": [
+                            {
+                              "id": "othermod_farmer_wheat",
+                              "match": { "item": "minecraft:wheat" },
+                              "offer": {
+                                "above": 32,
+                                "basePrice": 4,
+                                "priceJitter": 0,
+                                "bundleSize": 16
+                              },
+                              "dump": { "above": 64 }
+                            }
+                          ]
+                        }
+                        """)
+        ));
+
+        assertTrue(this.manager.stockPoliciesFor(VillagerProfessionKey.FARMER).isEmpty());
+        assertEquals(1, this.manager.stockPoliciesFor(moddedFarmer).size());
+    }
+
+    @Test
     void defaultResourceFiles_allProfessionsLoadWithStock() throws IOException {
         this.manager.reload(loadDefaultEntries());
 
         for (String profession : DEFAULT_PROFESSION_FILES) {
             // A parse error in a shipped file is only logged as a warning and silently drops the
             // whole profession, so guard every bundled file against regression here.
-            assertFalse(this.manager.stockPoliciesFor(VillagerProfessionKey.of(profession)).isEmpty(),
+            VillagerProfessionKey key = new VillagerProfessionKey(ResourceLocation.withDefaultNamespace(profession));
+            assertFalse(this.manager.stockPoliciesFor(key).isEmpty(),
                     "Default trade catalog for profession '" + profession + "' failed to load");
         }
     }

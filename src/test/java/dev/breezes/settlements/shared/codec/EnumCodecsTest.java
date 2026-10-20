@@ -50,6 +50,19 @@ class EnumCodecsTest {
         assertEquals(Sample.FIRST, decoded);
     }
 
+    @Test
+    void lenientWithLabel_decodesAnUnknownNameAsTheFallbackInsteadOfErroring() {
+        // Arrange — the labeled overload warns about the replacement, but decodes the same way
+        Codec<Sample> labeled = EnumCodecs.lenient(Sample.class, Sample.SECOND, "sample");
+        JsonElement garbage = new JsonPrimitive("REMOVED_CONSTANT");
+
+        // Act
+        Sample decoded = labeled.parse(JsonOps.INSTANCE, garbage).resultOrPartial(Assertions::fail).orElseThrow();
+
+        // Assert
+        assertEquals(Sample.SECOND, decoded);
+    }
+
     private static JsonElement encode(Sample value) {
         return CODEC.encodeStart(JsonOps.INSTANCE, value)
                 .resultOrPartial(Assertions::fail)

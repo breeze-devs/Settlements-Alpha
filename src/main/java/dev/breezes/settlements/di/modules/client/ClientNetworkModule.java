@@ -5,6 +5,8 @@ import dagger.Module;
 import dagger.multibindings.ClassKey;
 import dagger.multibindings.IntoMap;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.arrival.handler.ClientBoundSettlementArrivalPacketHandler;
+import dev.breezes.settlements.infrastructure.network.features.arrival.packet.ClientBoundSettlementArrivalPacket;
 import dev.breezes.settlements.infrastructure.network.features.debug.handler.ClientBoundSettlementDebugPacketHandler;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.infrastructure.network.features.farming.handler.ClientBoundCultivationSeedSetPacketHandler;
@@ -99,5 +101,10 @@ public abstract class ClientNetworkModule {
     @IntoMap
     @ClassKey(ClientBoundFlarePacket.class)
     abstract ClientSidePacketHandler<?> flare(ClientBoundFlarePacketHandler impl);
+
+    @Binds
+    @IntoMap
+    @ClassKey(ClientBoundSettlementArrivalPacket.class)
+    abstract ClientSidePacketHandler<?> settlementArrival(ClientBoundSettlementArrivalPacketHandler impl);
 
 }

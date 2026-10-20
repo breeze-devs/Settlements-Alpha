@@ -6,25 +6,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Builder
+/**
+ * A settlement's character traits and scale.
+ *
+ * @param initialPopulation the villagers a generated settlement starts with, or the headcount observed when a
+ *                          settlement was founded; never updated afterward
+ */
+@Builder(toBuilder = true)
 public record SettlementProfile(
         TraitId primary,
         List<TraitId> secondary,
         List<TraitId> flavor,
         Map<TraitId, Float> adjustedWeights,
         ScaleTier scaleTier,
-        int estimatedPopulation,
+        // TODO: spawn a generated settlement's initial population once generation spawns villagers; its NBT templates
+        //  hold none yet
+        int initialPopulation,
         float wealthLevel,
         DefenseLevel defenseLevel,
-        long seed,
-        List<String> historyEventIds
+        long seed
 ) {
 
     public SettlementProfile {
         secondary = List.copyOf(secondary);
         flavor = List.copyOf(flavor);
         adjustedWeights = Map.copyOf(adjustedWeights);
-        historyEventIds = List.copyOf(historyEventIds);
     }
 
     public boolean hasTrait(TraitId id) {

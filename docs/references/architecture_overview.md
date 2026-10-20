@@ -77,6 +77,7 @@ conventions.
 | Day-plan execution, overrides, social cues, or vanilla activity arbitration | [Behavior Orchestration](behavior_orchestration.md) |
 | Danger assessment, fighting, or fleeing | [Threat Response](threat_response.md) |
 | Datapack loaders and their validation boundaries | [Datapack System](datapack_system.md) |
+| Settlement records, founding, membership, or lifecycle | [Settlement Identity and Lifecycle](settlements.md) |
 | Settlement generation | [Generation Overview](generation/overview.md), [Pipeline](generation/pipeline.md), [Minecraft Integration](generation/minecraft_integration.md) |
 | Animation, locomotion, models, or rendered attachments | [Animation System](animation_system.md), [Animation Import](animation_import_blockbench.md), [Model Tuning](animation_model_tuning.md) |
 | HUD regions, previews, or entity highlights | [Player Surfaces](player_surfaces.md) |

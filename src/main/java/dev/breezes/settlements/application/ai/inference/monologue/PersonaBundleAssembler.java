@@ -39,9 +39,10 @@ public final class PersonaBundleAssembler {
         List<DialogueFacet> facets = this.facetDeriver.derive(villager);
         Anchors anchors = buildAnchors(villager);
 
+        // The path alone, unlike the registry id the key holds: a prompt has no use for the namespace
         PersonaBundle.PersonaBundleBuilder builder = PersonaBundle.builder()
                 .name(this.nameDirectory.resolve(villager.getUUID()))
-                .profession(villager.getProfession().id())
+                .profession(villager.getProfession().id().getPath())
                 .geneSignals(GeneSignal.allFrom(villager.getGenetics()))
                 .anchors(anchors);
 

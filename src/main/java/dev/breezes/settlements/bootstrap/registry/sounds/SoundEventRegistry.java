@@ -34,6 +34,20 @@ public final class SoundEventRegistry {
             "interaction_fail",
             () -> SoundEvent.createVariableRangeEvent(ResourceLocationUtil.mod("interaction_fail")));
 
+    /**
+     * A settlement's bell, the sound of arriving in a settlement
+     */
+    public static final Supplier<SoundEvent> SETTLEMENT_ENTER = REGISTRY.register(
+            "settlement_enter",
+            () -> SoundEvent.createVariableRangeEvent(ResourceLocationUtil.mod("settlement_enter")));
+
+    /**
+     * The jingle of a settlement newly known: discovered, or founded around the listener
+     */
+    public static final Supplier<SoundEvent> SETTLEMENT_DISCOVERY = REGISTRY.register(
+            "settlement_discovery",
+            () -> SoundEvent.createVariableRangeEvent(ResourceLocationUtil.mod("settlement_discovery")));
+
     public static void register(IEventBus eventBus) {
         REGISTRY.register(eventBus);
     }

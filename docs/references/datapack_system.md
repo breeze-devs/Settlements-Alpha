@@ -169,6 +169,9 @@ fixed to `"profession"`; the list field name is caller-supplied, e.g. `"recipes"
 merges per profession with an inner id-dedupe (last-write-wins, order preserved), then calls an overridable
 hook.
 
+The `"profession"` field is the profession's full registry id, such as `"minecraft:farmer"`. A file can therefore
+target another mod's profession, and it never reaches a profession from a different namespace that shares its path.
+
 ```java
 protected ProfessionCatalogDataManager(String directory, Codec<T> valueCodec, String valuesField) {
     super(directory, ProfessionCatalogFile.codec(valueCodec, valuesField));

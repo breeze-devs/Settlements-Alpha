@@ -1,8 +1,9 @@
 package dev.breezes.settlements.infrastructure.generation.debug;
 
 import dev.breezes.settlements.domain.common.BiomeId;
-import dev.breezes.settlements.domain.generation.history.VisualMarkerSet;
+import dev.breezes.settlements.domain.generation.history.DrawnHistoryEvent;
 import dev.breezes.settlements.domain.generation.history.HistoryEventResult;
+import dev.breezes.settlements.domain.generation.history.VisualMarkerSet;
 import dev.breezes.settlements.domain.generation.layout.LayoutResult;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
@@ -27,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GenerationResultSerializerTest {
 
     private static final TraitId FARMING = TraitId.of("settlements:settlement_traits/farming");
+    private static final DrawnHistoryEvent FOUNDED_BY_EXPLORERS =
+            new DrawnHistoryEvent("settlements:settlement_events/founded_by_explorers", 100);
 
     @Test
     void toJson_includesNestedHistoryPayload() {
@@ -47,15 +50,14 @@ class GenerationResultSerializerTest {
                 .flavor(List.of())
                 .adjustedWeights(Map.of(FARMING, 0.75f))
                 .scaleTier(ScaleTier.VILLAGE)
-                .estimatedPopulation(42)
+                .initialPopulation(42)
                 .wealthLevel(0.5f)
                 .defenseLevel(DefenseLevel.LOW)
                 .seed(123L)
-                .historyEventIds(List.of("settlements:settlement_events/founded_by_explorers"))
                 .build();
 
         HistoryEventResult history = new HistoryEventResult(
-                List.of("settlements:settlement_events/founded_by_explorers"),
+                List.of(FOUNDED_BY_EXPLORERS),
                 Map.of(FARMING, 0.75f),
                 new VisualMarkerSet(Set.of("explorer_camp", "flagpole")));
 
@@ -70,7 +72,7 @@ class GenerationResultSerializerTest {
         String json = GenerationResultSerializer.toJson(result);
 
         assertTrue(json.contains("\"history\""));
-        assertTrue(json.contains("\"eventIds\""));
+        assertTrue(json.contains("\"events\""));
         assertTrue(json.contains("settlements:settlement_events/founded_by_explorers"));
         assertTrue(json.contains("\"visualMarkers\""));
         assertTrue(json.contains("explorer_camp"));

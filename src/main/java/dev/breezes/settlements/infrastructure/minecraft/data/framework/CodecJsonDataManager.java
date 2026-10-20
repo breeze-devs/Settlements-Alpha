@@ -79,7 +79,8 @@ public abstract class CodecJsonDataManager<T> extends SimpleJsonResourceReloadLi
     protected abstract String label();
 
     /**
-     * Builds the manager's immutable snapshot / derived indexes from the successfully decoded files.
+     * Builds the manager's immutable snapshot / derived indexes from the successfully decoded files, given in file id
+     * order.
      */
     protected abstract void onReloaded(@Nonnull Map<ResourceLocation, T> values);
 

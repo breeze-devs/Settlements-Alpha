@@ -149,6 +149,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private static final ClockTicks PERCEPTION_COOLDOWN_TICKS = ClockTicks.seconds(1);
     // Occasional name sync for catching direct name data modifications
     private static final ClockTicks NAME_SYNC_COOLDOWN_TICKS = ClockTicks.minutes(1);
+    // How often a villager looks for new settlements or re-checks the settlement it belongs to
+    private static final ClockTicks MEMBERSHIP_CHECK_COOLDOWN_TICKS = ClockTicks.minutes(2);
+    // Short against the minutes a villager spends at MEET, so a member that reaches its bell is checked in while it
+    // stands there, between the strolls that take it out of check-in range
+    private static final ClockTicks CHECK_IN_COOLDOWN_TICKS = ClockTicks.seconds(5);
 
     // Rain exposure is sampled coarsely with debouncing
     private static final ClockTicks RAIN_EXPOSURE_SAMPLE_COOLDOWN_TICKS = ClockTicks.seconds(1);
@@ -219,6 +224,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     private final ITickable reconcilerCooldown;
     private final ITickable perceptionCooldown;
     private final ITickable nameSyncCooldown;
+    private final ITickable membershipCheckCooldown;
+    private final ITickable checkInCooldown;
     private final ITickable rainExposureCooldown;
     private final DebouncedSignal rainExposure;
     @Nullable
@@ -248,6 +255,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.reconcilerCooldown = Tickable.staggered(RECONCILER_COOLDOWN_TICKS);
         this.perceptionCooldown = Tickable.staggered(PERCEPTION_COOLDOWN_TICKS);
         this.nameSyncCooldown = Tickable.staggered(NAME_SYNC_COOLDOWN_TICKS);
+        this.membershipCheckCooldown = Tickable.staggered(MEMBERSHIP_CHECK_COOLDOWN_TICKS);
+        this.checkInCooldown = Tickable.staggered(CHECK_IN_COOLDOWN_TICKS);
         this.rainExposureCooldown = Tickable.staggered(RAIN_EXPOSURE_SAMPLE_COOLDOWN_TICKS);
         this.rainExposure = new DebouncedSignal(false, RAIN_EXPOSURE_OBSERVATIONS_TO_CHANGE);
         this.sootyExpiresAtGameTime = 0L;
@@ -409,7 +418,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         if (this.cachedProfession != currentProfession || this.cachedProfessionKey == null) {
             // Profession is stable for long stretches but can change through vanilla data updates, so invalidate lazily.
             this.cachedProfession = currentProfession;
-            this.cachedProfessionKey = VillagerProfessionKey.fromResourceLocation(BuiltInRegistries.VILLAGER_PROFESSION.getKey(currentProfession));
+            this.cachedProfessionKey = new VillagerProfessionKey(BuiltInRegistries.VILLAGER_PROFESSION.getKey(currentProfession));
         }
 
         return this.cachedProfessionKey;
@@ -447,6 +456,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             // accurate here -- this is the name directory's self-healing seam: a missed write, a
             // bad prune, or a restored backup repairs itself the next time this villager loads.
             this.upsertNameInDirectory();
+
+            // Members skip the assignment cadence and may never check in, babies among them, so a member's lost roster
+            // row is restored here
+            SettlementsDagger.serverOrThrow().settlementMembershipService().repair(this);
         }
     }
 
@@ -475,7 +488,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     }
 
     public Component getProfessionDisplayName() {
-        return Component.translatable(this.getType().getDescriptionId() + "." + this.getProfession().id());
+        return this.getTypeName();
     }
 
     @Nullable
@@ -687,6 +700,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         this.tickReconciler();
         this.tickNameSync();
+        this.tickMembershipCheck(server);
+        this.tickCheckIn(server);
     }
 
     /**
@@ -801,6 +816,34 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     }
 
     /**
+     * Has an unassigned villager assigned to a settlement, or a member's membership verified, throttled to
+     * {@link #MEMBERSHIP_CHECK_COOLDOWN_TICKS}.
+     */
+    private void tickMembershipCheck(@Nonnull ServerComponent server) {
+        if (!this.membershipCheckCooldown.tickCheckAndReset(1)) {
+            return;
+        }
+
+        if (this.hasData(AttachmentRegistry.SETTLEMENT_MEMBERSHIP)) {
+            server.settlementMembershipService().clearUnresolvableMembership(this);
+        } else {
+            server.settlementAssignmentService().assign(this);
+        }
+    }
+
+    /**
+     * Has a member meeting at its bell checked in at its settlement's gathering, throttled to
+     * {@link #CHECK_IN_COOLDOWN_TICKS}.
+     */
+    private void tickCheckIn(@Nonnull ServerComponent server) {
+        if (!this.checkInCooldown.tickCheckAndReset(1)) {
+            return;
+        }
+
+        server.settlementMembershipService().checkIn(this);
+    }
+
+    /**
      * Also forgets the POI positions vanilla's death releases, including when the death event is canceled.
      */
     @Override
@@ -829,11 +872,12 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
 
         this.planRuntimeState.clearPendingGeneration();
 
-        // De-register from name directory if villager is about to be permanently removed
+        // A villager about to be permanently removed leaves the name directory and its settlement's roster
         if (server != null && reason.shouldDestroy()) {
             server.villagerNameDirectory().remove(this.getUUID());
             // Drop the cache too: if this same instance is ever revived, onAddedToLevel must re-publish
             this.lastPublishedName = null;
+            server.settlementMembershipService().recordRemoval(this, reason);
         }
 
         // Prune cache
@@ -932,6 +976,20 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         this.planRuntimeState.reset();
         this.registerBrainGoals(this.getBrain());
         this.brainGoalsInitialized = true;
+    }
+
+    /**
+     * Also has a member that grew up recorded as an adult on its settlement's roster.
+     */
+    @Override
+    protected void ageBoundaryReached() {
+        super.ageBoundaryReached();
+
+        // Loading a baby, a newborn's first age, and a conversion's copied age cross the boundary too, before the
+        // villager is in a level, and none of them is growing up
+        if (!this.isBaby() && this.isAddedToLevel() && this.level() instanceof ServerLevel) {
+            SettlementsDagger.serverOrThrow().settlementMembershipService().recordGrowingUp(this);
+        }
     }
 
     @Nullable
@@ -1274,6 +1332,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryModuleType.WALK_TARGET,
                 MemoryModuleType.LOOK_TARGET,
                 MemoryModuleType.INTERACTION_TARGET,
+                // TODO: BREED_TARGET is never set. It remains because for some reason LocateHidingPlace needs it
                 MemoryModuleType.BREED_TARGET,
                 MemoryModuleType.PATH,
                 // Retained for vanilla brain compat; no longer written -- our InteractWithBarriers

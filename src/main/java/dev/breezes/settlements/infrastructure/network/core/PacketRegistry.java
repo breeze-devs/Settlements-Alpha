@@ -1,6 +1,7 @@
 package dev.breezes.settlements.infrastructure.network.core;
 
 import dev.breezes.settlements.di.SettlementsDagger;
+import dev.breezes.settlements.infrastructure.network.features.arrival.packet.ClientBoundSettlementArrivalPacket;
 import dev.breezes.settlements.infrastructure.network.features.ballista.packet.ServerBoundBallistaAimPacket;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.infrastructure.network.features.farming.packet.ClientBoundCultivationSeedSetPacket;
@@ -29,10 +30,10 @@ import javax.annotation.Nonnull;
 public class PacketRegistry {
 
     /**
-     * Wire-format version of all Settlements payloads.
+     * Wire-format version of all Settlements payloads and synced attachments.
      * Prevents clients from joining servers compiled with a different version.
      */
-    private static final String NETWORK_VERSION = "1";
+    private static final String NETWORK_VERSION = "3";
 
     public static void bindPacketHandlers(@Nonnull RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(NETWORK_VERSION).optional();
@@ -42,6 +43,7 @@ public class PacketRegistry {
         registerClient(registrar, ClientBoundCultivationSeedSetPacket.ID, ClientBoundCultivationSeedSetPacket.CODEC);
         registerClient(registrar, ClientBoundVillageDayTypePacket.ID, ClientBoundVillageDayTypePacket.CODEC);
         registerClient(registrar, ClientBoundFlarePacket.ID, ClientBoundFlarePacket.CODEC);
+        registerClient(registrar, ClientBoundSettlementArrivalPacket.ID, ClientBoundSettlementArrivalPacket.CODEC);
 
         registerServer(registrar, ServerBoundBallistaAimPacket.ID, ServerBoundBallistaAimPacket.CODEC);
 

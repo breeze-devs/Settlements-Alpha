@@ -215,13 +215,17 @@ public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
     @Nullable
     private static Holder<MobEffect> resolveBuffEffect(@Nonnull VillagerProfessionKey profession) {
-        // Strings mirror the VillagerProfessionKey constants; only smithing trades repair golems.
-        return switch (profession.id()) {
-            case "armorer" -> MobEffects.DAMAGE_RESISTANCE;
-            case "weaponsmith" -> MobEffects.DAMAGE_BOOST;
-            case "toolsmith" -> MobEffects.MOVEMENT_SPEED;
-            default -> null;
-        };
+        // Only smithing trades repair golems
+        if (VillagerProfessionKey.ARMORER.equals(profession)) {
+            return MobEffects.DAMAGE_RESISTANCE;
+        }
+        if (VillagerProfessionKey.WEAPONSMITH.equals(profession)) {
+            return MobEffects.DAMAGE_BOOST;
+        }
+        if (VillagerProfessionKey.TOOLSMITH.equals(profession)) {
+            return MobEffects.MOVEMENT_SPEED;
+        }
+        return null;
     }
 
     private static int resolveBuffAmplifier(int expertiseLevel) {

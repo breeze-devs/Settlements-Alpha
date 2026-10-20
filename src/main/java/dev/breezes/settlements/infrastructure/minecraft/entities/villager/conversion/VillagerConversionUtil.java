@@ -17,8 +17,8 @@ import javax.annotation.Nullable;
 /**
  * Converts a villager between the vanilla and Settlements entity types, waking it if asleep.
  * <p>
- * A conversion replaces the villager with a copy loaded from its saved data under a new UUID, which keeps the home,
- * job site, and meeting point the villager held reserved.
+ * A conversion replaces the villager with a copy loaded from its saved data under a new UUID, preserving its
+ * serialized attachments and keeping the home, job site, and meeting point the villager held reserved.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class VillagerConversionUtil {
@@ -26,21 +26,23 @@ public final class VillagerConversionUtil {
     /**
      * Replaces a Settlements villager with a vanilla copy, frozen and silenced when stasis is set.
      * A vanilla villager is frozen or unfrozen in place instead.
-     * <p>
-     * If the copy cannot be created or the level refuses it, the Settlements villager stays unconverted.
+     *
+     * @return the copy, or null when the old villager remains: it was already a vanilla villager, or the copy could
+     * not be created or was refused by the level
      */
-    public static void convertToVanilla(@Nonnull ServerLevel level,
-                                        @Nonnull Villager oldVillager,
-                                        boolean stasis) {
+    @Nullable
+    public static Villager convertToVanilla(@Nonnull ServerLevel level,
+                                            @Nonnull Villager oldVillager,
+                                            boolean stasis) {
         if (!(oldVillager instanceof BaseVillager)) {
             wake(oldVillager);
             applyVanillaState(oldVillager, stasis);
-            return;
+            return null;
         }
 
         Villager newVillager = EntityType.VILLAGER.create(level);
         if (newVillager == null) {
-            return;
+            return null;
         }
 
         settle(level, oldVillager);
@@ -48,7 +50,7 @@ public final class VillagerConversionUtil {
         copyPose(oldVillager, newVillager);
         applyVanillaState(newVillager, stasis);
 
-        replace(level, oldVillager, newVillager);
+        return replace(level, oldVillager, newVillager) ? newVillager : null;
     }
 
     /**

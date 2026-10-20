@@ -39,4 +39,10 @@ public final class SettlementsEntityTypeTags {
     public static final TagKey<EntityType<?>> RETRIEVABLE_PROJECTILES = TagKey.create(Registries.ENTITY_TYPE,
             ResourceLocationUtil.mod("retrievable_projectiles"));
 
+    /**
+     * Entities counted as a settlement's residents when a founding observes how large it is.
+     */
+    public static final TagKey<EntityType<?>> SETTLEMENT_RESIDENTS = TagKey.create(Registries.ENTITY_TYPE,
+            ResourceLocationUtil.mod("settlement_residents"));
+
 }

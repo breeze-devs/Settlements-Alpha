@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CraftCatalogDataManagerTest {
 
-    // One bundled craft_catalog JSON per crafting profession; filename matches the profession id.
+    // One bundled craft_catalog JSON per crafting profession; filename matches the vanilla profession's path.
     private static final String[] CRAFT_PROFESSION_FILES = {
             "armorer", "cartographer", "cleric", "farmer", "fletcher",
             "leatherworker", "librarian", "shepherd", "toolsmith", "weaponsmith"
@@ -189,7 +189,8 @@ class CraftCatalogDataManagerTest {
 
         // Assert — guard every shipped craft catalog against parse regressions
         for (String profession : CRAFT_PROFESSION_FILES) {
-            assertFalse(this.manager.recipesFor(VillagerProfessionKey.of(profession)).isEmpty(),
+            VillagerProfessionKey key = new VillagerProfessionKey(ResourceLocation.withDefaultNamespace(profession));
+            assertFalse(this.manager.recipesFor(key).isEmpty(),
                     "Default craft catalog for profession '" + profession + "' failed to load");
         }
     }

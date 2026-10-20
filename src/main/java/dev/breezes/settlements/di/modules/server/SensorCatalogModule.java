@@ -22,7 +22,6 @@ import dev.breezes.settlements.di.CognitionScoped;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
-import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.domain.world.blocks.BlockMatchers;
 
 import java.util.HashSet;
@@ -55,9 +54,8 @@ public abstract class SensorCatalogModule {
     @BaseLane
     static VillagerSensorFactory blockResourceSensor(BlockResourceSensorConfig config,
                                                      Set<BlockResource> resources,
-                                                     WorldResourceIndex index,
-                                                     SettlementQueryService settlementQueryService) {
-        return villager -> new BlockResourceSensor(config, resources, index, settlementQueryService);
+                                                     WorldResourceIndex index) {
+        return villager -> new BlockResourceSensor(config, resources, index);
     }
 
     @Provides

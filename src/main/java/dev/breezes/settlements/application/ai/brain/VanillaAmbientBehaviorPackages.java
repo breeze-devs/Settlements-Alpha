@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.ambient.AmbientBehaviors;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.home.ValidateNearbyHome;
-import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.DoNothing;
@@ -31,7 +30,6 @@ import net.minecraft.world.entity.ai.behavior.TradeWithVillager;
 import net.minecraft.world.entity.ai.behavior.TriggerGate;
 import net.minecraft.world.entity.ai.behavior.ValidateNearbyPoi;
 import net.minecraft.world.entity.ai.behavior.VillageBoundRandomStroll;
-import net.minecraft.world.entity.ai.behavior.VillagerMakeLove;
 import net.minecraft.world.entity.ai.behavior.WorkAtComposter;
 import net.minecraft.world.entity.ai.behavior.WorkAtPoi;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -44,6 +42,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class VanillaAmbientBehaviorPackages {
+
+    /**
+     * How close an adult's meet walk brings it to its meeting point, as a Manhattan distance in blocks between the
+     * villager's block position and the meeting point's.
+     */
+    public static final int MEET_WALK_CLOSE_ENOUGH_DISTANCE = 6;
 
     private static final float STROLL_SPEED_MODIFIER = 0.4F;
 
@@ -98,7 +102,8 @@ public final class VanillaAmbientBehaviorPackages {
                         Pair.of(StrollAroundPoi.create(MemoryModuleType.MEETING_POINT, STROLL_SPEED_MODIFIER, 40), 2),
                         Pair.of(SocializeAtBell.create(), 2)
                 )))),
-                Pair.of(2, AmbientBehaviors.gated(SetWalkTargetFromBlockMemory.create(MemoryModuleType.MEETING_POINT, speed, 6, 100, 200))),
+                Pair.of(2, AmbientBehaviors.gated(SetWalkTargetFromBlockMemory.create(MemoryModuleType.MEETING_POINT, speed,
+                        MEET_WALK_CLOSE_ENOUGH_DISTANCE, 100, 200))),
                 Pair.of(3, AmbientBehaviors.gated(new GiveGiftToHero(100))),
                 Pair.of(3, ValidateNearbyPoi.create((poiType) -> poiType.is(PoiTypes.MEETING), MemoryModuleType.MEETING_POINT)),
                 Pair.of(3, AmbientBehaviors.gated(new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED,
@@ -118,15 +123,12 @@ public final class VanillaAmbientBehaviorPackages {
                 Pair.of(3, AmbientBehaviors.gated(SetLookAndInteract.create(EntityType.PLAYER, 4))),
                 Pair.of(3, new ShowTradesToPlayer(400, 1600)),
                 Pair.of(3, AmbientBehaviors.gated(new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED,
-                        GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new TradeWithVillager(), 1))))),
-                Pair.of(3, AmbientBehaviors.gated(new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.BREED_TARGET), GateBehavior.OrderPolicy.ORDERED,
-                        GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new VillagerMakeLove(), 1)))))
+                        GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new TradeWithVillager(), 1)))))
         ));
 
         ArrayList<Pair<? extends BehaviorControl<? super Villager>, Integer>> idleChoiceBehaviors = new ArrayList<>();
         idleChoiceBehaviors.addAll(List.of(
                 Pair.of(InteractWith.of(EntityType.VILLAGER, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 2),
-                Pair.of(InteractWith.of(EntityType.VILLAGER, 8, AgeableMob::canBreed, AgeableMob::canBreed, MemoryModuleType.BREED_TARGET, speed, 2), 1),
                 Pair.of(InteractWith.of(EntityType.CAT, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 1),
                 Pair.of(VillageBoundRandomStroll.create(speed), 1),
                 Pair.of(SetWalkTargetFromLookTarget.create(speed, 2), 1),

@@ -15,7 +15,6 @@ import java.util.Random;
 
 public class SamplingEngine {
 
-    private static final float HAMLET_WEIGHT = 0.30f;
     private static final float VILLAGE_WEIGHT = 0.40f;
     private static final float TOWN_WEIGHT = 0.30f;
     private static final float PRIMARY_WEIGHT_MULTIPLIER = 1.5f;
@@ -23,9 +22,13 @@ public class SamplingEngine {
     private static final TraitId DEFENSE_TRAIT = TraitId.of("settlements:settlement_traits/defense");
     private static final float FALLBACK_SCORE = 1.0f;
 
+    /**
+     * Samples the profile of a settlement of the given tier and initial population from its trait scores.
+     */
     public SettlementProfile sample(@Nonnull Map<TraitId, Float> traitScores,
+                                    @Nonnull ScaleTier scaleTier,
+                                    int initialPopulation,
                                     @Nonnull Random random) {
-        ScaleTier scaleTier = this.determineScaleTier(random);
         int traitSlots = random.nextInt(scaleTier.minTraitSlots(), scaleTier.maxTraitSlots() + 1);
         Map<TraitId, Float> positiveScores = this.positiveScoresOrFallback(traitScores);
         List<TraitId> draws = this.drawTraits(positiveScores, traitSlots, random);
@@ -34,7 +37,6 @@ public class SamplingEngine {
         List<TraitId> secondary = this.secondaryTraits(draws);
         List<TraitId> flavor = this.flavorTraits(draws);
         Map<TraitId, Float> adjustedWeights = this.adjustedWeights(positiveScores, primary);
-        int population = random.nextInt(scaleTier.minPopulation(), scaleTier.maxPopulation() + 1);
         float wealth = random.nextFloat();
         DefenseLevel defenseLevel = this.determineDefenseLevel(primary, secondary, flavor);
         long seed = random.nextLong();
@@ -45,15 +47,17 @@ public class SamplingEngine {
                 .flavor(flavor)
                 .adjustedWeights(adjustedWeights)
                 .scaleTier(scaleTier)
-                .estimatedPopulation(population)
+                .initialPopulation(initialPopulation)
                 .wealthLevel(wealth)
                 .defenseLevel(defenseLevel)
                 .seed(seed)
-                .historyEventIds(List.of())
                 .build();
     }
 
-    protected ScaleTier determineScaleTier(@Nonnull Random random) {
+    /**
+     * Rolls the scale tier of a settlement generated with its structure.
+     */
+    public ScaleTier determineScaleTier(@Nonnull Random random) {
         float roll = random.nextFloat();
         if (roll < VILLAGE_WEIGHT) {
             return ScaleTier.VILLAGE;

@@ -13,8 +13,9 @@ Two cross-cutting disciplines:
 A committed surface — a screen the player opened on purpose — is out of scope here. These regions are ambient: dismissed
 by looking away, never capturing input, never blocking movement (**U7**).
 
-**Where to start reading:** `presentation/ui/hud` holds the suppression predicate every HUD region answers to, together
-with the crosshair region and its two provider seams (one keyed on the held item, one keyed on the aim target). Entity
+**Where to start reading:** `presentation/ui` holds the suppression predicate every HUD region answers to, and
+`presentation/ui/hud` holds the crosshair region and its two provider seams (one keyed on the held item, one keyed on
+the aim target). Entity
 outlines and their provider seam live under `infrastructure/rendering/highlight`. A region's owner is the only place
 that resolves precedence for that region; nothing else in the seam needs to.
 

@@ -1,8 +1,10 @@
 package dev.breezes.settlements.infrastructure.minecraft.data.history;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.breezes.settlements.domain.generation.history.HistoryEventDefinition;
+import dev.breezes.settlements.domain.generation.history.SettlementFoundingKind;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HistoryEventDataManagerTest {
 
+    private static final String[] DEFAULT_EVENT_FILES = {
+            "founded_by_refugees",
+            "founded_by_explorers",
+            "founded_by_exiles",
+            "founded_by_monks",
+            "founded_by_prospectors",
+            "founded_on_ancient_site",
+            "founded_as_outpost",
+            "founded_by_fishermen",
+            "founded_around_new_bell",
+            "great_fire",
+            "flood",
+            "rich_vein_struck",
+            "hero_emerged"
+    };
+
     private final HistoryEventDataManager manager = new HistoryEventDataManager();
 
     @BeforeEach
@@ -32,7 +50,7 @@ class HistoryEventDataManagerTest {
 
     @Test
     void loadsAllDefaultEvents() {
-        assertEquals(12, this.manager.allEvents().size());
+        assertEquals(DEFAULT_EVENT_FILES.length, this.manager.allEvents().size());
     }
 
     @Test
@@ -63,7 +81,7 @@ class HistoryEventDataManagerTest {
 
         this.manager.reload(entries);
 
-        assertEquals(12, this.manager.allEvents().size());
+        assertEquals(DEFAULT_EVENT_FILES.length, this.manager.allEvents().size());
     }
 
     @Test
@@ -160,26 +178,71 @@ class HistoryEventDataManagerTest {
         assertEquals(Set.of(), definition.preconditions().requiredResourceTags());
         assertEquals(Set.of(), definition.preconditions().requiredWaterFeatures());
         assertEquals(0, definition.preconditions().minPopulation());
+        assertEquals(SettlementFoundingKind.ESTABLISHED, definition.preconditions().founding());
+    }
+
+    @Test
+    void foundingPreconditionParsesNew() {
+        // Act
+        this.manager.reload(Map.of(resource("settlements:history/events/young"),
+                eventWithPreconditions("settlements:settlement_events/young", """
+                        {"founding": "new"}
+                        """)));
+
+        // Assert
+        assertEquals(SettlementFoundingKind.NEW, onlyEvent().preconditions().founding());
+    }
+
+    @Test
+    void foundingPreconditionDefaultsToEstablished_whenPreconditionsOmitIt() {
+        // Act
+        this.manager.reload(Map.of(resource("settlements:history/events/old"),
+                eventWithPreconditions("settlements:settlement_events/old", """
+                        {"min_population": 0}
+                        """)));
+
+        // Assert
+        assertEquals(SettlementFoundingKind.ESTABLISHED, onlyEvent().preconditions().founding());
+    }
+
+    @Test
+    void unknownFoundingRejectsEntry() {
+        // Act — strict like the other preconditions: an unknown value fails the whole entry rather than falling back
+        this.manager.reload(Map.of(resource("settlements:history/events/unknown_founding"),
+                eventWithPreconditions("settlements:settlement_events/unknown_founding", """
+                        {"founding": "ancient"}
+                        """)));
+
+        // Assert
+        assertTrue(this.manager.allEvents().isEmpty());
+    }
+
+    private HistoryEventDefinition onlyEvent() {
+        assertEquals(1, this.manager.allEvents().size());
+        return this.manager.allEvents().getFirst();
+    }
+
+    private static JsonElement eventWithPreconditions(String id, String preconditions) {
+        JsonObject event = JsonParser.parseString("""
+                {
+                  "category": "founding",
+                  "time_horizon_min": 100,
+                  "time_horizon_max": 100,
+                  "exclusive_tags": [],
+                  "probability_weight": 1.0,
+                  "trait_modifiers": {},
+                  "visual_markers": [],
+                  "narrative_text": "test"
+                }
+                """).getAsJsonObject();
+        event.addProperty("id", id);
+        event.add("preconditions", JsonParser.parseString(preconditions));
+        return event;
     }
 
     private static Map<ResourceLocation, JsonElement> loadDefaultEntries() throws IOException {
-        String[] files = {
-                "founded_by_refugees",
-                "founded_by_explorers",
-                "founded_by_exiles",
-                "founded_by_monks",
-                "founded_by_prospectors",
-                "founded_on_ancient_site",
-                "founded_as_outpost",
-                "founded_by_fishermen",
-                "great_fire",
-                "flood",
-                "rich_vein_struck",
-                "hero_emerged"
-        };
-
         Map<ResourceLocation, JsonElement> entries = new HashMap<>();
-        for (String file : files) {
+        for (String file : DEFAULT_EVENT_FILES) {
             String resourcePath = "data/settlements/settlements/history/events/" + file + ".json";
             try (InputStream stream = HistoryEventDataManagerTest.class.getClassLoader().getResourceAsStream(resourcePath)) {
                 assertNotNull(stream, "Missing test resource: " + resourcePath);

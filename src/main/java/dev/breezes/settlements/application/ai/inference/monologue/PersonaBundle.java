@@ -31,7 +31,7 @@ public final class PersonaBundle {
 
     /**
      * Wire key "profession" — matches SIS PersonaDTO.profession.
-     * Value is the profession registry id (e.g. "minecraft:farmer").
+     * Value is the profession's registry path without its namespace (e.g. "farmer").
      */
     private final String profession;
 

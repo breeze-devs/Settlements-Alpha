@@ -6,6 +6,7 @@ import dev.breezes.settlements.di.modules.client.ClientBallistaModule;
 import dev.breezes.settlements.di.modules.client.ClientCultivationLilyModule;
 import dev.breezes.settlements.di.modules.client.ClientLifecycleModule;
 import dev.breezes.settlements.di.modules.client.ClientNetworkModule;
+import dev.breezes.settlements.di.modules.client.ClientSettlementBellModule;
 import dev.breezes.settlements.di.modules.client.ClientTotemAffordanceModule;
 import dev.breezes.settlements.di.modules.client.HudModule;
 import dev.breezes.settlements.di.modules.client.UiSyncClientModule;
@@ -18,6 +19,7 @@ import dev.breezes.settlements.infrastructure.minecraft.blocks.ballista.Ballista
 import dev.breezes.settlements.infrastructure.minecraft.data.farming.crops.CultivationSeedSetClientProjection;
 import dev.breezes.settlements.infrastructure.minecraft.data.schedule.VillageDayTypeClientProjection;
 import dev.breezes.settlements.infrastructure.network.core.ClientSidePacketReceiver;
+import dev.breezes.settlements.infrastructure.rendering.border.SettlementBorderRenderer;
 import dev.breezes.settlements.infrastructure.rendering.debug.SettlementDebugOverlayState;
 import dev.breezes.settlements.infrastructure.rendering.debug.tuning.DebugTuningBoard;
 import dev.breezes.settlements.infrastructure.rendering.debug.tuning.DebugTuningHudRenderer;
@@ -27,6 +29,7 @@ import dev.breezes.settlements.infrastructure.rendering.zone.CultivationLilyPlac
 import dev.breezes.settlements.infrastructure.rendering.zone.CultivationLilyZoneRevealRenderer;
 import dev.breezes.settlements.presentation.ui.hud.ClockHudRenderer;
 import dev.breezes.settlements.presentation.ui.hud.CrosshairHudRenderer;
+import dev.breezes.settlements.presentation.ui.hud.SettlementArrivalHudRenderer;
 import dev.breezes.settlements.presentation.ui.sync.UiClientState;
 
 import java.util.Set;
@@ -38,6 +41,7 @@ import java.util.Set;
         ClientCultivationLilyModule.class,
         ClientLifecycleModule.class,
         ClientNetworkModule.class,
+        ClientSettlementBellModule.class,
         ClientTotemAffordanceModule.class,
         HudModule.class,
         UiSyncClientModule.class,
@@ -64,6 +68,8 @@ public interface ClientComponent {
 
     ClockHudRenderer clockHudRenderer();
 
+    SettlementArrivalHudRenderer settlementArrivalHudRenderer();
+
     VillageDayTypeClientProjection villageDayTypeClientProjection();
 
     DebugTuningBoard debugTuningBoard();
@@ -73,6 +79,8 @@ public interface ClientComponent {
     CultivationLilyZoneRevealRenderer cultivationLilyZoneRevealRenderer();
 
     CultivationLilyPlacementPreviewRenderer cultivationLilyPlacementPreviewRenderer();
+
+    SettlementBorderRenderer settlementBorderRenderer();
 
     CultivationSeedSetClientProjection cultivationSeedSetClientProjection();
 

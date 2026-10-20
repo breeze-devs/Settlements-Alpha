@@ -18,6 +18,7 @@ public record UITheme(
         int successColor,
         int errorColor,
         int warningColor,
+        int progressColor,
         int backgroundDimColor,
         int overlayColor
 ) {
@@ -33,6 +34,7 @@ public record UITheme(
             0xFF55FF55,   // successColor
             0xFFFF5555,   // errorColor
             0xFFFFA500,   // warningColor
+            0xFFFFAA00,   // progressColor
             0x50000000,   // backgroundDimColor
             0xCC000000    // overlayColor
     );

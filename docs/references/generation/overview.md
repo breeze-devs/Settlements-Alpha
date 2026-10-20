@@ -43,14 +43,18 @@ probabilities, building placement rules — are exposed through datapack JSON fi
 
 ### Settlement Scale Tiers
 
-| Tier    | Trait Slots | Buildings | Population | Area Radius | Notes                                      |
-|---------|-------------|-----------|------------|-------------|--------------------------------------------|
-| Hamlet  | 1-2         | 5-8       | 10-20      | ~32 blocks  | No formal roads, shared clearing           |
-| Village | 2-4         | 10-20     | 30-60      | ~56 blocks  | Main road, civic buildings, optional walls |
-| Town    | 4-5         | 25-40     | 80-150     | ~80 blocks  | Crossroads, full zoning, stone walls       |
-| City    | --          | --        | --         | --          | *Future: multi-district expansion*         |
+| Tier    | Trait Slots | Buildings | Area Radius | Notes                                      |
+|---------|-------------|-----------|-------------|--------------------------------------------|
+| Hamlet  | 1-2         | 5-8       | ~32 blocks  | No formal roads, shared clearing           |
+| Village | 2-4         | 10-20     | ~56 blocks  | Main road, civic buildings, optional walls |
+| Town    | 4-5         | 25-40     | ~80 blocks  | Crossroads, full zoning, stone walls       |
+| City    | --          | --        | --          | *Future: multi-district expansion*         |
 
-Scale tier is selected via weighted random during profile generation (40% Village, 30% Town, 30% Hamlet).
+Each tier also has a population range, held by `ScaleTier`, and the one table serves two paths.
+Generation rolls a tier by weighted random (40% Village, 30% Town, 30% Hamlet) and then an initial
+population within its range: how many villagers the settlement starts with. A settlement founded in
+play observes its headcount instead and takes the highest tier whose minimum that count reaches, with
+hamlet as the floor.
 
 ---
 
@@ -68,16 +72,16 @@ launching Minecraft.
 The generation pipeline is strictly linear. Each phase consumes only the output of the previous
 phase.
 
-| Phase    | Input                                | Output                                      | MC Dependency              |
-|----------|--------------------------------------|---------------------------------------------|----------------------------|
-| Trigger  | Worldgen event                       | Chunk region claim                          | Yes                        |
-| Survey   | TerrainGrid + SurveyBounds           | SiteReport                                  | No (grid built by adapter) |
-| Score    | SiteReport                           | Map\<TraitId, Float\>                       | No                         |
-| Sample   | Trait scores + RNG seed              | SettlementProfile                           | No                         |
-| History  | SettlementProfile + SiteReport + RNG | Updated SettlementProfile + VisualMarkerSet | No                         |
-| Manifest | Profile + BuildingRegistry           | BuildingManifest                            | No                         |
-| Layout   | SiteReport + Profile + Manifest      | LayoutResult                                | No                         |
-| Build    | GenerationResult                     | Blocks in world                             | Yes                        |
+| Phase    | Input                                                     | Output                                      | MC Dependency              |
+|----------|-----------------------------------------------------------|---------------------------------------------|----------------------------|
+| Trigger  | Worldgen event                                            | Chunk region claim                          | Yes                        |
+| Survey   | TerrainGrid + SurveyBounds                                | SiteReport                                  | No (grid built by adapter) |
+| Score    | SiteReport                                                | Map\<TraitId, Float\>                       | No                         |
+| Sample   | Trait scores + tier + initial population + RNG            | SettlementProfile                           | No                         |
+| History  | SettlementProfile + SiteReport + established or new + RNG | Updated SettlementProfile + VisualMarkerSet | No                         |
+| Manifest | Profile + BuildingRegistry                                | BuildingManifest                            | No                         |
+| Layout   | SiteReport + Profile + Manifest                           | LayoutResult                                | No                         |
+| Build    | GenerationResult                                          | Blocks in world                             | Yes                        |
 
 See [pipeline.md](pipeline.md) for a detailed walkthrough of each phase.
 
@@ -100,6 +104,14 @@ Only `infrastructure/` and `bootstrap/` import Minecraft/NeoForge APIs.
 `SurveyBounds`, and seed, runs the full chain, and returns a `GenerationResult` bundling all phase
 outputs.
 
+Survey through History is also an entry point of its own, the character step. It takes a fixed tier,
+initial population, established-or-new value, and seed, so a settlement founded in play gets its
+character the way a generated one does. Generation rolls the tier and initial population, runs the
+character step as established, then builds the manifest and layout.
+
+[Settlement Identity and Lifecycle](../settlements.md) covers founding in play and the persistent
+settlement record that outlives generation.
+
 Constructor dependencies (all injected via Dagger):
 
 | Dependency             | Role                                          |
@@ -110,8 +122,9 @@ Constructor dependencies (all injected via Dagger):
 | `HistoryEventRegistry` | History event definitions                     |
 | `TraitRegistry`        | Known trait definitions (validates modifiers) |
 
-All randomness flows from a single seed derived from `worldSeed XOR hash(chunkPosition)`.
-Settlements are fully reproducible given the same seed and terrain.
+All randomness flows from a single seed derived from `worldSeed XOR hash(chunkPosition)`. Within one
+run, the same seed, terrain, and datapack give the same settlement. Trait order can differ between
+runs, and the draws with it, so reproducibility across restarts is not guaranteed.
 
 ### Key Terminology
 

@@ -25,6 +25,7 @@ class SamplingEngineTest {
     private static final TraitId FISHING = TraitId.of("settlements:settlement_traits/fishing");
     private static final TraitId MINING = TraitId.of("settlements:settlement_traits/mining");
     private static final TraitId DEFENSE = TraitId.of("settlements:settlement_traits/defense");
+    private static final int ANY_POPULATION = 10;
 
     private final SamplingEngine engine = new SamplingEngine();
 
@@ -73,8 +74,8 @@ class SamplingEngineTest {
     void determinism() {
         Map<TraitId, Float> scores = sampleScores();
 
-        SettlementProfile first = this.engine.sample(scores, new Random(12345L));
-        SettlementProfile second = this.engine.sample(scores, new Random(12345L));
+        SettlementProfile first = this.engine.sample(scores, ScaleTier.VILLAGE, ANY_POPULATION, new Random(12345L));
+        SettlementProfile second = this.engine.sample(scores, ScaleTier.VILLAGE, ANY_POPULATION, new Random(12345L));
 
         assertEquals(first, second);
     }
@@ -121,8 +122,7 @@ class SamplingEngineTest {
                 entry(LUMBER, 0.05f)
         );
 
-        SettlementProfile profile = this.engine.sample(scores, new StubRandom(8L)
-                .withFloat(scaleRollFor(ScaleTier.HAMLET))
+        SettlementProfile profile = this.engine.sample(scores, ScaleTier.HAMLET, ANY_POPULATION, new StubRandom(8L)
                 .withInt(1)
                 .withFloat(0.40f)
                 .withFloat(0.00f)
@@ -134,18 +134,10 @@ class SamplingEngineTest {
 
     @Test
     void wealthInRange() {
-        SettlementProfile profile = this.engine.sample(sampleScores(), new Random(9L));
+        SettlementProfile profile = this.engine.sample(sampleScores(), ScaleTier.VILLAGE, ANY_POPULATION, new Random(9L));
 
         assertTrue(profile.wealthLevel() >= 0.0f);
         assertTrue(profile.wealthLevel() <= 1.0f);
-    }
-
-    @Test
-    void populationInRange() {
-        SettlementProfile profile = this.engine.sample(sampleScores(), new Random(10L));
-
-        assertTrue(profile.estimatedPopulation() >= profile.scaleTier().minPopulation());
-        assertTrue(profile.estimatedPopulation() <= profile.scaleTier().maxPopulation());
     }
 
     @Test
@@ -208,8 +200,7 @@ class SamplingEngineTest {
 
         assertEquals(List.of(FARMING, LUMBER, DEFENSE), draws);
 
-        SettlementProfile profile = this.engine.sample(scores, new StubRandom(16L)
-                .withFloat(scaleRollFor(ScaleTier.VILLAGE))
+        SettlementProfile profile = this.engine.sample(scores, ScaleTier.VILLAGE, ANY_POPULATION, new StubRandom(16L)
                 .withInt(1)
                 .withFloat(0.40f)
                 .withFloat(0.00f)
@@ -228,18 +219,9 @@ class SamplingEngineTest {
     }
 
     private SettlementProfile sampleWithTierAndSlots(Map<TraitId, Float> scores, long seed, ScaleTier tier, int slots) {
-        return this.engine.sample(scores, new StubRandom(seed)
-                .withFloat(scaleRollFor(tier))
+        return this.engine.sample(scores, tier, ANY_POPULATION, new StubRandom(seed)
                 .withInt(slots - tier.minTraitSlots())
         );
-    }
-
-    private static float scaleRollFor(ScaleTier tier) {
-        return switch (tier) {
-            case VILLAGE -> 0.10f;
-            case TOWN -> 0.60f;
-            case HAMLET -> 0.95f;
-        };
     }
 
     private static Map<TraitId, Float> sampleScores() {

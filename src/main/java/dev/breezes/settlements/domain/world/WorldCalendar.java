@@ -15,6 +15,13 @@ import dev.breezes.settlements.domain.time.TimeOfDay;
 public final class WorldCalendar {
 
     /**
+     * The calendar days in one year.
+     */
+    // TODO: read the year length from the calendar's config once the villager lifecycle calendar exists, so years
+    //  agree between settlement history and villager ages
+    public static final int DAYS_PER_YEAR = 48;
+
+    /**
      * Distance from midnight (MC tick 18 000) to the next MC-day boundary (MC tick 24 000 == 0).
      * Adding this offset before dividing by {@link TimeOfDay#TICKS_PER_DAY} aligns the integer
      * day boundary on midnight rather than dawn.

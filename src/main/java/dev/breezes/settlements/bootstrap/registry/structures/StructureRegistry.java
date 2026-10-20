@@ -2,6 +2,7 @@ package dev.breezes.settlements.bootstrap.registry.structures;
 
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementBuildingPiece;
+import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementRecordPiece;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementRoadPiece;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.structures.SettlementStructure;
 import net.minecraft.core.registries.Registries;
@@ -27,6 +28,9 @@ public final class StructureRegistry {
 
     public static final DeferredHolder<StructurePieceType, StructurePieceType> SETTLEMENT_ROAD_PIECE_TYPE =
             PIECE_TYPES.register("settlement_road_piece", () -> SettlementRoadPiece::deserialize);
+
+    public static final DeferredHolder<StructurePieceType, StructurePieceType> SETTLEMENT_RECORD_PIECE_TYPE =
+            PIECE_TYPES.register("settlement_record_piece", () -> SettlementRecordPiece::deserialize);
 
     public static void register(IEventBus eventBus) {
         STRUCTURE_TYPES.register(eventBus);

@@ -114,6 +114,7 @@ import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.catalog.TradePriceResolver;
 import dev.breezes.settlements.application.enchanting.engine.EnchantmentEngine;
+import dev.breezes.settlements.application.settlement.membership.SettlementMembershipService;
 import dev.breezes.settlements.di.catalog.BehaviorCatalogEntry;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorCategory;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
@@ -332,7 +333,8 @@ public final class BehaviorCatalogModule {
                                                   BedReservationService bedReservationService,
                                                   CourtshipPresenter courtshipPresenter,
                                                   CourtshipChoreographyLibrary choreographyLibrary,
-                                                  CourtshipSelfMemoryRecorder selfMemoryRecorder) {
+                                                  CourtshipSelfMemoryRecorder selfMemoryRecorder,
+                                                  SettlementMembershipService membershipService) {
         return BehaviorCatalogEntry.builder()
                 .descriptor(BehaviorPlanningMetadata.builder()
                         .key(BehaviorKey.COURTSHIP_INITIATE)
@@ -352,7 +354,8 @@ public final class BehaviorCatalogModule {
                         .iconItemId(ResourceLocation.withDefaultNamespace("poppy"))
                         .build())
                 .factory(() -> new CourtshipInitiateBehavior(config, support, courtshipSessionRegistry,
-                        bedReservationService, courtshipPresenter, choreographyLibrary, selfMemoryRecorder))
+                        bedReservationService, courtshipPresenter, choreographyLibrary, selfMemoryRecorder,
+                        membershipService))
                 .build();
     }
 

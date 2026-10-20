@@ -1,9 +1,6 @@
 package dev.breezes.settlements.application.ai.sensors;
 
 import dev.breezes.settlements.domain.ai.memory.IMemoryWrite;
-import dev.breezes.settlements.domain.settlement.model.SettlementMetadata;
-import dev.breezes.settlements.domain.settlement.query.SettlementContext;
-import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -24,17 +21,14 @@ public final class BlockResourceSensor extends AbstractSensor<BaseVillager> {
     // resource set is fixed, so copying it per-tick would allocate on the hot per-villager scan path.
     private final Set<BlockResource> resources;
     private final WorldResourceIndex index;
-    private final SettlementQueryService settlementQueryService;
 
     public BlockResourceSensor(@Nonnull BlockResourceSensorConfig config,
                                @Nonnull Set<BlockResource> resources,
-                               @Nonnull WorldResourceIndex index,
-                               @Nonnull SettlementQueryService settlementQueryService) {
+                               @Nonnull WorldResourceIndex index) {
         super(List.of(), Tickable.staggered(ClockTicks.seconds(config.scanIntervalSeconds())));
         this.config = config;
         this.resources = Set.copyOf(resources);
         this.index = index;
-        this.settlementQueryService = settlementQueryService;
     }
 
     @Override
@@ -43,7 +37,7 @@ public final class BlockResourceSensor extends AbstractSensor<BaseVillager> {
             return List.of();
         }
 
-        BlockPos anchor = this.anchorFor(serverLevel, entity);
+        BlockPos anchor = entity.blockPosition();
         long nowTick = serverLevel.getGameTime();
         long ttlTicks = ClockTicks.seconds(this.config.scanIntervalSeconds()).getTicks();
 
@@ -66,18 +60,6 @@ public final class BlockResourceSensor extends AbstractSensor<BaseVillager> {
         }
 
         return writes;
-    }
-
-    private BlockPos anchorFor(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
-        BlockPos bodyPosition = villager.blockPosition();
-        return this.settlementQueryService.getSettlementAt(level, bodyPosition)
-                .map(SettlementContext::metadata)
-                .map(metadata -> centerAtVillagerHeight(metadata, bodyPosition))
-                .orElse(bodyPosition);
-    }
-
-    private static BlockPos centerAtVillagerHeight(@Nonnull SettlementMetadata metadata, @Nonnull BlockPos bodyPosition) {
-        return new BlockPos(metadata.centerX(), bodyPosition.getY(), metadata.centerZ());
     }
 
 }

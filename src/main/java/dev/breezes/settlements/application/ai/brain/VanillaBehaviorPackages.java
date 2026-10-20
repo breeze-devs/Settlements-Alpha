@@ -13,7 +13,6 @@ import dev.breezes.settlements.infrastructure.minecraft.behavior.threat.ThreatGo
 import dev.breezes.settlements.infrastructure.minecraft.behavior.threat.ThreatGolemSummonConfig;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.traversal.InteractWithBarriers;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
@@ -55,7 +54,6 @@ import net.minecraft.world.entity.ai.behavior.TradeWithVillager;
 import net.minecraft.world.entity.ai.behavior.TriggerGate;
 import net.minecraft.world.entity.ai.behavior.ValidateNearbyPoi;
 import net.minecraft.world.entity.ai.behavior.VillageBoundRandomStroll;
-import net.minecraft.world.entity.ai.behavior.VillagerMakeLove;
 import net.minecraft.world.entity.ai.behavior.WakeUp;
 import net.minecraft.world.entity.ai.behavior.YieldJobSite;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
@@ -183,16 +181,13 @@ public final class VanillaBehaviorPackages {
                 Pair.of(3, SetLookAndInteract.create(EntityType.PLAYER, 4)),
                 Pair.of(3, new ShowTradesToPlayer(400, 1600)),
                 Pair.of(3, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), GateBehavior.OrderPolicy.ORDERED,
-                        GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new TradeWithVillager(), 1)))),
-                Pair.of(3, new GateBehavior<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.BREED_TARGET), GateBehavior.OrderPolicy.ORDERED,
-                        GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new VillagerMakeLove(), 1))))
+                        GateBehavior.RunningPolicy.RUN_ONE, ImmutableList.of(Pair.of(new TradeWithVillager(), 1))))
         ));
 
         // Default behaviors that will be randomly chosen to run one
         ArrayList<Pair<? extends BehaviorControl<? super Villager>, Integer>> idleChoiceBehaviors = new ArrayList<>();
         idleChoiceBehaviors.addAll(List.of(
                 Pair.of(InteractWith.of(EntityType.VILLAGER, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 2),
-                Pair.of(InteractWith.of(EntityType.VILLAGER, 8, AgeableMob::canBreed, AgeableMob::canBreed, MemoryModuleType.BREED_TARGET, speed, 2), 1),
                 Pair.of(InteractWith.of(EntityType.CAT, 8, MemoryModuleType.INTERACTION_TARGET, speed, 2), 1),
                 Pair.of(VillageBoundRandomStroll.create(speed), 1),
                 Pair.of(SetWalkTargetFromLookTarget.create(speed, 2), 1),

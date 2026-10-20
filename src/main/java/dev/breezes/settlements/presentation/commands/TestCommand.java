@@ -31,19 +31,18 @@ import dev.breezes.settlements.domain.ai.planning.DayPlan;
 import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.personality.PersonalityStatus;
-import dev.breezes.settlements.domain.settlement.model.SettlementMetadata;
-import dev.breezes.settlements.domain.settlement.query.BuildingContext;
-import dev.breezes.settlements.domain.settlement.query.SettlementPositionContext;
-import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
+import dev.breezes.settlements.domain.settlement.model.Settlement;
+import dev.breezes.settlements.domain.settlement.model.SettlementBounds;
+import dev.breezes.settlements.domain.world.ChunkPosition;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.minecraft.query.SettlementStructureLocator;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementBuildingPiece;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces.SettlementRoadPiece;
 import dev.breezes.settlements.infrastructure.network.features.debug.packet.ClientBoundSettlementDebugPacket;
 import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.SectionPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -66,6 +65,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -90,49 +90,41 @@ public class TestCommand {
                 .then(buildPlanCommand()));
     }
 
+    /**
+     * Draws the generation debug overlay of the settlement structure at the player's position.
+     */
     private static int settlementInfo(CommandContext<CommandSourceStack> context) {
         if (!(context.getSource().getEntity() instanceof ServerPlayer player)) {
             context.getSource().sendFailure(Component.literal("Only players can use this command."));
             return 0;
         }
 
-        SettlementQueryService settlementQueryService = SettlementsDagger.serverOrThrow().settlementQueryService();
-        SettlementPositionContext positionContext = settlementQueryService.getContextAt(player.serverLevel(), player.blockPosition());
-
-        if (!positionContext.hasSettlement()) {
-            context.getSource().sendSuccess(() -> Component.literal("You are not standing in a settlement."), false);
-            return Command.SINGLE_SUCCESS;
+        ServerComponent server = SettlementsDagger.serverOrThrow();
+        Optional<Settlement> settlement = server.settlementQueryService()
+                .getSettlementAt(player.serverLevel(), player.blockPosition());
+        if (settlement.isEmpty()) {
+            context.getSource().sendFailure(Component.literal("You are not standing in a settlement."));
+            return 0;
+        }
+        Optional<StructureStart> structureStart = server.settlementStructureLocator()
+                .locate(player.serverLevel(), player.blockPosition());
+        if (structureStart.isEmpty()) {
+            context.getSource().sendFailure(Component.literal("No piece of a generated settlement structure holds "
+                    + "your position, so there is no overlay to draw."));
+            return 0;
         }
 
-        SettlementMetadata settlementMetadata = positionContext.settlement().orElseThrow().metadata();
-        context.getSource().sendSuccess(() -> Component.literal("Settlement: " + settlementMetadata.name()), false);
-        context.getSource().sendSuccess(() -> Component.literal("Scale tier: " + settlementMetadata.scaleTier()), false);
-        context.getSource().sendSuccess(() -> Component.literal("Primary trait: " + settlementMetadata.primaryTrait()), false);
-        context.getSource().sendSuccess(() -> Component.literal("Population: " + settlementMetadata.estimatedPopulation()), false);
-        context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT, "Wealth level: %.2f", settlementMetadata.wealthLevel())), false);
-        context.getSource().sendSuccess(() -> Component.literal("Center: (" + settlementMetadata.centerX() + ", " + settlementMetadata.centerZ() + ")"), false);
-
-        positionContext.building()
-                .map(BuildingContext::displayName)
-                .ifPresentOrElse(
-                        buildingName -> context.getSource().sendSuccess(() -> Component.literal("Building: " + buildingName), false),
-                        () -> context.getSource().sendSuccess(() -> Component.literal("Building: none"), false)
-                );
-
-        sendSettlementDebugOverlay(player, settlementMetadata);
+        sendSettlementDebugOverlay(player, settlement.get().bounds(), structureStart.get());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Drawing the generation debug overlay. /settlements here describes the settlement."), false);
         return Command.SINGLE_SUCCESS;
     }
 
     private static void sendSettlementDebugOverlay(@Nonnull ServerPlayer player,
-                                                   @Nonnull SettlementMetadata settlementMetadata) {
-        SettlementStructureLocator settlementStructureLocator = SettlementsDagger.serverOrThrow().settlementStructureLocator();
-        Optional<StructureStart> structureStart = settlementStructureLocator.locate(player.serverLevel(), player.blockPosition());
-        if (structureStart.isEmpty()) {
-            return;
-        }
-
+                                                   @Nonnull SettlementBounds bounds,
+                                                   @Nonnull StructureStart structureStart) {
         BuildingRegistry buildingRegistry = SettlementsDagger.component().buildingDefinitionDataManager();
-        List<StructurePiece> pieces = structureStart.get().getPieces();
+        List<StructurePiece> pieces = structureStart.getPieces();
         List<ClientBoundSettlementDebugPacket.BuildingBox> buildings = pieces.stream()
                 .filter(SettlementBuildingPiece.class::isInstance)
                 .map(SettlementBuildingPiece.class::cast)
@@ -150,14 +142,17 @@ public class TestCommand {
                         piece.getEnd()))
                 .toList();
 
+        // The overlay draws boxes, so the settlement shows as the box that encloses its claimed chunks
         int playerY = player.blockPosition().getY();
+        IntSummaryStatistics chunkXs = bounds.chunks().stream().mapToInt(ChunkPosition::x).summaryStatistics();
+        IntSummaryStatistics chunkZs = bounds.chunks().stream().mapToInt(ChunkPosition::z).summaryStatistics();
         BoundingBox settlementBox = new BoundingBox(
-                settlementMetadata.boundsMinX(),
+                SectionPos.sectionToBlockCoord(chunkXs.getMin()),
                 playerY + SETTLEMENT_DEBUG_MIN_Y_OFFSET,
-                settlementMetadata.boundsMinZ(),
-                settlementMetadata.boundsMaxX(),
+                SectionPos.sectionToBlockCoord(chunkZs.getMin()),
+                SectionPos.sectionToBlockCoord(chunkXs.getMax(), SectionPos.SECTION_MAX_INDEX),
                 playerY + SETTLEMENT_DEBUG_MAX_Y_OFFSET,
-                settlementMetadata.boundsMaxZ());
+                SectionPos.sectionToBlockCoord(chunkZs.getMax(), SectionPos.SECTION_MAX_INDEX));
 
         PacketDistributor.sendToPlayer(player, new ClientBoundSettlementDebugPacket(settlementBox, buildings, roads));
     }

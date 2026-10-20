@@ -3,8 +3,8 @@ package dev.breezes.settlements.infrastructure.minecraft.attachments;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.breezes.settlements.shared.codec.ListCodecs;
 import lombok.AccessLevel;
-import lombok.CustomLog;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -27,7 +27,6 @@ import java.util.stream.IntStream;
  * corrupted fact is survivable where losing a villager's entire history to it is not.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@CustomLog
 public final class VillagerKnowledgeAttachmentCodec {
 
     /**
@@ -66,19 +65,8 @@ public final class VillagerKnowledgeAttachmentCodec {
                     Codec.FLOAT.fieldOf("weight").forGetter(KnowledgeEntryState::weight)
             ).apply(instance, VillagerKnowledgeAttachmentCodec::entryState));
 
-    /**
-     * The entry list, decoding to whatever entries were readable rather than to all or nothing.
-     */
-    private static final Codec<List<KnowledgeEntryState>> ENTRY_LIST_CODEC = entryListCodec();
-
     public static final Codec<List<KnowledgeEntryState>> STATE_CODEC =
-            ENTRY_LIST_CODEC.optionalFieldOf("entries", List.of()).codec();
-
-    private static Codec<List<KnowledgeEntryState>> entryListCodec() {
-        Codec<List<KnowledgeEntryState>> listCodec = ENTRY_CODEC.listOf();
-        return Codec.of(listCodec, listCodec.promotePartial(
-                error -> log.warn("Dropping unreadable villager knowledge entry: {}", error)));
-    }
+            ListCodecs.lenient(ENTRY_CODEC, "villager knowledge entry").optionalFieldOf("entries", List.of()).codec();
 
     private static KnowledgeEntryState entryState(UUID originObservationId,
                                                   long originTimestampTick,

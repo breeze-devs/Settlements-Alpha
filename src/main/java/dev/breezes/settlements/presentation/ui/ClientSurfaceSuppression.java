@@ -30,6 +30,14 @@ public final class ClientSurfaceSuppression {
     }
 
     /**
+     * Whether the settlement border ribbon must not draw this frame.
+     */
+    public static boolean isSettlementBordersSuppressed(@Nonnull Minecraft minecraft) {
+        return isSuppressedForEverySurface(minecraft)
+                || minecraft.player.isSpectator();
+    }
+
+    /**
      * The floor all surface obeys.
      */
     private static boolean isSuppressedForEverySurface(@Nonnull Minecraft minecraft) {

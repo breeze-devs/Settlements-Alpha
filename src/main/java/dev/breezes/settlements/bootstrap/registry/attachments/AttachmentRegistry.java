@@ -4,12 +4,17 @@ import com.mojang.serialization.Codec;
 import dev.breezes.settlements.SettlementsMod;
 import dev.breezes.settlements.application.economy.demand.DemandSignalCodec;
 import dev.breezes.settlements.application.economy.demand.DemandSignalState;
+import dev.breezes.settlements.application.settlement.membership.SettlementMembership;
 import dev.breezes.settlements.domain.ai.knowledge.VillagerKnowledgeStore;
 import dev.breezes.settlements.domain.ai.memory.SettlementsMemoryStore;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
 import dev.breezes.settlements.domain.personality.PersonaLineageSnapshot;
 import dev.breezes.settlements.domain.personality.VillagerPersonality;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.PlayerSettlementDiscoveries;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.SettlementDirectory;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.SettlementDirectorySyncHandler;
+import dev.breezes.settlements.infrastructure.minecraft.attachments.SettlementMembershipAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TeardownLedgerAttachmentSerializer;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TotemTargetAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerEmeraldAttachment;
@@ -20,12 +25,16 @@ import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOrig
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerOriginAttachmentState;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerPersonalityAttachmentCodec;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.VillagerTeardownLedger;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public final class AttachmentRegistry {
@@ -72,6 +81,56 @@ public final class AttachmentRegistry {
             () -> AttachmentType.builder(() -> new GeneticsProfile())
                     .serialize(new VillagerGeneticsAttachmentSerializer())
                     .copyOnDeath() // carry over when converted to other entities like zombie villagers
+                    .build());
+
+    /**
+     * Absent while the villager is not associated with a settlement.
+     * The reference survives conversions, including into vanilla villagers that do not participate in the roster.
+     * A saved entry that cannot be read is dropped, leaving the villager not associated with any settlements.
+     */
+    public static final Supplier<AttachmentType<SettlementMembership>> SETTLEMENT_MEMBERSHIP = REGISTRY.register(
+            "settlement_membership",
+            () -> AttachmentType.<SettlementMembership>builder(holder -> {
+                        // Never created by default since a villager joins a settlement manually
+                        throw new IllegalStateException("Settlement membership read while the villager is unassigned");
+                    })
+                    .serialize(SettlementMembershipAttachmentCodec.STATE_CODEC)
+                    .copyOnDeath()
+                    // The reference is immutable, so sharing it avoids a serialization round trip.
+                    .copyHandler((membership, holder, provider) -> membership)
+                    .build());
+
+    /**
+     * The id of the settlement claiming a loaded chunk, synced to players tracking that chunk.
+     * Derived from the settlement store and not persisted. Absent for unclaimed chunks and on clients until synced.
+     * getData throws IllegalStateException when absent; use getExistingData for optional reads.
+     */
+    public static final Supplier<AttachmentType<UUID>> SETTLEMENT_CLAIM = REGISTRY.register(
+            "settlement_claim",
+            () -> AttachmentType.<UUID>builder(holder -> {
+                        // A default UUID would invent a claimant
+                        throw new IllegalStateException("Settlement claim read on a chunk no settlement claims");
+                    })
+                    // Tracking can include chunks not yet ready to send; their clients would discard claim updates.
+                    // Suppress those updates until the chunk is ready. Initial sync sends the claim after the chunk.
+                    .sync((holder, player) -> holder instanceof LevelChunk chunk
+                                    && chunk.getLevel() instanceof ServerLevel level
+                                    && level.getChunkSource().chunkMap.getChunkToSend(chunk.getPos().toLong()) != null,
+                            UUIDUtil.STREAM_CODEC)
+                    .build());
+
+    /**
+     * A level's settlement directory, synced to players in that level and not persisted.
+     * Absent until initialized on the server or first received on the client.
+     * getData throws IllegalStateException when absent; use getExistingData for optional reads.
+     */
+    public static final Supplier<AttachmentType<SettlementDirectory>> SETTLEMENT_DIRECTORY = REGISTRY.register(
+            "settlement_directory",
+            () -> AttachmentType.<SettlementDirectory>builder(holder -> {
+                        // A default would conceal missing settlement data and founding permission
+                        throw new IllegalStateException("Settlement directory read on a level that has none");
+                    })
+                    .sync(new SettlementDirectorySyncHandler())
                     .build());
 
     public static final Supplier<AttachmentType<VillagerTeardownLedger>> VILLAGER_TEARDOWN_LEDGER = REGISTRY.register(
@@ -168,6 +227,18 @@ public final class AttachmentRegistry {
     public static final Supplier<AttachmentType<Integer>> PLAYER_TOTEM_TARGET = REGISTRY.register(
             "totem_target",
             () -> AttachmentType.builder(() -> TotemTargetAttachment.NO_TARGET)
+                    .build());
+
+    /**
+     * The settlements a player has discovered, kept through death and every respawn.
+     * Absent until the player's first discovery, so a read that finds it absent means none.
+     */
+    public static final Supplier<AttachmentType<PlayerSettlementDiscoveries>> PLAYER_SETTLEMENT_DISCOVERIES =
+            REGISTRY.register("settlement_discoveries", () -> AttachmentType.builder(() -> PlayerSettlementDiscoveries.NONE)
+                    .serialize(PlayerSettlementDiscoveries.CODEC)
+                    .copyOnDeath()
+                    // The value is immutable, so sharing it avoids a serialization round trip.
+                    .copyHandler((discoveries, holder, provider) -> discoveries)
                     .build());
 
     /**

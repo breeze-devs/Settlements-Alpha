@@ -181,8 +181,7 @@ final class LayoutTestFixtures {
                 40,
                 0.5f,
                 DefenseLevel.MODERATE,
-                seed,
-                List.of()
+                seed
         );
     }
 
@@ -222,8 +221,7 @@ final class LayoutTestFixtures {
                 120,
                 0.7f,
                 DefenseLevel.HIGH,
-                seed,
-                List.of()
+                seed
         );
     }
 
@@ -239,8 +237,7 @@ final class LayoutTestFixtures {
                 15,
                 0.3f,
                 DefenseLevel.NONE,
-                seed,
-                List.of()
+                seed
         );
     }
 

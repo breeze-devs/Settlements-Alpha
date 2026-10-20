@@ -5,7 +5,6 @@ import dev.breezes.settlements.di.ClientSessionResettable;
 import dev.breezes.settlements.presentation.ui.ClientSurfaceSuppression;
 import dev.breezes.settlements.presentation.ui.framework.UITheme;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
-import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
 import dev.breezes.settlements.shared.util.DwellReveal;
 import dev.breezes.settlements.shared.util.DwellRevealTracker;
 import jakarta.inject.Inject;
@@ -46,11 +45,6 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
     private static final int LINE_LEADING = 3;
 
     private static final float FULLY_OPAQUE = 1.0F;
-
-    /**
-     * Text alpha floor; see platform standard P12.
-     */
-    private static final int MIN_HONORED_ALPHA_BYTE = 4;
 
     private final List<ModeHudProvider> modeProviders;
     private final List<LookTargetHudProvider> lookTargetProviders;
@@ -169,23 +163,13 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
         int y = guiGraphics.guiHeight() / 2 + CROSSHAIR_GAP;
 
         guiGraphics.drawCenteredString(font, content.headline().copy().withStyle(ChatFormatting.BOLD), centerX, y,
-                withAlpha(content.accentColor(), alpha));
+                HudTextColor.withAlpha(content.accentColor(), alpha));
 
         for (Component detail : content.details()) {
             y += font.lineHeight + LINE_LEADING;
-            guiGraphics.drawCenteredString(font, detail, centerX, y, withAlpha(UITheme.DEFAULT.subtleTextColor(), alpha));
+            guiGraphics.drawCenteredString(font, detail, centerX, y,
+                    HudTextColor.withAlpha(UITheme.DEFAULT.subtleTextColor(), alpha));
         }
-    }
-
-    /**
-     * Scales a packed ARGB color's alpha by a fraction from zero to one, preserving RGB.
-     * Clamps to {@link #MIN_HONORED_ALPHA_BYTE}; callers must skip drawing fully hidden content.
-     */
-    @VisibleForTesting
-    static int withAlpha(int argb, float alphaFraction) {
-        int scaled = Math.round(((argb >>> 24) & 0xFF) * alphaFraction);
-        int alpha = Math.max(MIN_HONORED_ALPHA_BYTE, scaled);
-        return (alpha << 24) | (argb & 0x00FFFFFF);
     }
 
 }

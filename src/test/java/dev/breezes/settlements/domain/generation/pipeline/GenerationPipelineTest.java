@@ -5,12 +5,17 @@ import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.generation.history.EventPreconditions;
 import dev.breezes.settlements.domain.generation.history.HistoryEventDefinition;
 import dev.breezes.settlements.domain.generation.history.HistoryEventRegistry;
+import dev.breezes.settlements.domain.generation.history.DrawnHistoryEvent;
+import dev.breezes.settlements.domain.generation.history.SettlementFoundingKind;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.IntRange;
+import dev.breezes.settlements.domain.generation.model.SettlementCharacter;
 import dev.breezes.settlements.domain.generation.model.building.BuildingDefinition;
 import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.geometry.BlockPosition;
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
+import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
+import dev.breezes.settlements.domain.generation.model.profile.SettlementProfile;
 import dev.breezes.settlements.domain.generation.model.profile.TraitDefinition;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
@@ -27,12 +32,16 @@ import dev.breezes.settlements.domain.generation.survey.BiomeSurveyData;
 import dev.breezes.settlements.domain.generation.survey.BiomeSurveyLookup;
 import dev.breezes.settlements.domain.generation.trait.TraitRegistry;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,6 +58,9 @@ class GenerationPipelineTest {
     private static final TraitId FISHING = TraitId.of("settlements:settlement_traits/fishing");
     private static final TraitId MINING = TraitId.of("settlements:settlement_traits/mining");
     private static final TraitId DEFENSE = TraitId.of("settlements:settlement_traits/defense");
+    private static final String EXPLORERS_EVENT = "settlements:settlement_events/founded_by_explorers";
+    private static final int EXPLORERS_TIME_HORIZON = 100;
+    private static final long SEED_SOURCE = 20261016L;
 
     private final GenerationPipeline pipeline = new GenerationPipeline(
             lookup(),
@@ -68,7 +80,7 @@ class GenerationPipelineTest {
         assertTrue(result.siteReport().resourceTags().contains(ResourceTag.LUMBER)
                 || result.siteReport().resourceDensities().containsKey(ResourceTag.LUMBER));
         assertNotNull(result.profile().primary());
-        assertTrue(result.profile().historyEventIds().isEmpty());
+        assertTrue(result.history().events().isEmpty());
         assertTrue(result.history().visualMarkers().isEmpty());
         assertTrue(insideBuildAreaXZ(bounds.buildArea(), result.layout().anchor()));
         assertFalse(result.layout().roads().isEmpty());
@@ -76,7 +88,7 @@ class GenerationPipelineTest {
     }
 
     @Test
-    void historyEvent_isAppliedToProfileWeightsIdsAndVisualMarkers() {
+    void historyEvent_isAppliedToProfileWeightsAndVisualMarkers() {
         TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
         SurveyBounds bounds = boundsForGrid(64, 64);
         GenerationResult baselineResult = this.pipeline.generate(grid, bounds, 12345L);
@@ -89,12 +101,11 @@ class GenerationPipelineTest {
 
         GenerationResult result = pipelineWithHistory.generate(grid, bounds, 12345L);
 
-        assertEquals(List.of("settlements:settlement_events/founded_by_explorers"), result.profile().historyEventIds());
-        assertEquals(List.of("settlements:settlement_events/founded_by_explorers"), result.history().eventIds());
+        assertEquals(List.of(new DrawnHistoryEvent(EXPLORERS_EVENT, EXPLORERS_TIME_HORIZON)), result.history().events());
         assertEquals(Set.of("explorer_camp", "flagpole"), result.history().visualMarkers().markers());
         assertEquals(
-                baselineResult.profile().adjustedWeights().get(FARMING) + 0.10f,
-                result.profile().adjustedWeights().get(FARMING));
+                baselineResult.profile().adjustedWeights().get(DEFENSE) + 0.10f,
+                result.profile().adjustedWeights().get(DEFENSE));
         assertEquals(result.profile().adjustedWeights(), result.history().modifiedWeights());
     }
 
@@ -112,8 +123,7 @@ class GenerationPipelineTest {
                 traitRegistry());
         GenerationResult comparison = comparisonPipeline.generate(grid, bounds, 12345L);
 
-        assertTrue(result.profile().historyEventIds().isEmpty());
-        assertTrue(result.history().eventIds().isEmpty());
+        assertTrue(result.history().events().isEmpty());
         assertTrue(result.history().visualMarkers().isEmpty());
         assertEquals(comparison.profile().adjustedWeights(), result.profile().adjustedWeights());
         assertEquals(result.profile().adjustedWeights(), result.history().modifiedWeights());
@@ -131,6 +141,67 @@ class GenerationPipelineTest {
     }
 
     @Test
+    void generate_rollsAnInitialPopulationWithinItsTiersRange() {
+        // Arrange
+        TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
+        SurveyBounds bounds = boundsForGrid(64, 64);
+
+        for (long seed : spreadSeeds(20)) {
+            // Act
+            SettlementProfile profile = this.pipeline.generate(grid, bounds, seed).profile();
+
+            // Assert
+            ScaleTier tier = profile.scaleTier();
+            assertTrue(profile.initialPopulation() >= tier.minPopulation()
+                            && profile.initialPopulation() <= tier.maxPopulation(),
+                    "Population " + profile.initialPopulation() + " outside " + tier + "'s range for seed " + seed);
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ScaleTier.class)
+    void character_keepsTheTierAndInitialPopulationItIsGiven(ScaleTier tier) {
+        // Arrange — a headcount past every tier's range, which no roll could produce
+        TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
+        SurveyBounds bounds = boundsForGrid(64, 64);
+        int headcount = Arrays.stream(ScaleTier.values()).mapToInt(ScaleTier::maxPopulation).max().orElseThrow() + 1;
+
+        for (long seed : spreadSeeds(10)) {
+            // Act
+            SettlementProfile profile = this.pipeline.character(grid, bounds, tier, headcount,
+                    SettlementFoundingKind.NEW, seed).profile();
+
+            // Assert
+            assertEquals(tier, profile.scaleTier(), "Tier changed for seed " + seed);
+            assertEquals(headcount, profile.initialPopulation(), "Initial population changed for seed " + seed);
+        }
+    }
+
+    @Test
+    void character_drawsTheHistoryOfTheFoundingKindItIsGiven() {
+        // Arrange — the one event is for established settlements
+        TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
+        SurveyBounds bounds = boundsForGrid(64, 64);
+        GenerationPipeline pipelineWithHistory = new GenerationPipeline(
+                lookup(),
+                registry(),
+                buildingRegistry(),
+                singleEventHistoryRegistry(),
+                traitRegistry());
+
+        // Act
+        SettlementCharacter established = pipelineWithHistory.character(grid, bounds, ScaleTier.VILLAGE,
+                ScaleTier.VILLAGE.minPopulation(), SettlementFoundingKind.ESTABLISHED, 12345L);
+        SettlementCharacter founded = pipelineWithHistory.character(grid, bounds, ScaleTier.VILLAGE,
+                ScaleTier.VILLAGE.minPopulation(), SettlementFoundingKind.NEW, 12345L);
+
+        // Assert
+        assertEquals(List.of(new DrawnHistoryEvent(EXPLORERS_EVENT, EXPLORERS_TIME_HORIZON)),
+                established.history().events());
+        assertTrue(founded.history().events().isEmpty());
+    }
+
+    @Test
     void differentSeeds_produceDifferentJson() {
         TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
         SurveyBounds bounds = boundsForGrid(64, 64);
@@ -139,6 +210,12 @@ class GenerationPipelineTest {
         GenerationResult second = this.pipeline.generate(grid, bounds, 222L);
 
         assertNotEquals(domainSignature(first), domainSignature(second));
+    }
+
+    private static long[] spreadSeeds(int count) {
+        // Drawn from one generator: java.util.Random's first draw barely moves across small consecutive seeds, so
+        // seeds 0 to n would all roll nearly the same tier
+        return new Random(SEED_SOURCE).longs(count).toArray();
     }
 
     private static BiomeSurveyLookup lookup() {
@@ -201,14 +278,15 @@ class GenerationPipelineTest {
 
     private static HistoryEventRegistry singleEventHistoryRegistry() {
         return () -> List.of(HistoryEventDefinition.builder()
-                .id("settlements:settlement_events/founded_by_explorers")
+                .id(EXPLORERS_EVENT)
                 .category("founding")
-                .timeHorizonMin(100)
-                .timeHorizonMax(100)
+                .timeHorizonMin(EXPLORERS_TIME_HORIZON)
+                .timeHorizonMax(EXPLORERS_TIME_HORIZON)
                 .exclusiveTags(List.of("FOUNDING"))
                 .probabilityWeight(1.0f)
                 .preconditions(EventPreconditions.NONE)
-                .traitModifiers(Map.of(FARMING, 0.10f))
+                // Defense: on a flat plain its weight stays far below the clamp whichever trait the seed makes primary
+                .traitModifiers(Map.of(DEFENSE, 0.10f))
                 .visualMarkers(List.of("explorer_camp", "flagpole"))
                 .narrativeText("An expedition party discovered this location and decided to stay.")
                 .build());

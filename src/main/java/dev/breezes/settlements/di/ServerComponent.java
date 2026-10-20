@@ -24,23 +24,32 @@ import dev.breezes.settlements.application.ai.threat.ThreatAssessor;
 import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
-import dev.breezes.settlements.application.settlement.persistence.SettlementMetadataQueueService;
+import dev.breezes.settlements.application.settlement.founding.SettlementFoundingService;
+import dev.breezes.settlements.application.settlement.health.SettlementHealthService;
+import dev.breezes.settlements.application.settlement.membership.SettlementAssignmentService;
+import dev.breezes.settlements.application.settlement.membership.SettlementMembershipService;
+import dev.breezes.settlements.application.settlement.naming.SettlementNamer;
+import dev.breezes.settlements.application.settlement.persistence.SettlementStore;
+import dev.breezes.settlements.application.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.bootstrap.event.CourtshipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.CultivationSeedSyncServerEvents;
+import dev.breezes.settlements.bootstrap.event.GeneratedSettlementRecordServerEvents;
 import dev.breezes.settlements.bootstrap.event.GossipSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.PersonaSweepServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlanOverlayPumpServerEvents;
 import dev.breezes.settlements.bootstrap.event.PlayerSettlementTracker;
-import dev.breezes.settlements.bootstrap.event.RegionSubtitleHandler;
 import dev.breezes.settlements.bootstrap.event.RehearsedDialogueSweepServerEvents;
 import dev.breezes.settlements.bootstrap.event.ResourceIndexRefresherServerEvents;
-import dev.breezes.settlements.bootstrap.event.SettlementMetadataPersistenceServerEvents;
+import dev.breezes.settlements.bootstrap.event.SettlementArrivalAnnouncer;
+import dev.breezes.settlements.bootstrap.event.SettlementClaimSyncServerEvents;
+import dev.breezes.settlements.bootstrap.event.SettlementDirectorySyncServerEvents;
+import dev.breezes.settlements.bootstrap.event.SettlementHealthServerEvents;
 import dev.breezes.settlements.bootstrap.event.TradeSessionReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.UiSyncServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerServerEvents;
 import dev.breezes.settlements.bootstrap.event.VillageDayTypeSyncServerEvents;
-import dev.breezes.settlements.bootstrap.event.VillagerZombificationServerEvents;
+import dev.breezes.settlements.bootstrap.event.VillagerConversionServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldEventBusReaperServerEvents;
 import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementServerEvents;
 import dev.breezes.settlements.di.catalog.VillagerSensorFactory;
@@ -58,6 +67,7 @@ import dev.breezes.settlements.di.modules.server.PoolModule;
 import dev.breezes.settlements.di.modules.server.SensorCatalogModule;
 import dev.breezes.settlements.di.modules.server.ServerNetworkModule;
 import dev.breezes.settlements.di.modules.server.SettlementQueryModule;
+import dev.breezes.settlements.di.modules.server.SettlementStoreModule;
 import dev.breezes.settlements.di.modules.server.SocialCueCatalogModule;
 import dev.breezes.settlements.di.modules.server.SpeechModule;
 import dev.breezes.settlements.di.modules.server.UiSyncModule;
@@ -67,7 +77,6 @@ import dev.breezes.settlements.domain.ai.naming.VillagerNameDirectory;
 import dev.breezes.settlements.domain.ai.planning.IPlanGenerator;
 import dev.breezes.settlements.domain.ai.schedule.IWeekCycleProvider;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventBus;
-import dev.breezes.settlements.domain.settlement.query.SettlementQueryService;
 import dev.breezes.settlements.infrastructure.minecraft.behavior.planning.PlanRunnerBehavior;
 import dev.breezes.settlements.infrastructure.minecraft.data.fishing.FishCatchDataManager;
 import dev.breezes.settlements.infrastructure.minecraft.data.mining.OreRegenDataManager;
@@ -88,6 +97,7 @@ import java.util.concurrent.ExecutorService;
         PlanInferenceModule.class,
         ConcurrencyModule.class,
         SettlementQueryModule.class,
+        SettlementStoreModule.class,
         SensorCatalogModule.class,
         UiSyncModule.class,
         SocialCueCatalogModule.class,
@@ -124,9 +134,9 @@ public interface ServerComponent {
 
     PlayerSettlementTracker playerSettlementTracker();
 
-    RegionSubtitleHandler regionSubtitleHandler();
+    SettlementArrivalAnnouncer settlementArrivalAnnouncer();
 
-    SettlementMetadataPersistenceServerEvents settlementMetadataPersistenceServerEvents();
+    GeneratedSettlementRecordServerEvents generatedSettlementRecordServerEvents();
 
     UiSyncServerEvents uiSyncServerEvents();
 
@@ -136,19 +146,31 @@ public interface ServerComponent {
 
     ResourceIndexRefresherServerEvents resourceIndexRefresherServerEvents();
 
+    SettlementHealthServerEvents settlementHealthServerEvents();
+
+    SettlementClaimSyncServerEvents settlementClaimSyncServerEvents();
+
+    SettlementDirectorySyncServerEvents settlementDirectorySyncServerEvents();
+
     WorldEventBus worldEventBus();
 
     WorldResourceIndex worldResourceIndex();
 
     PerceptionPipeline perceptionPipeline();
 
-    SettlementMetadataQueueService settlementMetadataQueueService();
-
     VillagerWallet villagerWallet();
 
     DemandSignalService demandSignalService();
 
+    SettlementStore settlementStore();
+
     SettlementQueryService settlementQueryService();
+
+    SettlementFoundingService settlementFoundingService();
+
+    SettlementHealthService settlementHealthService();
+
+    SettlementNamer settlementNamer();
 
     SettlementStructureLocator settlementStructureLocator();
 
@@ -190,7 +212,7 @@ public interface ServerComponent {
 
     PersonaSweepServerEvents personaSweepServerEvents();
 
-    VillagerZombificationServerEvents villagerZombificationServerEvents();
+    VillagerConversionServerEvents villagerConversionServerEvents();
 
     VillageAnimalSpawnerServerEvents villageAnimalSpawnerServerEvents();
 
@@ -215,6 +237,12 @@ public interface ServerComponent {
 
     // Exposed for BaseVillager (non-injectable Minecraft entity, server-only)
     VillagerNameDirectory villagerNameDirectory();
+
+    // Exposed for BaseVillager and VillagerTotemItem (non-injectable Minecraft entity and item, server-only)
+    SettlementMembershipService settlementMembershipService();
+
+    // Exposed for BaseVillager (non-injectable Minecraft entity, server-only)
+    SettlementAssignmentService settlementAssignmentService();
 
     @Subcomponent.Factory
     interface Factory {

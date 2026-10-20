@@ -9,6 +9,7 @@ import dev.breezes.settlements.di.modules.DataManagerModule;
 import dev.breezes.settlements.di.modules.EconomyModule;
 import dev.breezes.settlements.di.modules.FarmingModule;
 import dev.breezes.settlements.di.modules.ReloadListenerModule;
+import dev.breezes.settlements.di.modules.SettlementNamingModule;
 import dev.breezes.settlements.di.modules.SmeltingModule;
 import dev.breezes.settlements.di.modules.WorldGenerationModule;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
@@ -35,6 +36,7 @@ import java.util.Set;
         FarmingModule.class,
         SmeltingModule.class,
         WorldGenerationModule.class,
+        SettlementNamingModule.class,
         ReloadListenerModule.class,
 })
 public interface SettlementsComponent {

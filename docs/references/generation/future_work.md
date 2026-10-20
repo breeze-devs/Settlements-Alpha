@@ -12,7 +12,7 @@ provides enough context to seed a detailed design document.
 - [City Scale Tier](#city-scale-tier)
 - [P1 and P2 Traits](#p1-and-p2-traits)
 - [Advanced Road Generation](#advanced-road-generation)
-- [Settlement Persistence](#settlement-persistence)
+- [Runtime Extensions](#runtime-extensions)
 - [Other Planned Features](#other-planned-features)
 
 ---
@@ -50,9 +50,9 @@ explicit and guarantee adjacency.
 
 **Conceptual model:** NPCs would be spawned during or after the Build phase. Each building with
 `npcProfession` and `npcCount > 0` triggers villager spawning with the appropriate profession.
-Population is bounded by `SettlementProfile.estimatedPopulation`. Houses without explicit
-professions would spawn generic villagers. Requires a mapping from settlement-specific profession
-IDs to Minecraft's `VillagerProfession` registry.
+How many villagers spawn is the settlement's `SettlementProfile.initialPopulation`. Houses without
+explicit professions would spawn generic villagers. Requires a mapping from settlement-specific
+profession IDs to Minecraft's `VillagerProfession` registry.
 
 ---
 
@@ -124,14 +124,14 @@ Current roads use midpoint displacement for organic curves. Planned improvements
 
 ---
 
-## Settlement Persistence
+## Runtime Extensions
 
-Settlements currently exist only as structure pieces. A persistence layer via Minecraft's
-`SavedData` would enable:
+[Settlement Identity and Lifecycle](../settlements.md) owns persistence, position lookup,
+membership, and lifecycle events. Further extensions include:
 
-- Runtime queries ("is this position inside a settlement?", "which settlement is nearest?")
-- Villager behavior integration (villagers know their settlement's traits and buildings)
-- Dynamic settlement modification (building upgrades, population changes, event triggers)
+- Nearest-settlement queries
+- Villager behavior driven by settlement traits and buildings
+- Building upgrades
 - Map/minimap integration
 
 ---

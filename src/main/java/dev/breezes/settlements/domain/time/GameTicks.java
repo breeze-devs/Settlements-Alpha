@@ -30,6 +30,15 @@ public class GameTicks {
     }
 
     /**
+     * Duration expressed as whole game days (1 game day = 24,000 ticks).
+     *
+     * @throws ArithmeticException if the duration does not fit in an int of ticks
+     */
+    public static GameTicks days(int days) {
+        return of(Math.multiplyExact(days, TimeOfDay.TICKS_PER_DAY));
+    }
+
+    /**
      * Duration expressed as game hours (1 game hour = 1,000 ticks).
      */
     public static GameTicks hours(double hours) {
@@ -57,6 +66,29 @@ public class GameTicks {
 
     public ClockTicks asClockTicks() {
         return ClockTicks.of(this.getTicksAsInt());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof GameTicks ticksValue)) {
+            return false;
+        }
+        return this.ticks == ticksValue.ticks;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(this.ticks);
+    }
+
+    @Override
+    public String toString() {
+        return "GameTicks{" +
+                "ticks=" + this.ticks +
+                '}';
     }
 
 }

@@ -1,0 +1,20 @@
+{
+  "id": "settlements:settlement_events/founded_around_new_bell",
+  "category": "founding",
+  "time_horizon_min": 100,
+  "time_horizon_max": 100,
+  "exclusive_tags": [
+    "FOUNDING"
+  ],
+  "probability_weight": 1.0,
+  "preconditions": {
+    "min_trait_weights": {},
+    "required_resource_tags": [],
+    "required_water_features": [],
+    "min_population": 0,
+    "founding": "new"
+  },
+  "trait_modifiers": {},
+  "visual_markers": [],
+  "narrative_text": "A handful of families settled around a newly hung bell."
+}

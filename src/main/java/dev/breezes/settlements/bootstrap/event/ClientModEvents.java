@@ -133,6 +133,8 @@ public class ClientModEvents {
         event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("hud"), ClientModEvents::renderHud);
         event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("clock_hud"), ClientModEvents::renderClockHud);
 
+        event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, ResourceLocationUtil.mod("settlement_arrival"), ClientModEvents::renderSettlementArrival);
+
         if (DevTooling.isEnabled()) {
             event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocationUtil.mod("debug_tuning_overlay"),
                     ClientModEvents::renderDebugTuningOverlay);
@@ -156,6 +158,15 @@ public class ClientModEvents {
         }
 
         clientComponent.clockHudRenderer().render(guiGraphics, deltaTracker);
+    }
+
+    private static void renderSettlementArrival(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        ClientComponent clientComponent = SettlementsDagger.clientOrNull();
+        if (clientComponent == null) {
+            return;
+        }
+
+        clientComponent.settlementArrivalHudRenderer().render(guiGraphics, deltaTracker);
     }
 
     private static void renderDebugTuningOverlay(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {

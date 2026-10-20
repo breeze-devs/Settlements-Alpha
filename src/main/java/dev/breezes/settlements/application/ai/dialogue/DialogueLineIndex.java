@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.dialogue;
 
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import dev.breezes.settlements.shared.util.ResourceLocationUtil;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ import java.util.stream.IntStream;
  */
 public final class DialogueLineIndex {
 
-    public static final VillagerProfessionKey GENERIC = VillagerProfessionKey.of("generic");
+    public static final VillagerProfessionKey GENERIC = new VillagerProfessionKey(ResourceLocationUtil.mod("generic"));
 
     private final Map<VillagerProfessionKey, Map<Occasion, List<String>>> keysByProfession;
     private final Map<VillagerProfessionKey, Map<Occasion, Map<DialogueFacet, List<String>>>> keysByProfessionOccasionFacet;
@@ -140,6 +141,8 @@ public final class DialogueLineIndex {
                 Occasion.ZOMBIE_SIGHTED, numberedKeys("dialogue.settlements.farmer.zombie_sighted", 8)));
         result.put(VillagerProfessionKey.NITWIT, Map.of(
                 Occasion.IDLE, numberedKeys("dialogue.settlements.nitwit.idle", 10)));
+        result.put(VillagerProfessionKey.CARTOGRAPHER, Map.of(
+                Occasion.IDLE, numberedKeys("dialogue.settlements.cartographer.idle", 8)));
         return result;
     }
 

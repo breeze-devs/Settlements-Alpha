@@ -12,6 +12,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 
 public class SettlementBuildingPiece extends SettlementsStructurePiece {
 
@@ -19,12 +20,12 @@ public class SettlementBuildingPiece extends SettlementsStructurePiece {
     private static final String BUILDING_DEFINITION_ID_TAG = "BuildingDefinitionId";
 
     @Nullable
-    private final String settlementId;
+    private final UUID settlementId;
     private final String buildingDefinitionId;
 
     public SettlementBuildingPiece(StructureTemplateManager templateManager, ResourceLocation templateId,
                                    BlockPos position, Rotation rotation,
-                                   @Nullable String settlementId,
+                                   @Nullable UUID settlementId,
                                    @Nonnull String buildingDefinitionId) {
         super(StructureRegistry.SETTLEMENT_BUILDING_PIECE_TYPE.get(), templateManager, templateId, position, rotation);
         this.settlementId = settlementId;
@@ -34,7 +35,8 @@ public class SettlementBuildingPiece extends SettlementsStructurePiece {
     private SettlementBuildingPiece(StructureTemplateManager templateManager, CompoundTag tag) {
         super(StructureRegistry.SETTLEMENT_BUILDING_PIECE_TYPE.get(), tag, templateManager,
                 resourceLocation -> SettlementsStructurePiece.createSettings(SettlementsStructurePiece.readRotation(tag)));
-        this.settlementId = tag.contains(SETTLEMENT_ID_TAG) ? tag.getString(SETTLEMENT_ID_TAG) : null;
+        // An id saved in another form, such as a string, names no stored settlement and reads as none
+        this.settlementId = tag.hasUUID(SETTLEMENT_ID_TAG) ? tag.getUUID(SETTLEMENT_ID_TAG) : null;
         this.buildingDefinitionId = tag.contains(BUILDING_DEFINITION_ID_TAG)
                 ? tag.getString(BUILDING_DEFINITION_ID_TAG)
                 : "unknown";
@@ -48,13 +50,13 @@ public class SettlementBuildingPiece extends SettlementsStructurePiece {
     protected void addAdditionalSaveData(StructurePieceSerializationContext context, CompoundTag tag) {
         super.addAdditionalSaveData(context, tag);
         if (this.settlementId != null) {
-            tag.putString(SETTLEMENT_ID_TAG, this.settlementId);
+            tag.putUUID(SETTLEMENT_ID_TAG, this.settlementId);
         }
         tag.putString(BUILDING_DEFINITION_ID_TAG, this.buildingDefinitionId);
     }
 
     @Nullable
-    public String getSettlementId() {
+    public UUID getSettlementId() {
         return this.settlementId;
     }
 

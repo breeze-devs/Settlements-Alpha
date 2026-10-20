@@ -54,14 +54,33 @@
   "ui.settlements.clock_hud.day_type.rest": "Rest Day",
   "ui.settlements.clock_hud.day_type.unknown": "...",
 
+  "ui.settlements.bell_hud.no_settlement": "No settlement yet",
+  "ui.settlements.bell_hud.founding_cue": "A settlement can be founded once villagers gather here",
+  "ui.settlements.bell_hud.name_taken": "Another settlement uses the name %s",
+  "ui.settlements.bell_hud.founding_excluded": "Settlements can't be founded in this dimension",
+  "ui.settlements.bell_hud.needs_residents.one": "Needs 1 more resident",
+  "ui.settlements.bell_hud.needs_residents.many": "Needs %s more residents",
+  "ui.settlements.bell_hud.recovering": "Recovering",
+  "ui.settlements.bell_hud.rename_hint": "Rename it with a name tag",
+  "ui.settlements.bell_hud.rename": "%1$s %2$s → %3$s",
+  "ui.settlements.bell_hud.already_named": "Already named %s",
+
+  "ui.settlements.settlement_status.falling.one": "About to fall into ruin · 1 day left",
+  "ui.settlements.settlement_status.falling.many": "Falling into ruin · %s days left",
+
+  "ui.settlements.arrival.discovery": "Discovery!",
+  "ui.settlements.arrival.founded": "Newly founded",
+  "ui.settlements.arrival.renamed": "Renamed",
+  "ui.settlements.arrival.formerly": "formerly %s",
+  "ui.settlements.arrival.leaving": "Leaving",
+  "ui.settlements.arrival.disbanded": "Fallen into ruin",
+
   "block.settlements.dormant_ore": "Dormant Ore",
   "block.settlements.dormant_deepslate_ore": "Dormant Deepslate Ore",
   "block.settlements.cultivation_lily": "Cultivation Lily",
   "block.settlements.ballista": "Ballista",
 
   "creative_tab.settlements": "Settlements",
-
-  "overlay.settlements.region.enter.title": "Welcome to",
 
   "ui.settlements.behavior.behavior.harvest_sugarcane": "Harvest Sugarcane",
   "ui.settlements.behavior.behavior.harvest_ore": "Harvest Ore",
@@ -263,6 +282,15 @@
   "dialogue.settlements.nitwit.idle.9": "Grass is soft...",
   "dialogue.settlements.nitwit.idle.10": "Maybe I should ring the bell",
 
+  "dialogue.settlements.cartographer.idle.1": "I survey these lands with my compass. You should try it too.",
+  "dialogue.settlements.cartographer.idle.2": "Hold a compass and you'll see where a village's lands end",
+  "dialogue.settlements.cartographer.idle.3": "Never set out without a compass. It shows whose land you're on.",
+  "dialogue.settlements.cartographer.idle.4": "Every road on my maps, I walked myself",
+  "dialogue.settlements.cartographer.idle.5": "Running low on paper again",
+  "dialogue.settlements.cartographer.idle.6": "There's still a blank corner on my map",
+  "dialogue.settlements.cartographer.idle.7": "A good map is worth a hundred directions",
+  "dialogue.settlements.cartographer.idle.8": "Careful, the ink's still wet",
+
   "dialogue.settlements.generic.panic.1": "Run!",
   "dialogue.settlements.generic.panic.2": "Help me!",
   "dialogue.settlements.generic.panic.3": "Get away!",
@@ -368,6 +396,8 @@
   "subtitles.settlements.cucco_fall": "A chicken falls ominously",
   "subtitles.settlements.wololo": "A shepherd chants mysteriously",
   "subtitles.settlements.interaction_fail": "Interaction fails",
+  "subtitles.settlements.settlement_enter": "Settlement bell chimes",
+  "subtitles.settlements.settlement_discovery": "Settlement fanfare plays",
 
   "action.settlements.chest.waxed": "Chest waxed, villagers will ignore it",
   "action.settlements.chest.unwaxed": "Chest unwaxed, villagers may use it again"

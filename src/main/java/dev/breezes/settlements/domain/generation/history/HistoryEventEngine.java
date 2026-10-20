@@ -4,6 +4,10 @@ import dev.breezes.settlements.domain.generation.model.profile.SettlementProfile
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.survey.SiteReport;
 import dev.breezes.settlements.domain.generation.trait.TraitRegistry;
+import dev.breezes.settlements.domain.time.GameTicks;
+import dev.breezes.settlements.domain.world.CivilDateTime;
+import dev.breezes.settlements.domain.world.WorldCalendar;
+import dev.breezes.settlements.shared.annotations.stylistic.VisibleForTesting;
 import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
@@ -23,6 +27,15 @@ public class HistoryEventEngine {
 
     private static final int MAX_DRAWS = 32;
 
+    // Events rolled at a time horizon below this belong to the founding era and are dated at the founding. The rest are
+    // spread between the founding and the record, keeping their horizon order.
+    private static final int LATER_ERA_START = 200;
+
+    @VisibleForTesting
+    static final int MIN_FOUNDING_AGE_YEARS = 20;
+    @VisibleForTesting
+    static final int MAX_FOUNDING_AGE_YEARS = 150;
+
     private final HistoryEventRegistry eventRegistry;
     private final TraitRegistry traitRegistry;
 
@@ -31,41 +44,90 @@ public class HistoryEventEngine {
         this.traitRegistry = traitRegistry;
     }
 
+    /**
+     * Draws the history events of a settlement and applies how they change its trait weights and its look. The same
+     * inputs and random state always draw the same events.
+     *
+     * @param founding whether the settlement is established or new; only events whose preconditions require the same
+     *                 kind are drawn
+     */
     public HistoryEventResult roll(@Nonnull SettlementProfile profile,
                                    @Nonnull SiteReport report,
+                                   @Nonnull SettlementFoundingKind founding,
                                    @Nonnull Random random) {
         List<HistoryEventDefinition> eligible = this.eventRegistry.allEvents().stream()
-                .filter(event -> event.preconditions().isSatisfiedBy(profile, report))
+                .filter(event -> event.preconditions().isSatisfiedBy(profile, report, founding))
                 .toList();
 
         if (eligible.isEmpty()) {
-            return passthrough(profile);
+            return new HistoryEventResult(List.of(), profile.adjustedWeights(), VisualMarkerSet.EMPTY);
         }
 
         List<HistoryEventDefinition> drawn = weightedSampleWithoutReplacement(eligible, Math.min(MAX_DRAWS, eligible.size()), random);
-        List<RolledHistoryEvent> rolled = drawn.stream()
-                .map(event -> new RolledHistoryEvent(event, rollTimeHorizon(event, random)))
-                .sorted(Comparator.comparingInt(RolledHistoryEvent::timeHorizon)
+        List<RolledEvent> rolled = drawn.stream()
+                .map(event -> new RolledEvent(event, rollTimeHorizon(event, random)))
+                .sorted(Comparator.comparingInt(RolledEvent::timeHorizon)
                         .thenComparing(rolledEvent -> rolledEvent.definition().id()))
                 .toList();
 
-        List<HistoryEventDefinition> survivors = filterExclusiveTags(rolled).stream()
+        List<RolledEvent> survivors = filterExclusiveTags(rolled).stream()
                 .limit(profile.scaleTier().maxHistoryEvents())
                 .toList();
 
         Map<TraitId, Float> modifiedWeights = applyModifiers(profile, survivors);
-        List<String> eventIds = survivors.stream().map(HistoryEventDefinition::id).toList();
         VisualMarkerSet visualMarkers = new VisualMarkerSet(survivors.stream()
-                .flatMap(event -> event.visualMarkers().stream())
+                .flatMap(survivor -> survivor.definition().visualMarkers().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new)));
 
         log.info("Rolled history events produced visual markers: {}", visualMarkers.markers());
 
-        return new HistoryEventResult(eventIds, modifiedWeights, visualMarkers);
+        List<DrawnHistoryEvent> events = survivors.stream()
+                .map(survivor -> new DrawnHistoryEvent(survivor.definition().id(), survivor.timeHorizon()))
+                .toList();
+        return new HistoryEventResult(events, modifiedWeights, visualMarkers);
     }
 
-    private HistoryEventResult passthrough(SettlementProfile profile) {
-        return new HistoryEventResult(List.of(), profile.adjustedWeights(), VisualMarkerSet.EMPTY);
+    /**
+     * Dates the selected history events of a settlement whose record begins at the given moment.
+     * <p>
+     * An established settlement is founded a random number of years before its record begins. A new one is founded as
+     * its record begins, every event is dated then, and nothing is drawn from random.
+     *
+     * @param events   the drawn events, earliest era first
+     * @param recorded the moment the settlement's record begins
+     * @param founding whether the settlement is established or new
+     */
+    public static DatedHistory date(@Nonnull List<DrawnHistoryEvent> events,
+                                    @Nonnull CivilDateTime recorded,
+                                    @Nonnull SettlementFoundingKind founding,
+                                    @Nonnull Random random) {
+        if (founding == SettlementFoundingKind.NEW) {
+            return new DatedHistory(recorded, events.stream()
+                    .map(event -> new HistoryEvent(event.eventId(), recorded))
+                    .toList());
+        }
+
+        int foundingAgeDays = random.nextInt(MIN_FOUNDING_AGE_YEARS * WorldCalendar.DAYS_PER_YEAR,
+                MAX_FOUNDING_AGE_YEARS * WorldCalendar.DAYS_PER_YEAR + 1);
+        CivilDateTime founded = recorded.minus(GameTicks.days(foundingAgeDays));
+
+        // Later-era ages are rolled independently, strictly between the founding and the record, then handed out oldest
+        // first, so the dates keep the era order the events arrive in
+        long laterEraCount = events.stream().filter(event -> event.timeHorizon() >= LATER_ERA_START).count();
+        List<Integer> laterEraAgesDays = random.ints(laterEraCount, 1, foundingAgeDays)
+                .boxed()
+                .sorted(Comparator.reverseOrder())
+                .toList();
+
+        List<HistoryEvent> dated = new ArrayList<>(events.size());
+        int nextLaterEraAge = 0;
+        for (DrawnHistoryEvent event : events) {
+            CivilDateTime date = event.timeHorizon() < LATER_ERA_START
+                    ? founded
+                    : recorded.minus(GameTicks.days(laterEraAgesDays.get(nextLaterEraAge++)));
+            dated.add(new HistoryEvent(event.eventId(), date));
+        }
+        return new DatedHistory(founded, dated);
     }
 
     private static int rollTimeHorizon(HistoryEventDefinition event, Random random) {
@@ -111,28 +173,29 @@ public class HistoryEventEngine {
         return selected;
     }
 
-    private static List<HistoryEventDefinition> filterExclusiveTags(List<RolledHistoryEvent> rolledEvents) {
+    private static List<RolledEvent> filterExclusiveTags(List<RolledEvent> rolledEvents) {
         Set<String> claimedTags = new HashSet<>();
-        List<HistoryEventDefinition> survivors = new ArrayList<>();
+        List<RolledEvent> survivors = new ArrayList<>();
 
-        for (RolledHistoryEvent rolledEvent : rolledEvents) {
+        for (RolledEvent rolledEvent : rolledEvents) {
             HistoryEventDefinition definition = rolledEvent.definition();
             boolean conflicts = definition.exclusiveTags().stream().anyMatch(claimedTags::contains);
             if (conflicts) {
                 continue;
             }
-            survivors.add(definition);
+            survivors.add(rolledEvent);
             claimedTags.addAll(definition.exclusiveTags());
         }
 
         return survivors;
     }
 
-    private Map<TraitId, Float> applyModifiers(SettlementProfile profile, List<HistoryEventDefinition> survivors) {
+    private Map<TraitId, Float> applyModifiers(SettlementProfile profile, List<RolledEvent> survivors) {
         Map<TraitId, Float> modifiedWeights = new LinkedHashMap<>(profile.adjustedWeights());
         Set<TraitId> knownTraits = this.traitRegistry.allTraitIds();
 
-        for (HistoryEventDefinition event : survivors) {
+        for (RolledEvent survivor : survivors) {
+            HistoryEventDefinition event = survivor.definition();
             for (Map.Entry<TraitId, Float> modifier : event.traitModifiers().entrySet()) {
                 TraitId traitId = modifier.getKey();
                 if (!knownTraits.contains(traitId)) {
@@ -153,7 +216,16 @@ public class HistoryEventEngine {
         return Math.max(min, Math.min(max, value));
     }
 
-    private record RolledHistoryEvent(HistoryEventDefinition definition, int timeHorizon) {
+    /**
+     * A settlement's history dated on the world's calendar.
+     *
+     * @param founded when the settlement was founded
+     * @param events  its history events, earliest first
+     */
+    public record DatedHistory(CivilDateTime founded, List<HistoryEvent> events) {
+    }
+
+    private record RolledEvent(HistoryEventDefinition definition, int timeHorizon) {
     }
 
 }

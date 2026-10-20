@@ -251,8 +251,7 @@ class BuildingManifestCalculatorTest {
                 20,
                 0.5f,
                 DefenseLevel.NONE,
-                1L,
-                List.of()
+                1L
         );
     }
 

@@ -61,10 +61,13 @@ import dev.breezes.settlements.application.ai.socialcue.SocialCueConfig;
 import dev.breezes.settlements.application.ai.speech.SpeechMirrorConfig;
 import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.hunger.HungerConfig;
+import dev.breezes.settlements.application.settlement.founding.SettlementFoundingConfig;
+import dev.breezes.settlements.application.settlement.health.SettlementDecayConfig;
 import dev.breezes.settlements.bootstrap.event.VillageAnimalSpawnerConfig;
 import dev.breezes.settlements.bootstrap.event.WorldgenVillagerReplacementConfig;
 import dev.breezes.settlements.domain.ai.eventlane.EventLaneConfig;
 import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
+import dev.breezes.settlements.presentation.ui.hud.SettlementTitleConfig;
 
 import jakarta.inject.Singleton;
 
@@ -423,6 +426,24 @@ public final class ConfigModule {
     @Singleton
     static PlanInferenceConfig planInferenceConfig() {
         return ConfigFactory.create(PlanInferenceConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static SettlementFoundingConfig settlementFoundingConfig() {
+        return ConfigFactory.create(SettlementFoundingConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static SettlementDecayConfig settlementDecayConfig() {
+        return ConfigFactory.create(SettlementDecayConfig.class);
+    }
+
+    @Provides
+    @Singleton
+    static SettlementTitleConfig settlementTitleConfig() {
+        return ConfigFactory.create(SettlementTitleConfig.class);
     }
 
     @Provides

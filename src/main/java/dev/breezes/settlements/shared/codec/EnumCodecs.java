@@ -3,11 +3,15 @@ package dev.breezes.settlements.shared.codec;
 import com.mojang.serialization.Codec;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.CustomLog;
+
+import java.util.Optional;
 
 /**
  * Shared lenient enum {@link Codec} construction for persisted runtime state.
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@CustomLog
 public final class EnumCodecs {
 
     /**
@@ -15,14 +19,24 @@ public final class EnumCodecs {
      * {@code fallback} instead of failing the surrounding record decode.
      */
     public static <E extends Enum<E>> Codec<E> lenient(Class<E> type, E fallback) {
-        return Codec.STRING.xmap(name -> valueOfOr(type, name, fallback), Enum::name);
+        return Codec.STRING.xmap(name -> constant(type, name).orElse(fallback), Enum::name);
     }
 
-    private static <E extends Enum<E>> E valueOfOr(Class<E> type, String name, E fallback) {
-        try {
-            return Enum.valueOf(type, name);
-        } catch (IllegalArgumentException exception) {
+    /**
+     * Builds a codec that never errors: an unknown or renamed constant name decodes to fallback.
+     */
+    public static <E extends Enum<E>> Codec<E> lenient(Class<E> type, E fallback, String fieldLabel) {
+        return Codec.STRING.xmap(name -> constant(type, name).orElseGet(() -> {
+            log.warn("Unknown {} '{}' read as {}", fieldLabel, name, fallback);
             return fallback;
+        }), Enum::name);
+    }
+
+    private static <E extends Enum<E>> Optional<E> constant(Class<E> type, String name) {
+        try {
+            return Optional.of(Enum.valueOf(type, name));
+        } catch (IllegalArgumentException exception) {
+            return Optional.empty();
         }
     }
 

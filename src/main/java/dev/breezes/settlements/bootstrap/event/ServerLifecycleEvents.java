@@ -30,13 +30,16 @@ public final class ServerLifecycleEvents {
 
         log.info("Registering events");
         NeoForge.EVENT_BUS.register(serverComponent.playerSettlementTracker());
-        NeoForge.EVENT_BUS.register(serverComponent.regionSubtitleHandler());
-        NeoForge.EVENT_BUS.register(serverComponent.settlementMetadataPersistenceServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.settlementArrivalAnnouncer());
+        NeoForge.EVENT_BUS.register(serverComponent.generatedSettlementRecordServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.uiSyncServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.courtshipSessionReaperServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.resourceIndexRefresherServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.settlementHealthServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.settlementClaimSyncServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.settlementDirectorySyncServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.tradeSessionReaperServerEvents());
-        NeoForge.EVENT_BUS.register(serverComponent.villagerZombificationServerEvents());
+        NeoForge.EVENT_BUS.register(serverComponent.villagerConversionServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.villageAnimalSpawnerServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.worldgenVillagerReplacementServerEvents());
         NeoForge.EVENT_BUS.register(serverComponent.cultivationSeedSyncServerEvents());
@@ -74,13 +77,16 @@ public final class ServerLifecycleEvents {
             // Each handler is @ServerScope, so its accessor returns the instance registered at start
             // An unscoped handler's accessor would build a new instance, and unregistering that would do nothing
             NeoForge.EVENT_BUS.unregister(serverComponent.playerSettlementTracker());
-            NeoForge.EVENT_BUS.unregister(serverComponent.regionSubtitleHandler());
-            NeoForge.EVENT_BUS.unregister(serverComponent.settlementMetadataPersistenceServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.settlementArrivalAnnouncer());
+            NeoForge.EVENT_BUS.unregister(serverComponent.generatedSettlementRecordServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.uiSyncServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.courtshipSessionReaperServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.resourceIndexRefresherServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.settlementHealthServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.settlementClaimSyncServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.settlementDirectorySyncServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.tradeSessionReaperServerEvents());
-            NeoForge.EVENT_BUS.unregister(serverComponent.villagerZombificationServerEvents());
+            NeoForge.EVENT_BUS.unregister(serverComponent.villagerConversionServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.villageAnimalSpawnerServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.worldgenVillagerReplacementServerEvents());
             NeoForge.EVENT_BUS.unregister(serverComponent.cultivationSeedSyncServerEvents());

@@ -245,7 +245,7 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
                 continue;
             }
 
-            if (!villager.getNavigationManager().canReach(candidate, this.config.maxPointDistance())) {
+            if (!villager.getNavigationManager().canReach(candidate, NAVIGATION_COMPLETION_DISTANCE)) {
                 continue;
             }
 

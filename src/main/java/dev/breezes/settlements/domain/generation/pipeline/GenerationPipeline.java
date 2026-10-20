@@ -6,10 +6,13 @@ import dev.breezes.settlements.domain.generation.building.BuildingRegistry;
 import dev.breezes.settlements.domain.generation.history.HistoryEventEngine;
 import dev.breezes.settlements.domain.generation.history.HistoryEventRegistry;
 import dev.breezes.settlements.domain.generation.history.HistoryEventResult;
+import dev.breezes.settlements.domain.generation.history.SettlementFoundingKind;
 import dev.breezes.settlements.domain.generation.layout.LayoutResult;
 import dev.breezes.settlements.domain.generation.layout.SettlementLayoutEngine;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
+import dev.breezes.settlements.domain.generation.model.SettlementCharacter;
 import dev.breezes.settlements.domain.generation.model.building.BuildingManifest;
+import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.profile.SettlementProfile;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.survey.SiteReport;
@@ -38,9 +41,45 @@ public class GenerationPipeline {
     private final HistoryEventRegistry historyEventRegistry;
     private final TraitRegistry traitRegistry;
 
+    /**
+     * Generates an established settlement on its site.
+     */
     public GenerationResult generate(@Nonnull TerrainGrid terrainGrid,
                                      @Nonnull SurveyBounds bounds,
                                      long seed) {
+        Random random = new Random(seed);
+        ScaleTier scaleTier = new SamplingEngine().determineScaleTier(random);
+        int initialPopulation = random.nextInt(scaleTier.minPopulation(), scaleTier.maxPopulation() + 1);
+        // Its own seed rather than this one, so the character's draws do not replay the tier and population rolls.
+        // Generated settlements are established: their structure stands before any record of them begins.
+        SettlementCharacter character = this.character(terrainGrid, bounds, scaleTier, initialPopulation,
+                SettlementFoundingKind.ESTABLISHED, random.nextLong());
+
+        BuildingManifestCalculator manifestCalculator = new BuildingManifestCalculator(this.buildingRegistry);
+        BuildingManifest manifest = manifestCalculator.calculate(character.profile(), random);
+
+        SettlementLayoutEngine layoutEngine = new SettlementLayoutEngine();
+        LayoutResult layout = layoutEngine.generateLayout(character.siteReport(), character.profile(), manifest,
+                this.biomeLookup);
+
+        return new GenerationResult(character.siteReport(), character.profile(), character.history(), layout, seed);
+    }
+
+    /**
+     * Decides a settlement's character from its site: surveys the terrain, scores the traits, samples a profile, and
+     * draws the settlement's history.
+     *
+     * @param scaleTier         the settlement's tier, which the profile keeps
+     * @param initialPopulation the settlement's initial population, which the profile keeps
+     * @param founding          whether the settlement is established or new, which decides the history it may draw
+     * @param seed              seeds every random draw the character makes
+     */
+    public SettlementCharacter character(@Nonnull TerrainGrid terrainGrid,
+                                         @Nonnull SurveyBounds bounds,
+                                         @Nonnull ScaleTier scaleTier,
+                                         int initialPopulation,
+                                         @Nonnull SettlementFoundingKind founding,
+                                         long seed) {
         SurveyEngine surveyEngine = new SurveyEngine(this.biomeLookup);
         SiteReport report = surveyEngine.analyze(terrainGrid, bounds);
 
@@ -49,31 +88,15 @@ public class GenerationPipeline {
 
         Random random = new Random(seed);
         SamplingEngine samplingEngine = new SamplingEngine();
-        SettlementProfile profile = samplingEngine.sample(scores, random);
+        SettlementProfile sampled = samplingEngine.sample(scores, scaleTier, initialPopulation, random);
 
         HistoryEventEngine historyEngine = new HistoryEventEngine(this.historyEventRegistry, this.traitRegistry);
-        HistoryEventResult historyResult = historyEngine.roll(profile, report, random);
+        HistoryEventResult history = historyEngine.roll(sampled, report, founding, random);
 
-        profile = SettlementProfile.builder()
-                .primary(profile.primary())
-                .secondary(profile.secondary())
-                .flavor(profile.flavor())
-                .adjustedWeights(historyResult.modifiedWeights())
-                .scaleTier(profile.scaleTier())
-                .estimatedPopulation(profile.estimatedPopulation())
-                .wealthLevel(profile.wealthLevel())
-                .defenseLevel(profile.defenseLevel())
-                .seed(profile.seed())
-                .historyEventIds(historyResult.eventIds())
+        SettlementProfile profile = sampled.toBuilder()
+                .adjustedWeights(history.modifiedWeights())
                 .build();
-
-        BuildingManifestCalculator manifestCalculator = new BuildingManifestCalculator(this.buildingRegistry);
-        BuildingManifest manifest = manifestCalculator.calculate(profile, random);
-
-        SettlementLayoutEngine layoutEngine = new SettlementLayoutEngine();
-        LayoutResult layout = layoutEngine.generateLayout(report, profile, manifest, this.biomeLookup);
-
-        return new GenerationResult(report, profile, historyResult, layout, seed);
+        return new SettlementCharacter(report, profile, history);
     }
 
     /**
@@ -84,11 +107,8 @@ public class GenerationPipeline {
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey);
 
-        if (dominantBiome.isEmpty()) {
-            return Set.of();
-        }
-
-        return this.biomeLookup.lookup(dominantBiome.get()).templateTags();
+        return dominantBiome.map(biomeId -> this.biomeLookup.lookup(biomeId).templateTags())
+                .orElseGet(Set::of);
     }
 
 }

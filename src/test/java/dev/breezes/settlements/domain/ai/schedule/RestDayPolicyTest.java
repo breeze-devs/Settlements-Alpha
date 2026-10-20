@@ -1,6 +1,7 @@
 package dev.breezes.settlements.domain.ai.schedule;
 
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +28,7 @@ class RestDayPolicyTest {
 
     @Test
     void unspecifiedProfessionUsesReasonableDefaults() {
-        VillagerProfessionKey custom = VillagerProfessionKey.of("custom_job");
+        VillagerProfessionKey custom = new VillagerProfessionKey(ResourceLocation.fromNamespaceAndPath("othermod", "custom_job"));
 
         RestDayPolicy policy = RestDayPolicy.defaultFor(custom);
 

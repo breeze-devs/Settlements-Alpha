@@ -23,6 +23,7 @@ import dev.breezes.settlements.application.ai.courtship.CourtshipPhase;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSelfMemoryRecorder;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSession;
 import dev.breezes.settlements.application.ai.courtship.CourtshipSessionRegistry;
+import dev.breezes.settlements.application.settlement.membership.SettlementMembershipService;
 import dev.breezes.settlements.bootstrap.registry.memory.MemoryModuleTypeRegistry;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
@@ -61,6 +62,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
     private final CourtshipPresenter courtshipPresenter;
     private final CourtshipChoreographyLibrary choreographyLibrary;
     private final CourtshipSelfMemoryRecorder selfMemoryRecorder;
+    private final SettlementMembershipService membershipService;
 
     @Nullable
     private UUID activeSessionId;
@@ -71,7 +73,8 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
                                      @Nonnull BedReservationService bedReservationService,
                                      @Nonnull CourtshipPresenter courtshipPresenter,
                                      @Nonnull CourtshipChoreographyLibrary choreographyLibrary,
-                                     @Nonnull CourtshipSelfMemoryRecorder selfMemoryRecorder) {
+                                     @Nonnull CourtshipSelfMemoryRecorder selfMemoryRecorder,
+                                     @Nonnull SettlementMembershipService membershipService) {
         super(log,
                 config.createPreconditionCheckCooldownTickable(),
                 config.createBehaviorCooldownTickable(),
@@ -82,6 +85,7 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         this.courtshipPresenter = courtshipPresenter;
         this.choreographyLibrary = choreographyLibrary;
         this.selfMemoryRecorder = selfMemoryRecorder;
+        this.membershipService = membershipService;
 
         this.preconditions.add(this.canInitiateCourtship());
         this.initializeStateMachine(this.createControlStep(), Stage.CLOSED);
@@ -347,12 +351,14 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
         // Child owns the primary bed now — cancel teardown so the release obligation is dropped.
         this.bedReservationService.assignHome(primaryChild, serverLevel, primaryBed);
         primaryHandle.cancel();
+        this.membershipService.inheritAtBirth(primaryChild, self, partner);
 
         if (secondaryBed != null) {
             BaseVillager secondaryChild = spawnChild(serverLevel, self, partner, secondaryBed);
             if (secondaryChild != null) {
                 this.bedReservationService.assignHome(secondaryChild, serverLevel, secondaryBed);
                 secondaryHandle.cancel();
+                this.membershipService.inheritAtBirth(secondaryChild, self, partner);
             }
             // If secondary spawn failed, secondaryHandle stays tracked and teardown releases the unused bed.
         }

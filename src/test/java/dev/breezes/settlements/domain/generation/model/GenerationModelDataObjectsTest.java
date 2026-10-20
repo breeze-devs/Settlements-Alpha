@@ -80,8 +80,7 @@ class GenerationModelDataObjectsTest {
                 42,
                 0.6f,
                 DefenseLevel.MODERATE,
-                99L,
-                List.of()
+                99L
         );
 
         assertTrue(profile.hasTrait(FARMING));

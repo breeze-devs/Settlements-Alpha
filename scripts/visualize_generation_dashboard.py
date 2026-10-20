@@ -739,7 +739,7 @@ def render_stats_tab(visualization: dict[str, Any]) -> None:
                     f"- **Profile seed:** {profile.get('seed', 'n/a')}",
                     f"- **Biome distribution:** {format_distribution(site_report.get('biomeDistribution', {}), limit=6)}",
                     f"- **Adjusted weights:** {format_distribution(profile.get('adjustedWeights', {}), limit=6)}",
-                    f"- **History events:** {format_list(history.get('eventIds', profile.get('historyEventIds', [])))}",
+                    f"- **History events:** {format_list([event.get('eventId') for event in history.get('events', [])])}",
                     f"- **Visual markers:** {format_list(history.get('visualMarkers', []))}",
                     f"- **Elevation min/max/mean:** {elevation.get('min', 'n/a')} / {elevation.get('max', 'n/a')} / {elevation.get('mean', 'n/a')}",
                     f"- **High point:** ({high_point.get('x', 'n/a')}, {high_point.get('z', 'n/a')}) @ y={high_point.get('y', 'n/a')}",

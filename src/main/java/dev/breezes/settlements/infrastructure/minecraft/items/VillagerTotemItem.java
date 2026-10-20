@@ -1,7 +1,9 @@
 package dev.breezes.settlements.infrastructure.minecraft.items;
 
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
+import dev.breezes.settlements.di.SettlementsDagger;
 import dev.breezes.settlements.domain.personality.OriginType;
+import dev.breezes.settlements.domain.settlement.model.SettlementLogType;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.attachments.TotemTargetAttachment;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
@@ -252,10 +254,19 @@ public class VillagerTotemItem extends Item {
 
     private void convertVillager(ServerLevel level, Villager oldVillager, TotemMode mode) {
         if (mode.convertsToVanilla()) {
-            VillagerConversionUtil.convertToVanilla(level, oldVillager, mode.keepsVanillaVillagerInStasis());
+            Villager vanillaVillager = VillagerConversionUtil.convertToVanilla(level, oldVillager,
+                    mode.keepsVanillaVillagerInStasis());
+            // Logged only once the conversion has happened, since a refused one leaves the member where it was
+            if (vanillaVillager != null && oldVillager instanceof BaseVillager member) {
+                SettlementsDagger.serverOrThrow().settlementMembershipService()
+                        .recordConversion(member, SettlementLogType.LEFT);
+            }
         } else {
             // Treat totem conversion as world-gen origin
-            VillagerConversionUtil.convertToSettlements(level, oldVillager, OriginType.WORLDGEN);
+            BaseVillager newVillager = VillagerConversionUtil.convertToSettlements(level, oldVillager, OriginType.WORLDGEN);
+            if (newVillager != null) {
+                SettlementsDagger.serverOrThrow().settlementMembershipService().recordReturn(newVillager);
+            }
         }
     }
 

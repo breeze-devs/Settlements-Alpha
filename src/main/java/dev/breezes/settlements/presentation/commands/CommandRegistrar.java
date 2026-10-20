@@ -10,6 +10,7 @@ public class CommandRegistrar {
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
+        SettlementsCommand.register(event.getDispatcher());
         TestCommand.register(event.getDispatcher());
     }
 

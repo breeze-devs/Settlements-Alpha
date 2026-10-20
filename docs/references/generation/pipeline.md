@@ -52,9 +52,12 @@ Resource tags are the "observation" layer between raw biome data and trait scori
 
 ### Minecraft Bridge
 
-`TerrainGridFactory` translates Minecraft's `GenerationContext` into a domain `TerrainGrid`. It
-samples height via `ChunkGenerator.getBaseHeight()`, biome via `BiomeSource.getNoiseBiome()`, and
-temperature from the sampled biome. Biome identifiers are interned as `BiomeId` instances.
+`TerrainGridFactory` translates a chunk generator's noise, from Minecraft's `GenerationContext` or
+from a running level's generator, into a domain `TerrainGrid`. It reads no chunk, so a settlement
+founded at a bell is surveyed off the server thread. It samples height via `ChunkGenerator.getBaseHeight()`, biome via
+`BiomeSource.getNoiseBiome()` at that surface height, and temperature from the sampled biome. Sampling
+at the surface, as vanilla's structure biome check does, keeps a cave biome below from standing in for
+the land. Biome identifiers are interned as `BiomeId` instances.
 
 ### Extension Point
 
@@ -114,29 +117,32 @@ config; future special traits (e.g., ARCANE) can provide custom Java implementat
 **Purpose:** Turn raw scores into a concrete settlement identity. This is where randomness lives —
 the same terrain can produce different settlements on different seeds.
 
-**Input:** `Map<TraitId, Float>` + `Random`  
+**Input:** `Map<TraitId, Float>` + `ScaleTier` + initial population + `Random`  
 **Output:** `SettlementProfile`  
 **Engine:** `SamplingEngine` (`domain/`, pure Java, zero constructor dependencies)
 
+The tier and initial population arrive fixed and the profile keeps them. Generation rolls them before
+the character step: the tier by weighted random (40% Village, 30% Town, 30% Hamlet), then the initial
+population within the tier's range. A settlement founded in play takes them from its observed
+headcount instead (see [overview.md](overview.md#settlement-scale-tiers)).
+
 ### How It Works
 
-1. **Scale tier selection.** Weighted random: 40% Village, 30% Town, 30% Hamlet.
-2. **Trait slot count.** Random integer within the tier's slot range (e.g., Village: 2–4 slots).
-3. **Trait drawing.** Weighted random sampling without replacement. After each draw, the drawn trait
+1. **Trait slot count.** Random integer within the tier's slot range (e.g., Village: 2–4 slots).
+2. **Trait drawing.** Weighted random sampling without replacement. After each draw, the drawn trait
    is removed and weights re-normalized. Drawing stops early if the pool exhausts.
-4. **Slot assignment** from draw order:
+3. **Slot assignment** from draw order:
     - 1 draw: 1 primary
     - 2 draws: 1 primary, 1 secondary
     - 3 draws: 1 primary, 1 secondary, 1 flavor
     - 4 draws: 1 primary, 2 secondary, 1 flavor
     - 5 draws: 1 primary, 2 secondary, 2 flavor
-5. **Metadata derivation:**
-    - Population: random within tier range
+4. **Metadata derivation:**
     - Wealth: `random.nextFloat()` (pure random for now)
     - Defense level: derived from DEFENSE trait's slot (absent→NONE, flavor→LOW, secondary→MODERATE,
       primary→HIGH)
     - Adjusted weights: copy of raw scores with primary trait boosted 1.5x
-6. **Downstream seed.** A `random.nextLong()` is stored on the profile for deterministic
+5. **Downstream seed.** A `random.nextLong()` is stored on the profile for deterministic
    reproducibility in later phases.
 
 ### Fallback Behavior
@@ -148,18 +154,20 @@ If all trait scores are zero, the engine falls back to FARMING as primary with a
 
 ## 4.4 History Event Phase
 
-**Purpose:** Roll history events that shaped the settlement before the player arrived. Events modify
-trait weights and deposit visual markers used downstream for template variant selection.
+**Purpose:** Draw the history events that shaped the settlement before its record began. Events
+modify trait weights and deposit visual markers used downstream for template variant selection.
 
-**Input:** `SettlementProfile` + `SiteReport` + `Random`  
+**Input:** `SettlementProfile` + `SiteReport` + `SettlementFoundingKind` + `Random`  
 **Output:** Updated `SettlementProfile` + `HistoryEventResult`  
 **Engine:** `HistoryEventEngine` (`domain/`, pure Java)
 
 ### How It Works
 
 1. **Eligible event filtering.** All registered events are checked against preconditions (minimum
-   trait weights, required resource tags, required water features, minimum population). An empty
-   eligible pool is a valid passthrough — returns `HistoryEventResult.EMPTY`.
+   trait weights, required resource tags, required water features, minimum population, founding
+   kind). An event marked `new` is drawn only by a new settlement, one founded in play as its record
+   begins, and a new settlement draws nothing else. An empty eligible pool is a valid passthrough: no
+   events and unchanged weights.
 2. **Weighted sampling without replacement.** Up to 32 candidate events are drawn using
    `probabilityWeight` values.
 3. **Time horizon assignment.** Each drawn event receives a concrete era value via random roll
@@ -171,15 +179,28 @@ trait weights and deposit visual markers used downstream for template variant se
    accumulate richer histories.
 7. **Trait modifier application.** Additive deltas applied in chronological order, clamped to
    [0.0, 1.0]. Unknown trait IDs are skipped with a warning.
-8. **Result assembly.** Returns fired event IDs, final modified weight map, and merged
-   `VisualMarkerSet`.
+8. **Result assembly.** Returns the surviving events with their eras, earliest first, the final
+   modified weight map, and merged `VisualMarkerSet`.
 
 ### Integration
 
-After this phase, `GenerationPipeline` reconstructs `SettlementProfile` with updated
-`adjustedWeights` and populated `historyEventIds`. The `HistoryEventResult` is carried in
-`GenerationResult` and consumed by the MC integration layer when constructing
-`TemplateResolutionContext`.
+After this phase, the character step rebuilds `SettlementProfile` with updated
+`adjustedWeights`. The `HistoryEventResult` is carried in `GenerationResult`. The MC integration
+layer reads its visual markers when constructing `TemplateResolutionContext`, and carries the drawn
+events in the structure start until the settlement's record exists.
+
+**Dating waits for the record.** Generation runs on a worldgen thread, often long before the
+settlement is recorded, so the drawn events carry eras but no dates. When the record is created,
+`HistoryEventEngine.date` dates them on the world's calendar against the record's start: the
+founding falls within a fixed range of years before it, founding-era events (horizons below 200) at
+the founding, and later-era events strictly between the founding and the record, in era order. It
+is seeded from the profile's seed, so a record rebuilt from the same structure start gets the same
+dates relative to its start. A new settlement is founded as its record begins, and every event it
+drew is dated then.
+
+The draw and the dating each take the settlement's established-or-new value, and a caller passes
+the same value to both. Otherwise a new settlement's young founding would be dated decades before
+its record, or an established settlement's past would collapse onto the day it was recorded.
 
 ---
 

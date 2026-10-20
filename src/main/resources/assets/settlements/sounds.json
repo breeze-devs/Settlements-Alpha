@@ -22,5 +22,17 @@
     "sounds": [
       "settlements:interaction_fail"
     ]
+  },
+  "settlement_enter": {
+    "subtitle": "subtitles.settlements.settlement_enter",
+    "sounds": [
+      "settlements:settlement_enter"
+    ]
+  },
+  "settlement_discovery": {
+    "subtitle": "subtitles.settlements.settlement_discovery",
+    "sounds": [
+      "settlements:settlement_discovery"
+    ]
   }
 }

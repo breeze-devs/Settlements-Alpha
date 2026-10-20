@@ -192,10 +192,25 @@ does.
 
 The version is therefore a hand-kept promise that the wire format has not changed. Bump it with any change to what a
 payload's codec writes or reads, and whenever a payload is added or removed. Ours is `PacketRegistry`'s
-`NETWORK_VERSION`.
+`NETWORK_VERSION`. Synced attachments count too. Their sync handlers write into NeoForge's own payload, whose version
+NeoForge keeps, so ours is the only guard on their format: bump it when what an attachment's sync handler writes or
+reads changes.
 
 `RegisterPayloadHandlersEvent#registrar(String)` takes that version, not a namespace. Passing the mod id, which reads
 naturally there, keeps the check wired up while making every pair of builds pass it.
+
+### P19 — A new world's dimensions start without their tags
+
+The Create World screen binds the data packs' tags while the world is still being configured, then builds the world's
+dimension registry (`minecraft:dimension`, `LevelStem`) afresh from the chosen preset and starts the server with it. The
+tags were bound to the registry it replaced, so **for the whole first session of a world created in single player,
+every dimension tag reads empty**. `Holder#is` answers false rather than failing, so a dimension gate built on a tag
+refuses every dimension. It does so without a word, and only in a brand-new world. Opening the world again, a `/reload`,
+and a dedicated server's start all bind the tags properly, which makes the trap look like a regression, since an
+existing test world never shows it. Other registries keep their tags; only the dimension layer is replaced.
+
+Bind the dimension tags again at server start, before any level loads, against the server's own registry: load them with
+vanilla's `TagLoader` from the server's resource manager, as a reload does. Ours is `DimensionTagBindingServerEvents`.
 
 ## Build
 
