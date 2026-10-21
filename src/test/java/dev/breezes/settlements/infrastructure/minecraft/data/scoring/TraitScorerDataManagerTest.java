@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TraitScorerDataManagerTest {
@@ -37,8 +38,8 @@ class TraitScorerDataManagerTest {
 
         // Assert
         TraitScorer scorer = this.manager.allScorers().get(MINING);
-        assertTrue(scorer instanceof ConfiguredTraitScorer, "Mining scorer should be present");
-        ConfiguredTraitScorer configured = (ConfiguredTraitScorer) scorer;
+        ConfiguredTraitScorer configured = assertInstanceOf(ConfiguredTraitScorer.class, scorer,
+                "Mining scorer should be present and configured");
         assertEquals(0.5f, configured.config().baseScore());
         assertEquals(0.4f, configured.config().resourceTagWeights().get(ResourceTag.STONE));
     }

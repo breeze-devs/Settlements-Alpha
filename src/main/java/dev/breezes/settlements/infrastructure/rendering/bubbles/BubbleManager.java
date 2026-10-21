@@ -26,34 +26,35 @@ public class BubbleManager {
 
     private static final double STACKED_BUBBLE_Y_OFFSET = 0.35D;
     private static final int DEFAULT_VISIBILITY_BLOCKS = 32;
+    private static final Comparator<BubbleViewEntry> RENDER_ORDER = Comparator
+            .comparingInt(BubbleViewEntry::channelOrder)
+            .thenComparing(Comparator.comparingInt(BubbleViewEntry::priority).reversed())
+            .thenComparingLong(BubbleViewEntry::createdGameTime)
+            .thenComparingLong(BubbleViewEntry::sequenceNumber);
 
     private final Map<UUID, BubbleViewEntry> bubblesById;
-    private long nextLocalSequenceNumber;
 
     public BubbleManager() {
         this.bubblesById = new LinkedHashMap<>();
-        this.nextLocalSequenceNumber = 0L;
     }
 
     public Optional<SpeechBubble> getActiveBubble() {
-        List<BubbleViewEntry> orderedEntries = this.getOrderedEntries();
-        if (orderedEntries.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(orderedEntries.getFirst().getBubble());
+        return this.bubblesById.values().stream()
+                .min(RENDER_ORDER)
+                .map(BubbleViewEntry::bubble);
     }
 
     public void tick(double deltaTick) {
         this.bubblesById.values().removeIf(entry -> {
-            entry.getBubble().tick(deltaTick);
-            return entry.getBubble().isExpired();
+            entry.bubble().tick(deltaTick);
+            return entry.bubble().isExpired();
         });
     }
 
     public void render(@Nonnull RenderParameter parameter) {
         List<BubbleViewEntry> orderedEntries = this.getOrderedEntries();
         for (int i = 0; i < orderedEntries.size(); i++) {
-            SpeechBubble bubble = orderedEntries.get(i).getBubble();
+            SpeechBubble bubble = orderedEntries.get(i).bubble();
             parameter.getPoseStack().pushPose();
             parameter.getPoseStack().translate(0.0D, STACKED_BUBBLE_Y_OFFSET * i, 0.0D);
             bubble.render(parameter);
@@ -62,7 +63,7 @@ public class BubbleManager {
     }
 
     public void removeAllBubbles() {
-        this.bubblesById.values().forEach(entry -> entry.getBubble().setExpired());
+        this.bubblesById.values().forEach(entry -> entry.bubble().setExpired());
         this.bubblesById.clear();
     }
 
@@ -79,7 +80,7 @@ public class BubbleManager {
                 continue;
             }
 
-            localEntry.getValue().getBubble().setExpired();
+            localEntry.getValue().bubble().setExpired();
             iterator.remove();
         }
 
@@ -88,17 +89,23 @@ public class BubbleManager {
             BubbleViewEntry existing = this.bubblesById.get(snapshot.bubbleId());
 
             if (existing != null) {
-                // A contentVersion mismatch means the server changed the bubble's segments.
-                // Only in that case do we rebuild; otherwise we preserve the existing instance
-                // to avoid resetting per-bubble animation state (e.g. sprite frame clocks).
-                boolean contentChanged = existing.getContentVersion() != snapshot.contentVersion();
-                SpeechBubble bubble = contentChanged
-                        ? this.createBubble(snapshot, currentGameTime).orElse(existing.getBubble())
-                        : existing.getBubble();
+                // Rebuild when contentVersion mismatch, aka the server changed the bubble's content
+                // Otherwise preserve the existing instance to avoid resetting per-bubble state
+                boolean contentChanged = existing.contentVersion() != snapshot.contentVersion();
+                Optional<SpeechBubble> bubble = contentChanged
+                        ? this.createBubble(snapshot, currentGameTime)
+                        : Optional.of(existing.bubble());
+                if (bubble.isEmpty()) {
+                    // Keeping the old instance would pair superseded segments with the new contentVersion, so no
+                    // later snapshot would retry the rebuild. Dropping the entry matches a failed first build: the
+                    // bubble stays absent until a later snapshot builds it successfully.
+                    existing.bubble().setExpired();
+                    this.bubblesById.remove(snapshot.bubbleId());
+                    continue;
+                }
 
                 this.bubblesById.put(snapshot.bubbleId(), BubbleViewEntry.builder()
-                        .bubbleId(snapshot.bubbleId())
-                        .bubble(bubble)
+                        .bubble(bubble.get())
                         .contentVersion(snapshot.contentVersion())
                         .channelOrder(snapshot.channel().ordinal())
                         .priority(snapshot.priority())
@@ -110,7 +117,6 @@ public class BubbleManager {
 
             this.createBubble(snapshot, currentGameTime)
                     .ifPresent(bubble -> this.bubblesById.put(snapshot.bubbleId(), BubbleViewEntry.builder()
-                            .bubbleId(snapshot.bubbleId())
                             .bubble(bubble)
                             .contentVersion(snapshot.contentVersion())
                             .channelOrder(snapshot.channel().ordinal())
@@ -137,29 +143,17 @@ public class BubbleManager {
 
     private List<BubbleViewEntry> getOrderedEntries() {
         List<BubbleViewEntry> entries = new ArrayList<>(this.bubblesById.values());
-        entries.sort(buildComparator());
+        entries.sort(RENDER_ORDER);
         return entries;
     }
 
-    private static Comparator<BubbleViewEntry> buildComparator() {
-        return Comparator.comparingInt(BubbleViewEntry::getChannelOrder)
-                .thenComparing((left, right) -> Integer.compare(right.getPriority(), left.getPriority()))
-                .thenComparingLong(BubbleViewEntry::getCreatedGameTime)
-                .thenComparingLong(BubbleViewEntry::getSequenceNumber);
-    }
-
     @Builder
-    @Getter
-    private static class BubbleViewEntry {
-
-        private UUID bubbleId;
-        private SpeechBubble bubble;
-        private int channelOrder;
-        private int priority;
-        private long createdGameTime;
-        private long sequenceNumber;
-        private int contentVersion;
-
+    private record BubbleViewEntry(SpeechBubble bubble,
+                                   int channelOrder,
+                                   int priority,
+                                   long createdGameTime,
+                                   long sequenceNumber,
+                                   int contentVersion) {
     }
 
 }

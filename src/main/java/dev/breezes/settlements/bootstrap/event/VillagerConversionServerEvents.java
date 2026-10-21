@@ -49,12 +49,15 @@ public final class VillagerConversionServerEvents {
             return;
         }
 
-        if (original instanceof BaseVillager villager && outcome instanceof ZombieVillager zombie) {
-            this.handleZombification(villager, zombie);
-        } else if (original instanceof BaseVillager villager && outcome instanceof Witch) {
-            this.membershipService.recordConversion(villager, SettlementLogType.BECAME_WITCH);
-        } else if (original instanceof ZombieVillager zombie && outcome instanceof Villager vanillaVillager) {
-            this.handleCure(serverLevel, zombie, vanillaVillager);
+        switch (original) {
+            case BaseVillager villager when outcome instanceof ZombieVillager zombie ->
+                    this.handleZombification(villager, zombie);
+            case BaseVillager villager when outcome instanceof Witch ->
+                    this.membershipService.recordConversion(villager, SettlementLogType.BECAME_WITCH);
+            case ZombieVillager zombie when outcome instanceof Villager vanillaVillager ->
+                    this.handleCure(serverLevel, zombie, vanillaVillager);
+            default -> {
+            }
         }
     }
 

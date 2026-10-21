@@ -18,6 +18,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,7 +47,7 @@ class TraitDefinitionDataManagerTest {
     void nullable_custom_name_supported() {
         TraitDefinition definition = this.manager.byId(TraitId.of("settlements:settlement_traits/waypoint")).orElseThrow();
         assertEquals("Waypoint", definition.displayInfo().displayName());
-        assertEquals(null, definition.displayInfo().customName());
+        assertNull(definition.displayInfo().customName());
     }
 
     @Test

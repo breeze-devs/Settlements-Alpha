@@ -26,7 +26,7 @@ public final class BehaviorDeedLedger implements BehaviorState {
     private final List<BehaviorOutcome> entries = new ArrayList<>(1);
 
     public Optional<BehaviorOutcome> primary() {
-        return this.entries.isEmpty() ? Optional.empty() : Optional.of(this.entries.get(0));
+        return this.entries.isEmpty() ? Optional.empty() : Optional.of(this.entries.getFirst());
     }
 
     public BehaviorOutcome declarePrimary(@Nonnull BehaviorOutcome primary) {
@@ -45,6 +45,9 @@ public final class BehaviorDeedLedger implements BehaviorState {
             return secondary;
         }
 
+        // TODO: bug — on an empty ledger this secondary lands in slot 0, so primary() reports it as the primary
+        //  and a later declarePrimary overwrites it. Hold the primary in its own slot so a secondary recorded
+        //  before the primary is neither promoted nor lost.
         this.entries.add(secondary);
         return secondary;
     }

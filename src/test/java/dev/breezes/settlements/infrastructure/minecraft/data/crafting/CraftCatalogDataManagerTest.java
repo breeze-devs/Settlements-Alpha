@@ -19,6 +19,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,13 +67,13 @@ class CraftCatalogDataManagerTest {
         assertEquals(ResourceLocation.parse("minecraft:string"), string.output().itemId());
         assertEquals(1, string.inputs().size());
         assertEquals(4, string.inputs().getFirst().count());
-        assertTrue(string.inputs().getFirst().match() instanceof ItemMatch.TagRef,
+        assertInstanceOf(ItemMatch.TagRef.class, string.inputs().getFirst().match(),
                 "wool input must parse as a tag match");
 
         CraftRecipe shears = recipes.get(1);
-        assertTrue(shears.inputs().getFirst().match() instanceof ItemMatch.ItemRef itemRef
-                        && itemRef.id().equals(ResourceLocation.parse("minecraft:iron_ingot")),
+        ItemMatch.ItemRef ironInput = assertInstanceOf(ItemMatch.ItemRef.class, shears.inputs().getFirst().match(),
                 "iron input must parse as an item match");
+        assertEquals(ResourceLocation.parse("minecraft:iron_ingot"), ironInput.id());
     }
 
     @Test

@@ -75,8 +75,8 @@ public final class SocialCueScript {
         long running = 0;
         for (int i = 0; i < steps.size(); i++) {
             prefix[i] = running;
-            if (steps.get(i) instanceof CueStep.Wait wait) {
-                running += wait.duration().getTicks();
+            if (steps.get(i) instanceof CueStep.Wait(ClockTicks duration)) {
+                running += duration.getTicks();
             }
         }
         prefix[steps.size()] = running;

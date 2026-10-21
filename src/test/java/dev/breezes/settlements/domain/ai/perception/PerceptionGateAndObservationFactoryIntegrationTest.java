@@ -85,16 +85,15 @@ class PerceptionGateAndObservationFactoryIntegrationTest {
         assertEquals(0L, state.getLastSeenSeq(), "cursor starts at 0");
 
         emitEvent(WorldEventType.RESOURCE_HARVESTED, 10, 10);
-        emitEvent(WorldEventType.SHEEP_SHEARED, 10, 10);
-        List<WorldEvent> delta = visitDelta(state.getLastSeenSeq());
+        WorldEvent lastEvent = emitEvent(WorldEventType.SHEEP_SHEARED, 10, 10);
 
-        // Act — simulate what PerceptionPipeline does with the cursor
-        long newSeq = delta.get(delta.size() - 1).getSequence();
+        // Act
+        long newSeq = this.bus.visitDelta(state.getLastSeenSeq(), event -> {
+        });
         state.advanceCursor(newSeq);
 
-        // Assert — cursor now points past the last processed event
-        assertTrue(state.getLastSeenSeq() >= 2L, "cursor should have advanced past both events");
-        // Subsequent delta should be empty
+        // Assert
+        assertEquals(lastEvent.getSequence(), state.getLastSeenSeq(), "cursor should rest on the last emitted event");
         List<WorldEvent> nextDelta = visitDelta(state.getLastSeenSeq());
         assertTrue(nextDelta.isEmpty(), "no new events should be visible after cursor advance");
     }

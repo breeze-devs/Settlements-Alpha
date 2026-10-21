@@ -5,6 +5,7 @@ import com.mojang.serialization.JsonOps;
 import dev.breezes.settlements.domain.genetics.Gene;
 import dev.breezes.settlements.domain.genetics.GeneType;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.EnumMap;
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class VillagerGeneticsAttachmentSerializerTest {
 
@@ -34,7 +34,7 @@ class VillagerGeneticsAttachmentSerializerTest {
                 .getOrThrow();
         List<VillagerGeneState> decoded = VillagerGeneticsAttachmentCodec.STATE_CODEC
                 .parse(JsonOps.INSTANCE, payload)
-                .resultOrPartial(message -> fail(message))
+                .resultOrPartial(Assertions::fail)
                 .orElseThrow();
         GeneticsProfile loaded = this.serializer.fromState(decoded);
 

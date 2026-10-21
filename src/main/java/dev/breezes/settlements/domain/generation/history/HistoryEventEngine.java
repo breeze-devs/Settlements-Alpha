@@ -204,16 +204,12 @@ public class HistoryEventEngine {
                 }
 
                 float current = modifiedWeights.getOrDefault(traitId, 0.0f);
-                float updated = clamp(current + modifier.getValue(), 0.0f, 1.0f);
+                float updated = Math.clamp(current + modifier.getValue(), 0.0f, 1.0f);
                 modifiedWeights.put(traitId, updated);
             }
         }
 
         return modifiedWeights;
-    }
-
-    private static float clamp(float value, float min, float max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     /**

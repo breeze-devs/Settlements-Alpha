@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -77,7 +78,7 @@ class DayPlanComposerGapFillTest {
 
         assertFalse(beforeAnchor.isEmpty(), "the free sub-interval before the anchor must be filled");
         assertFalse(afterAnchor.isEmpty(), "the free sub-interval after the anchor must be filled");
-        assertTrue(morningBandFillSlots.size() == beforeAnchor.size() + afterAnchor.size(),
+        assertEquals(morningBandFillSlots.size(), beforeAnchor.size() + afterAnchor.size(),
                 "every fill slot must fall entirely before or entirely after the anchor — none may overlap it");
 
         // Cadence/spacing invariant: within each side of the anchor (the packer's own per-call

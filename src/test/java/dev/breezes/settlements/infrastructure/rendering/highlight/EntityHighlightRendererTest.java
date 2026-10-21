@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import javax.annotation.Nonnull;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EntityHighlightRendererTest {
 
@@ -20,8 +20,7 @@ class EntityHighlightRendererTest {
 
         // Assert — Set iteration order does not reliably place either provider first, so this depends
         // on the sort here rather than on incidental collection order.
-        assertSame(highPriority, ordered.get(0));
-        assertSame(lowPriority, ordered.get(1));
+        assertEquals(List.of(highPriority, lowPriority), ordered);
     }
 
     @Test
@@ -34,8 +33,7 @@ class EntityHighlightRendererTest {
         List<EntityHighlightProvider> ordered = EntityHighlightRenderer.orderedByPrecedence(List.of(zProvider, aProvider));
 
         // Assert — sorting on priority alone leaves this pair's order undefined.
-        assertSame(aProvider, ordered.get(0));
-        assertSame(zProvider, ordered.get(1));
+        assertEquals(List.of(aProvider, zProvider), ordered);
     }
 
     private static class FakeProvider implements EntityHighlightProvider {

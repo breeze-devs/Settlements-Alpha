@@ -3,8 +3,9 @@ package dev.breezes.settlements.infrastructure.rendering.bubbles.canvas;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleBoundingBox;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.RenderParameter;
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.CustomLog;
+import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
@@ -15,19 +16,18 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 @Builder
-@CustomLog
 public class BubbleTextElement implements BubbleInnerElement {
 
-    private Font font;
-    private Component component;
+    private final Component component;
 
     @Builder.Default
-    private int maxWidth = 200;
+    private final int maxWidth = 200;
     @Builder.Default
-    private float opacity = 0.8F;
-    @Builder.Default
-    private float scale = 1.0F;
+    private final float scale = 1.0F;
 
+    // Layout reads the lines several times per frame, so they are split once and kept
+    @Getter(value = AccessLevel.PRIVATE, lazy = true)
+    private final List<FormattedCharSequence> lines = Minecraft.getInstance().font.split(this.component, this.maxWidth);
 
     @Override
     public void preRender(@Nonnull RenderParameter parameter) {
@@ -35,8 +35,8 @@ public class BubbleTextElement implements BubbleInnerElement {
 
     @Override
     public void render(@Nonnull RenderParameter parameter, @Nonnull PoseStack bubblePoseStack, @Nonnull Matrix4f bubblePose) {
-        Font resolvedFont = this.resolveFont();
-        List<FormattedCharSequence> messageLines = resolvedFont.split(this.component, this.maxWidth);
+        Font font = Minecraft.getInstance().font;
+        List<FormattedCharSequence> messageLines = this.getLines();
 
         BubbleBoundingBox boundingBox = this.getBoundingBox();
         float xStart = -boundingBox.getWidth() / 2.0F;
@@ -51,9 +51,9 @@ public class BubbleTextElement implements BubbleInnerElement {
         for (int i = 0; i < messageLines.size(); i++) {
             FormattedCharSequence sequence = messageLines.get(i);
             if (sequence != null) {
-                resolvedFont.drawInBatch(sequence,
+                font.drawInBatch(sequence,
                         xStart / this.scale,
-                        (yStart / this.scale) + resolvedFont.lineHeight * i,
+                        (yStart / this.scale) + font.lineHeight * i,
                         -1, // Color formatting is handled by the Component style natively
                         false,
                         resolvedPose,
@@ -68,42 +68,31 @@ public class BubbleTextElement implements BubbleInnerElement {
 
     @Override
     public BubbleBoundingBox getBoundingBox() {
-        Font resolvedFont = this.resolveFont();
-        List<FormattedCharSequence> messageLines = resolvedFont.split(this.component, this.maxWidth);
+        Font font = Minecraft.getInstance().font;
+        List<FormattedCharSequence> messageLines = this.getLines();
 
         int textWidth = messageLines.stream()
-                .map(resolvedFont::width)
+                .map(font::width)
                 .max(Integer::compare)
                 .orElse(this.maxWidth);
         return BubbleBoundingBox.builder()
                 .width(Math.max(1, Math.round(textWidth * this.scale)))
-                .height(Math.max(1, Math.round(resolvedFont.lineHeight * messageLines.size() * this.scale)))
+                .height(Math.max(1, Math.round(font.lineHeight * messageLines.size() * this.scale)))
                 .build();
     }
 
     @Override
     public void adjustPoseStack(@Nonnull RenderParameter parameter, @Nonnull PoseStack poseStack) {
-        Font resolvedFont = this.resolveFont();
-        List<FormattedCharSequence> messageLines = resolvedFont.split(this.component, this.maxWidth);
-        poseStack.translate(0.0D, (0.1F * messageLines.size() * this.scale), 0.0D);
+        poseStack.translate(0.0D, (0.1F * this.getLines().size() * this.scale), 0.0D);
     }
 
     @Override
     public BubbleInnerElement copy() {
         return BubbleTextElement.builder()
-                .font(this.font)
-                .component(this.component != null ? this.component.copy() : null)
+                .component(this.component.copy())
                 .maxWidth(this.maxWidth)
-                .opacity(this.opacity)
                 .scale(this.scale)
                 .build();
-    }
-
-    private Font resolveFont() {
-        if (this.font != null) {
-            return this.font;
-        }
-        return Minecraft.getInstance().font;
     }
 
 }

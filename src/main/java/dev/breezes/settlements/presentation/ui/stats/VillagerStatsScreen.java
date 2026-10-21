@@ -198,11 +198,6 @@ public class VillagerStatsScreen extends LayoutScreen {
     }
 
     @Override
-    public void onClose() {
-        super.onClose();
-    }
-
-    @Override
     public void removed() {
         if (this.sessionId > 0) {
             PacketDistributor.sendToServer(new ServerBoundCloseUiPacket(UiChannel.VILLAGER_STATS, this.sessionId));

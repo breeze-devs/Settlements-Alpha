@@ -156,7 +156,7 @@ class HttpInferenceTransportTest {
     }
 
     @Test
-    void postStreaming_missingEndpoint_returnsCompletedNoOp() throws Exception {
+    void postStreaming_missingEndpoint_returnsCompletedNoOp() {
         // Arrange — no endpoint configured
         HttpInferenceTransport transport = newTransport(config("", ""));
         List<String> received = Collections.synchronizedList(new ArrayList<>());

@@ -84,31 +84,41 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
 
         StepResult result = step.tick(context);
 
-        if (result instanceof StepResult.NoOp) {
-            return StepResult.noOp();
-        } else if (result instanceof StepResult.Transition(StageKey key)) {
-            // When an inner step explicitly transitions to the outer StagedStep's own exit stage
-            // (e.g. AWARD → Stage.END), treat it as clean completion rather than calling
-            // transitionStage(key), which would fail with "unknown stage" because the
-            // behavior-level terminal stage is intentionally absent from the stageStepMap.
-            if (key.equals(this.nextStage)) {
+        switch (result) {
+            case StepResult.NoOp noOp -> {
+                return StepResult.noOp();
+            }
+            case StepResult.Transition(StageKey key) -> {
+                // When an inner step explicitly transitions to the outer StagedStep's own exit stage
+                // (e.g. AWARD → Stage.END), treat it as clean completion rather than calling
+                // transitionStage(key), which would fail with "unknown stage" because the
+                // behavior-level terminal stage is intentionally absent from the stageStepMap.
+                if (key.equals(this.nextStage)) {
+                    this.transitionStage(InternalStage.END);
+                    this.onEnd(context);
+                    return StepResult.transition(this.nextStage);
+                }
+                this.transitionStage(key);
+                return StepResult.noOp();
+            }
+            case StepResult.Complete complete -> {
+                // Inner step completes, treat as transition to END
                 this.transitionStage(InternalStage.END);
                 this.onEnd(context);
+                // After onEnd, we are done with this StagedStep, so we transition to the *next* stage defined for the parent
                 return StepResult.transition(this.nextStage);
+                // After onEnd, we are done with this StagedStep, so we transition to the *next* stage defined for the parent
             }
-            this.transitionStage(key);
-            return StepResult.noOp();
-        } else if (result instanceof StepResult.Complete) {
-            // Inner step completes, treat as transition to END
-            this.transitionStage(InternalStage.END);
-            this.onEnd(context);
-            // After onEnd, we are done with this StagedStep, so we transition to the *next* stage defined for the parent
-            return StepResult.transition(this.nextStage);
-        } else if (result instanceof StepResult.Fail) {
-            // Bubble up the failure to the parent step
-            return result;
-        } else if (result instanceof StepResult.Abort) {
-            return result;
+            case StepResult.Fail fail -> {
+                // Bubble up the failure to the parent step
+                return result;
+                // Bubble up the failure to the parent step
+            }
+            case StepResult.Abort abort -> {
+                return result;
+            }
+            default -> {
+            }
         }
 
         return StepResult.noOp();

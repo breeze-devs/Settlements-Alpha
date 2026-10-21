@@ -255,7 +255,7 @@ class ObservationFactoryTest {
 
         // Assert
         assertNotNull(observation); // sanity
-        assertEquals(null, observation.relatedEntity());
+        assertNull(observation.relatedEntity());
     }
 
     @Test

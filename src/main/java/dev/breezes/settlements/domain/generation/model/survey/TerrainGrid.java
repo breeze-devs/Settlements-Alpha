@@ -100,11 +100,11 @@ public final class TerrainGrid {
     }
 
     private int clampGridX(int gridX) {
-        return Math.max(0, Math.min(this.gridWidth - 1, gridX));
+        return Math.clamp(gridX, 0, this.gridWidth - 1);
     }
 
     private int clampGridZ(int gridZ) {
-        return Math.max(0, Math.min(this.gridDepth - 1, gridZ));
+        return Math.clamp(gridZ, 0, this.gridDepth - 1);
     }
 
     @Override

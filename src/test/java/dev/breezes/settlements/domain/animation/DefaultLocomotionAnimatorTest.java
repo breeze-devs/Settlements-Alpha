@@ -76,7 +76,7 @@ class DefaultLocomotionAnimatorTest {
     }
 
     private static LocomotionAnimationLibrary library(Map<NavigationType, KeyframeAnimation> animations) {
-        return navigationType -> animations.get(navigationType);
+        return animations::get;
     }
 
     private static KeyframeAnimation constantAnimation(String name, float value) {

@@ -71,7 +71,7 @@ class MonologueRequestServiceTest {
         UUID uuid = UUID.randomUUID();
         VillagerMonologueResult result = VillagerMonologueResult.builder()
                 .villagerId(uuid)
-                .bucket(Occasion.EVENING, List.of("§aThis is coloured text"))
+                .bucket(Occasion.EVENING, List.of("§aThis is colored text"))
                 .build();
 
         // Act
@@ -79,9 +79,9 @@ class MonologueRequestServiceTest {
 
         // Assert
         assertTrue(pack.isPresent());
-        String installedLine = pack.get().getLinesByOccasion().get(Occasion.EVENING).get(0);
+        String installedLine = pack.get().getLinesByOccasion().get(Occasion.EVENING).getFirst();
         assertFalse(installedLine.contains("§"), "Formatting codes must be stripped before install");
-        assertTrue(installedLine.contains("This is coloured text"));
+        assertTrue(installedLine.contains("This is colored text"));
     }
 
     @Test

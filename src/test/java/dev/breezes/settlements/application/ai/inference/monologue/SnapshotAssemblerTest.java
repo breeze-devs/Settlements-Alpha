@@ -51,7 +51,7 @@ class SnapshotAssemblerTest {
 
         List<int[]> melon = sites.get("RIPE_MELON");
         assertEquals(1, melon.size());
-        assertArrayEquals(new int[]{10, 64, 20}, melon.get(0));
+        assertArrayEquals(new int[]{10, 64, 20}, melon.getFirst());
 
         List<int[]> ore = sites.get("ORE");
         assertEquals(2, ore.size());

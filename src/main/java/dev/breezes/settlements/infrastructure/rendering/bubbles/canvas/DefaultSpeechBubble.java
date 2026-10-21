@@ -39,7 +39,7 @@ public class DefaultSpeechBubble implements SpeechBubble {
     @Override
     public void render(@Nonnull RenderParameter parameter) {
         Location location = Location.fromEntity(parameter.getObserver(), true);
-        if (location.distance(parameter.getEntity()) > this.visibilitySquared || this.isExpired()) {
+        if (location.distanceSquared(parameter.getEntity()) > this.visibilitySquared || this.isExpired()) {
             return;
         }
 

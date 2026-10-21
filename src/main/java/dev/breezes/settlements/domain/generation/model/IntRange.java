@@ -17,7 +17,7 @@ public record IntRange(int minInclusive, int maxInclusive) {
     }
 
     public int clamp(int value) {
-        return Math.max(this.minInclusive, Math.min(this.maxInclusive, value));
+        return Math.clamp(value, this.minInclusive, this.maxInclusive);
     }
 
     public int size() {

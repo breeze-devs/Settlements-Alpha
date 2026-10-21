@@ -86,8 +86,7 @@ public final class VillageAnimalSpawnerServerEvents {
 
         BlockPos candidate = new BlockPos(targetX, surfaceY, targetZ);
 
-        // Check if chunk is loaded
-        if (!serverLevel.hasChunksAt(candidate.getX() - 10, candidate.getZ() - 10, candidate.getX() + 10, candidate.getZ() + 10)) {
+        if (!serverLevel.isAreaLoaded(candidate, 10)) {
             return;
         }
 

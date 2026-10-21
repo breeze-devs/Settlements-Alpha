@@ -46,9 +46,7 @@ class WorldEventBusTest {
         bus.visitDelta(e1.getSequence(), visited::add);
 
         // Assert
-        assertEquals(2, visited.size());
-        assertEquals(e2.getSequence(), visited.get(0).getSequence());
-        assertEquals(e3.getSequence(), visited.get(1).getSequence());
+        assertEquals(List.of(e2.getSequence(), e3.getSequence()), visited.stream().map(WorldEvent::getSequence).toList());
     }
 
     @Test
@@ -137,7 +135,7 @@ class WorldEventBusTest {
         // Assert — the event at tick 10 is gone (115 - 100 = 15 > 10), recent stays
         List<WorldEvent> remaining = bus.snapshotLog();
         assertEquals(1, remaining.size());
-        assertEquals(105L, remaining.get(0).getGameTick());
+        assertEquals(105L, remaining.getFirst().getGameTick());
     }
 
     @Test
@@ -168,7 +166,7 @@ class WorldEventBusTest {
         // Assert
         List<WorldEvent> remaining = configuredBus.snapshotLog();
         assertEquals(1, remaining.size());
-        assertEquals(130L, remaining.get(0).getGameTick());
+        assertEquals(130L, remaining.getFirst().getGameTick());
     }
 
     @Test

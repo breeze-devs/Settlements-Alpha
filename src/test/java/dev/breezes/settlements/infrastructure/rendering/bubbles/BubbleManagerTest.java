@@ -10,9 +10,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 class BubbleManagerTest {
@@ -192,14 +194,35 @@ class BubbleManagerTest {
         Assertions.assertEquals(1, manager.getCreateCount(bubbleId));
     }
 
+    @Test
+    void applySnapshot_failedRebuild_dropsAndExpiresSupersededBubble() {
+        // Arrange
+        TestBubbleManager manager = new TestBubbleManager();
+        UUID bubbleId = new UUID(0L, 1L);
+        manager.applySnapshot(List.of(createSnapshot(bubbleId, BubbleChannel.BEHAVIOR, 10, 100, 1, 0)), 0L);
+        TestSpeechBubble supersededBubble = manager.getCreatedBubble(bubbleId);
+        manager.failCreatesFor(bubbleId);
+
+        // Act — bumped contentVersion whose rebuild fails
+        manager.applySnapshot(List.of(createSnapshot(bubbleId, BubbleChannel.BEHAVIOR, 10, 100, 1, 1)), 0L);
+
+        // Assert — the superseded segments must not stay on screen under the new contentVersion
+        Assertions.assertFalse(manager.getBubblesById().containsKey(bubbleId));
+        Assertions.assertTrue(supersededBubble.expired());
+    }
+
     private static final class TestBubbleManager extends BubbleManager {
 
         private final Map<UUID, Integer> createCounts = new HashMap<>();
         private final Map<UUID, TestSpeechBubble> createdBubbles = new HashMap<>();
+        private final Set<UUID> failingCreates = new HashSet<>();
 
         @Override
         protected Optional<SpeechBubble> createBubble(BubbleEntrySnapshot entry, long currentGameTime) {
             this.createCounts.merge(entry.bubbleId(), 1, Integer::sum);
+            if (this.failingCreates.contains(entry.bubbleId())) {
+                return Optional.empty();
+            }
             TestSpeechBubble bubble = new TestSpeechBubble(entry.bubbleId());
             this.createdBubbles.put(entry.bubbleId(), bubble);
             return Optional.of(bubble);
@@ -211,6 +234,10 @@ class BubbleManagerTest {
 
         private TestSpeechBubble getCreatedBubble(UUID bubbleId) {
             return this.createdBubbles.get(bubbleId);
+        }
+
+        private void failCreatesFor(UUID bubbleId) {
+            this.failingCreates.add(bubbleId);
         }
 
     }

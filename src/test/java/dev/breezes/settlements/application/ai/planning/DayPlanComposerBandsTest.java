@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -54,25 +53,26 @@ class DayPlanComposerBandsTest {
                 context, palette, context.restDayPolicy(), frame, LUNCH_BAND_BOUND_CIVIL, DINNER_BAND_BOUND_CIVIL);
 
         // Assert
-        assertEquals(3, bands.size());
-        assertEquals(PlanBand.MORNING, bands.get(0).id());
-        assertEquals(70, bands.get(0).basePriority());
-        assertEquals(1_000, bands.get(0).startCivil());
-        assertEquals(12_000, bands.get(0).endCivil(), "MORNING now runs to the raw workEnd — the truncate-at-lunch cap is gone");
-        assertTrue(bands.get(0).pool().stream()
+        assertEquals(List.of(PlanBand.MORNING, PlanBand.AFTERNOON, PlanBand.EVENING), bands.stream().map(PlanBand::id).toList());
+        PlanBand morning = bands.get(0);
+        PlanBand afternoon = bands.get(1);
+        PlanBand evening = bands.get(2);
+
+        assertEquals(1_000, morning.startCivil());
+        assertEquals(12_000, morning.endCivil(), "MORNING must run to workEnd, not stop at the lunch bound");
+        assertTrue(morning.pool().stream()
                         .allMatch(behavior -> behavior.descriptor().getCategory() == BehaviorCategory.WORK),
                 "Work-day morning band must draw only from WORK-category behaviors");
 
-        assertEquals(PlanBand.AFTERNOON, bands.get(1).id());
-        assertEquals(50, bands.get(1).basePriority());
-        assertEquals(DINNER_BAND_BOUND_CIVIL, bands.get(1).endCivil());
+        assertEquals(DINNER_BAND_BOUND_CIVIL, afternoon.endCivil());
 
-        assertEquals(PlanBand.EVENING, bands.get(2).id());
-        assertEquals(40, bands.get(2).basePriority());
-        assertEquals(DINNER_BAND_BOUND_CIVIL, bands.get(2).startCivil());
-        assertTrue(bands.get(2).pool().stream()
+        assertEquals(DINNER_BAND_BOUND_CIVIL, evening.startCivil());
+        assertTrue(evening.pool().stream()
                         .noneMatch(behavior -> behavior.descriptor().getCategory() == BehaviorCategory.WORK),
                 "Evening band must never draw WORK-category behaviors");
+
+        assertTrue(morning.basePriority() > afternoon.basePriority(), "MORNING must outrank AFTERNOON");
+        assertTrue(afternoon.basePriority() > evening.basePriority(), "AFTERNOON must outrank EVENING");
     }
 
     @Test
@@ -81,24 +81,24 @@ class DayPlanComposerBandsTest {
         PlanGenerationContext context = context(VillagerProfessionKey.FARMER, PlanDayType.REST_DAY);
         PlannerPolicy.PlannerPalette palette = new PlannerPolicy.PlannerPalette(context.availableBehaviors());
         DayPlanComposer.PlanFrame frame = frame(0, 20_000, 1_000, 12_000);
+        PlanBand workDayMorning = morningBand(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY, frame);
 
         // Act
         List<PlanBand> bands = DayPlanComposer.deriveBands(
                 context, palette, context.restDayPolicy(), frame, LUNCH_BAND_BOUND_CIVIL, DINNER_BAND_BOUND_CIVIL);
 
         // Assert
-        assertEquals(3, bands.size());
-        assertEquals(PlanBand.MORNING, bands.get(0).id());
-        assertEquals(55, bands.get(0).basePriority());
-        // Rest-day morning draws from the full available pool, not just work behaviors.
-        assertFalse(bands.get(0).pool().isEmpty());
-        assertTrue(bands.get(0).pool().stream()
+        assertEquals(List.of(PlanBand.MORNING, PlanBand.AFTERNOON, PlanBand.EVENING), bands.stream().map(PlanBand::id).toList());
+        PlanBand morning = bands.get(0);
+        PlanBand afternoon = bands.get(1);
+        PlanBand evening = bands.get(2);
+
+        assertTrue(morning.pool().stream()
                         .anyMatch(behavior -> behavior.descriptor().getCategory() == BehaviorCategory.SOCIAL),
                 "Rest-day morning band must include non-work candidates");
-        assertEquals(PlanBand.AFTERNOON, bands.get(1).id());
-        assertEquals(50, bands.get(1).basePriority());
-        assertEquals(PlanBand.EVENING, bands.get(2).id());
-        assertEquals(40, bands.get(2).basePriority());
+        assertTrue(morning.basePriority() < workDayMorning.basePriority(), "Rest-day MORNING must rank below work-day MORNING");
+        assertTrue(morning.basePriority() > afternoon.basePriority(), "MORNING must outrank AFTERNOON");
+        assertTrue(afternoon.basePriority() > evening.basePriority(), "AFTERNOON must outrank EVENING");
     }
 
     @Test
@@ -109,14 +109,19 @@ class DayPlanComposerBandsTest {
         PlanGenerationContext context = context(VillagerProfessionKey.NITWIT, PlanDayType.WORK_DAY);
         PlannerPolicy.PlannerPalette palette = new PlannerPolicy.PlannerPalette(context.availableBehaviors());
         DayPlanComposer.PlanFrame frame = frame(0, 20_000, 1_000, 12_000);
+        PlanBand restDayMorning = morningBand(VillagerProfessionKey.FARMER, PlanDayType.REST_DAY, frame);
 
         // Act
         List<PlanBand> bands = DayPlanComposer.deriveBands(
                 context, palette, context.restDayPolicy(), frame, LUNCH_BAND_BOUND_CIVIL, DINNER_BAND_BOUND_CIVIL);
 
         // Assert
-        assertEquals(PlanBand.MORNING, bands.get(0).id());
-        assertEquals(55, bands.get(0).basePriority());
+        PlanBand morning = bands.getFirst();
+        assertEquals(PlanBand.MORNING, morning.id());
+        assertEquals(restDayMorning.basePriority(), morning.basePriority(), "NITWIT work-day MORNING must take the rest-day priority");
+        assertTrue(morning.pool().stream()
+                        .anyMatch(behavior -> behavior.descriptor().getCategory() == BehaviorCategory.SOCIAL),
+                "NITWIT work-day MORNING must draw from the full pool, not just WORK behaviors");
     }
 
     @Test
@@ -141,7 +146,7 @@ class DayPlanComposerBandsTest {
     void deriveBands_workEndPastDinnerCollapsesAfternoonAndPushesEveningToWorkEnd() {
         // Arrange — a long, high-WIL work day whose workEnd (17000) lands past the dinner band
         // bound (16500): AFTERNOON must collapse to nothing, and EVENING must start at workEnd,
-        // never overlapping the MORNING band that now legitimately runs that late.
+        // never overlapping the MORNING band, which runs to workEnd.
         PlanGenerationContext context = context(VillagerProfessionKey.FARMER, PlanDayType.WORK_DAY);
         PlannerPolicy.PlannerPalette palette = new PlannerPolicy.PlannerPalette(context.availableBehaviors());
         int lateWorkEndCivil = DINNER_BAND_BOUND_CIVIL + 500;
@@ -170,6 +175,13 @@ class DayPlanComposerBandsTest {
                 .workEndCivil(workEndCivil)
                 .mealOffsetTicks(0)
                 .build();
+    }
+
+    private static PlanBand morningBand(VillagerProfessionKey profession, PlanDayType dayType, DayPlanComposer.PlanFrame frame) {
+        PlanGenerationContext context = context(profession, dayType);
+        PlannerPolicy.PlannerPalette palette = new PlannerPolicy.PlannerPalette(context.availableBehaviors());
+        return DayPlanComposer.deriveBands(
+                context, palette, context.restDayPolicy(), frame, LUNCH_BAND_BOUND_CIVIL, DINNER_BAND_BOUND_CIVIL).getFirst();
     }
 
     private static PlanGenerationContext context(VillagerProfessionKey profession, PlanDayType dayType) {

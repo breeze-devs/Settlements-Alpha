@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 class HudPrecedenceTest {
 
@@ -23,8 +22,7 @@ class HudPrecedenceTest {
 
         // Assert — a comparator that sorted ascending, or that skipped priority entirely, would report
         // lowPriority first.
-        assertSame(highPriority, ordered.get(0));
-        assertSame(lowPriority, ordered.get(1));
+        assertEquals(List.of(highPriority, lowPriority), ordered);
     }
 
     @Test
@@ -38,8 +36,7 @@ class HudPrecedenceTest {
 
         // Assert — sorting on priority alone leaves this pair's order undefined, which is exactly the
         // Set-iteration-order defect this tiebreak exists to remove.
-        assertSame(aProvider, ordered.get(0));
-        assertSame(zProvider, ordered.get(1));
+        assertEquals(List.of(aProvider, zProvider), ordered);
     }
 
     @Test

@@ -40,8 +40,8 @@ class VillagerSpeechServiceTest {
         // Assert
         assertEquals(1, firstSinkCalls.size());
         assertEquals(1, secondSinkCalls.size());
-        assertSame(utterance, firstSinkCalls.get(0));
-        assertSame(utterance, secondSinkCalls.get(0));
+        assertSame(utterance, firstSinkCalls.getFirst());
+        assertSame(utterance, secondSinkCalls.getFirst());
     }
 
 }

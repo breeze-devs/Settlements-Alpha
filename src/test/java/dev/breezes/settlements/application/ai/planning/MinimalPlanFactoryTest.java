@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class MinimalPlanFactoryTest {
 
-    /** Small offset spread by {@code Chronotype#mealOffsetTicks()} (±12 game-minutes = ±240 ticks). */
+    /**
+     * Small offset spread by {@code Chronotype#mealOffsetTicks()} (±12 game-minutes = ±240 ticks).
+     */
     private static final int MEAL_OFFSET_TOLERANCE_TICKS = 240;
 
     @Test
@@ -83,8 +85,8 @@ class MinimalPlanFactoryTest {
         assertTrue(wakeCivil > 0 && wakeCivil < bedtimeCivil && bedtimeCivil < TimeOfDay.TICKS_PER_DAY);
 
         assertEquals(1, plan.getSchedule().activityBlocks().size());
-        assertEquals(wakeCivil, plan.getSchedule().activityBlocks().get(0).startTick());
-        assertEquals(bedtimeCivil, plan.getSchedule().activityBlocks().get(0).endTick());
+        assertEquals(wakeCivil, plan.getSchedule().activityBlocks().getFirst().startTick());
+        assertEquals(bedtimeCivil, plan.getSchedule().activityBlocks().getFirst().endTick());
     }
 
     private static void assertNear(int expected, int actual) {

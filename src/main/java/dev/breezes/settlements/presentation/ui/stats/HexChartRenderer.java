@@ -154,7 +154,7 @@ class HexChartRenderer {
     public static float[][] computeDataVertices(float cx, float cy, float radius, @Nonnull double[] geneValues) {
         float[][] vertices = new float[NUM_AXES][2];
         for (int i = 0; i < NUM_AXES; i++) {
-            double value = i < geneValues.length ? Math.max(0, Math.min(1, geneValues[i])) : 0;
+            double value = i < geneValues.length ? Math.clamp(geneValues[i], 0.0, 1.0) : 0;
             double angle = Math.toRadians(-90 + i * 60);
             vertices[i][0] = cx + radius * (float) (value * Math.cos(angle));
             vertices[i][1] = cy + radius * (float) (value * Math.sin(angle));

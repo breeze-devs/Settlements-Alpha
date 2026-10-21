@@ -31,7 +31,7 @@ class ScoreEngineTest {
     private static final TraitId DEFENSE = TraitId.of("settlements:settlement_traits/defense");
 
     private final SurveyEngine surveyEngine = new SurveyEngine(this::lookup);
-    private final ScoreEngine scoreEngine = new ScoreEngine(() -> defaultScorers());
+    private final ScoreEngine scoreEngine = new ScoreEngine(this::defaultScorers);
 
     @Test
     void flatPlains_farmingDominates() {

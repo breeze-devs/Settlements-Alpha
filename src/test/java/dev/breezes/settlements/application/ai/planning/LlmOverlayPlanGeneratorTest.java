@@ -88,7 +88,7 @@ class LlmOverlayPlanGeneratorTest {
                 .filter(slot -> !slot.getBehaviorKey().equals(BehaviorKey.EAT_FOOD))
                 .toList();
         assertFalse(nonMealSlots.isEmpty());
-        assertEquals(BehaviorKey.of("b"), nonMealSlots.get(0).getBehaviorKey(),
+        assertEquals(BehaviorKey.of("b"), nonMealSlots.getFirst().getBehaviorKey(),
                 "earliest packed slot must honor the LLM order (b before a)");
     }
 
@@ -319,7 +319,7 @@ class LlmOverlayPlanGeneratorTest {
 
         // Assert
         assertEquals(1, intent.pins().size());
-        assertTrue(intent.pins().get(0).meal(), "an eat_food pin must be flagged as a meal");
+        assertTrue(intent.pins().getFirst().meal(), "an eat_food pin must be flagged as a meal");
     }
 
     @Test
@@ -421,8 +421,8 @@ class LlmOverlayPlanGeneratorTest {
         // Assert
         List<PlanSlot> mealSlots = mealSlots(plan);
         assertEquals(1, mealSlots.size(), "the colliding default must be suppressed, leaving only the occasion meal");
-        assertEquals(TimeOfDay.AT_17_00.getCivilTick(), mealSlots.get(0).getStartTick());
-        assertFalse(mealSlots.get(0).isFlexible(), "an occasion meal pin is rigid, same as a default meal anchor");
+        assertEquals(TimeOfDay.AT_17_00.getCivilTick(), mealSlots.getFirst().getStartTick());
+        assertFalse(mealSlots.getFirst().isFlexible(), "an occasion meal pin is rigid, same as a default meal anchor");
     }
 
     @Test

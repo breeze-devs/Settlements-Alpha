@@ -78,9 +78,9 @@ public class MinimalPlanFactory {
         // same chronotype offset as the composer, so a healthy frame still lines up with the frame a
         // real plan would have used.
         int rawWakeCivil = CivilTime.civilFromDayTime(wakeAtAbsoluteTick);
-        int wakeCivil = Math.max(1, Math.min(rawWakeCivil, TICKS_PER_DAY - MINIMUM_WAKING_SPAN_TICKS - 1));
+        int wakeCivil = Math.clamp(rawWakeCivil, 1, TICKS_PER_DAY - MINIMUM_WAKING_SPAN_TICKS - 1);
         int rawBedtimeCivil = CivilTime.civilFromMcTick(schedule.defaultSleepTick() + chronotype.wakeSleepOffsetTicks());
-        int bedtimeCivil = Math.min(TICKS_PER_DAY - 1, Math.max(rawBedtimeCivil, wakeCivil + MINIMUM_WAKING_SPAN_TICKS));
+        int bedtimeCivil = Math.clamp(rawBedtimeCivil, wakeCivil + MINIMUM_WAKING_SPAN_TICKS, TICKS_PER_DAY - 1);
 
         List<PlanSlot> slots = new ArrayList<>();
         for (MealAnchorRule rule : DefaultMealAnchorTable.rows()) {
@@ -121,7 +121,7 @@ public class MinimalPlanFactory {
      */
     private static int clampToFrame(int startTick, int durationTicks, int wakeCivil, int bedtimeCivil) {
         int latestStart = bedtimeCivil - durationTicks;
-        return Math.max(wakeCivil, Math.min(startTick, latestStart));
+        return Math.clamp(startTick, wakeCivil, latestStart);
     }
 
 }

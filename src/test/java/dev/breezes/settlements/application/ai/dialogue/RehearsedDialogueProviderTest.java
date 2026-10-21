@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -95,7 +96,7 @@ class RehearsedDialogueProviderTest {
 
         // Assert — no EVENING pack, must fall back
         assertTrue(line.isPresent());
-        assertTrue(line.get() instanceof DialogueLine.Translatable);
+        assertInstanceOf(DialogueLine.Translatable.class, line.get());
     }
 
     @Test
@@ -111,7 +112,7 @@ class RehearsedDialogueProviderTest {
 
         // Assert
         assertTrue(line.isPresent());
-        assertTrue(line.get() instanceof DialogueLine.Translatable);
+        assertInstanceOf(DialogueLine.Translatable.class, line.get());
     }
 
     @Test
@@ -134,9 +135,9 @@ class RehearsedDialogueProviderTest {
 
         // Assert
         assertTrue(first.isPresent());
-        assertTrue(first.get() instanceof DialogueLine.Literal);
+        assertInstanceOf(DialogueLine.Literal.class, first.get());
         assertTrue(second.isPresent());
-        assertTrue(second.get() instanceof DialogueLine.Translatable);
+        assertInstanceOf(DialogueLine.Translatable.class, second.get());
     }
 
     @Test
@@ -281,7 +282,7 @@ class RehearsedDialogueProviderTest {
         DialogueContext ctx = DialogueContext.builder().occasion(Occasion.IDLE).build();
         Optional<DialogueLine> line = provider.sampleAmbientLine(uuid, ctx);
         assertTrue(line.isPresent());
-        assertTrue(line.get() instanceof DialogueLine.Literal, "Installed rehearsed lines must be Literal");
+        assertInstanceOf(DialogueLine.Literal.class, line.get(), "Installed rehearsed lines must be Literal");
     }
 
     @Test
@@ -309,8 +310,7 @@ class RehearsedDialogueProviderTest {
         // Assert — stale pack not installed; fallback (Translatable) is served
         Optional<DialogueLine> line = provider.sampleAmbientLine(uuid, ctx);
         assertTrue(line.isPresent());
-        assertTrue(line.get() instanceof DialogueLine.Translatable,
-                "Stale result must be dropped; fallback Translatable must be served");
+        assertInstanceOf(DialogueLine.Translatable.class, line.get(), "Stale result must be dropped; fallback Translatable must be served");
     }
 
     @Test
@@ -364,8 +364,7 @@ class RehearsedDialogueProviderTest {
         // Assert — the straggler is dropped by the epoch guard; fallback is served
         Optional<DialogueLine> line = provider.sampleAmbientLine(uuid, ctx);
         assertTrue(line.isPresent());
-        assertTrue(line.get() instanceof DialogueLine.Translatable,
-                "A result from a cancelled sweep must be dropped, not installed");
+        assertInstanceOf(DialogueLine.Translatable.class, line.get(), "A result from a cancelled sweep must be dropped, not installed");
     }
 
     @Test
@@ -422,7 +421,7 @@ class RehearsedDialogueProviderTest {
         // Assert — the rehearsed pack is gone; sampling falls through to the scripted floor
         Optional<DialogueLine> line = provider.sampleAmbientLine(villagerUuid, context);
         assertTrue(line.isPresent());
-        assertTrue(line.get() instanceof DialogueLine.Translatable, "Evicted villager must fall back to scripted");
+        assertInstanceOf(DialogueLine.Translatable.class, line.get(), "Evicted villager must fall back to scripted");
     }
 
     @Test

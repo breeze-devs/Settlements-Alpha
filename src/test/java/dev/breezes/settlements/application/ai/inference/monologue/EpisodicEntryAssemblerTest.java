@@ -118,7 +118,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert
         assertEquals(1, result.size());
-        assertEquals("FIRST_HAND_PARTICIPANT", result.get(0).getPerspective());
+        assertEquals("FIRST_HAND_PARTICIPANT", result.getFirst().getPerspective());
     }
 
     @Test
@@ -131,7 +131,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert — absent actor defaults to PARTICIPANT, not BYSTANDER, to avoid "I saw someone harvest"
         assertEquals(1, result.size());
-        assertEquals("FIRST_HAND_PARTICIPANT", result.get(0).getPerspective());
+        assertEquals("FIRST_HAND_PARTICIPANT", result.getFirst().getPerspective());
     }
 
     @Test
@@ -144,7 +144,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert
         assertEquals(1, result.size());
-        assertEquals("FIRST_HAND_BYSTANDER", result.get(0).getPerspective());
+        assertEquals("FIRST_HAND_BYSTANDER", result.getFirst().getPerspective());
     }
 
     @Test
@@ -156,7 +156,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertNull(result.get(0).getActor());
+        assertEquals(1, result.size());
+        assertNull(result.getFirst().getActor());
     }
 
     @Test
@@ -169,7 +170,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertEquals(expectedActorName, result.get(0).getActor());
+        assertEquals(1, result.size());
+        assertEquals(expectedActorName, result.getFirst().getActor());
     }
 
     @Test
@@ -182,7 +184,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertEquals(expectedTargetName, result.get(0).getTarget());
+        assertEquals(1, result.size());
+        assertEquals(expectedTargetName, result.getFirst().getTarget());
     }
 
     @Test
@@ -195,7 +198,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertEquals(expectedTargetName, result.get(0).getTarget());
+        assertEquals(1, result.size());
+        assertEquals(expectedTargetName, result.getFirst().getTarget());
     }
 
     @Test
@@ -208,7 +212,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertEquals(expectedTargetName, result.get(0).getTarget());
+        assertEquals(1, result.size());
+        assertEquals(expectedTargetName, result.getFirst().getTarget());
     }
 
     @Test
@@ -221,7 +226,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertEquals(expectedTargetName, result.get(0).getTarget());
+        assertEquals(1, result.size());
+        assertEquals(expectedTargetName, result.getFirst().getTarget());
     }
 
     @Test
@@ -234,7 +240,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertEquals(expectedTargetName, result.get(0).getTarget());
+        assertEquals(1, result.size());
+        assertEquals(expectedTargetName, result.getFirst().getTarget());
     }
 
     @Test
@@ -246,7 +253,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert — non-social event types must not resolve target to avoid bogus human names
-        assertNull(result.get(0).getTarget());
+        assertEquals(1, result.size());
+        assertNull(result.getFirst().getTarget());
     }
 
     @Test
@@ -258,7 +266,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertNull(result.get(0).getTarget());
+        assertEquals(1, result.size());
+        assertNull(result.getFirst().getTarget());
     }
 
     @Test
@@ -272,8 +281,9 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert — raw string pass-through, not enum re-encoding
-        assertEquals("FAILURE", result.get(0).getOutcome());
-        assertEquals("haggling fell through", result.get(0).getReason());
+        assertEquals(1, result.size());
+        assertEquals("FAILURE", result.getFirst().getOutcome());
+        assertEquals("haggling fell through", result.getFirst().getReason());
     }
 
     @Test
@@ -287,8 +297,9 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertEquals("SUCCESS", result.get(0).getOutcome());
-        assertNull(result.get(0).getReason());
+        assertEquals(1, result.size());
+        assertEquals("SUCCESS", result.getFirst().getOutcome());
+        assertNull(result.getFirst().getReason());
     }
 
     @Test
@@ -300,8 +311,9 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert — absent metadata → null fields → Gson omits from wire
-        assertNull(result.get(0).getOutcome());
-        assertNull(result.get(0).getReason());
+        assertEquals(1, result.size());
+        assertNull(result.getFirst().getOutcome());
+        assertNull(result.getFirst().getReason());
     }
 
     @Test
@@ -313,7 +325,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert
-        assertEquals(CURRENT_TICK - ADMITTED_TICK, result.get(0).getAgeTicks());
+        assertEquals(1, result.size());
+        assertEquals(CURRENT_TICK - ADMITTED_TICK, result.getFirst().getAgeTicks());
     }
 
     @Test
@@ -326,7 +339,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert — clamped to zero, never negative
-        assertEquals(0L, result.get(0).getAgeTicks());
+        assertEquals(1, result.size());
+        assertEquals(0L, result.getFirst().getAgeTicks());
     }
 
     @Test
@@ -340,10 +354,8 @@ class EpisodicEntryAssemblerTest {
         List<EpisodicEntryDTO> result = this.assembler.assemble(OBSERVER_ID, this.store, CURRENT_TICK);
 
         // Assert — highest weight first
-        assertEquals(3, result.size());
-        assertEquals("SHEEP_SHEARED", result.get(0).getEventType());
-        assertEquals("COW_MILKED", result.get(1).getEventType());
-        assertEquals("RESOURCE_HARVESTED", result.get(2).getEventType());
+        assertEquals(List.of("SHEEP_SHEARED", "COW_MILKED", "RESOURCE_HARVESTED"),
+                result.stream().map(EpisodicEntryDTO::getEventType).toList());
     }
 
     @Test
@@ -379,7 +391,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert — prefix stripped, slots present in the nested map
         assertEquals(1, result.size());
-        Map<String, String> detail = result.get(0).getDetail();
+        Map<String, String> detail = result.getFirst().getDetail();
         assertEquals("melons", detail.get("item"));
         assertEquals("3", detail.get("count"));
     }
@@ -394,7 +406,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert — absent detail → null so Gson omits the field on the wire
         assertEquals(1, result.size());
-        assertNull(result.get(0).getDetail());
+        assertNull(result.getFirst().getDetail());
     }
 
     @Test
@@ -412,7 +424,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert — prefix stripped, display name surfaces under the bare "player" slot
         assertEquals(1, result.size());
-        Map<String, String> detail = result.get(0).getDetail();
+        Map<String, String> detail = result.getFirst().getDetail();
         assertEquals("Steve", detail.get("player"));
     }
 
@@ -433,7 +445,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert
         assertEquals(1, result.size());
-        Map<String, String> detail = result.get(0).getDetail();
+        Map<String, String> detail = result.getFirst().getDetail();
         assertEquals("bread", detail.get("item"));
         assertEquals("4", detail.get("count"));
         assertEquals("1 emerald", detail.get("price"));
@@ -452,7 +464,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert
         assertEquals(1, result.size());
-        int[] pos = result.get(0).getPos();
+        int[] pos = result.getFirst().getPos();
         assertArrayEquals(new int[]{123, 64, -6}, pos);
     }
 
@@ -466,7 +478,7 @@ class EpisodicEntryAssemblerTest {
 
         // Assert — absent pos → null so Gson omits the field on the wire
         assertEquals(1, result.size());
-        assertNull(result.get(0).getPos());
+        assertNull(result.getFirst().getPos());
     }
 
     private static KnowledgeEntry directEntryWithPos(@Nullable UUID actorId,

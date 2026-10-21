@@ -244,7 +244,7 @@ class WindowPackerTest {
 
         // Assert — slots appear in emission order; first must have the highest priority
         assertFalse(result.isEmpty());
-        assertEquals(basePriority, result.get(0).priority());
+        assertEquals(basePriority, result.getFirst().priority());
 
         for (int i = 1; i < result.size(); i++) {
             assertTrue(result.get(i).priority() <= result.get(i - 1).priority(),
@@ -289,10 +289,7 @@ class WindowPackerTest {
 
         // Assert — coverage-first guarantees each fresh key is emitted before any repeat, and within
         // the fresh pass the earliest-in-order key always wins, so the first three slots are exactly B, A, C
-        assertTrue(result.size() >= 3, "Expected all three fresh keys to be emitted");
-        assertEquals(KEY_B, result.get(0).key());
-        assertEquals(KEY_A, result.get(1).key());
-        assertEquals(KEY_C, result.get(2).key());
+        assertEquals(List.of(KEY_B, KEY_A, KEY_C), leadingKeys(result, 3));
 
         // Once every key has appeared once, the walk is in the repeat phase — order still governs
         for (int i = 3; i < result.size(); i++) {
@@ -316,10 +313,8 @@ class WindowPackerTest {
         List<WindowPacker.PackedSlot> result = WindowPacker.pack(pool, start, end, 50, strategy, new Random(0L), 1.0);
 
         // Assert — the foreign key never appears; real pool keys are still ordered B before A
-        assertTrue(result.size() >= 2);
         assertTrue(result.stream().noneMatch(s -> s.key().equals(foreignKey)));
-        assertEquals(KEY_B, result.get(0).key());
-        assertEquals(KEY_A, result.get(1).key());
+        assertEquals(List.of(KEY_B, KEY_A), leadingKeys(result, 2));
     }
 
     @Test
@@ -338,10 +333,7 @@ class WindowPackerTest {
         List<WindowPacker.PackedSlot> result = WindowPacker.pack(pool, start, end, 50, strategy, new Random(0L), 1.0);
 
         // Assert — unranked KEY_C is only picked once both ranked keys have been covered
-        assertTrue(result.size() >= 3);
-        assertEquals(KEY_B, result.get(0).key());
-        assertEquals(KEY_A, result.get(1).key());
-        assertEquals(KEY_C, result.get(2).key());
+        assertEquals(List.of(KEY_B, KEY_A, KEY_C), leadingKeys(result, 3));
     }
 
     @Test
@@ -359,9 +351,7 @@ class WindowPackerTest {
         List<WindowPacker.PackedSlot> result = WindowPacker.pack(pool, start, end, 50, strategy, new Random(0L), 1.0);
 
         // Assert — deterministic id tie-break means KEY_A (id "test_a") always wins over KEY_B first
-        assertTrue(result.size() >= 2);
-        assertEquals(KEY_A, result.get(0).key());
-        assertEquals(KEY_B, result.get(1).key());
+        assertEquals(List.of(KEY_A, KEY_B), leadingKeys(result, 2));
     }
 
     @Test
@@ -379,9 +369,7 @@ class WindowPackerTest {
         List<WindowPacker.PackedSlot> result = WindowPacker.pack(pool, start, end, 50, strategy, new Random(0L), 1.0);
 
         // Assert — B still ranks before A, exactly as if the duplicate were never appended
-        assertTrue(result.size() >= 2);
-        assertEquals(KEY_B, result.get(0).key());
-        assertEquals(KEY_A, result.get(1).key());
+        assertEquals(List.of(KEY_B, KEY_A), leadingKeys(result, 2));
     }
 
     @Test
@@ -527,6 +515,10 @@ class WindowPackerTest {
     private static WindowPacker.PackingCandidate candidate(BehaviorKey key, double weight,
                                                            int durationTicks, CooldownRange cooldown) {
         return new WindowPacker.PackingCandidate(key, weight, durationTicks, cooldown);
+    }
+
+    private static List<BehaviorKey> leadingKeys(List<WindowPacker.PackedSlot> result, int count) {
+        return result.stream().limit(count).map(WindowPacker.PackedSlot::key).toList();
     }
 
 }

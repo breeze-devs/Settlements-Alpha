@@ -3,6 +3,7 @@ package dev.breezes.settlements.domain.ai.memory;
 import org.junit.jupiter.api.Test;
 
 import static dev.breezes.settlements.domain.ai.memory.DecayingSpatialSiteStoreTest.packPos;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -100,7 +101,7 @@ class SiteScorerTest {
         double score = SiteScorer.DISTANCE.score(siteAtOrigin, 10, 64, 20, 0L, 0L);
 
         // Assert
-        assertTrue(score == 0.0, "Site at the exact origin must score 0");
+        assertEquals(0.0, score, "Site at the exact origin must score 0");
     }
 
     @Test
@@ -113,7 +114,7 @@ class SiteScorerTest {
         double score = SiteScorer.DISTANCE.score(site, 0, 0, 0, 0L, 0L);
 
         // Assert
-        assertTrue(score == 25.0, "Expected dist² of 25 for (3,0,4) from (0,0,0), got " + score);
+        assertEquals(25.0, score, "Expected dist² of 25 for (3,0,4) from (0,0,0)");
     }
 
 }

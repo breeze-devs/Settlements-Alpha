@@ -27,7 +27,7 @@ public class BubbleBoundaryElement {
 
     private static final ResourceLocation BUBBLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(SettlementsMod.MOD_ID, "textures/bubble/speech_bubble.png");
 
-    public static RenderType BUBBLE = RenderType.create("settlements:speech_bubble",
+    private static final RenderType BUBBLE = RenderType.create("settlements:speech_bubble",
             DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 256,
             false, false,
             RenderType.CompositeState.builder()
@@ -38,10 +38,10 @@ public class BubbleBoundaryElement {
                     .setOverlayState(RenderStateShard.OVERLAY)
                     .createCompositeState(false));
 
-    private BubbleInnerElement innerElement;
+    private final BubbleInnerElement innerElement;
 
     @Builder.Default
-    private float opacity = 0.8F;
+    private final float opacity = 0.8F;
 
     public void render(@Nonnull RenderParameter parameter) {
         PoseStack poseStack = parameter.getPoseStack();
@@ -143,7 +143,7 @@ public class BubbleBoundaryElement {
                 .setOverlay(OverlayTexture.NO_OVERLAY);
     }
 
-    protected double getNameOffset(@Nonnull RenderParameter renderParameter) {
+    private double getNameOffset(@Nonnull RenderParameter renderParameter) {
         Entity entity = renderParameter.getEntity();
 
         // Check if entity has custom name and should be displayed
