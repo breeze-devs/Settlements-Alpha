@@ -29,7 +29,7 @@ import java.util.Optional;
 
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class PartnerScanner {
 
     private final TradeCatalogRegistry tradeCatalogRegistry;
@@ -106,8 +106,8 @@ public final class PartnerScanner {
                     continue;
                 }
 
-                log.behaviorTrace("Matched trade candidate: buyer={}, seller={}, item={}, want={}, sellerAsk={}, buyerOffer={}, bundleSize={}",
-                        buyer.getUUID(), seller.getUUID(), BuiltInRegistries.ITEM.getKey(matchedItem), activeDemand.match().asDebugString(),
+                log.trace("Matched trade candidate: buyer={}, seller={}, item={}, want={}, sellerAsk={}, buyerOffer={}, bundleSize={}",
+                        buyer.getUUID(), seller.getUUID(), matchedItem, activeDemand.match(),
                         sellerAsk, buyerOffer, offerEntry.bundleSize());
                 return Optional.of(TradeCandidate.builder()
                         .partner(seller)

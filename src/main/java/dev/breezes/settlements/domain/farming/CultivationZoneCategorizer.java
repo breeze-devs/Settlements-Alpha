@@ -3,7 +3,6 @@ package dev.breezes.settlements.domain.farming;
 import dev.breezes.settlements.domain.tags.SettlementsBlockTags;
 import dev.breezes.settlements.domain.world.blocks.BlockStateView;
 import lombok.AccessLevel;
-import lombok.CustomLog;
 import lombok.NoArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -30,7 +29,6 @@ import java.util.stream.Stream;
  * caller that hands it a canopy position reads the block above the canopy as the canopy.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@CustomLog
 public final class CultivationZoneCategorizer {
 
     /**

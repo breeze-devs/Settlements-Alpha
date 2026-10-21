@@ -38,7 +38,7 @@ import java.util.Optional;
  * <p>
  * Only consumes food if the villager requires satiation or healing.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class EatFoodBehavior extends VillagerStateMachineBehavior {
 
     private enum EatStage implements StageKey {
@@ -168,8 +168,7 @@ public class EatFoodBehavior extends VillagerStateMachineBehavior {
      */
     private void swallowSelectedFood(@Nonnull BaseVillager villager) {
         if (!villager.getSettlementsInventory().consumeOrBypassed(this.selectedFood, 1)) {
-            log.behaviorTrace("Meal for villager {} found nothing left of its chosen food to swallow",
-                    villager.getUUID());
+            log.debug("Meal for villager {} found nothing left of its chosen food to swallow", villager.getUUID());
             return;
         }
 

@@ -69,7 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
 
     private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
@@ -176,7 +176,6 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                 .name("PickNextCultivationCell")
                 .action(ctx -> {
                     if (this.selectedLilyPos == null) {
-                        log.behaviorStatus("No lily selected, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 
@@ -188,7 +187,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                     if (this.pendingCells.isEmpty()) {
                         BlockEntity be = level.getBlockEntity(this.selectedLilyPos);
                         if (!(be instanceof CultivationLilyBlockEntity lily) || !lily.isValid()) {
-                            log.behaviorStatus("Lily at {} is no longer valid", this.selectedLilyPos);
+                            log.debug("Lily at {} is no longer valid", this.selectedLilyPos);
                             return StepResult.transition(Stage.AWARD);
                         }
 
@@ -199,7 +198,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                                 .forEach(this.pendingCells::add);
 
                         if (this.pendingCells.isEmpty()) {
-                            log.behaviorStatus("Lily zone has no actionable cells, ending behavior");
+                            log.debug("Lily zone has no actionable cells, ending behavior");
                             return StepResult.transition(Stage.AWARD);
                         }
                     }
@@ -225,7 +224,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                         // the villager carries that seed (or bypass is on), so a scythe is never
                         // started without the means to replant.
                         if (resolveCropToPlant(villager, lily).isEmpty()) {
-                            log.behaviorStatus("Villager has no matching seeds, ending behavior");
+                            log.debug("Villager has no matching seeds, ending behavior");
                             return StepResult.transition(Stage.AWARD);
                         }
 
@@ -239,7 +238,6 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                         return StepResult.transition(Stage.APPROACH_CELL);
                     }
 
-                    log.behaviorStatus("No more actionable cells, ending behavior");
                     return StepResult.transition(Stage.AWARD);
                 })
                 .build();
@@ -318,7 +316,7 @@ public class CultivatePlotBehavior extends VillagerStateMachineBehavior {
                     Item seedItem = BuiltInRegistries.ITEM.get(def.seedItem());
                     boolean consumed = villager.getSettlementsInventory().consumeOrBypassed(seedItem, 1);
                     if (!consumed) {
-                        log.behaviorStatus("Could not consume seed, skipping plant");
+                        log.debug("Could not consume seed {}, skipping plant at {}", seedItem, cellPos);
                         return StepResult.noOp();
                     }
 

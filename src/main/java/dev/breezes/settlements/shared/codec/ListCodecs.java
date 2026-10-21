@@ -46,7 +46,7 @@ public final class ListCodecs {
                 } catch (IllegalArgumentException | NullPointerException exception) {
                     // A precondition that throws mid-decode escapes the codec and aborts the decode of everything
                     // around the element, rather than dropping that one element
-                    log.warn("Dropped a {} its type rejected: {}", elementLabel, exception.getMessage(), exception);
+                    log.warn("Dropped a {} its type rejected", elementLabel, exception);
                     return DataResult.error(() -> "Rejected by its type: " + exception.getMessage());
                 }
 

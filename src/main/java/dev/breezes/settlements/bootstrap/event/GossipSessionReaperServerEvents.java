@@ -5,7 +5,6 @@ import dev.breezes.settlements.di.ServerScope;
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.CustomLog;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -15,7 +14,6 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  */
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
-@CustomLog
 public final class GossipSessionReaperServerEvents {
 
     private final GossipSessionRegistry gossipSessionRegistry;

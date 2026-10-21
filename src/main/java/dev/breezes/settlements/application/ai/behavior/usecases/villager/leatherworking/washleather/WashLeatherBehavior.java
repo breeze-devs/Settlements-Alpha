@@ -49,7 +49,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class WashLeatherBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
@@ -325,7 +325,7 @@ public class WashLeatherBehavior extends VillagerStateMachineBehavior {
 
         BlockState current = level.getBlockState(this.cauldronPos);
         if (!current.is(Blocks.CAULDRON) && !current.is(Blocks.WATER_CAULDRON)) {
-            log.behaviorTrace("Skipping cauldron water level update at {} — block is no longer a cauldron", this.cauldronPos);
+            log.trace("Skipping cauldron water level update at {} — block is no longer a cauldron", this.cauldronPos);
             return;
         }
 

@@ -25,7 +25,7 @@ import java.util.List;
  * When the provider has no batch-capable rung this event handler exits immediately with zero overhead.
  */
 @ServerScope
-@CustomLog
+@CustomLog(topic = "inference")
 public final class RehearsedDialogueSweepServerEvents {
 
     /**
@@ -74,7 +74,7 @@ public final class RehearsedDialogueSweepServerEvents {
         this.lastSweptDay = currentDay;
 
         List<BaseVillager> villagers = this.collectLoadedVillagers(server);
-        log.info("Evening dialogue pack sweep triggered at dayTime={}, loaded villagers={}", timeOfDay, villagers.size());
+        log.debug("Evening dialogue pack sweep triggered at timeOfDay={}, loaded villagers={}", timeOfDay, villagers.size());
         this.dialogueProvider.runEveningPackSweep(villagers);
     }
 

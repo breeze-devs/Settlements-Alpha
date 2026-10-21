@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class EnchantmentEngine {
 
     private final EnchantmentCostDataManager costDataManager;
@@ -50,19 +50,19 @@ public class EnchantmentEngine {
 
         List<EnchantmentCostData> pool = PoolFilter.filter(this.costDataManager.getAllCosts(), result,
                 appliedThisSession, expertise, remainingBudget, registryAccess);
-        log.behaviorStatus("Enchanting session starts for item {}: expertise={}, intelligence={}, bookshelves={}, budget={}, rolls={}, pool={}",
+        log.trace("Enchanting session starts for item {}: expertise={}, intelligence={}, bookshelves={}, budget={}, rolls={}, pool={}",
                 item, expertise, intelligence, bookshelfCount, totalBudget, definition.getMaxRolls(), pool.size());
 
+        String endReason = "roll limit reached";
         while (rollsPerformed < definition.getMaxRolls()) {
             if (pool.isEmpty()) {
-                log.behaviorStatus("Enchanting session ended: pool empty after {} rolls, {} budget remaining",
-                        rollsPerformed, remainingBudget);
+                endReason = "pool empty";
                 break;
             }
 
             Map<EnchantmentCostData, Double> weightedPool = PoolWeightResolver.resolve(pool, specialization);
             if (weightedPool.isEmpty()) {
-                log.behaviorStatus("Enchanting session ended: weighted pool empty after {} rolls", rollsPerformed);
+                endReason = "weighted pool empty";
                 break;
             }
 
@@ -73,7 +73,7 @@ public class EnchantmentEngine {
             Optional<Holder.Reference<Enchantment>> enchantmentHolder =
                     PoolFilter.resolveEnchantment(selected.enchantmentId(), registryAccess);
             if (enchantmentHolder.isEmpty()) {
-                log.behaviorWarn("Could not resolve enchantment '{}', skipping", selected.enchantmentId());
+                log.error("Could not resolve enchantment '{}', skipping", selected.enchantmentId());
                 rollsPerformed++;
                 continue;
             }
@@ -86,13 +86,13 @@ public class EnchantmentEngine {
             // Re-filter from the previous pool (strictly shrinking — budget decreased, conflicts grew)
             pool = PoolFilter.filter(pool, result, appliedThisSession, expertise, remainingBudget, registryAccess);
 
-            log.behaviorStatus("Roll {}: {} lv.{} (cost={}, remaining={}, pool={})",
+            log.trace("Roll {}: {} lv.{} (cost={}, remaining={}, pool={})",
                     rollsPerformed, selected.enchantmentId(), level, cost, remainingBudget, pool.size());
         }
 
         result.set(DataComponentRegistry.VILLAGER_ENCHANT_ATTEMPTED.get(), true);
-        log.behaviorStatus("Enchanting session complete: {} rolls, {} total budget, {} remaining",
-                rollsPerformed, totalBudget, remainingBudget);
+        log.debug("Enchanting session complete for item {} ({}): {} rolls, {} total budget, {} remaining",
+                item, endReason, rollsPerformed, totalBudget, remainingBudget);
         return result;
     }
 

@@ -53,7 +53,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation GLASS_BOTTLE_ID = ResourceLocation.withDefaultNamespace("glass_bottle");
@@ -151,7 +151,6 @@ public class CollectHoneyBehavior extends VillagerStateMachineBehavior {
                     boolean resolved = this.targetResolver.resolveBlockTarget(context, MemoryTypeRegistry.FULL_HIVE_SITES,
                             this.fullHiveMatcher, this.confirmBox, this.maxConfirms, 2);
                     if (!resolved) {
-                        log.behaviorStatus("No additional full hive targets found, ending honey collection");
                         return StepResult.transition(CollectStage.AWARD);
                     }
 

@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * soon as that villager's upstream generation finishes. Each line is parsed independently so a
  * single malformed line cannot discard the rest of the stream.
  */
-@CustomLog
+@CustomLog(topic = "inference")
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class HttpPersonaGateway implements PersonaGateway {
 
@@ -54,7 +54,7 @@ public final class HttpPersonaGateway implements PersonaGateway {
                 onVillager.accept(result);
             }
         } catch (RuntimeException e) {
-            log.error("PERSONA response line parse failed: {}", e.getMessage());
+            log.error("PERSONA response line parse failed", e);
         }
     }
 

@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
     private final Map<StageKey, BehaviorStep<T>> stageStepMap;
@@ -64,7 +64,7 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
     }
 
     protected StepResult onStart(@Nonnull BehaviorContext<T> context) {
-        log.behaviorStatus("Starting {} ({})", this.getName(), this.getUuid());
+        log.trace("Starting {} ({})", this.getName(), this.getUuid());
         if (this.onStart != null) {
             StepResult result = this.onStart.tick(context);
             if (!(result instanceof StepResult.NoOp)) {
@@ -78,8 +78,8 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
     protected StepResult doTick(@Nonnull BehaviorContext<T> context) {
         BehaviorStep<T> step = this.stageStepMap.get(this.currentStage);
         if (step == null) {
-            log.error("Missing step for stage: {} in {} ({})", this.currentStage.name(), this.getName(), this.getUuid());
-            return StepResult.abort("MISSING_STEP", new IllegalStateException("Missing step for stage: " + this.currentStage.name()));
+            return StepResult.abort("MISSING_STEP", new IllegalStateException("Missing step for stage %s in %s"
+                    .formatted(this.currentStage.name(), this.getName())));
         }
 
         StepResult result = step.tick(context);
@@ -107,12 +107,10 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
                 this.onEnd(context);
                 // After onEnd, we are done with this StagedStep, so we transition to the *next* stage defined for the parent
                 return StepResult.transition(this.nextStage);
-                // After onEnd, we are done with this StagedStep, so we transition to the *next* stage defined for the parent
             }
             case StepResult.Fail fail -> {
                 // Bubble up the failure to the parent step
                 return result;
-                // Bubble up the failure to the parent step
             }
             case StepResult.Abort abort -> {
                 return result;
@@ -125,7 +123,7 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
     }
 
     protected void onEnd(@Nonnull BehaviorContext<T> context) {
-        log.behaviorStatus("Ending {} ({})", this.getName(), this.getUuid());
+        log.trace("Ending {} ({})", this.getName(), this.getUuid());
         if (this.onEnd != null) {
             this.onEnd.tick(context);
         }
@@ -193,18 +191,17 @@ public class StagedStep<T extends ISettlementsBrainEntity> extends AbstractStep<
 
     private void transitionStage(@Nonnull StageKey stage) {
         if (stage == InternalStage.END) {
-            log.behaviorStatus("End requested for {} ({})", this.getName(), this.getUuid());
             this.currentStage = InternalStage.END;
             return;
         }
 
         BehaviorStep<T> nextStep = this.stageStepMap.get(stage);
         if (nextStep == null) {
-            log.warn("Attempted to transition to an unknown stage: {} for {} ({})", stage.name(), this.getName(), this.getUuid());
+            log.error("Attempted to transition to an unknown stage: {} for {} ({})", stage.name(), this.getName(), this.getUuid());
             throw new StopBehaviorException("Attempted to transition to an unknown stage: %s".formatted(stage.name()));
         }
 
-        log.behaviorStatus("Transitioning from {} to {} stage for {} ({})", this.currentStage.name(), stage.name(), this.getName(), this.getUuid());
+        log.debug("Transitioning from {} to {} stage for {} ({})", this.currentStage.name(), stage.name(), this.getName(), this.getUuid());
         this.currentStage = stage;
         // Per-entry lifecycle: give the destination step a fresh start so timeouts, tickables, and
         // nested sequence/state indices don't carry over from a previous entry on this same run.

@@ -20,7 +20,7 @@ import java.util.List;
  * <p>
  * Of each pair of claimants, the one with the lower UUID keeps the bed; the other forgets it and wakes if asleep.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class BedCompetitorScan {
 
@@ -77,7 +77,7 @@ public final class BedCompetitorScan {
         }
 
         log.debug("Bed {} in {}: villager {} keeps it, villager {} forgets it",
-                home.pos().toShortString(), home.dimension().location(), winner.getUUID(), loser.getUUID());
+                home.pos(), home.dimension().location(), winner.getUUID(), loser.getUUID());
         return winner;
     }
 

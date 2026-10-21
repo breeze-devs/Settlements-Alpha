@@ -29,7 +29,7 @@ import java.util.Set;
  * Condition for clerics to find a friendly entity that's in need of a healing potion.
  * Only triggers on hurt entities (health < maxHealth); potion tier is expertise-scaled.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implements IEntityCondition<T> {
 
     private static final Set<Class<?>> FRIENDLY_ENTITY_CLASSES = Set.of(Player.class, Villager.class, WanderingTrader.class);
@@ -43,12 +43,11 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
     @Override
     public boolean test(@Nullable T villager) {
         if (villager == null) {
-            log.sensorWarn("Source entity is null, returning empty targets");
             return false;
         }
 
         Map<Entity, PotionType> map = this.findFriendlyNeedsPotionMap(villager);
-        log.sensorStatus("Found {} friendly entities that need a potion", map.size());
+        log.trace("Found {} friendly entities that need a potion", map.size());
         return !map.isEmpty();
     }
 
@@ -58,9 +57,10 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
                 .ofType(LivingEntity.class, entity -> this.isEligibleCandidate(villager, entity))
                 .forEach(entity -> {
                     Optional<PotionType> potionType = this.needsPotion(villager, entity);
-                    potionType.ifPresent(type -> result.put(entity, type));
-
-                    log.sensorTrace("Entity '{}' needs potion type: {}", entity.getName(), potionType.orElse(null));
+                    potionType.ifPresent(type -> {
+                        result.put(entity, type);
+                        log.trace("Entity '{}' needs potion type: {}", entity.getScoreboardName(), type);
+                    });
                 });
 
         return result;
@@ -81,8 +81,8 @@ public class NearbyFriendlyNeedsPotionCondition<T extends BaseVillager> implemen
             return true;
         }
 
-        log.sensorTrace("Ignoring player '{}' with reputation '{}' below minimum reputation of {}",
-                entity.getName(), reputation, this.minimumReputation);
+        log.trace("Ignoring player '{}' with reputation '{}' below minimum reputation of {}",
+                entity.getScoreboardName(), reputation, this.minimumReputation);
         return false;
     }
 

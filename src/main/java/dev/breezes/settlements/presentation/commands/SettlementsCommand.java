@@ -33,7 +33,6 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.TimeOfDay;
 import dev.breezes.settlements.domain.world.ChunkPosition;
 import lombok.AccessLevel;
-import lombok.CustomLog;
 import lombok.NoArgsConstructor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -68,7 +67,6 @@ import java.util.concurrent.CompletableFuture;
  * position it claims, found one at a bell, and disband one by its id. Its output is English and never translated,
  * since it is an operator's debug tool.
  */
-@CustomLog
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SettlementsCommand {
 
@@ -194,7 +192,6 @@ public final class SettlementsCommand {
         }
 
         Settlement settlement = disbanded.get();
-        log.info("Disbanded settlement {} ({}) in {} by command", settlement.name(), settlement.id(), dimensionName(level));
         boolean tombstoned = store().isTombstoned(level, settlementId);
         source.sendSuccess(() -> Component.literal("Disbanded " + settlement.name() + " ")
                 .append(ComponentUtils.copyOnClickText(settlement.id().toString()))

@@ -1,5 +1,8 @@
 package dev.breezes.settlements.bootstrap.event;
 
+import dev.breezes.settlements.application.ai.dialogue.DialogueMode;
+import dev.breezes.settlements.application.ai.dialogue.DialogueProviderFactory;
+import dev.breezes.settlements.application.ai.dialogue.RehearsedDialogueConfig;
 import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.inference.InferenceTransport;
 import dev.breezes.settlements.di.ServerComponent;
@@ -20,14 +23,14 @@ public final class ServerLifecycleEvents {
 
     @SubscribeEvent
     public static void onServerAboutToStart(ServerAboutToStartEvent event) {
-        log.info("Initializing server subcomponent");
+        log.debug("Initializing server subcomponent");
         ServerComponent serverComponent = SettlementsDagger.component().serverComponentFactory().create();
         SettlementsDagger.initializeServer(serverComponent);
 
         InferenceGate inferenceGate = serverComponent.inferenceGate();
-        logInferenceState(inferenceGate);
+        logInferenceState(inferenceGate, serverComponent.rehearsedDialogueConfig());
 
-        log.info("Registering events");
+        log.debug("Registering events");
         NeoForge.EVENT_BUS.register(serverComponent.playerSettlementTracker());
         NeoForge.EVENT_BUS.register(serverComponent.settlementArrivalAnnouncer());
         NeoForge.EVENT_BUS.register(serverComponent.generatedSettlementRecordServerEvents());
@@ -58,7 +61,7 @@ public final class ServerLifecycleEvents {
 
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
-        log.info("De-registering events");
+        log.debug("De-registering events");
         ServerComponent serverComponent = SettlementsDagger.serverOrNull();
         if (serverComponent != null) {
             boolean inferenceEnabled = serverComponent.inferenceGate().isEnabled();
@@ -100,21 +103,23 @@ public final class ServerLifecycleEvents {
             }
         }
 
-        log.info("Clearing server subcomponent");
+        log.debug("Clearing server subcomponent");
         SettlementsDagger.clearServer();
     }
 
     /**
-     * Logs the resolved kill-switch state once at startup. The misconfigured case — opted in but no
-     * endpoint — is surfaced as a warning because it silently behaves as OFF, which is easy to miss.
+     * Logs the resolved kill-switch state and the effective dialogue mode, once per server start. The misconfigured
+     * case — opted in but no endpoint — is also surfaced as a warning because it silently behaves as OFF, which is easy
+     * to miss.
      */
-    private static void logInferenceState(InferenceGate inferenceGate) {
+    private static void logInferenceState(InferenceGate inferenceGate, RehearsedDialogueConfig rehearsedDialogueConfig) {
         if (inferenceGate.isMisconfigured()) {
             log.warn("Settlements Inference Service is enabled but no endpoint is configured — staying OFF. "
                     + "Set endpoint_base_url in inference.toml, or set enabled=false to silence this warning.");
-            return;
         }
-        log.info("Settlements Inference Service: {}", inferenceGate.isEnabled() ? "ON" : "OFF");
+        DialogueMode dialogueMode = DialogueProviderFactory.effectiveMode(rehearsedDialogueConfig, inferenceGate.isEnabled());
+        log.info("Settlements Inference Service: {}, dialogue mode: {}", inferenceGate.isEnabled() ? "ON" : "OFF",
+                dialogueMode);
     }
 
     private static void shutdownExecutor(ExecutorService executor) {

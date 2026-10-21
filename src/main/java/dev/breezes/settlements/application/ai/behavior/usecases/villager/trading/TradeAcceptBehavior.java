@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
 
     private static final double APPROACH_DISTANCE_SQUARED = 9.0D;
@@ -106,8 +106,9 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
         BaseVillager self = context.getInitiator().getMinecraftEntity();
         TradeSession session = this.sessionRegistry.getActiveSession(self.getUUID()).orElse(null);
         if (session == null) {
-            log.behaviorWarn("Trade session is null, stopping the behavior");
-            return StepResult.fail("Trade session is null");
+            // Closing a trade removes its session for both villagers, so a missing session is the trade's normal end
+            log.debug("Trade session of responder {} has closed, ending the mirror", self.getUUID());
+            return StepResult.complete();
         }
 
         PresentationSignature signature = PresentationSignature.from(session);

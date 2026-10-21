@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 /**
  * Single composition pipeline for a villager's day plan.
  */
-@CustomLog
+@CustomLog(topic = "planning")
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public class DayPlanComposer {
 
@@ -291,7 +291,8 @@ public class DayPlanComposer {
         for (PinnedSelection pin : pins) {
             WeightedBehavior behavior = findBehavior(context, pin.key());
             if (behavior == null) {
-                log.error("Unknown pin ID: {}", pin.key());
+                log.debug("Pinned behavior '{}' dropped: not in the behavior pool of {} for wakeAtAbsoluteTick={}",
+                        pin.key(), context.profession(), context.wakeAtAbsoluteTick());
                 continue;
             }
 

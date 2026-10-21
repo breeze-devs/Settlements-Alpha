@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-@CustomLog
+@CustomLog(topic = "worldgen")
 public class RandomSearchPlacer extends BuildingPlacer {
 
     private final CandidateGenerator candidateGenerator;
@@ -87,14 +87,14 @@ public class RandomSearchPlacer extends BuildingPlacer {
                 placed.add(assignment);
                 context.getGrid().occupy(footprint.bounds());
                 wasPlaced = true;
-                log.worldgenStatus("RandomSearch: placed {} at ({},{},{}) zone={}",
+                log.debug("RandomSearch: placed {} at ({},{},{}) zone={}",
                         building.id(), center.x(), center.y(), center.z(), zone);
                 break;
             }
 
             if (!wasPlaced) {
                 remaining.add(building);
-                log.worldgenWarn("RandomSearch: failed to place {} after {} attempts", building.id(), this.maxAttempts);
+                log.debug("RandomSearch: failed to place {} after {} attempts", building.id(), this.maxAttempts);
             }
         }
 

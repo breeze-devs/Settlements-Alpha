@@ -5,7 +5,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models
 import dev.breezes.settlements.infrastructure.minecraft.mixins.BlockDisplayMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.DisplayEntityMixin;
 import lombok.Builder;
-import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.EntityType;
@@ -16,10 +15,8 @@ import javax.annotation.Nonnull;
 import java.util.Optional;
 
 @Getter
-@CustomLog
 public class TransformedBlockDisplay extends TransformedDisplay {
 
-    @Nonnull
     private BlockState blockState;
 
     @Builder
@@ -29,7 +26,6 @@ public class TransformedBlockDisplay extends TransformedDisplay {
     }
 
     @Override
-    @Nonnull
     protected Display.BlockDisplay createEntity(@Nonnull Location location) {
         Optional<Level> level = location.getLevel();
         if (level.isEmpty()) {
@@ -45,7 +41,6 @@ public class TransformedBlockDisplay extends TransformedDisplay {
         return blockDisplay;
     }
 
-    @Nonnull
     @Override
     public TransformedDisplay cloneWithoutEntity() {
         return new TransformedBlockDisplay(this.blockState, this.transformationMatrix);

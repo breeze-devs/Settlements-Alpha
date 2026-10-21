@@ -27,7 +27,7 @@ import java.util.Map;
  */
 @Singleton
 @RequiredArgsConstructor(onConstructor_ = @Inject)
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public final class RecipeCatalogValidationReloadListener extends SimplePreparableReloadListener<Void> {
 
     private final CraftCatalogDataManager craftCatalog;
@@ -45,7 +45,7 @@ public final class RecipeCatalogValidationReloadListener extends SimplePreparabl
                 + this.validateCatalog("Forge", this.forgeCatalog.loadedRecipes());
 
         if (missing > 0) {
-            log.warn("Recipe catalog validation: {} recipe output(s) lack a trade-catalog dump ceiling and ship idle", missing);
+            log.debug("Recipe catalog validation: {} recipe output(s) lack a trade-catalog dump ceiling and ship idle", missing);
         }
     }
 

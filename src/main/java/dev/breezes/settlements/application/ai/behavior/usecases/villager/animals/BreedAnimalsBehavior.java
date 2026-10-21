@@ -43,7 +43,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
 
     private enum BreedStage implements StageKey {
@@ -262,7 +262,7 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
             return StepResult.complete();
         }
 
-        log.behaviorStatus("Feeding {} animal: '{}'", label, target);
+        log.trace("Feeding {} animal: '{}'", label, target);
 
         if (!villager.getSettlementsInventory().consumeOrBypassed(this.heldItem.getItem(), 1)) {
             return StepResult.complete();
@@ -276,7 +276,6 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
         ParticleRegistry.breedItemConsume(targetLocation, this.heldItem);
         SoundRegistry.FEED_ANIMAL.playGlobally(targetLocation, SoundSource.NEUTRAL);
 
-        log.behaviorStatus("Fed {} animal", label);
         this.shouldRewardExperience = true;
 
         // Record the species noun each time an animal is successfully fed; the second feed
@@ -317,8 +316,10 @@ public class BreedAnimalsBehavior extends VillagerStateMachineBehavior {
                 && ((Animal) targetEntity).isBaby();
         List<Entity> nearbyEntities = villager.level().getEntities(villager, scanBoundary, isBabyOfRightType);
         for (Entity nearbyEntity : nearbyEntities) {
-            log.behaviorStatus("Claiming baby animal '{}' as village-owned", nearbyEntity);
-            nearbyEntity.addTag(EntityTag.VILLAGE_OWNED_ANIMAL.getTag());
+            // addTag returns false for a baby that already carries the tag, so only new claims are logged
+            if (nearbyEntity.addTag(EntityTag.VILLAGE_OWNED_ANIMAL.getTag())) {
+                log.debug("Claimed baby animal '{}' as village-owned", nearbyEntity);
+            }
         }
     }
 

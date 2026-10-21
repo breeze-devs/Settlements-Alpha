@@ -29,7 +29,7 @@ import java.util.function.Predicate;
  * At most one override is installed per villager; only a strictly higher tier can replace it.
  */
 @ServerScope
-@CustomLog
+@CustomLog(topic = "planning")
 public final class OverrideArbiter {
 
     private final List<OverridePolicy> orderedPolicies;
@@ -125,14 +125,13 @@ public final class OverrideArbiter {
 
         Installed installed = candidate.get();
         if (!this.tryStartAndInstall(level, villager, runtime, installed)) {
-            log.behaviorStatus("Override '{}' stopped for villager {}; replacement '{}' failed to start",
+            log.debug("Override '{}' stopped for villager {} to make way for '{}'; re-queuing interrupted plan slot",
                     outgoing.diagnosticId(), villager.getUUID(), installed.runner().diagnosticId());
             this.dayPlanHandoff.reAttemptInterruptedSlot(villager);
             return true;
         }
 
-        log.behaviorStatus("Override '{}' preempted '{}' for villager {}",
-                installed.runner().diagnosticId(), outgoing.diagnosticId(), villager.getUUID());
+        log.debug("Override '{}' preempted '{}' for villager {}", installed.runner().diagnosticId(), outgoing.diagnosticId(), villager.getUUID());
         return true;
     }
 
@@ -150,7 +149,7 @@ public final class OverrideArbiter {
         stopRunner(level, villager, runner);
         runtime.clearRunner();
         this.dayPlanHandoff.reAttemptInterruptedSlot(villager);
-        log.behaviorStatus("Override '{}' stopped for villager {}; re-queuing interrupted plan slot", diagnosticId, villager.getUUID());
+        log.debug("Override '{}' stopped for villager {}; re-queuing interrupted plan slot", diagnosticId, villager.getUUID());
     }
 
     private boolean tryStart(@Nonnull ServerLevel level, @Nonnull BaseVillager villager, @Nonnull OverrideRuntimeState runtime) {
@@ -177,7 +176,7 @@ public final class OverrideArbiter {
             return false;
         }
 
-        log.behaviorStatus("Override '{}' installed for villager {}", installed.runner().diagnosticId(), villager.getUUID());
+        log.debug("Override '{}' installed for villager {}", installed.runner().diagnosticId(), villager.getUUID());
         return true;
     }
 
@@ -193,7 +192,7 @@ public final class OverrideArbiter {
         try {
             installed.runner().start(level, villager);
         } catch (RuntimeException e) {
-            log.behaviorError("Override '{}' threw during start for villager {}; skipping override",
+            log.error("Override '{}' threw during start for villager {}; skipping override",
                     installed.runner().diagnosticId(), villager.getUUID(), e);
             return false;
         }
@@ -206,7 +205,7 @@ public final class OverrideArbiter {
         try {
             runner.stop(level, villager);
         } catch (RuntimeException e) {
-            log.behaviorError("Override '{}' threw during stop for villager {}; discarding it",
+            log.error("Override '{}' threw during stop for villager {}; discarding it",
                     runner.diagnosticId(), villager.getUUID(), e);
         }
     }
@@ -261,7 +260,7 @@ public final class OverrideArbiter {
                                                        @Nonnull BehaviorKey key) {
         IBehavior<BaseVillager> behavior = this.catalog.createBehavior(key).orElse(null);
         if (behavior == null) {
-            log.behaviorWarn("Override behavior '{}' not found in catalog for villager {}", key, villager.getUUID());
+            log.error("Override behavior '{}' not found in catalog for villager {}", key, villager.getUUID());
             return Optional.empty();
         }
 
@@ -270,7 +269,7 @@ public final class OverrideArbiter {
         behavior.getPreconditionCheckCooldown().forceComplete();
 
         if (!behavior.tickPreconditions(1, level, villager)) {
-            log.behaviorTrace("Override preconditions not met for '{}' on villager {}", key, villager.getUUID());
+            log.trace("Override preconditions not met for '{}' on villager {}", key, villager.getUUID());
             return Optional.empty();
         }
 

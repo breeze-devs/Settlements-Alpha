@@ -51,7 +51,8 @@ public final class UiSyncServerEvents {
             Entity entity = player.serverLevel().getEntity(session.getVillagerEntityId());
             UiServerChannelDefinition definition = this.channelDefinitions.get(session.getChannel());
             if (definition == null) {
-                log.warn("Missing ui channel definition for {}", session.getChannel());
+                log.error("Missing ui channel definition for {} in sessionId={} of player {}", session.getChannel(),
+                        session.getSessionId(), session.getPlayerUuid());
                 continue;
             }
 

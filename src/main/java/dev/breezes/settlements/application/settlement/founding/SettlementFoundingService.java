@@ -85,7 +85,7 @@ import java.util.stream.Stream;
  */
 @ServerSide
 @ServerScope
-@CustomLog
+@CustomLog(topic = "settlement")
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class SettlementFoundingService {
 
@@ -309,7 +309,7 @@ public final class SettlementFoundingService {
         Settlement founded = this.membershipService.joinFounders(level, stored.get().id(), members).orElseThrow();
 
         log.info("Founded settlement {} ({}) at {} in {}, claiming {} chunks, with {} founding members",
-                founded.name(), founded.id(), bell.toShortString(), level.dimension().location(),
+                founded.name(), founded.id(), bell, level.dimension().location(),
                 founded.bounds().chunks().size(), members.size());
         this.lifecyclePublisher.founded(level, founded);
         return new Founded(founded, founding.requestedClaim(), members);

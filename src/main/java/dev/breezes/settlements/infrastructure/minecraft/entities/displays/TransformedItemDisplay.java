@@ -5,7 +5,6 @@ import dev.breezes.settlements.infrastructure.minecraft.entities.displays.models
 import dev.breezes.settlements.infrastructure.minecraft.mixins.DisplayEntityMixin;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.ItemDisplayMixin;
 import lombok.Builder;
-import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.EntityType;
@@ -16,7 +15,6 @@ import javax.annotation.Nonnull;
 import java.util.Optional;
 
 @Getter
-@CustomLog
 public class TransformedItemDisplay extends TransformedDisplay {
 
     private ItemStack itemStack;

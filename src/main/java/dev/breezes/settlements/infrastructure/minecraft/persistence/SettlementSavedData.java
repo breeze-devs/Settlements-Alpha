@@ -75,7 +75,7 @@ public final class SettlementSavedData extends SavedData {
                 if (this.settlementsById.containsKey(decoded.id())) {
                     log.warn("Dropping a second stored settlement with id {}", decoded.id());
                 } else {
-                    log.warn("Dropping stored settlement {}: an earlier stored settlement claims its center chunk {}",
+                    log.error("Dropping stored settlement {}: an earlier stored settlement claims its center chunk {}",
                             decoded.id(), decoded.bounds().center());
                 }
                 this.setDirty();

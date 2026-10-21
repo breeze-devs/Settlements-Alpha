@@ -234,7 +234,7 @@ public final class SettlementSavedDataCodec {
         try {
             return new SettlementGatherings(count, lastDay);
         } catch (IllegalArgumentException exception) {
-            log.warn("Clearing unreadable settlement gatherings: {}", exception.getMessage());
+            log.warn("Clearing unreadable settlement gatherings", exception);
             return SettlementGatherings.NONE;
         }
     }
@@ -260,7 +260,7 @@ public final class SettlementSavedDataCodec {
 
     private static StoredState readState(int formatVersion, List<Settlement> settlements, List<UUID> tombstones) {
         if (formatVersion > FORMAT_VERSION) {
-            log.warn("Settlement store has format version {}, newer than the {} this build reads; data this build cannot "
+            log.error("Settlement store has format version {}, newer than the {} this build reads; data this build cannot "
                     + "read is lost when the store is next saved", formatVersion, FORMAT_VERSION);
         }
         return new StoredState(settlements, tombstones);

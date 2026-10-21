@@ -5,64 +5,13 @@ import dev.breezes.settlements.shared.logging.levels.LogLevel;
 import javax.annotation.Nonnull;
 
 /**
- * Wrapper for all logging in Settlements
+ * Logger bound to one category, through which Settlements code logs.
+ * <p>
+ * Each severity method takes a format whose {} placeholders take the arguments in order.
+ * Pass an exception as the last argument without a corresponding placeholder to log it with its stack trace.
  */
 public interface ILogger {
 
-    void log(@Nonnull LogLevel level, @Nonnull String format, @Nonnull Object... args);
-
-    /**
-     * Logs a message at the default level
-     */
-    void log(@Nonnull String format, @Nonnull Object... args);
-
-    /*
-     * Logging for behaviors
-     */
-    void behaviorStatus(@Nonnull String format, @Nonnull Object... args);
-
-    void behaviorWarn(@Nonnull String format, @Nonnull Object... args);
-
-    void behaviorError(@Nonnull String format, @Nonnull Object... args);
-
-    void behaviorTrace(@Nonnull String format, @Nonnull Object... args);
-
-    /*
-     * Logging for sensors
-     */
-    void sensorStatus(@Nonnull String format, @Nonnull Object... args);
-
-    void sensorWarn(@Nonnull String format, @Nonnull Object... args);
-
-    void sensorError(@Nonnull String format, @Nonnull Object... args);
-
-    void sensorTrace(@Nonnull String format, @Nonnull Object... args);
-
-    /*
-     * Logging for world generation
-     */
-    void worldgenStatus(@Nonnull String format, @Nonnull Object... args);
-
-    void worldgenWarn(@Nonnull String format, @Nonnull Object... args);
-
-    void worldgenError(@Nonnull String format, @Nonnull Object... args);
-
-    void worldgenTrace(@Nonnull String format, @Nonnull Object... args);
-
-    /*
-     * Logging for resource loading
-     */
-    void resourceLoadingStatus(@Nonnull String format, @Nonnull Object... args);
-
-    void resourceLoadingWarn(@Nonnull String format, @Nonnull Object... args);
-
-    void resourceLoadingError(@Nonnull String format, @Nonnull Object... args);
-
-    void resourceLoadingTrace(@Nonnull String format, @Nonnull Object... args);
-
-    /*
-     * Convenience methods for logging at different levels
-     */
     void trace(@Nonnull String format, @Nonnull Object... args);
 
     void debug(@Nonnull String format, @Nonnull Object... args);
@@ -73,6 +22,16 @@ public interface ILogger {
 
     void error(@Nonnull String format, @Nonnull Object... args);
 
-    void error(@Nonnull Throwable e, @Nonnull String format, @Nonnull Object... args);
+    /**
+     * Returns whether Settlements admits a call at the given level, enabling preemptive filtering for expensive arguments.
+     * The host's Log4j configuration can still drop an admitted call.
+     */
+    boolean isEnabled(@Nonnull LogLevel level);
+
+    /**
+     * Returns this logger in the given category: the same name and destinations, with its events in that category.
+     * Every call for a category returns the same instance, so calling it on a logging path allocates nothing.
+     */
+    ILogger as(@Nonnull LogCategory category);
 
 }

@@ -46,7 +46,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class CutStoneBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;

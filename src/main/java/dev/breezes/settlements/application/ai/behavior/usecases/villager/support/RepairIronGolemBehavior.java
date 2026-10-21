@@ -48,7 +48,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class RepairIronGolemBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation IRON_INGOT_ID = ResourceLocation.withDefaultNamespace("iron_ingot");

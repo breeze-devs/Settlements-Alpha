@@ -21,7 +21,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@CustomLog
+@CustomLog(topic = "worldgen")
 public class SettlementLayoutEngine {
 
     private final HubPlacer hubPlacer;
@@ -96,8 +96,8 @@ public class SettlementLayoutEngine {
         BlockPosition planningCenter = hubAssignment.plot().bounds().centerXZ().withY(hubAssignment.plot().targetY());
         context.setPlanningCenter(planningCenter);
         context.setStartingPlotId(allAssignments.size());
-        log.worldgenStatus("Phase A.1 Hub: {} placed", hubResult.placed().size());
-        log.worldgenStatus("Planning center set to hub at ({},{},{})", planningCenter.x(), planningCenter.y(), planningCenter.z());
+        log.debug("Phase A.1 Hub: {} placed", hubResult.placed().size());
+        log.debug("Planning center set to hub at ({},{},{})", planningCenter.x(), planningCenter.y(), planningCenter.z());
 
         List<BuildingDefinition> constrained = pool.stream()
                 .filter(building -> !building.requiresResources().isEmpty())
@@ -108,7 +108,7 @@ public class SettlementLayoutEngine {
         allAssignments.addAll(constrainedResult.placed());
         pool.addAll(constrainedResult.remaining());
         context.setStartingPlotId(allAssignments.size());
-        log.worldgenStatus("Phase A.2 Constrained: {} placed, {} demoted",
+        log.debug("Phase A.2 Constrained: {} placed, {} demoted",
                 constrainedResult.placed().size(), constrainedResult.remaining().size());
 
         Set<TraitId> satisfiedTraits = constrainedResult.placed().stream()
@@ -141,7 +141,7 @@ public class SettlementLayoutEngine {
         pool.addAll(signatureResult.remaining());
         context.setStartingPlotId(allAssignments.size());
         context.setTraitSourceOverrides(Map.of());
-        log.worldgenStatus("Phase A.3 Signature: {} placed", signatureResult.placed().size());
+        log.debug("Phase A.3 Signature: {} placed", signatureResult.placed().size());
 
         int bonusCount = Math.min(
                 random.nextInt(0, 3),
@@ -158,25 +158,25 @@ public class SettlementLayoutEngine {
         allAssignments.addAll(bonusResult.placed());
         pool.addAll(bonusResult.remaining());
         context.setStartingPlotId(allAssignments.size());
-        log.worldgenStatus("Phase A.4 Bonus: {} placed", bonusResult.placed().size());
+        log.debug("Phase A.4 Bonus: {} placed", bonusResult.placed().size());
 
         List<RoadSegment> roads = this.roadGenerator.generateRoads(context.getPlanningCenter(), allAssignments, report.terrainGrid(), grid, random);
         context.setRoads(roads);
-        log.worldgenStatus("Phase B Roads: {} segments", roads.size());
+        log.debug("Phase B Roads: {} segments", roads.size());
 
         context.setBuildings(pool);
         PlacementPhaseResult infillResult = this.infillPlacer.executePlacement(context);
         allAssignments.addAll(infillResult.placed());
         context.setStartingPlotId(allAssignments.size());
-        log.worldgenStatus("Phase C Infill: {} placed, {} remaining",
+        log.debug("Phase C Infill: {} placed, {} remaining",
                 infillResult.placed().size(), infillResult.remaining().size());
 
         context.setBuildings(infillResult.remaining());
         PlacementPhaseResult scatterResult = this.uniformPlacer.executePlacement(context);
         allAssignments.addAll(scatterResult.placed());
-        log.worldgenStatus("Phase D Scatter: {} placed, {} dropped",
+        log.debug("Phase D Scatter: {} placed, {} dropped",
                 scatterResult.placed().size(), scatterResult.remaining().size());
-        log.worldgenStatus("Layout complete: {} buildings, {} roads", allAssignments.size(), roads.size());
+        log.debug("Layout complete: {} buildings, {} roads", allAssignments.size(), roads.size());
 
         return new LayoutResult(anchor, context.getPlanningCenter(), roads, allAssignments);
     }

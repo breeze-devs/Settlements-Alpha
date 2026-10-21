@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
 
     private static final int BURST_DURATION_TICKS = 30;
@@ -204,8 +204,7 @@ public class ThrowEggsBehavior extends VillagerStateMachineBehavior {
                 .toList();
 
         if (candidates.isEmpty()) {
-            log.behaviorStatus("No egg targets found nearby; stopping");
-            this.requestStop("no_nearby_egg_targets");
+            this.requestStop("No egg targets found nearby");
             return;
         }
 

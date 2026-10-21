@@ -31,13 +31,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 /**
  * Application-layer entry point for executing villager day plans.
  */
 @ServerScope
-@CustomLog
+@CustomLog(topic = "planning")
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public class PlanRunner implements DayPlanHandoff {
 
@@ -88,7 +90,7 @@ public class PlanRunner implements DayPlanHandoff {
             // Once exhausted, generation/adoption owns progress; ticking slots here just repeats cleanup work.
             return;
         } else if (this.isPlanOverdue(plan, dayTime)) {
-            log.behaviorWarn("Plan overdue backstop fired for villager {}: dayTime={}, wakeAtAbsoluteTick={}",
+            log.debug("Plan overdue backstop fired for villager {}: dayTime={}, wakeAtAbsoluteTick={}",
                     villager.getUUID(), dayTime, plan.getWakeAtAbsoluteTick());
             this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
             return;
@@ -96,7 +98,7 @@ public class PlanRunner implements DayPlanHandoff {
             // Forward time jumps (e.g. /time set, bed-sleep skip) can cross the calendar boundary
             // before the plan's authored duration elapses; without this gate the villager would
             // execute yesterday's plan into today.
-            log.behaviorStatus("Plan calendar mismatch for villager {}: planDay={}, currentDay={}, dayTime={}",
+            log.debug("Plan calendar mismatch for villager {}: planDay={}, currentDay={}, dayTime={}",
                     villager.getUUID(), plan.getCalendarDay(), WorldCalendar.calendarDayOf(dayTime), dayTime);
             this.completeExpiredPlanAndSubmitSuccessor(level, villager, runtime, plan);
             return;
@@ -152,9 +154,8 @@ public class PlanRunner implements DayPlanHandoff {
         } else {
             resetReason = RESET_REASON_MISSING_SUCCESSOR;
         }
-        this.hardReset(level, villager, runtime, dayTime, resetReason, singleTickDelta(runtime));
-        log.behaviorStatus("Plan regenerated for villager {} during unmanaged activity: dayTime={}",
-                villager.getUUID(), dayTime);
+        this.hardReset(level, villager, runtime, dayTime, resetReason + " during unmanaged activity",
+                singleTickDelta(runtime));
     }
 
     @Override
@@ -224,7 +225,7 @@ public class PlanRunner implements DayPlanHandoff {
 
         Optional<IBehavior<BaseVillager>> maybeBehavior = this.catalog.createBehavior(slot.getBehaviorKey());
         if (maybeBehavior.isEmpty()) {
-            log.behaviorWarn("Plan slot skipped for villager {}: behavior '{}' missing from catalog",
+            log.error("Plan slot skipped for villager {}: behavior '{}' missing from catalog",
                     villager.getUUID(), slot.getBehaviorKey());
             slot.markStatus(PlanSlotStatus.SKIPPED);
             plan.advanceSlot();
@@ -243,7 +244,7 @@ public class PlanRunner implements DayPlanHandoff {
 
         if (!behavior.tickPreconditions(1, level, villager)) {
             if (slot.isFlexible()) {
-                log.behaviorTrace("Plan slot skipped for villager {}: behavior '{}' preconditions not met",
+                log.debug("Plan slot skipped for villager {}: behavior '{}' preconditions not met",
                         villager.getUUID(), slot.getBehaviorKey());
                 slot.markStatus(PlanSlotStatus.SKIPPED);
                 plan.advanceSlot();
@@ -261,7 +262,7 @@ public class PlanRunner implements DayPlanHandoff {
             // Never installed as the current behavior (assignPlanBehavior hasn't run yet), so
             // nothing further needs stopping here; just skip the slot rather than retry a start
             // that will likely fail again.
-            log.behaviorError("Plan behavior '{}' threw during start for villager {}; skipping slot",
+            log.error("Plan behavior '{}' threw during start for villager {}; skipping slot",
                     slot.getBehaviorKey(), villager.getUUID(), e);
             slot.markStatus(PlanSlotStatus.SKIPPED);
             plan.advanceSlot();
@@ -302,7 +303,7 @@ public class PlanRunner implements DayPlanHandoff {
         try {
             behavior.tick(delta, level, villager);
         } catch (RuntimeException e) {
-            log.behaviorError("Plan behavior '{}' threw during tick for villager {}; force-stopping wedged behavior",
+            log.error("Plan behavior '{}' threw during tick for villager {}; force-stopping wedged behavior",
                     slot.getBehaviorKey(), villager.getUUID(), e);
             this.abortPlanBehavior(level, villager, runtime, slot, plan, behavior);
             return;
@@ -328,7 +329,7 @@ public class PlanRunner implements DayPlanHandoff {
                                         @Nonnull PlanSlot slot,
                                         @Nonnull DayPlan plan,
                                         @Nonnull IBehavior<BaseVillager> behavior) {
-        log.behaviorWarn("Plan behavior '{}' exceeded max run duration ({} ticks) for villager {}; force-stopping wedged behavior",
+        log.warn("Plan behavior '{}' exceeded max run duration ({} ticks) for villager {}; force-stopping wedged behavior",
                 slot.getBehaviorKey(), runtime.getCurrentBehaviorElapsedTicks(), villager.getUUID());
         this.abortPlanBehavior(level, villager, runtime, slot, plan, behavior);
     }
@@ -408,7 +409,7 @@ public class PlanRunner implements DayPlanHandoff {
             // A hard reset must yield a plan THIS tick — the caller immediately seeks and ticks it.
             // The floor does not accept an intent, so carried pins are acceptably lost on this path.
             newPlan = this.minimalPlanFactory.create(villager, wakeAtAbsoluteTick);
-            log.behaviorError("Plan regeneration failed for villager {}; installed minimal plan floor: dayTime={}",
+            log.error("Plan regeneration failed for villager {}; installed minimal plan floor: dayTime={}",
                     villager.getUUID(), dayTime, exception);
         }
         villager.setDayPlan(newPlan);
@@ -466,14 +467,16 @@ public class PlanRunner implements DayPlanHandoff {
                               long dayTime,
                               @Nonnull String reason,
                               @Nonnull DeltaResult delta) {
-        if (RESET_REASON_MISSING_PLAN.equals(reason)
-                || RESET_REASON_MISSING_SUCCESSOR.equals(reason)) {
-            log.behaviorStatus("Plan hard reset for villager {}: reason={}, dayTime={}, previousDayTime={}, rawDelta={}",
-                    villager.getUUID(), reason, dayTime, delta.previousDayTime(), delta.rawDelta());
+        // The other reasons are expected outcomes of loads and time jumps, reached by every loaded villager. A generation
+        // still running at its wake tick instead points to a saturated or hung plan executor, which an operator can fix.
+        if (RESET_REASON_ASYNC_OVERRUN.equals(reason)) {
+            log.warn("Plan hard reset for villager {}: async plan generation was still running at its wake tick, so the "
+                            + "plan executor may be saturated or hung: dayTime={}, previousDayTime={}, rawDelta={}",
+                    villager.getUUID(), dayTime, delta.previousDayTime(), delta.rawDelta());
             return;
         }
 
-        log.behaviorWarn("Plan hard reset for villager {}: reason={}, dayTime={}, previousDayTime={}, rawDelta={}",
+        log.debug("Plan hard reset for villager {}: reason={}, dayTime={}, previousDayTime={}, rawDelta={}",
                 villager.getUUID(), reason, dayTime, delta.previousDayTime(), delta.rawDelta());
     }
 
@@ -492,13 +495,13 @@ public class PlanRunner implements DayPlanHandoff {
             try {
                 DayPlan fallback = this.planGenerator.generate(this.createGenerationContext(villager, wakeAtAbsoluteTick));
                 runtime.setPendingArrival(new PlanArrival(fallback, PlanAuthor.HEURISTIC));
-                log.behaviorWarn("Async plan generation failed for villager {}; sync fallback installed",
+                log.debug("Async plan generation failed for villager {}; sync fallback installed",
                         villager.getUUID());
             } catch (Exception exception) {
                 // Upon exception, build minimal plan
                 DayPlan minimalPlan = this.minimalPlanFactory.create(villager, wakeAtAbsoluteTick);
                 runtime.setPendingArrival(new PlanArrival(minimalPlan, PlanAuthor.HEURISTIC));
-                log.behaviorError("Sync fallback plan generation failed for villager {}; installed minimal plan floor",
+                log.error("Sync fallback plan generation failed for villager {}; installed minimal plan floor",
                         villager.getUUID(), exception);
             } finally {
                 // Clear the failed future either way so this branch does not re-run every tick.
@@ -552,7 +555,7 @@ public class PlanRunner implements DayPlanHandoff {
 
         villager.setDayPlan(pending);
         runtime.reset(dayTime);
-        log.behaviorStatus("Plan adopted pre-generated plan at scheduled wake for villager {}: wakeAtAbsoluteTick={}",
+        log.debug("Plan adopted pre-generated plan at scheduled wake for villager {}: wakeAtAbsoluteTick={}",
                 villager.getUUID(), pending.getWakeAtAbsoluteTick());
         return pending;
     }
@@ -584,7 +587,13 @@ public class PlanRunner implements DayPlanHandoff {
         runtime.setPendingFutureWakeAtAbsoluteTick(nextWakeAtAbsoluteTick);
         future.whenComplete((plan, error) -> {
             if (error != null) {
-                log.behaviorWarn("Async plan generation failed for villager {}: {}", villager.getUUID(), error.toString());
+                Throwable cause = error instanceof CompletionException && error.getCause() != null
+                        ? error.getCause()
+                        : error;
+                // The runner cancels a generation it no longer needs, which is not a failure
+                if (!(cause instanceof CancellationException)) {
+                    log.error("Async plan generation failed for villager {}", villager.getUUID(), cause);
+                }
                 return;
             }
             runtime.getPendingArrivals().offer(new PlanArrival(plan, PlanAuthor.HEURISTIC));

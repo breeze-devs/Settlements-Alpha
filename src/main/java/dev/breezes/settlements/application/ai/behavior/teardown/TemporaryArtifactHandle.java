@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
  * Both {@link #dispose} and {@link TeardownScope#teardownAll} are safe to call
  * in any order — duplicate discharge is a no-op.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class TemporaryArtifactHandle {
 
     private final TeardownObligation obligation;
@@ -57,7 +57,7 @@ public final class TemporaryArtifactHandle {
                 this.obligation.discharge(level);
             }
         } catch (Exception e) {
-            log.error("Failed to discharge obligation via handle '{}': {}", this.obligation.describe(), e.getMessage());
+            log.error("Failed to discharge obligation via handle '{}'", this.obligation.describe(), e);
         }
     }
 

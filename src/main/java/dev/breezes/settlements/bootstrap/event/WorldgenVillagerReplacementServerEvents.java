@@ -42,7 +42,7 @@ import java.util.UUID;
  */
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
-@CustomLog
+@CustomLog(topic = "worldgen")
 public final class WorldgenVillagerReplacementServerEvents {
 
     /**

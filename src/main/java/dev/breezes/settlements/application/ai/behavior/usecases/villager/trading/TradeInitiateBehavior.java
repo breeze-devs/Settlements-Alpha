@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
 
     public enum Stage implements StageKey {
@@ -135,7 +135,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         this.sessionRegistry.getActiveSession(villager.getUUID()).ifPresent(session -> {
             TradeSessionPhase phase = session.getPhase();
             if (phase != TradeSessionPhase.DEAL && phase != TradeSessionPhase.WALK_AWAY) {
-                log.warn("Closing trade session after external interruption: sessionId={}, phase={}",
+                log.trace("Closing unfinished trade session as the behavior stops: sessionId={}, phase={}",
                         session.getSessionId(), phase);
                 this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.EXTERNAL_CANCEL);
             }
@@ -151,31 +151,30 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         return ICondition.named("can initiate villager trade", villager -> {
             this.pendingCandidate = null;
             if (this.sessionRegistry.getActiveSession(villager.getUUID()).isPresent()) {
-                log.behaviorStatus("Trade initiation blocked: villager {} already has an active session", villager.getUUID());
+                log.trace("Trade initiation blocked: villager {} already has an active session", villager.getUUID());
                 return false;
             }
             if (this.villagerWallet.getBalance(villager) <= 0) {
-                log.behaviorStatus("Trade initiation blocked: villager {} has no emerald balance", villager.getUUID());
+                log.trace("Trade initiation blocked: villager {} has no emerald balance", villager.getUUID());
                 return false;
             }
 
             List<ActiveDemand> activeDemands = this.demandEvaluator.resolve(villager);
             if (activeDemands.isEmpty()) {
-                log.behaviorStatus("Trade initiation blocked: villager {} has no active demands", villager.getUUID());
+                log.trace("Trade initiation blocked: villager {} has no active demands", villager.getUUID());
                 return false;
             }
 
-            log.behaviorStatus("Trade initiation evaluating {} active demands for villager {}: {}",
-                    activeDemands.size(), villager.getUUID(), activeDemands.stream().map(demand -> demand.match().asDebugString()).toList());
+            log.trace("Trade initiation evaluating {} active demands for villager {}", activeDemands.size(), villager.getUUID());
 
             this.pendingCandidate = this.partnerScanner.findPartner(villager, activeDemands)
                     .orElse(null);
             if (this.pendingCandidate == null) {
-                log.behaviorStatus("Trade initiation blocked: villager {} found no partner candidate", villager.getUUID());
+                log.trace("Trade initiation blocked: villager {} found no partner candidate", villager.getUUID());
                 return false;
             }
 
-            log.behaviorStatus("Trade initiation selected partner {} for villager {} with item {}",
+            log.debug("Trade initiation selected partner {} for villager {} with item {}",
                     this.pendingCandidate.partner().getUUID(), villager.getUUID(), this.pendingCandidate.matchedItem());
 
             return true;
@@ -311,9 +310,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         }
 
         if (session.getNegotiationRoundsRemaining() <= 0) {
-            session.transitionTo(TradeSessionPhase.WALK_AWAY, buyer.level().getGameTime());
-            this.presentWalkAwayToBoth(session, buyer, seller);
-            return StepResult.transition(Stage.WALK_AWAY);
+            return this.enterWalkAway(buyer, seller, session);
         }
 
         if (session.getBuyerOffer() >= session.getSellerAsk()) {
@@ -377,6 +374,14 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         return StepResult.complete();
     }
 
+    private StepResult enterWalkAway(@Nonnull BaseVillager buyer,
+                                     @Nonnull BaseVillager seller,
+                                     @Nonnull TradeSession session) {
+        session.transitionTo(TradeSessionPhase.WALK_AWAY, buyer.level().getGameTime());
+        this.presentWalkAwayToBoth(session, buyer, seller);
+        return StepResult.transition(Stage.WALK_AWAY);
+    }
+
     private StepResult enterDeal(@Nonnull BaseVillager buyer, @Nonnull TradeSession session) {
         BaseVillager seller = this.resolveParticipant(buyer.level(), session.getSellerId()).orElse(null);
         if (seller == null) {
@@ -387,10 +392,15 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         if (!this.tradeExecuted) {
             if (!this.villagerWallet.canAfford(buyer, session.getBuyerOffer())) {
                 // If buyer cannot afford the deal, walk away
-                log.behaviorStatus("Buyer cannot afford this deal, walking away");
-                session.transitionTo(TradeSessionPhase.WALK_AWAY, buyer.level().getGameTime());
-                this.presentWalkAwayToBoth(session, buyer, seller);
-                return StepResult.transition(Stage.WALK_AWAY);
+                log.debug("Buyer {} cannot afford the deal at {} emeralds, walking away", buyer.getUUID(),
+                        session.getBuyerOffer());
+                return this.enterWalkAway(buyer, seller, session);
+            }
+            // The seller's stock can change while the trade is negotiated
+            if (seller.getSettlementsInventory().count(session.getMatchedItem()) < session.getBundleSize()) {
+                log.debug("Seller {} no longer has {} {}, walking away", seller.getUUID(), session.getBundleSize(),
+                        session.getMatchedItem());
+                return this.enterWalkAway(buyer, seller, session);
             }
 
             // The session remains open for a short DEAL phase so both villagers can render the final
@@ -398,11 +408,9 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
             try {
                 this.tradeExecutor.execute(session, buyer, seller);
             } catch (RuntimeException exception) {
-                log.warn("Trade execution failed, converting to walk-away: sessionId={}, buyer={}, seller={}",
+                log.error("Trade execution failed, converting to walk-away: sessionId={}, buyer={}, seller={}",
                         session.getSessionId(), buyer.getUUID(), seller.getUUID(), exception);
-                session.transitionTo(TradeSessionPhase.WALK_AWAY, buyer.level().getGameTime());
-                this.presentWalkAwayToBoth(session, buyer, seller);
-                return StepResult.transition(Stage.WALK_AWAY);
+                return this.enterWalkAway(buyer, seller, session);
             }
             if (this.activeDemand != null
                     && this.activeDemand.origin() != ActiveDemand.Origin.STATIC_SHORTFALL) {

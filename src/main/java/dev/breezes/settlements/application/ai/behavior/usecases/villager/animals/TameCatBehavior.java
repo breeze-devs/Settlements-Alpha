@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class TameCatBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation COD_ID = ResourceLocation.withDefaultNamespace("cod");
@@ -95,11 +95,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                             cat -> cat.isTame() && ownerMatches(villager, cat))
                     .size();
 
-            if (owned >= limit) {
-                log.behaviorStatus("Owned cats {} >= limit {}, aborting tame (precondition)", owned, limit);
-                return false;
-            }
-            return true;
+            return owned < limit;
         }));
 
         this.initializeStateMachine(this.createControlStep(), TameStage.END);
@@ -140,8 +136,6 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    log.behaviorStatus("Attempting to tame cat {}", cat.getUUID());
-
                     Location catLoc = Location.fromEntity(cat, false);
                     if (RandomUtil.chance(TAME_SUCCESS_CHANCE)) {
                         catLoc.displayParticles(ParticleTypes.HEART, 7, 0.4, 0.5, 0.4, 0.01);
@@ -168,12 +162,12 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                         tameOutcome.putDetailField("animal", "cat");
                         ctx.declarePrimaryDeed(tameOutcome);
 
-                        log.behaviorStatus("Successfully tamed cat {}", settlementsCat.getUUID());
+                        log.debug("Tamed cat {}, replaced by SettlementsCat {}", cat.getUUID(), settlementsCat.getUUID());
                         return StepResult.complete();
                     }
 
                     catLoc.displayParticles(ParticleTypes.SMOKE, 6, 0.35, 0.5, 0.35, 0.01);
-                    log.behaviorStatus("Failed to tame cat");
+                    log.debug("Failed to tame cat {}", cat.getUUID());
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
@@ -209,8 +203,7 @@ public class TameCatBehavior extends VillagerStateMachineBehavior {
                         cat -> cat.isTame() && ownerMatches(villager, cat))
                 .size();
         if (owned >= limit) {
-            log.behaviorStatus("Owned cats {} >= limit {}, aborting tame", owned, limit);
-            this.requestStop("Owned cats greater than taming limit");
+            this.requestStop("Owned cats %d >= limit %d".formatted(owned, limit));
             return;
         }
 

@@ -16,7 +16,7 @@ public final class ClientSessionLifecycleEvents {
 
     @SubscribeEvent
     public static void onClientLoggingIn(ClientPlayerNetworkEvent.LoggingIn event) {
-        log.info("Initializing client session subcomponent");
+        log.debug("Initializing client session subcomponent");
         ClientSessionComponent clientSessionComponent = SettlementsDagger.client()
                 .clientSessionComponentFactory()
                 .create();
@@ -25,7 +25,7 @@ public final class ClientSessionLifecycleEvents {
 
     @SubscribeEvent
     public static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
-        log.info("Clearing client session subcomponent");
+        log.debug("Clearing client session subcomponent");
         resetClientScopedSessionState();
         SettlementsDagger.clearClientSession();
     }

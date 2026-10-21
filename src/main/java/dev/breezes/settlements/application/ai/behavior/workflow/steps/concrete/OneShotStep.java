@@ -20,10 +20,9 @@ import java.util.function.Function;
  * {@link StepResult.NoOp} is a misuse; the step warns and converts to {@link StepResult#complete()} rather
  * than stalling.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class OneShotStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
-    @Nonnull
     private final Function<BehaviorContext<T>, StepResult> action;
 
     @Builder

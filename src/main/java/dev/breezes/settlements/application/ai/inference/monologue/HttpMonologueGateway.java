@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * as soon as that villager's upstream generation finishes. Each line is parsed independently so
  * a single malformed line cannot discard the rest of the stream.
  */
-@CustomLog
+@CustomLog(topic = "inference")
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class HttpMonologueGateway implements MonologueGateway {
 
@@ -59,7 +59,7 @@ public final class HttpMonologueGateway implements MonologueGateway {
                 onVillager.accept(normalizeVillager(result));
             }
         } catch (RuntimeException e) {
-            log.error("MONOLOGUE response line parse failed: {}", e.getMessage());
+            log.error("MONOLOGUE response line parse failed", e);
         }
     }
 

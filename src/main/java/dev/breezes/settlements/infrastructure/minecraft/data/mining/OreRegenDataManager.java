@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public class OreRegenDataManager extends CodecJsonDataManager<OreRegenEntry> {
 
     private static final String DIRECTORY_PATH = "settlements/mining/ore_weights";
@@ -67,7 +67,7 @@ public class OreRegenDataManager extends CodecJsonDataManager<OreRegenEntry> {
         Map<OreRegenEntry, Double> candidates = candidatesForHost(requestingHost);
 
         if (candidates.isEmpty()) {
-            log.warn("No ore regen entries are compatible with host '{}' — check your datapack", requestingHost);
+            log.error("No ore regen entries are compatible with host '{}'; check your datapack", requestingHost);
             return Optional.empty();
         }
 
@@ -88,7 +88,7 @@ public class OreRegenDataManager extends CodecJsonDataManager<OreRegenEntry> {
         Block block = BuiltInRegistries.BLOCK.get(entry.getBlockId());
         // BuiltInRegistries.BLOCK.get returns air for unknown ids, just like ITEM.
         if (block == Blocks.AIR) {
-            log.warn("Ore regen entry references block '{}' which no longer resolves — skipping", entry.getBlockId());
+            log.error("Ore regen entry references block '{}' which no longer resolves, skipping", entry.getBlockId());
             return Optional.empty();
         }
 

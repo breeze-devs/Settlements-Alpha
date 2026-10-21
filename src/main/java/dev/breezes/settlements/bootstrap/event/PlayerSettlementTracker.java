@@ -23,7 +23,6 @@ import dev.breezes.settlements.infrastructure.minecraft.event.settlement.Settlem
 import dev.breezes.settlements.infrastructure.minecraft.event.settlement.SettlementRegionCause;
 import jakarta.inject.Inject;
 import lombok.AccessLevel;
-import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -60,7 +59,6 @@ import java.util.UUID;
  * Founding and recording queue a recheck for server-tick end. Disbanding publishes exits immediately.
  */
 @ServerScope
-@CustomLog
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class PlayerSettlementTracker {
 

@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * {@code ConcurrentHashMap.put} — the tick thread never sees a partially-populated occasion map.
  * Draw and depletion happen on the tick thread only.
  */
-@CustomLog
+@CustomLog(topic = "inference")
 public final class RehearsedDialogueProvider implements DialogueProvider {
 
     private final DialogueProvider fallback;

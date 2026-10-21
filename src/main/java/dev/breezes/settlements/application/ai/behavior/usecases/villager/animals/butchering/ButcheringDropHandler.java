@@ -10,7 +10,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import java.util.UUID;
 
 @EventBusSubscriber
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ButcheringDropHandler {
 
     @SubscribeEvent
@@ -22,7 +22,7 @@ public class ButcheringDropHandler {
         }
 
         UUID villagerUuid = event.getEntity().getPersistentData().getUUID(ButcherLivestockBehavior.RESERVED_FOR_VILLAGER_KEY);
-        log.behaviorStatus("Reserving {} drops from {} for villager {}",
+        log.debug("Reserving {} drops from {} for villager {}",
                 event.getDrops().size(), event.getEntity().getClass().getSimpleName(), villagerUuid);
 
         for (ItemEntity drop : event.getDrops()) {

@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
@@ -146,7 +146,6 @@ public class HarvestSugarCaneBehavior extends VillagerStateMachineBehavior {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.HARVESTABLE_SUGARCANE_SITES,
                             this.sugarCaneMatcher, this.confirmBox, this.maxConfirms, 2);
                     if (!resolved) {
-                        log.behaviorStatus("No additional sugar cane targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 

@@ -61,7 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class HarvestOreBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
@@ -155,7 +155,6 @@ public class HarvestOreBehavior extends VillagerStateMachineBehavior {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.ORE_SITES,
                             this.oreMatcher, this.confirmBox, this.maxConfirms, 2);
                     if (!resolved) {
-                        log.behaviorStatus("No additional ore targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 

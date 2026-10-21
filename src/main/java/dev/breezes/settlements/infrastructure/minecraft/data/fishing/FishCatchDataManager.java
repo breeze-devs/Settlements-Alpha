@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public class FishCatchDataManager extends CodecJsonDataManager<FishCatchEntry> {
 
     private static final String DIRECTORY_PATH = "settlements/fishing/catches";

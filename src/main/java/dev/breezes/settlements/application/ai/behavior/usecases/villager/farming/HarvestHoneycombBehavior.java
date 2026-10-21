@@ -53,7 +53,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation SHEARS_ITEM_ID = ResourceLocation.withDefaultNamespace("shears");
@@ -152,7 +152,6 @@ public class HarvestHoneycombBehavior extends VillagerStateMachineBehavior {
                     boolean resolved = this.targetResolver.resolveBlockTarget(context, MemoryTypeRegistry.FULL_HIVE_SITES,
                             this.fullHiveMatcher, this.confirmBox, this.maxConfirms, 2);
                     if (!resolved) {
-                        log.behaviorStatus("No additional full hive targets found, ending honeycomb harvest");
                         return StepResult.transition(HarvestStage.AWARD);
                     }
 

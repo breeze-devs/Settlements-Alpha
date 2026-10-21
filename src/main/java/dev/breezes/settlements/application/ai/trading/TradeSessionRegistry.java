@@ -65,7 +65,7 @@ public final class TradeSessionRegistry {
 
         putSession(session);
         this.invitesByTarget.put(target.getUUID(), invite);
-        log.info("Created trade invite: sessionId={}, initiator={}, responder={}, buyer={}, seller={}, item={}, bundleSize={}, priceJitter={}, buyerOffer={}, sellerAsk={}",
+        log.debug("Created trade invite: sessionId={}, initiator={}, responder={}, buyer={}, seller={}, item={}, bundleSize={}, priceJitter={}, buyerOffer={}, sellerAsk={}",
                 sessionId, initiator.getUUID(), target.getUUID(), buyerId, sellerId, matchedItem, bundleSize, priceJitter, buyerOffer, sellerAsk);
         return session;
     }
@@ -86,7 +86,7 @@ public final class TradeSessionRegistry {
                 .orElseThrow(() -> new IllegalStateException("Pending trade invite had no matching active session"));
 
         session.transitionTo(TradeSessionPhase.ESTABLISHED, currentGameTime);
-        log.info("Accepted trade invite: sessionId={}, targetId={}, phase={}", session.getSessionId(), targetId, session.getPhase());
+        log.debug("Accepted trade invite: sessionId={}, targetId={}, phase={}", session.getSessionId(), targetId, session.getPhase());
         return session;
     }
 
@@ -115,8 +115,10 @@ public final class TradeSessionRegistry {
             case EXTERNAL_CANCEL -> TradeSessionPhase.EXTERNAL_CANCEL;
             case TIMEOUT -> TradeSessionPhase.CLOSED;
         };
+        TradeSessionPhase closedPhase = session.getPhase();
         session.transitionTo(terminalPhase, session.getPhaseEnteredGameTime());
-        log.info("Closed trade session: sessionId={}, reason={}, terminalPhase={}", sessionId, reason, terminalPhase);
+        log.debug("Closed trade session: sessionId={}, reason={}, closedPhase={}, terminalPhase={}",
+                sessionId, reason, closedPhase, terminalPhase);
     }
 
     public void tickTimeouts(long currentGameTime) {
@@ -136,7 +138,7 @@ public final class TradeSessionRegistry {
                 continue;
             }
             if ((currentGameTime - session.getPhaseEnteredGameTime()) > maxDurationTicks) {
-                log.info("Trade session timed out: sessionId={}, phase={}, phaseEnteredGameTime={}, currentGameTime={}",
+                log.trace("Trade session timed out: sessionId={}, phase={}, phaseEnteredGameTime={}, currentGameTime={}",
                         session.getSessionId(), session.getPhase(), session.getPhaseEnteredGameTime(), currentGameTime);
                 closeSession(session.getSessionId(), CloseReason.TIMEOUT);
             }

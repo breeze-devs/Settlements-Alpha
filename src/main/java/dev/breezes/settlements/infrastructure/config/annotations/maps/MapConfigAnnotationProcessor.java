@@ -48,7 +48,7 @@ public class MapConfigAnnotationProcessor implements ConfigAnnotationSubProcesso
             ConfigurationType type = annotation.type();
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
-            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath());
+            ModConfigSpec.Builder builder = registry.getBuilder(type);
             builder.push(className);
             ModConfigSpec.ConfigValue<String> configValue = builder.comment(annotation.description())
                     .define(annotation.identifier(), serializedMap);
@@ -82,7 +82,7 @@ public class MapConfigAnnotationProcessor implements ConfigAnnotationSubProcesso
                 field.set(null, deserializedMap); // instance is null for static fields
                 log.debug("Set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get());
             } catch (Exception e) {
-                String errorMessage = "Failed to set field '%s.%s' to %s".formatted(field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get());
+                String errorMessage = "Failed to set field '%s.%s'".formatted(field.getDeclaringClass().getSimpleName(), field.getName());
                 CrashUtil.crash(new ConfigLoadingCrashReport(new ConfigLoadingException(errorMessage, e)));
             }
         }

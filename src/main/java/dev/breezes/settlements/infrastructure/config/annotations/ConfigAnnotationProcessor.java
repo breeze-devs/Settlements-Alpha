@@ -14,6 +14,7 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforgespi.language.ModFileScanData;
+import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.ElementType;
@@ -28,8 +29,20 @@ import java.util.stream.Collectors;
 @CustomLog
 public class ConfigAnnotationProcessor {
 
+    /**
+     * Registers a record configuration of a STARTUP type and returns the record holding the loaded value from its file.
+     * The values are read once, so edits to the file take effect at the next game start.
+     * <p>
+     * process skips these records, so each is registered only through this method.
+     *
+     * @throws IllegalArgumentException if the record's configuration type is not a STARTUP type
+     */
+    public static <T extends Record> T registerStartupConfig(@Nonnull ModContainer container, @Nonnull Class<T> recordClass) {
+        return new RecordConfigProcessor().registerAtStartup(container, recordClass);
+    }
+
     public static void process() {
-        log.info("Processing mod config annotations");
+        log.debug("Processing mod config annotations");
 
         ModContainer container = ModList.get()
                 .getModContainerById(SettlementsMod.MOD_ID)
@@ -44,7 +57,7 @@ public class ConfigAnnotationProcessor {
         ConfigurationAnnotationRegistry registry = new ConfigurationAnnotationRegistry();
         List<Runnable> tasks = new ArrayList<>();
 
-        log.info("Processing field-based configurations...");
+        log.debug("Processing field-based configurations...");
         List<ConfigAnnotationSubProcessor<?>> processors = List.of(
                 new BooleanConfigAnnotationProcessor(),
                 new DoubleConfigAnnotationProcessor(),
@@ -67,31 +80,42 @@ public class ConfigAnnotationProcessor {
             }
         }
 
-        log.info("Processing Record-based configurations...");
+        log.debug("Processing Record-based configurations...");
         RecordConfigProcessor recordProcessor = new RecordConfigProcessor();
 
         Set<Class<?>> behaviorConfigRecords = scanner.getAnnotatedBy(BehaviorConfig.class, ElementType.TYPE)
                 .map(ConfigAnnotationProcessor::getClassFromAnnotationData)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
+                // registerStartupConfig registers these; registering one here again would conflict over its file.
+                .filter(recordClass -> recordClass.getAnnotation(BehaviorConfig.class).type().getModConfigType() != ModConfig.Type.STARTUP)
                 .collect(Collectors.toSet());
 
-        log.info("- Found {} @BehaviorConfig records", behaviorConfigRecords.size());
+        log.debug("- Found {} @BehaviorConfig records", behaviorConfigRecords.size());
         for (Class<?> recordClass : behaviorConfigRecords) {
             Runnable task = recordProcessor.process(recordClass, registry);
             tasks.add(task);
         }
 
-        log.info("Compiling {} config files", registry.getFileBuilderMap().size());
-        for (Map.Entry<String, ModConfigSpec.Builder> entry : registry.getFileBuilderMap().entrySet()) {
-            log.info("  - {}", entry.getKey());
+        log.debug("Compiling {} config files", registry.getFileBuilderMap().size());
+        for (Map.Entry<ConfigurationType, ModConfigSpec.Builder> entry : registry.getFileBuilderMap().entrySet()) {
+            ConfigurationType type = entry.getKey();
+            String filePath = type.getFilePath();
+            // Only static fields reach here with a STARTUP type, since the record scan skips STARTUP records. Their
+            // values would be populated at load-complete, too late for a STARTUP file, and registering the file again
+            // would conflict with the record registerStartupConfig already registered for it.
+            Validate.validState(type.getModConfigType() != ModConfig.Type.STARTUP,
+                    "%s is a STARTUP configuration, so its settings must be components of a record registered through "
+                            + "registerStartupConfig, not static fields", filePath);
+            log.debug("  - {}", filePath);
             ModConfigSpec spec = entry.getValue().build();
-            container.registerConfig(ModConfig.Type.COMMON, spec, entry.getKey());
+            container.registerConfig(type.getModConfigType(), spec, filePath);
         }
 
         // Schedule post-load tasks (populate static fields and register factories)
         CommonModEvents.LOAD_COMPLETE_TASKS.addAll(tasks);
-        log.info("Scheduled {} post-load configuration tasks", tasks.size());
+        log.info("Config processed: {} @BehaviorConfig records, {} config files registered, {} load-complete tasks scheduled",
+                behaviorConfigRecords.size(), registry.getFileBuilderMap().size(), tasks.size());
     }
 
     private static Optional<Field> getFieldFromAnnotationData(@Nonnull ModFileScanData.AnnotationData annotationData) {

@@ -31,6 +31,7 @@ import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.rendering.particles.EnchantTier;
+import dev.breezes.settlements.shared.logging.levels.LogLevel;
 import lombok.CustomLog;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -39,6 +40,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EnchantingTableBlock;
@@ -47,8 +49,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class EnchantItemBehavior extends VillagerStateMachineBehavior {
 
     private enum EnchantStage implements StageKey {
@@ -160,14 +163,12 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         this.enchantingTablePos = this.nearbyEnchantingTableCondition.getTargets().getFirst();
         if (this.enchantingTablePos == null) {
-            log.behaviorError("Unable to find enchanting table position");
             this.requestStop("Unable to find enchanting table position");
             return;
         }
 
         this.targetRepresentative = this.findFirstEnchantableNonEnchantedRepresentative(entity.getSettlementsInventory()).orElse(null);
         if (this.targetRepresentative == null) {
-            log.behaviorError("No enchantable non-enchanted item found");
             this.requestStop("No enchantable non-enchanted item found");
             return;
         }
@@ -188,7 +189,7 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
                                    @Nonnull BaseVillager entity,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.enchantingTablePos == null || !(world.getBlockState(this.enchantingTablePos).is(Blocks.ENCHANTING_TABLE))) {
-            log.behaviorError("Invalid enchanting table position: {}", this.enchantingTablePos);
+            log.debug("Enchanting table at {} is gone", this.enchantingTablePos);
             return false;
         }
 
@@ -214,7 +215,6 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
                                     @Nonnull BaseVillager entity,
                                     @Nonnull BehaviorContext<BaseVillager> context) {
         if (this.enchantingTablePos == null || this.targetRepresentative == null) {
-            log.behaviorError("Failed to enchant item: enchanting setup or target is invalid");
             this.requestStop("Enchanting setup or target is invalid");
             return false;
         }
@@ -229,14 +229,21 @@ public class EnchantItemBehavior extends VillagerStateMachineBehavior {
                 specialization, world.registryAccess());
 
         if (inventory.consume(this.targetRepresentative, 1) != 1) {
-            log.behaviorError("Failed to enchant item because item cannot be consumed");
+            log.warn("Failed to enchant {}: the item cannot be consumed from the inventory", this.targetRepresentative);
             this.requestStop("Failed to enchant item because item cannot be consumed");
             return false;
         }
 
         inventory.add(enchantedItem);
         this.enchantTier = EnchantTier.classify(enchantedItem);
-        log.behaviorStatus("Enchanted item from {} to {} (tier {})", this.targetRepresentative, enchantedItem, this.enchantTier);
+        if (log.isEnabled(LogLevel.DEBUG)) {
+            // A holder's toString prints the enchantment's whole definition, so the ids and levels are built here
+            String enchantments = EnchantmentHelper.getEnchantmentsForCrafting(enchantedItem).entrySet().stream()
+                    .map(entry -> entry.getKey().getRegisteredName() + " " + entry.getIntValue())
+                    .collect(Collectors.joining(", "));
+            log.debug("Enchanted {} into {} with [{}] (tier {})", this.targetRepresentative.getItem(),
+                    enchantedItem.getItem(), enchantments, this.enchantTier);
+        }
 
         BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.ITEM_ENCHANTED, null);
         outcome.markSucceeded();

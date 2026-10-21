@@ -34,7 +34,7 @@ import java.util.Map;
  * <p>
  * Ends after the burst, or as soon as the hostile dies, is removed, or leaves reach.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ThrowEggsAtHostileBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks BURST_DURATION = ClockTicks.of(30);

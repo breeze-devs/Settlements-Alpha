@@ -166,8 +166,10 @@ public final class SocialCueArbiter {
             String resolvedContextKey = contextKey.get();
             SocialCue cue = entry.buildCue(villager, resolvedContextKey);
             if (cue.getScript().getTotalDuration().getTicks() > SocialCueScript.MAX_DURATION.getTicks()) {
-                log.warn("SocialCue '{}' script exceeds max duration ({} ticks) — skipping",
-                        entry.getKey(), cue.getScript().getTotalDuration().getTicks());
+                log.error("SocialCue '{}' script runs {} ticks, over the {}-tick maximum; skipping",
+                        entry.getKey(), cue.getScript().getTotalDuration().getTicks(), SocialCueScript.MAX_DURATION.getTicks());
+                // Consumes the cue's cooldown, so the next scans do not rebuild and reject the same script
+                runtimeState.recordCueDeclined(entry.getKey(), gameTime, entry.getCooldown().getTicks());
                 continue;
             }
 

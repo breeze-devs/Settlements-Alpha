@@ -51,7 +51,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class TameWolfBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation BONE_ID = ResourceLocation.withDefaultNamespace("bone");
@@ -101,11 +101,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                             wolf -> wolf.isTame() && ownerMatches(villager, wolf))
                     .size();
 
-            if (owned >= limit) {
-                log.behaviorStatus("Owned wolves {} >= limit {}, aborting tame (precondition)", owned, limit);
-                return false;
-            }
-            return true;
+            return owned < limit;
         }));
 
         this.initializeStateMachine(this.createControlStep(), TameStage.END);
@@ -150,8 +146,6 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                     }
 
                     // Try to tame
-                    log.behaviorStatus("Attempting to tame wolf {}", wolf.getUUID());
-
                     if (RandomUtil.chance(TAME_SUCCESS_CHANCE)) {
                         // Success effects
                         Location wolfLoc = Location.fromEntity(wolf, false);
@@ -169,7 +163,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                             alreadySettlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
                             alreadySettlementsWolf.applyCollarColor(DyeColor.LIME);
                             settlementsWolf = alreadySettlementsWolf;
-                            log.behaviorStatus("Tamed existing SettlementsWolf {} in-place", settlementsWolf.getUUID());
+                            log.debug("Tamed existing SettlementsWolf {} in-place", settlementsWolf.getUUID());
                         } else {
                             // Vanilla Wolf: swap for a SettlementsWolf and copy the coat variant so the
                             // visual appearance is preserved across the entity replacement.
@@ -185,7 +179,8 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                             settlementsWolf.setTame(true, true);
                             settlementsWolf.setOwnerUUID(ctx.getInitiator().getMinecraftEntity().getUUID());
                             settlementsWolf.applyCollarColor(DyeColor.LIME);
-                            log.behaviorStatus("Replaced vanilla Wolf with SettlementsWolf {}", settlementsWolf.getUUID());
+                            log.debug("Tamed vanilla wolf {}, replaced by SettlementsWolf {}", wolf.getUUID(),
+                                    settlementsWolf.getUUID());
                         }
 
                         this.rememberOwnedWolf(ctx.getInitiator().getMinecraftEntity(), settlementsWolf);
@@ -202,7 +197,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                         // Failure effects
                         Location wolfLoc = Location.fromEntity(wolf, false);
                         wolfLoc.displayParticles(ParticleTypes.SMOKE, 6, 0.35, 0.5, 0.35, 0.01);
-                        log.behaviorStatus("Failed to tame wolf");
+                        log.debug("Failed to tame wolf {}", wolf.getUUID());
                     }
                     return StepResult.noOp();
                 })
@@ -244,8 +239,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
                         wolf -> wolf.isTame() && ownerMatches(villager, wolf))
                 .size();
         if (owned >= limit) {
-            log.behaviorStatus("Owned wolves {} >= limit {}, aborting tame", owned, limit);
-            this.requestStop("Owned wolves greater than taming limit");
+            this.requestStop("Owned wolves %d >= limit %d".formatted(owned, limit));
             return;
         }
 
@@ -308,7 +302,7 @@ public class TameWolfBehavior extends VillagerStateMachineBehavior {
         List<UUID> ownedWolfIds = villager.getBrain()
                 .getMemory(MemoryTypeRegistry.OWNED_WOLVES.getModuleType())
                 .orElse(List.of());
-        log.behaviorStatus("Remembering tamed wolf {}", wolf.getUUID());
+        log.trace("Remembering tamed wolf {}", wolf.getUUID());
         List<UUID> updatedOwnedWolfIds = new ArrayList<>(ownedWolfIds);
         updatedOwnedWolfIds.add(wolf.getUUID());
         villager.getBrain().setMemory(MemoryTypeRegistry.OWNED_WOLVES.getModuleType(), List.copyOf(updatedOwnedWolfIds));

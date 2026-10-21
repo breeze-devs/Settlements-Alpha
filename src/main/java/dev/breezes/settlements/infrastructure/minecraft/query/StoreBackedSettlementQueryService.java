@@ -26,7 +26,7 @@ import java.util.UUID;
 /**
  * Finds settlements and buildings by the claimed chunks in the settlement store.
  */
-@CustomLog
+@CustomLog(topic = "settlement")
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class StoreBackedSettlementQueryService implements SettlementQueryService {
@@ -72,7 +72,7 @@ public final class StoreBackedSettlementQueryService implements SettlementQueryS
 
     private String displayName(@Nonnull String buildingDefinitionId) {
         if (this.buildingRegistry.byId(buildingDefinitionId).isEmpty()) {
-            log.warn("Missing building definition '{}'; using raw id as display name", buildingDefinitionId);
+            log.error("Missing building definition '{}'; using raw id as display name", buildingDefinitionId);
         }
         return this.buildingRegistry.displayNameFor(buildingDefinitionId);
     }

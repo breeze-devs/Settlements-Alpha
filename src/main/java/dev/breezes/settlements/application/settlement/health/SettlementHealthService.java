@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
  */
 @ServerSide
 @ServerScope
-@CustomLog
+@CustomLog(topic = "settlement")
 public final class SettlementHealthService {
 
     /**

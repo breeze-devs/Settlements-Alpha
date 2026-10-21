@@ -19,7 +19,7 @@ import java.util.Map;
  * If a keyframe is exactly the start or end of the tickable, it will not be executed.
  * Use the onStart and onEnd steps for that.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
     private final ITickable tickable;
@@ -73,13 +73,13 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
         if (completed) {
             // By default, we return complete when timer runs out
             if (this.onEnd == null) {
-                log.behaviorStatus("No onEnd step, returning complete");
+                log.trace("{} has no onEnd step, returning complete", this.getName());
                 return StepResult.complete();
             }
 
             // This return can be overridden by the onEnd step
             StepResult nextStage = this.onEnd.tick(context);
-            log.behaviorStatus("Next stage: {}", nextStage);
+            log.trace("{} ended with result {}", this.getName(), nextStage);
 
             // If onEnd returns NoOp, we still want to signal completion
             if (nextStage instanceof StepResult.NoOp) {

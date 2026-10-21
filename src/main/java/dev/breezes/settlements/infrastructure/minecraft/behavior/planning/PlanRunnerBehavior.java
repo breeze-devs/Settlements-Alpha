@@ -5,7 +5,6 @@ import dev.breezes.settlements.application.ai.planning.PlanRunner;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import jakarta.inject.Inject;
-import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.Behavior;
@@ -26,7 +25,6 @@ import java.util.Set;
  * It stays running and delegates interruption decisions to {@link PlanRunner} and
  * {@link OverrideArbiter}.
  */
-@CustomLog
 public class PlanRunnerBehavior extends Behavior<Villager> {
 
     private static final Set<Activity> DAY_PLAN_ACTIVITIES = Set.of(Activity.WORK, Activity.MEET, Activity.IDLE);

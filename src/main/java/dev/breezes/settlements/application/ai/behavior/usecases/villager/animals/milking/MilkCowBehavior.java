@@ -40,7 +40,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class MilkCowBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation BUCKET_ID = ResourceLocation.withDefaultNamespace("bucket");

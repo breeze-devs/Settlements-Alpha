@@ -36,7 +36,7 @@ import java.util.Optional;
  * <p>
  * An instance holds one villager's summon cadence, so each brain needs its own.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class ThreatGolemSummon extends OneShot<Villager> {
 
     private static final ClockTicks SUMMON_INTERVAL = ClockTicks.seconds(5);
@@ -160,8 +160,7 @@ public final class ThreatGolemSummon extends OneShot<Villager> {
             Location arrival = Location.of(summoned.getX(), summoned.getY(0.5), summoned.getZ(), level);
             ParticleRegistry.summonIronGolem(arrival);
             SoundRegistry.SUMMON_IRON_GOLEM.playGlobally(arrival, SoundSource.NEUTRAL);
-            log.debug("Villager {} summoned iron golem {} at {}", summoner.getUUID(), summoned.getUUID(),
-                    summoned.blockPosition().toShortString());
+            log.debug("Villager {} summoned iron golem {} at {}", summoner.getUUID(), summoned.getUUID(), summoned.blockPosition());
         });
     }
 

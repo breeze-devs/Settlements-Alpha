@@ -52,7 +52,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class FishingBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation FISHING_ROD_ID = ResourceLocation.withDefaultNamespace("fishing_rod");
@@ -119,16 +119,14 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                                    @Nonnull BehaviorContext<BaseVillager> context) {
         this.waterTarget = this.nearbyWaterExistsCondition.getWaterTarget().orElse(null);
         if (this.waterTarget == null) {
-            log.behaviorWarn("Fishing behavior started without a water target; stopping");
             this.requestStop("Fishing behavior started without a water target");
             return;
         }
 
         Optional<BlockPos> shorePosition = this.nearbyWaterExistsCondition.getShorePosition();
         if (shorePosition.isEmpty()) {
-            log.behaviorWarn("Fishing behavior started without a shore position for water target {}; stopping",
-                    this.waterTarget);
-            this.requestStop("Fishing behavior started without a shore position");
+            this.requestStop("Fishing behavior started without a shore position for water target %s"
+                    .formatted(this.waterTarget));
             return;
         }
 
@@ -140,8 +138,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
         // Gaze at the water rather than the shore block
         context.setState(BehaviorStateType.LOOK_TARGET, LookState.ofLocation(Location.of(this.waterTarget, villager.level())));
 
-        log.behaviorStatus("Starting fishing behavior at shore position {} and water position {}",
-                shorePosition, this.waterTarget);
         this.castRetryCount = 0;
     }
 
@@ -228,8 +224,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                 })
                 .addKeyFrame(ClockTicks.of(FishingAnimations.CAST_IMPACT_TICK), context -> {
                     if (this.waterTarget == null) {
-                        log.behaviorWarn("No water target set during cast — stopping");
-                        return StepResult.fail("NO_WATER_TARGET");
+                        return StepResult.fail("No water target set during cast");
                     }
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
                     return this.castHook(villager);
@@ -254,13 +249,12 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                     if (this.activeHook != null && this.activeHook.isRemoved() && this.activeHook.isMissedWater()) {
                         if (this.castRetryCount < MAX_CAST_RETRIES) {
                             this.castRetryCount++;
-                            log.behaviorStatus("Hook missed water (attempt {}/{}), retrying",
+                            log.debug("Hook missed water (attempt {}/{}), retrying",
                                     this.castRetryCount, MAX_CAST_RETRIES);
                             this.activeHook = null;
                             context.getInitiator().getMinecraftEntity().setBobberDeployed(false);
                             return StepResult.transition(FishingStage.CAST_LINE);
                         }
-                        log.behaviorWarn("Hook missed water, no retries left");
                         context.getInitiator().getMinecraftEntity().setBobberDeployed(false);
                         return StepResult.complete();
                     }
@@ -269,7 +263,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
                         SoundRegistry.FISHING_SPLASH.playGlobally(
                                 Location.fromEntity(this.activeHook, false),
                                 SoundSource.NEUTRAL);
-                        log.behaviorStatus("Fish has bitten the hook!");
                         return StepResult.transition(FishingStage.FIGHT_FISH);
                     }
 
@@ -393,8 +386,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
 
     private StepResult castHook(@Nonnull BaseVillager villager) {
         if (this.waterTarget == null) {
-            log.behaviorWarn("No water target set during cast, stopping behavior");
-            return StepResult.fail("NO_WATER_TARGET");
+            return StepResult.fail("No water target set during cast");
         }
 
         int baseMinBiteTicks = ClockTicks.seconds(this.config.minWaitTimeSeconds()).getTicksAsInt();
@@ -423,7 +415,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
         villager.setBobberDeployed(true);
         SoundRegistry.FISHING_CAST.playGlobally(Location.fromEntity(villager, true), SoundSource.NEUTRAL);
 
-        log.behaviorStatus("Casted fishing hook, fish will appear in {} ticks", biteTimeTicks);
+        log.debug("Cast fishing hook, fish will bite in {} ticks", biteTimeTicks);
         return StepResult.noOp();
     }
 
@@ -437,7 +429,6 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
         Location villagerHead = Location.fromEntity(villager, true);
         villagerHead.displayParticles(ParticleTypes.ANGRY_VILLAGER, 6, 0.3, 0.2, 0.3, 0.01);
         villagerHead.playSound(SoundEvents.VILLAGER_NO, 0.8f, 1.0f, SoundSource.NEUTRAL);
-        log.behaviorStatus("Villager reeled in nothing while fishing");
     }
 
     private StepResult collectAndComplete(@Nonnull BehaviorContext<BaseVillager> context) {
@@ -448,7 +439,7 @@ public class FishingBehavior extends VillagerStateMachineBehavior {
             SoundRegistry.ITEM_POP_IN.playGlobally(
                     Location.fromEntity(context.getInitiator().getMinecraftEntity(), false),
                     SoundSource.NEUTRAL);
-            log.behaviorStatus("Collected fish: {}", this.caughtItem);
+            log.debug("Collected fish: {}", this.caughtItem);
 
             BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.FISH_CAUGHT, null);
             outcome.markSucceeded();

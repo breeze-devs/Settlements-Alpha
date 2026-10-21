@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class HarvestNetherWartBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
@@ -148,7 +148,6 @@ public class HarvestNetherWartBehavior extends VillagerStateMachineBehavior {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.NETHER_WART_FARM_SITES,
                             this.netherWartMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
-                        log.behaviorStatus("No additional nether wart targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 

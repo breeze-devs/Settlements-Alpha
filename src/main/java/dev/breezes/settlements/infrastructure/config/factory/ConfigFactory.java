@@ -1,7 +1,5 @@
 package dev.breezes.settlements.infrastructure.config.factory;
 
-import com.google.gson.Gson;
-import com.mojang.authlib.minecraft.client.ObjectMapper;
 import dev.breezes.settlements.infrastructure.config.annotations.RecordConfigProcessor;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.ConfigLoadingException;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
@@ -28,8 +26,6 @@ import java.util.function.Supplier;
  */
 @CustomLog
 public class ConfigFactory {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(new Gson());
 
     /**
      * Registry mapping config Record classes to their cached instances.
@@ -59,8 +55,7 @@ public class ConfigFactory {
             log.debug("Registering config for {}", type.getSimpleName());
             T instance = factory.get();
             INSTANCES.put(type, instance);
-            log.debug("Successfully created and cached config instance for {}: {}",
-                    type.getSimpleName(), OBJECT_MAPPER.writeValueAsString(instance));
+            log.debug("Successfully created and cached config instance for {}: {}", type.getSimpleName(), instance);
         } catch (Exception e) {
             String message = "Failed to create config instance for %s".formatted(type.getSimpleName());
             CrashUtil.crash(new ConfigLoadingCrashReport(new ConfigLoadingException(message, e)));

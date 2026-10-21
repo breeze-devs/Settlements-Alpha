@@ -33,7 +33,7 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
             ConfigurationType type = annotation.type();
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
-            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath());
+            ModConfigSpec.Builder builder = registry.getBuilder(type);
             builder.push(className);
             ModConfigSpec.IntValue configValue = builder.comment(annotation.description())
                     .defineInRange(annotation.identifier(), annotation.defaultValue(), annotation.min(), annotation.max());
@@ -47,7 +47,7 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
     }
 
     private void populateInts(@Nonnull Map<Field, ModConfigSpec.IntValue> integerConfigValues) {
-        log.debug("Populating %d integer fields from config".formatted(integerConfigValues.size()));
+        log.debug("Populating {} integer fields from config", integerConfigValues.size());
 
         for (Map.Entry<Field, ModConfigSpec.IntValue> entry : integerConfigValues.entrySet()) {
             Field field = entry.getKey();
@@ -57,7 +57,7 @@ public class IntegerConfigAnnotationProcessor implements ConfigAnnotationSubProc
                 field.set(null, configValue.get()); // instance is null for static fields
                 log.debug("Set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get());
             } catch (Exception e) {
-                log.error("Failed to set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get(), e);
+                log.error("Failed to set field {}.{}", field.getDeclaringClass().getSimpleName(), field.getName(), e);
             }
         }
     }

@@ -22,7 +22,7 @@ import java.util.Optional;
 /**
  * Generic base for datapack-backed managers that decode every file with a single {@link Codec}
  */
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public abstract class CodecJsonDataManager<T> extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new GsonBuilder().create();
@@ -64,13 +64,13 @@ public abstract class CodecJsonDataManager<T> extends SimpleJsonResourceReloadLi
                     errorCount++;
                 }
             } catch (Exception exception) {
-                log.warn("Failed to parse {} entry '{}': {}", this.label(), entry.getKey(), exception.getMessage());
+                log.warn("Failed to parse {} entry '{}'", this.label(), entry.getKey(), exception);
                 errorCount++;
             }
         }
 
         this.onReloaded(parsed);
-        log.info("Loaded {} {} entries ({} errors)", parsed.size(), this.label(), errorCount);
+        log.debug("Loaded {} {} entries ({} errors)", parsed.size(), this.label(), errorCount);
     }
 
     /**

@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 
-@CustomLog
+@CustomLog(topic = "sensor")
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class ResourceIndexRefresher {
@@ -208,7 +208,7 @@ public final class ResourceIndexRefresher {
                     if (err != null) {
                         // On failure: post a null-scan arrival so the main-thread drain clears
                         // the in-flight marker. The section stays stale and queryAll re-enqueues it.
-                        log.warn("Async section scan failed for sectionKey={}: {}", sectionKey, err.toString());
+                        log.error("Async section scan failed for sectionKey={}", sectionKey, err);
                         asyncState.arrivals.offer(new ScanArrival(sectionKey, null));
                         return;
                     }

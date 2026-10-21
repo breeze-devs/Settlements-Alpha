@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.inference;
 import com.google.gson.Gson;
 import jakarta.inject.Inject;
 import lombok.CustomLog;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import java.net.URI;
@@ -12,7 +13,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -20,11 +23,16 @@ import java.util.function.Function;
 /**
  * Java HTTP transport for inference capability requests
  */
-@CustomLog
+@CustomLog(topic = "inference")
 public final class HttpInferenceTransport implements InferenceTransport {
 
     private static final String CONTENT_TYPE_JSON = "application/json";
     private static final Gson GSON = new Gson();
+
+    /**
+     * Maximum length of the error response body a log line carries, abbreviation marker included.
+     */
+    private static final int MAX_LOGGED_BODY_CHARS = 512;
 
     private final InferenceConfig config;
     private final HttpClient httpClient;
@@ -62,7 +70,8 @@ public final class HttpInferenceTransport implements InferenceTransport {
         return this.httpClient.sendAsync(requestBuilder.build(), HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                        log.error("Inference backend returned HTTP {} for {}: {}", response.statusCode(), capability, response.body());
+                        log.error("Inference backend returned HTTP {} for {}: {}", response.statusCode(), capability,
+                                StringUtils.abbreviate(response.body(), MAX_LOGGED_BODY_CHARS));
                         return InferenceTransportResponse.miss();
                     }
                     return InferenceTransportResponse.success(response.body(), response.statusCode());
@@ -114,8 +123,12 @@ public final class HttpInferenceTransport implements InferenceTransport {
         // Absorb all errors so the completion future never fails exceptionally — callers can
         // safely attach thenRun cleanup without wrapping in exceptionally.
         CompletableFuture<Void> completion = sourceFuture.handle((response, throwable) -> {
-            if (throwable != null) {
-                log.error("Inference streaming request for {} ended with error", capability, throwable);
+            Throwable failure = throwable instanceof CompletionException && throwable.getCause() != null
+                    ? throwable.getCause()
+                    : throwable;
+            // cancel() aborts the exchange on purpose, which is not a failure
+            if (failure != null && !(failure instanceof CancellationException)) {
+                log.error("Inference streaming request for {} ended with error", capability, failure);
             }
             return null;
         });

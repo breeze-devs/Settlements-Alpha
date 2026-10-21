@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @ServerScope
-@CustomLog
+@CustomLog(topic = "planning")
 public class BehaviorCatalogImpl implements IBehaviorCatalog {
 
     /**

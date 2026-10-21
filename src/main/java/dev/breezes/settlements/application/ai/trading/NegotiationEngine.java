@@ -3,19 +3,8 @@ package dev.breezes.settlements.application.ai.trading;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class NegotiationEngine {
-
-    public enum ConcedingSide {
-        BUYER,
-        SELLER,
-    }
-
-    public record NegotiationRoundResult(
-            int buyerOffer,
-            int sellerAsk
-    ) {
-    }
 
     public NegotiationRoundResult advanceRound(int buyerOffer, int sellerAsk, int priceJitter) {
         if (buyerOffer <= 0 || sellerAsk <= 0) {
@@ -28,7 +17,7 @@ public final class NegotiationEngine {
             throw new IllegalArgumentException("Negotiation advance requires a positive spread");
         }
 
-        log.info("Negotiation round start: buyerOffer={}, sellerAsk={}, priceJitter={}", buyerOffer, sellerAsk, priceJitter);
+        log.trace("Negotiation round start: buyerOffer={}, sellerAsk={}, priceJitter={}", buyerOffer, sellerAsk, priceJitter);
 
         int spread = sellerAsk - buyerOffer;
         int buyerConcession = this.randomConcessionAmount(spread);
@@ -40,8 +29,8 @@ public final class NegotiationEngine {
         int nextBuyerOffer = Math.min(buyerOffer + buyerConcession, sellerAsk);
         int nextSellerAsk = Math.max(nextBuyerOffer, sellerAsk - sellerConcession);
 
-        log.info("Negotiation round result: nextBuyerOffer={}, nextSellerAsk={}, buyerConcession={}, sellerConcession={}",
-                nextBuyerOffer, nextSellerAsk, buyerConcession, sellerConcession);
+        log.debug("Negotiation round result: buyerOffer {} -> {}, sellerAsk {} -> {}, buyerConcession={}, sellerConcession={}",
+                buyerOffer, nextBuyerOffer, sellerAsk, nextSellerAsk, buyerConcession, sellerConcession);
         return new NegotiationRoundResult(nextBuyerOffer, nextSellerAsk);
     }
 
@@ -65,6 +54,12 @@ public final class NegotiationEngine {
 
         maximumConcession = Math.min(spread, maximumConcession);
         return RandomUtil.randomInt(minimumConcession, maximumConcession, true);
+    }
+
+    public record NegotiationRoundResult(
+            int buyerOffer,
+            int sellerAsk
+    ) {
     }
 
 }

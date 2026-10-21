@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class WalkDogBehavior extends VillagerStateMachineBehavior {
 
     private static final double LEASH_DISTANCE = 2.5;

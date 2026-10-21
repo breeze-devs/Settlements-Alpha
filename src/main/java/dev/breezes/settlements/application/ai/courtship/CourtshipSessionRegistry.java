@@ -46,7 +46,7 @@ public final class CourtshipSessionRegistry {
 
         putSession(session);
         this.invitesByReceiver.put(receiver.getUUID(), invite);
-        log.info("Created courtship invite: sessionId={}, presenter={}, receiver={}", sessionId, presenter.getUUID(), receiver.getUUID());
+        log.debug("Created courtship invite: sessionId={}, presenter={}, receiver={}", sessionId, presenter.getUUID(), receiver.getUUID());
         return session;
     }
 
@@ -66,7 +66,7 @@ public final class CourtshipSessionRegistry {
                 .orElseThrow(() -> new IllegalStateException("Pending courtship invite had no matching active session"));
 
         session.transitionTo(CourtshipPhase.ACCEPTED, currentGameTime);
-        log.info("Accepted courtship invite: sessionId={}, receiverId={}", session.getSessionId(), receiverId);
+        log.debug("Accepted courtship invite: sessionId={}, receiverId={}", session.getSessionId(), receiverId);
         return session;
     }
 
@@ -92,8 +92,10 @@ public final class CourtshipSessionRegistry {
         CourtshipPhase terminalPhase = reason == CourtshipCloseReason.COMPLETED
                 ? CourtshipPhase.COMPLETED
                 : CourtshipPhase.ABORTED;
+        CourtshipPhase closedPhase = session.getPhase();
         session.transitionTo(terminalPhase, session.getPhaseEnteredGameTime());
-        log.info("Closed courtship session: sessionId={}, reason={}, terminalPhase={}", sessionId, reason, terminalPhase);
+        log.debug("Closed courtship session: sessionId={}, reason={}, closedPhase={}, terminalPhase={}",
+                sessionId, reason, closedPhase, terminalPhase);
     }
 
     /**
@@ -115,7 +117,7 @@ public final class CourtshipSessionRegistry {
                 continue;
             }
             if ((currentGameTime - session.getPhaseEnteredGameTime()) > maxDurationTicks) {
-                log.info("Courtship session timed out: sessionId={}, phase={}", session.getSessionId(), session.getPhase());
+                log.trace("Courtship session timed out: sessionId={}, phase={}", session.getSessionId(), session.getPhase());
                 closeSession(session.getSessionId(), CourtshipCloseReason.TIMEOUT);
             }
         }

@@ -10,7 +10,6 @@ import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 import dev.breezes.settlements.domain.presentation.ArmPose;
 import dev.breezes.settlements.domain.presentation.ModelPartRef;
 import dev.breezes.settlements.shared.util.ResourceLocationUtil;
-import lombok.CustomLog;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.model.HeadedModel;
@@ -35,7 +34,6 @@ import org.joml.Vector3f;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-@CustomLog
 @OnlyIn(Dist.CLIENT)
 @Getter
 public class SettlementsVillagerModel<T extends Entity> extends HierarchicalModel<T> implements HeadedModel, VillagerHeadModel {

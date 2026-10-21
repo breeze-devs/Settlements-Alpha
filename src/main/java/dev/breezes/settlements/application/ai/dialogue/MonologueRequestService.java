@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  * backend round-trip. The pure conversion path ({@link #toPack}) is kept Minecraft-free so it
  * can be unit-tested without an MC environment.
  */
-@CustomLog
+@CustomLog(topic = "inference")
 @ServerScope
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class MonologueRequestService {

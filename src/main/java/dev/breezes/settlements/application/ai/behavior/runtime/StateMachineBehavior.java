@@ -202,21 +202,21 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
                     throw new StopBehaviorException("Behavior '%s' has ended".formatted(behaviorName));
                 }
 
-                this.getLog().behaviorError("Behavior '{}' produced unexpected transition '{}' (expected end '{}')",
+                this.getLog().error("Behavior '{}' produced unexpected transition '{}' (expected end '{}')",
                         behaviorName, key.name(), endStage.name());
                 this.lastLifecycleResult = BehaviorLifecycleResult.fail("unexpected transition '%s'".formatted(key.name()));
                 throw new StopBehaviorException("Behavior '%s' unexpected transition '%s'".formatted(behaviorName, key.name()));
             }
             case StepResult.Fail fail -> {
-                this.getLog().behaviorWarn("Behavior '{}' failed with code '{}' and details {}", behaviorName, fail.code(), fail.details());
                 this.lastLifecycleResult = BehaviorLifecycleResult.fail(fail.code());
-                throw new StopBehaviorException("Behavior '%s' failed with code '%s'".formatted(behaviorName, fail.code()));
+                // A Fail is an expected outcome and gets no line of its own: this message is the run's stop reason
+                String reason = fail.details().isEmpty()
+                        ? "Behavior '%s' failed with code '%s'".formatted(behaviorName, fail.code())
+                        : "Behavior '%s' failed with code '%s' and details %s".formatted(behaviorName, fail.code(), fail.details());
+                throw new StopBehaviorException(reason);
             }
             case StepResult.Abort abort -> {
-                this.getLog().behaviorError("Behavior '{}' aborted with code '{}'", behaviorName, abort.code());
-                if (abort.cause() != null) {
-                    this.getLog().error(abort.cause(), "Behavior '{}' abort cause", behaviorName);
-                }
+                this.getLog().error("Behavior '{}' aborted with code {}", behaviorName, abort.code(), abort.cause());
                 this.lastLifecycleResult = BehaviorLifecycleResult.abort(abort.code());
                 throw new StopBehaviorException("Behavior '%s' aborted with code '%s'".formatted(behaviorName, abort.code()));
             }

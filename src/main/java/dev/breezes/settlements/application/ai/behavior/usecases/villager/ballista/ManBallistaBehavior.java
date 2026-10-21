@@ -50,7 +50,7 @@ import java.util.Set;
  * Uses a ballista against one hostile, shot after shot, until the target is lost, the machine cannot be worked, or the
  * operator has no bolt left to load.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ManBallistaBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks APPROACH_TIMEOUT = ClockTicks.seconds(12);

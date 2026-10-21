@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 /**
  * Walks a fletcher to each stuck projectile its latest scan remembered, and picks it up as a player would.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class RetrieveProjectilesBehavior extends VillagerStateMachineBehavior {
 
     // A projectile stuck in a wall can sit two blocks above the feet of a villager standing beneath it

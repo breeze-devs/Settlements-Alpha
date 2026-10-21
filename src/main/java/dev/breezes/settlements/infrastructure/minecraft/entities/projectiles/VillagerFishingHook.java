@@ -196,7 +196,7 @@ public class VillagerFishingHook extends Projectile {
             }
 
             if (++this.lifetimeTicks >= this.maxLifetimeTicks) {
-                log.info("Fishing hook max lifetime reached, discarding");
+                log.debug("Fishing hook max lifetime reached, discarding");
                 this.discard();
                 return;
             }
@@ -226,7 +226,7 @@ public class VillagerFishingHook extends Projectile {
 
         if (!this.level().isClientSide
                 && this.state == HookState.FLYING && (this.onGround() || this.horizontalCollision)) {
-            log.warn("Fishing hook missed water, discarding");
+            log.trace("Fishing hook missed water, discarding");
             this.missedWater = true;
             this.discard();
             return;
@@ -313,7 +313,7 @@ public class VillagerFishingHook extends Projectile {
     private Optional<Entity> createRandomFish() {
         Optional<FishCatchEntry> catchEntry = SettlementsDagger.serverOrThrow().fishCatchDataManager().rollRandomCatch();
         if (catchEntry.isEmpty()) {
-            log.warn("No fish catch entries available while reeling in villager fishing hook");
+            log.debug("No fish catch entries available while reeling in villager fishing hook");
             this.selectedCatchEntry = null;
             this.selectedCatchSize = null;
             return Optional.empty();
@@ -324,7 +324,7 @@ public class VillagerFishingHook extends Projectile {
                 .map(entityType -> entityType.create(this.level()))
                 .map(createdEntity -> (Entity) createdEntity);
         if (entity.isEmpty()) {
-            log.warn("Unable to create fish catch entity '{}'", entry.getEntityId());
+            log.error("Unable to create fish catch entity '{}'", entry.getEntityId());
             this.selectedCatchEntry = null;
             this.selectedCatchSize = null;
             return Optional.empty();

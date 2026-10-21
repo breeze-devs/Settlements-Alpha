@@ -6,7 +6,6 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.cuccos.goals.DiveBombGoal;
-import lombok.CustomLog;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -26,7 +25,6 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
-@CustomLog
 public class CuccoEntity extends Chicken {
 
     private static final double PANIC_SPEED = 2.45D;

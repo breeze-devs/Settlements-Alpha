@@ -1,18 +1,14 @@
 package dev.breezes.settlements.shared.logging.levels;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-@AllArgsConstructor
-@Getter
+/**
+ * Severity of a log event. Constants are declared from least to most severe, so ordinal order is severity order.
+ */
 public enum LogLevel {
 
-    TRACE("Trace"),
-    DEBUG("Debug"),
-    INFO("Info"),
-    WARN("Warn"),
-    ERROR("Error");
-
-    private final String prefix;
+    TRACE,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR
 
 }

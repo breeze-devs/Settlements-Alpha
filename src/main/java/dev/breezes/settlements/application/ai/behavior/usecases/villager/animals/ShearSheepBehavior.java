@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Behavior that makes villagers shear nearby sheep
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ShearSheepBehavior extends VillagerStateMachineBehavior {
 
     private static final String BUBBLE_OWNER_KEY = "behavior:shear_sheep";
@@ -197,7 +197,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
                                 .toList();
                         if (!nearbySheep.isEmpty()) {
                             context.setState(BehaviorStateType.TARGET, TargetState.of(nearbySheep));
-                            log.behaviorStatus("Found {} nearby sheep to shear, remaining {}", nearbySheep.size(), this.shearCount.get());
                             return StepResult.transition(ShearStage.SHEAR_SHEEP);
                         }
                     }
@@ -216,7 +215,6 @@ public class ShearSheepBehavior extends VillagerStateMachineBehavior {
         int limit = config.expertiseShearLimit().getOrDefault(expertise.getConfigName(), DEFAULT_SHEAR_LIMIT);
         this.shearCount.set(limit);
         this.shouldRewardExperience = false;
-        log.behaviorStatus("Villager is '{}' level, maximum shear count is {}", expertise.toString(), limit);
 
         if (!villager.getSettlementsInventory().containsOrBypassed(Items.SHEARS)) {
             this.requestStop("No shears available");

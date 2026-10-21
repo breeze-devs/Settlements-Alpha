@@ -34,7 +34,7 @@ import java.util.UUID;
  */
 @ServerSide
 @ServerScope
-@CustomLog
+@CustomLog(topic = "settlement")
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class GeneratedSettlementRecorder {
 
@@ -59,7 +59,7 @@ public final class GeneratedSettlementRecorder {
         if (name.isEmpty()) {
             // Nothing is stored, so the start's next load tries again, by which time a datapack reload may have filled
             // the pools
-            log.warn("Generated settlement {} in {} is not recorded: the settlement name pools are empty",
+            log.error("Generated settlement {} in {} is not recorded: the settlement name pools are empty",
                     generated.id(), level.dimension().location());
             return;
         }

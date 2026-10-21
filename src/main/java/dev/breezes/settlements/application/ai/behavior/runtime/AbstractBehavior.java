@@ -6,15 +6,18 @@ import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.shared.logging.ILogger;
+import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Getter
 public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntity> implements IBehavior<T> {
@@ -29,6 +32,12 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
 
     protected BehaviorStatus status;
     private boolean stopRequested;
+    /**
+     * Reason of the current run's pending stop, or null while none is pending.
+     */
+    @Nullable
+    @Getter(AccessLevel.NONE)
+    private String stopReason;
     @Getter
     private final Map<Class<?>, Boolean> latestPreconditionEvaluationResults;
 
@@ -79,7 +88,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             boolean passed = precondition.test(entity);
             this.latestPreconditionEvaluationResults.put(precondition.getClass(), passed);
             if (!passed) {
-                log.behaviorTrace("Precondition '{}' is not met", precondition.description());
+                log.trace("Precondition '{}' is not met", precondition.description());
                 allPassed = false;
             }
         }
@@ -99,7 +108,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             return;
         }
 
-        log.behaviorStatus("Starting behavior (entity: {})", entity.getUUID().toString());
+        log.debug("Starting behavior (entity: {})", entity.getUUID());
         try {
             this.doStart(world, entity);
         } catch (RuntimeException e) {
@@ -123,7 +132,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
 
         // Check for the stop flag, we want to early return since preconditions may no longer be met
         if (this.stopRequested) {
-            log.behaviorStatus("Stop requested, stopping behavior");
+            log.trace("Stop requested, stopping behavior");
             this.stop(world, entity);
             return;
         }
@@ -131,23 +140,26 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         try {
             this.tickBehavior(delta, world, entity);
         } catch (StopBehaviorException e) {
-            this.requestStop("Behavior stop requested by exception");
+            this.requestStop(e.getMessage());
         }
 
         // No cooldown for checking continue conditions
         boolean canContinue = !this.stopRequested && this.tickContinueConditions(delta, world, entity);
         if (!canContinue) {
-            log.behaviorStatus("Behavior can no longer continue, stopping behavior");
+            log.trace("Behavior can no longer continue, stopping behavior");
             this.stop(world, entity);
         }
     }
 
     public abstract void tickBehavior(int delta, @Nonnull Level world, @Nonnull T entity);
 
+    /**
+     * Returns whether every continue condition holds, requesting a stop that names the first unmet one otherwise.
+     */
     public boolean tickContinueConditions(int delta, @Nonnull Level world, @Nonnull T entity) {
         for (ICondition<T> continueCondition : this.continueConditions) {
             if (!continueCondition.test(entity)) {
-                log.behaviorTrace("Continue condition '{}' is not met", continueCondition.description());
+                this.requestStop("Continue condition '%s' is not met".formatted(continueCondition.description()));
                 return false;
             }
         }
@@ -158,12 +170,12 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
     @Override
     public void requestStop(@Nonnull String reason) {
         if (this.stopRequested) {
-            log.behaviorTrace("Ignoring stop request since behavior is already stopping");
             return;
         }
 
-        log.behaviorStatus("Requesting to stop behavior: {}", reason);
+        log.trace("Requesting to stop behavior: {}", reason);
         this.stopRequested = true;
+        this.stopReason = reason;
     }
 
     @Override
@@ -173,7 +185,9 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             return;
         }
 
-        log.behaviorStatus("Stopping behavior");
+        // A stop without a pending request comes from whoever runs the behavior, not from the run itself
+        log.debug("Stopping behavior (entity: {}, reason: {})", entity.getUUID(),
+                Objects.requireNonNullElse(this.stopReason, "stopped by its runner"));
         this.tearDown(world, entity);
     }
 
@@ -183,12 +197,13 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         } catch (Exception e) {
             // stop() runs on the entity-removal chain (BaseVillager.remove -> brain.stopAll -> ...),
             // so a throw here must never escape: it would abort removal itself.
-            log.behaviorError("Behavior teardown threw for entity {}: {}", entity.getUUID(), e.getMessage(), e);
+            log.error("Behavior teardown threw for entity {}", entity.getUUID(), e);
         } finally {
             // Always advance to STOPPED so the behavior cannot be stuck as RUNNING
             this.behaviorCoolDown.resetWithMultiplier(this.getCooldownMultiplier(entity));
             this.status = BehaviorStatus.STOPPED;
             this.stopRequested = false;
+            this.stopReason = null;
         }
     }
 

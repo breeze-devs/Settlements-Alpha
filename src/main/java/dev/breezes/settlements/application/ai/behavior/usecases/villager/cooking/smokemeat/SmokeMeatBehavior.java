@@ -46,7 +46,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
@@ -250,18 +250,18 @@ public class SmokeMeatBehavior extends VillagerStateMachineBehavior {
 
         BlockState currentState = level.getBlockState(pos);
         if (!currentState.is(Blocks.SMOKER)) {
-            log.behaviorTrace("Skipping smoker lit state update at {} because block is no longer a smoker", pos);
+            log.trace("Skipping smoker lit state update at {} because block is no longer a smoker", pos);
             return;
         }
         if (!currentState.hasProperty(AbstractFurnaceBlock.LIT)) {
-            log.behaviorTrace("Skipping smoker lit state update at {} because block state has no LIT property", pos);
+            log.trace("Skipping smoker lit state update at {} because block state has no LIT property", pos);
             return;
         }
         if (currentState.getValue(AbstractFurnaceBlock.LIT) == lit) {
             return;
         }
 
-        log.behaviorTrace("Setting smoker lit state to {}", lit);
+        log.trace("Setting smoker lit state to {}", lit);
         BlockState newState = currentState.setValue(AbstractFurnaceBlock.LIT, lit);
         level.setBlock(pos, newState, BlockFlag.of(BlockFlag.SEND_BLOCK_UPDATE, BlockFlag.SEND_CLIENT_UPDATE));
     }

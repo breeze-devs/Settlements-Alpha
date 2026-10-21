@@ -58,7 +58,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class DyeSheepBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;
@@ -183,7 +183,6 @@ public class DyeSheepBehavior extends VillagerStateMachineBehavior {
         this.dyedSheepIds.clear();
         this.selectedDyeColor = this.chooseBehaviorDyeColor(villager).orElse(null);
         this.shouldRewardExperience = false;
-        log.behaviorStatus("Villager is '{}' level, maximum dye count is {}", expertise.toString(), limit);
 
         List<Targetable> targets = this.findEligibleSheepTargets(villager);
         if (targets.isEmpty()) {

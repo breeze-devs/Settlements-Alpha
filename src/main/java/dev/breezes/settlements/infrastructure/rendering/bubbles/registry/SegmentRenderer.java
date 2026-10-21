@@ -38,7 +38,7 @@ public final class SegmentRenderer {
         Item resolvedItem = BuiltInRegistries.ITEM.getOptional(item.itemId())
                 .filter(candidate -> candidate != Items.AIR)
                 .orElseGet(() -> {
-                    log.error("Unknown item {}, using placeholder item", item.itemId());
+                    log.warn("Unknown item {}, using placeholder item", item.itemId());
                     return Items.BARRIER;
                 });
 

@@ -2,7 +2,6 @@ package dev.breezes.settlements.domain.world.blocks;
 
 import dev.breezes.settlements.domain.world.location.Location;
 import lombok.AllArgsConstructor;
-import lombok.CustomLog;
 import lombok.Getter;
 import lombok.ToString;
 import net.minecraft.world.level.Level;
@@ -14,7 +13,6 @@ import javax.annotation.Nullable;
 
 @AllArgsConstructor
 @ToString
-@CustomLog
 public class PhysicalBlock {
 
     private final Location location;

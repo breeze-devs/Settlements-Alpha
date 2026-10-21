@@ -15,9 +15,11 @@ import dev.breezes.settlements.bootstrap.registry.sounds.SoundEventRegistry;
 import dev.breezes.settlements.bootstrap.registry.structures.StructureRegistry;
 import dev.breezes.settlements.bootstrap.registry.tabs.CreativeTabRegistry;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigAnnotationProcessor;
+import dev.breezes.settlements.infrastructure.logging.LoggingConfig;
 import dev.breezes.settlements.infrastructure.network.core.PacketRegistry;
+import dev.breezes.settlements.shared.logging.LoggerFactory;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 
 import javax.annotation.Nonnull;
@@ -28,8 +30,10 @@ public final class SettlementsMod {
     public static final String MOD_ID = "settlements";
     public static final String MOD_NAME = "Settlements";
 
-    public SettlementsMod() {
-        IEventBus modEventBus = ModLoadingContext.get().getActiveContainer().getEventBus();
+    public SettlementsMod(IEventBus modEventBus, ModContainer container) {
+        // Register logging policy first so later initialization paths can follow the logging policies
+        LoggingConfig loggingConfig = ConfigAnnotationProcessor.registerStartupConfig(container, LoggingConfig.class);
+        LoggerFactory.installPolicy(loggingConfig.toPolicy());
 
         // Link our registries to the mod event bus
         ItemRegistry.register(modEventBus);

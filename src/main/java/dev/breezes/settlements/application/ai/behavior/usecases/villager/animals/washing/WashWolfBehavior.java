@@ -32,7 +32,7 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nonnull;
 import java.util.Map;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class WashWolfBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.5D;

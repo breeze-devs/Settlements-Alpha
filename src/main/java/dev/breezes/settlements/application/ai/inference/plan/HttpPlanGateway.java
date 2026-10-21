@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * soon as that villager's upstream generation finishes. Each line is parsed independently so a
  * single malformed line cannot discard the rest of the stream.
  */
-@CustomLog
+@CustomLog(topic = "inference")
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class HttpPlanGateway implements PlanGateway {
 
@@ -58,7 +58,7 @@ public final class HttpPlanGateway implements PlanGateway {
                 onVillager.accept(normalizeVillager(result));
             }
         } catch (RuntimeException e) {
-            log.error("PLAN response line parse failed: {}", e.getMessage());
+            log.error("PLAN response line parse failed", e);
         }
     }
 

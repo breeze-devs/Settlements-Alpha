@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavior {
 
     public enum Stage implements StageKey {

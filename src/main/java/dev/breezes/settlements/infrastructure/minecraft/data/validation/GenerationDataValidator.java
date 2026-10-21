@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public final class GenerationDataValidator {
 
     public void validateAndApply(@Nonnull TraitRegistry traitRegistry,
@@ -26,7 +26,7 @@ public final class GenerationDataValidator {
         Map<TraitId, TraitScorer> validScorers = new LinkedHashMap<>();
         for (Map.Entry<TraitId, TraitScorer> entry : scorerDataManager.rawScorers().entrySet()) {
             if (!knownTraits.contains(entry.getKey())) {
-                log.error("Trait scorer registered for unknown trait '{}'", entry.getKey());
+                log.warn("Dropping the trait scorer registered for unknown trait '{}'", entry.getKey());
                 continue;
             }
             validScorers.put(entry.getKey(), entry.getValue());
@@ -34,21 +34,19 @@ public final class GenerationDataValidator {
 
         List<BuildingDefinition> validBuildings = new ArrayList<>();
         for (BuildingDefinition definition : buildingDataManager.rawDefinitions()) {
-            boolean invalid = false;
-            for (TraitId traitId : definition.traitAffinities().keySet()) {
-                if (!knownTraits.contains(traitId)) {
-                    log.error("Building '{}' references unknown trait '{}'", definition.id(), traitId);
-                    invalid = true;
-                }
-            }
-            if (!invalid) {
+            List<TraitId> unknownTraits = definition.traitAffinities().keySet().stream()
+                    .filter(traitId -> !knownTraits.contains(traitId))
+                    .toList();
+            if (unknownTraits.isEmpty()) {
                 validBuildings.add(definition);
+            } else {
+                log.error("Dropping building '{}': it references unknown traits {}", definition.id(), unknownTraits);
             }
         }
 
         scorerDataManager.replaceActiveScorers(validScorers);
         buildingDataManager.replaceActiveDefinitions(validBuildings);
-        log.info("Validated generation data against {} known traits: {} scorers active, {} buildings active",
+        log.debug("Validated generation data against {} known traits: {} scorers active, {} buildings active",
                 knownTraits.size(), validScorers.size(), validBuildings.size());
     }
 

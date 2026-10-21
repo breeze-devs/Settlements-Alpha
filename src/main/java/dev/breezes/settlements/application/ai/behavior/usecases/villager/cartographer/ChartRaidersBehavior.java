@@ -32,7 +32,7 @@ import java.util.Optional;
 /**
  * The cartographer sketches a map and detects enemies in the active raid.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ChartRaidersBehavior extends VillagerStateMachineBehavior {
 
     /**

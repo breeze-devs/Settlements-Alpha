@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 1.5D;

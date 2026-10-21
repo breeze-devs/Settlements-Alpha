@@ -25,7 +25,7 @@ import java.util.Optional;
  * with a mandatory {@code default} fallback used whenever a harvested block or expertise has no
  * dedicated entry.
  */
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public abstract class WeightedYieldDataManager extends CodecJsonDataManager<WeightedYieldTable> {
 
     protected static final String DEFAULT_BLOCK_ID = "default";
@@ -78,7 +78,7 @@ public abstract class WeightedYieldDataManager extends CodecJsonDataManager<Weig
                                                @Nonnull String harvestedBlockId) {
         WeightedYieldTable defaultData = this.byBlock.get(DEFAULT_BLOCK_ID);
         if (defaultData == null) {
-            log.error("Cannot roll {} drops without a '{}' fallback", this.label, DEFAULT_BLOCK_ID);
+            log.debug("Cannot roll {} drops without a '{}' fallback", this.label, DEFAULT_BLOCK_ID);
             return List.of();
         }
 
@@ -88,7 +88,7 @@ public abstract class WeightedYieldDataManager extends CodecJsonDataManager<Weig
             pool = defaultData.pools().get(expertiseName);
         }
         if (pool == null) {
-            log.warn("{} pool missing for expertise '{}'", this.label, expertiseName);
+            log.error("{} pool missing for expertise '{}'", this.label, expertiseName);
             return List.of();
         }
 
@@ -112,7 +112,7 @@ public abstract class WeightedYieldDataManager extends CodecJsonDataManager<Weig
     private Optional<ItemStack> toItemStack(@Nonnull WeightedYieldItem itemEntry, @Nonnull String harvestedBlockId, @Nonnull String label) {
         Item item = BuiltInRegistries.ITEM.get(itemEntry.item());
         if (item == Items.AIR) {
-            log.warn("Skipping {} drop for block '{}' because item '{}' no longer resolves", label, harvestedBlockId, itemEntry.item());
+            log.error("Skipping {} drop for block '{}' because item '{}' no longer resolves", label, harvestedBlockId, itemEntry.item());
             return Optional.empty();
         }
 

@@ -8,7 +8,6 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.ITickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import jakarta.inject.Inject;
-import lombok.CustomLog;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,7 +22,6 @@ import java.util.List;
  * Drives the async persona-generation pipeline off the server tick.
  */
 @ServerScope
-@CustomLog
 public final class PersonaSweepServerEvents {
 
     /**

@@ -24,7 +24,7 @@ import java.util.Deque;
  * obligation to a per-villager persisted ledger so crash-orphaned artifacts can
  * be reclaimed on the next reload without a world-level sweep.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class TeardownScope {
 
     private final Deque<TeardownObligation> live = new ArrayDeque<>();
@@ -60,11 +60,11 @@ public final class TeardownScope {
                     obligation.discharge(level);
                 }
             } catch (Exception e) {
-                log.error("Teardown obligation failed '{}': {}", obligation.describe(), e.getMessage());
+                log.error("Teardown obligation failed '{}'", obligation.describe(), e);
             } finally {
                 // Remove only this scope's own obligation from the ledger, mirroring track().
                 // Never drainPending() here: that would also clear un-reconciled crash-orphans
-                // left by a previous run, silently leaking the artifacts Dim 3 exists to reclaim.
+                // left by a previous run, silently leaking the artifacts crash recovery exists to reclaim.
                 if (this.ledger != null && obligation.durable()) {
                     this.ledger.remove(obligation);
                 }
@@ -73,8 +73,7 @@ public final class TeardownScope {
     }
 
     /**
-     * Bind a Dim 3 crash-recovery ledger.  Called in {@code StateMachineBehavior.doStart}
-     * when the entity implements {@code ProvidesTeardownLedger}.
+     * Binds the crash-recovery ledger that records this scope's durable obligations.
      */
     public void bindLedger(@Nonnull ITeardownLedger ledger) {
         this.ledger = ledger;

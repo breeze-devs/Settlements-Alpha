@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class DyeLeatherBehavior extends VillagerStateMachineBehavior {
 
     // The villager works from the open block beside the stand, so the action must trigger from one block out

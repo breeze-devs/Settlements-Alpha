@@ -61,7 +61,6 @@ public abstract class TransformedDisplay {
 
     public void setTransformation(@Nonnull TransformationMatrix newTransformation, @Nullable ClockTicks duration) {
         if (this.displayEntity == null) {
-            log.info("TODO: change to entity-level logger"); // TODO: change to entity-level logger
             log.error("Cannot set transformation on a display that has not been spawned!");
             return;
         }

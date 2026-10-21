@@ -62,7 +62,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@code pendingArrivals} queue on the captured {@link PlanRuntimeState} — exactly the same
  * off-thread contract {@code PlanRunner#submitNextPlanAsync} already relies on.
  */
-@CustomLog
+@CustomLog(topic = "planning")
 @ServerScope
 public final class PlanRequestService {
 

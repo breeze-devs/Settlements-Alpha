@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.mojang.authlib.minecraft.client.ObjectMapper;
 import dev.breezes.settlements.infrastructure.config.annotations.booleans.BooleanConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.doubles.DoubleConfig;
+import dev.breezes.settlements.infrastructure.config.annotations.enums.EnumConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.floats.FloatConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.maps.ConfigLoadingException;
@@ -16,7 +17,10 @@ import dev.breezes.settlements.infrastructure.config.factory.ConfigFactory;
 import dev.breezes.settlements.shared.util.crash.CrashUtil;
 import dev.breezes.settlements.shared.util.crash.report.ConfigLoadingCrashReport;
 import lombok.CustomLog;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,13 +45,15 @@ import java.util.Map;
  * - Each Record component must have exactly ONE config annotation
  * (@IntegerConfig, @BooleanConfig, etc.)
  * - Component order in the Record determines constructor parameter order
- * - Config values are eagerly loaded and cached in ConfigFactory
+ * - Config values are eagerly loaded and cached in ConfigFactory, except for records of a STARTUP type, which
+ * registerAtStartup returns to its caller instead
  * - Records are immutable snapshots of the config state at startup
  * <p>
  * SUPPORTED TYPES:
  * - Primitives: int, boolean, double, float
  * - String
  * - Map<String, ?> (with deserializers)
+ * - Enums
  */
 @CustomLog
 public class RecordConfigProcessor {
@@ -68,47 +74,70 @@ public class RecordConfigProcessor {
      * @return A Runnable that, when executed, will register the factory in
      * ConfigFactory
      */
-    @Nonnull
     public Runnable process(@Nonnull Class<?> recordClass, @Nonnull ConfigurationAnnotationRegistry registry) {
-        // Validate the class is a Record
+        BehaviorConfig behaviorConfig = requireBehaviorConfig(recordClass);
+        String configName = behaviorConfig.name();
+        ConfigurationType configurationType = behaviorConfig.type();
+
+        log.debug("Processing @BehaviorConfig record {} into the {} config file", recordClass.getSimpleName(), configurationType);
+
+        List<ComponentBinding> bindings = defineComponents(recordClass, configName, registry.getBuilder(configurationType));
+
+        log.debug("Successfully processed {} components for {}", bindings.size(), recordClass.getSimpleName());
+
+        // Return a Runnable that registers the factory
+        return () -> registerFactory(recordClass, bindings, configName);
+    }
+
+    /**
+     * Registers the record as the only section of its configuration type's file, and returns the record holding the
+     * values loaded from it.
+     *
+     * @throws IllegalArgumentException if the record's configuration type is not a STARTUP type
+     */
+    <T extends Record> T registerAtStartup(@Nonnull ModContainer container, @Nonnull Class<T> recordClass) {
+        BehaviorConfig behaviorConfig = requireBehaviorConfig(recordClass);
+        ConfigurationType configurationType = behaviorConfig.type();
+        Validate.isTrue(configurationType.getModConfigType() == ModConfig.Type.STARTUP,
+                "%s is a %s configuration; only STARTUP configurations load during mod construction",
+                recordClass.getName(), configurationType.getModConfigType());
+
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+        List<ComponentBinding> bindings = defineComponents(recordClass, behaviorConfig.name(), builder);
+        container.registerConfig(ModConfig.Type.STARTUP, builder.build(), configurationType.getFilePath());
+
+        // NeoForge loads a STARTUP file before registerConfig returns, so its values are readable now.
+        return instantiate(recordClass, bindings);
+    }
+
+    private BehaviorConfig requireBehaviorConfig(@Nonnull Class<?> recordClass) {
         if (!recordClass.isRecord()) {
             String message = "@BehaviorConfig can only be applied to Records, but %s is not a Record"
                     .formatted(recordClass.getName());
             CrashUtil.crash(new ConfigLoadingCrashReport(new ConfigLoadingException(message)));
         }
 
-        // Get the @BehaviorConfig annotation
         BehaviorConfig behaviorConfig = recordClass.getAnnotation(BehaviorConfig.class);
         if (behaviorConfig == null) {
             String message = "Record %s is missing @BehaviorConfig annotation".formatted(recordClass.getName());
             CrashUtil.crash(new ConfigLoadingCrashReport(new ConfigLoadingException(message)));
         }
+        return behaviorConfig;
+    }
 
-        String configName = behaviorConfig.name();
-        ConfigurationType configurationType = behaviorConfig.type();
-        String configFilePath = configurationType.getFilePath();
-
-        log.info("Processing @BehaviorConfig record: {} -> {}", recordClass.getSimpleName(), configFilePath);
-
-        // Get the builder for this config file
-        ModConfigSpec.Builder builder = registry.getBuilder(configFilePath);
+    /**
+     * Defines every component of the record in its own section of the builder, in component order.
+     */
+    private List<ComponentBinding> defineComponents(@Nonnull Class<?> recordClass,
+                                                    @Nonnull String configName,
+                                                    @Nonnull ModConfigSpec.Builder builder) {
         builder.push(configName);
-
-        // Process each record component
-        RecordComponent[] components = recordClass.getRecordComponents();
         List<ComponentBinding> bindings = new ArrayList<>();
-
-        for (RecordComponent component : components) {
-            ComponentBinding binding = processComponent(component, builder, configName);
-            bindings.add(binding);
+        for (RecordComponent component : recordClass.getRecordComponents()) {
+            bindings.add(processComponent(component, builder, configName));
         }
-
         builder.pop();
-
-        log.info("Successfully processed {} components for {}", bindings.size(), recordClass.getSimpleName());
-
-        // Return a Runnable that registers the factory
-        return () -> registerFactory(recordClass, bindings, configName);
+        return bindings;
     }
 
     /**
@@ -133,6 +162,8 @@ public class RecordConfigProcessor {
             return processStringComponent(component, builder);
         } else if (component.isAnnotationPresent(MapConfig.class)) {
             return processMapComponent(component, builder);
+        } else if (component.isAnnotationPresent(EnumConfig.class)) {
+            return processEnumComponent(component, builder);
         } else {
             String errorMsg = "Record component '%s.%s' has no config annotation".formatted(component.getDeclaringRecord().getSimpleName(), componentName);
             CrashUtil.crash(new ConfigLoadingCrashReport(new ConfigLoadingException(errorMsg)));
@@ -204,6 +235,25 @@ public class RecordConfigProcessor {
         return new ComponentBinding(configValue, ConfigValueType.MAP, deserializer);
     }
 
+    private ComponentBinding processEnumComponent(@Nonnull RecordComponent component,
+                                                  @Nonnull ModConfigSpec.Builder builder) {
+        EnumConfig annotation = component.getAnnotation(EnumConfig.class);
+        ModConfigSpec.EnumValue<?> configValue = defineEnum(builder.comment(annotation.description()),
+                annotation.identifier(),
+                component.getType(),
+                annotation.defaultValue());
+        return new ComponentBinding(configValue, ConfigValueType.ENUM);
+    }
+
+    // The component's enum type is known only at runtime, so the type defineEnum binds cannot be named here.
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static ModConfigSpec.EnumValue<?> defineEnum(@Nonnull ModConfigSpec.Builder builder,
+                                                         @Nonnull String identifier,
+                                                         @Nonnull Class<?> enumType,
+                                                         @Nonnull String defaultName) {
+        return builder.defineEnum(identifier, Enum.valueOf((Class) enumType, defaultName));
+    }
+
     /**
      * Serialize MapEntry[] to JSON format compatible with TOML.
      * Matches the legacy MapConfigAnnotationProcessor behavior.
@@ -225,23 +275,26 @@ public class RecordConfigProcessor {
     private <T> void registerFactory(@Nonnull Class<T> recordClass,
                                      @Nonnull List<ComponentBinding> bindings,
                                      @Nonnull String configName) {
-        log.debug("Registering factory for {}", recordClass.getSimpleName());
+        ConfigFactory.register(recordClass, () -> instantiate(recordClass, bindings));
+    }
 
-        ConfigFactory.register(recordClass, () -> {
-            try {
-                // Extract values from config bindings
-                Object[] args = new Object[bindings.size()];
-                for (int i = 0; i < bindings.size(); i++) {
-                    args[i] = bindings.get(i).getValue();
-                }
-
-                // Invoke the canonical constructor
-                return invokeCanonicalConstructor(recordClass, args);
-            } catch (Exception e) {
-                String errorMsg = "Failed to instantiate config Record %s from TOML values".formatted(recordClass.getSimpleName());
-                throw new RuntimeException(errorMsg, e);
+    /**
+     * Instantiates the record from the loaded values of its bindings.
+     */
+    private <T> T instantiate(@Nonnull Class<T> recordClass, @Nonnull List<ComponentBinding> bindings) {
+        try {
+            // Extract values from config bindings
+            Object[] args = new Object[bindings.size()];
+            for (int i = 0; i < bindings.size(); i++) {
+                args[i] = bindings.get(i).getValue();
             }
-        });
+
+            // Invoke the canonical constructor
+            return invokeCanonicalConstructor(recordClass, args);
+        } catch (Exception e) {
+            String errorMsg = "Failed to instantiate config Record %s from TOML values".formatted(recordClass.getSimpleName());
+            throw new RuntimeException(errorMsg, e);
+        }
     }
 
     /**
@@ -303,6 +356,7 @@ public class RecordConfigProcessor {
                 case FLOAT -> ((Number) rawValue).floatValue();
                 case STRING -> (String) rawValue;
                 case MAP -> deserializeMap((String) rawValue);
+                case ENUM -> (Enum<?>) rawValue;
             };
         }
 
@@ -343,7 +397,8 @@ public class RecordConfigProcessor {
         DOUBLE,
         FLOAT,
         STRING,
-        MAP
+        MAP,
+        ENUM
     }
 
 }

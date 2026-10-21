@@ -21,7 +21,7 @@ import java.util.Optional;
  * Finds water source blocks in range and identifies a walkable shore block adjacent to the water.
  * Both the water target (where to aim the hook) and shore position (where to stand) are exposed.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<E> {
 
     private final int rangeHorizontal;
@@ -115,7 +115,6 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
             }
         }
 
-        log.sensorStatus("No accessible water found nearby");
         return false;
     }
 
@@ -151,7 +150,7 @@ public class NearbyWaterExistsCondition<E extends Entity> implements ICondition<
         this.waterTarget = waterMutable.immutable();
         this.shorePosition = shoreMutable.immutable();
 
-        log.sensorStatus("Found water at {} with shore at {}", this.waterTarget, this.shorePosition);
+        log.trace("Found water at {} with shore at {}", this.waterTarget, this.shorePosition);
         return true;
     }
 

@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<E> {
 
     private final double rangeHorizontal;
@@ -109,14 +109,13 @@ public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<
                             && this.extraBlockCondition.test(mutableBlockPos, level)) {
                         targets.add(mutableBlockPos.immutable());
                         if (this.targets.size() >= this.minimumTargetCount) {
-                            log.sensorStatus("Found at least {} blocks nearby", this.minimumTargetCount);
+                            log.trace("Found at least {} blocks nearby", this.minimumTargetCount);
                             return true;
                         }
                     }
                 }
             }
         }
-        log.sensorStatus("Found {} blocks nearby", targets.size());
         return this.targets.size() >= this.minimumTargetCount;
     }
 

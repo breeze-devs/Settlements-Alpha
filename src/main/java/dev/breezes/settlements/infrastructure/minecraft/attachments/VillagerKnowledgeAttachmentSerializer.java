@@ -96,7 +96,7 @@ public final class VillagerKnowledgeAttachmentSerializer
         try {
             return WorldEventType.valueOf(rawType).getObservationType();
         } catch (IllegalArgumentException e) {
-            log.warn("Dropping knowledge entry with unrecognized event_type on load: {}", rawType);
+            log.debug("Dropping knowledge entry with unrecognized event_type on load: {}", rawType);
             return null;
         }
     }

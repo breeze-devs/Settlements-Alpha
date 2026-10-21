@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 /**
  * Logistics chore that walks the village chests to satisfy active demand and dump active surplus
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ManageChestsBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0D;

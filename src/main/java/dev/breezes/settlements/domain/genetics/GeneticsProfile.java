@@ -1,7 +1,6 @@
 package dev.breezes.settlements.domain.genetics;
 
 import dev.breezes.settlements.shared.util.RandomUtil;
-import lombok.CustomLog;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
@@ -13,7 +12,6 @@ import java.util.Optional;
 /**
  * Represents the complete genetic makeup of a single entity.
  */
-@CustomLog
 public class GeneticsProfile {
 
     private final Map<GeneType, Gene> genes;

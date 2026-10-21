@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ScavengeBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
@@ -154,7 +154,7 @@ public class ScavengeBehavior extends VillagerStateMachineBehavior {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.SCAVENGEABLE_FLORA_SITES,
                             this.floraMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
-                        log.behaviorStatus("No additional forage targets found, ending behavior");
+                        log.debug("No additional forage targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 

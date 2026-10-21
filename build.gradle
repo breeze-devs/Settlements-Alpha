@@ -4,6 +4,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'net.neoforged.moddev' version '1.0.21'
+    id 'me.champeau.jmh' version '0.7.3'
 }
 
 // Repairs jarJar'd artifacts that ship without a MANIFEST.MF, which ModDevGradle 1.0.21 NPEs on --
@@ -219,6 +220,54 @@ dependencies {
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
+}
+
+// Micro-benchmarks in src/jmh run only through `gradlew jmh`; nothing else depends on that source set.
+//
+// The plugin hangs the jmh classpaths off main's and test's, which ModDevGradle fills with Minecraft
+// and the whole NeoForge library set; jmhJar would unpack all of it into one fat jar, and `jmh` would
+// compile the tests. The benchmarks need only the mod's classes and the host's logging stack, so the
+// classpaths are cut back to the jmh configurations. The logging stack declares no versions: it
+// resolves to whatever NeoForge pins for the game, through the consistent-resolution link.
+configurations {
+    jmhCompileClasspath.setExtendsFrom([jmhImplementation, jmhCompileOnly])
+    jmhRuntimeClasspath.setExtendsFrom([jmhImplementation, jmhRuntimeOnly])
+    jmhCompileClasspath.shouldResolveConsistentlyWith(runtimeClasspath)
+    jmhRuntimeClasspath.shouldResolveConsistentlyWith(runtimeClasspath)
+}
+
+dependencies {
+    jmhCompileOnly 'org.apache.logging.log4j:log4j-api'
+    jmhRuntimeOnly 'org.apache.logging.log4j:log4j-core'
+    jmhRuntimeOnly 'net.minecrell:terminalconsoleappender'
+    jmhRuntimeOnly 'com.mojang:logging'
+}
+
+// Each -P property overrides the benchmark classes' own annotation defaults for one run, e.g.
+// `gradlew jmh -PjmhIncludes="debug2Args$|info2Args$" -PjmhForks=1`. jmhIncludes is one regex,
+// because the plugin hands JMH every include as a single comma-joined pattern. A profiler that
+// writes files does so in the project directory unless told otherwise, e.g. `jfr:dir=build/jmh-jfr`.
+jmh {
+    jmhVersion = '1.37'
+    includeTests = false
+    failOnError = true
+    resultFormat = 'JSON'
+    humanOutputFile = layout.buildDirectory.file('results/jmh/human.txt')
+    profilers = providers.gradleProperty('jmhProfilers').map { it.tokenize(',') }.orElse(['gc'])
+    includes = providers.gradleProperty('jmhIncludes').map { [it] }.orElse([])
+    fork = providers.gradleProperty('jmhForks').map { it as Integer }
+    warmupIterations = providers.gradleProperty('jmhWarmupIterations').map { it as Integer }
+    warmup = providers.gradleProperty('jmhWarmupTime')
+    iterations = providers.gradleProperty('jmhIterations').map { it as Integer }
+    timeOnIteration = providers.gradleProperty('jmhIterationTime')
+}
+
+// The benchmark jar bundles the mod's classes and mods.toml. Kept out of build/libs, it cannot be
+// copied into a mods folder beside the real jar, where NeoForge would reject the duplicate mod id.
+// It does not run on its own either: merging the logging jars keeps only one of their Log4j plugin
+// indexes, so it needs the original jars beside it on the classpath, as `gradlew jmh` provides.
+tasks.named('jmhJar', Jar).configure {
+    destinationDirectory = layout.buildDirectory.dir('jmh-libs')
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

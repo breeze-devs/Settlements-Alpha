@@ -35,7 +35,7 @@ import java.util.Map;
  * destitute neighbor and gifts a few emeralds through the abstract wallet ledger. No real
  * emerald {@code ItemEntity} is ever spawned — the held item, bubbles, and particles are cosmetic.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class DonateEmeraldsBehavior extends VillagerStateMachineBehavior {
 
     public enum Stage implements StageKey {

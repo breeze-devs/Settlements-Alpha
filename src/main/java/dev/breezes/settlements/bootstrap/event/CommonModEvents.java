@@ -52,7 +52,7 @@ public class CommonModEvents {
 
     @SubscribeEvent
     public static void onLoadComplete(@Nonnull FMLLoadCompleteEvent event) {
-        log.info("Running load complete tasks");
+        log.debug("Running load complete tasks");
         LOAD_COMPLETE_TASKS.forEach(Runnable::run);
 
         // Config factories are populated during load-complete tasks, so the root
@@ -61,20 +61,20 @@ public class CommonModEvents {
         SettlementsDagger.initialize(component);
         registerReloadListeners(component);
 
-        log.info("Root dagger component initialized after load complete");
+        log.debug("Root dagger component initialized after load complete");
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ClientComponent clientComponent = component.clientComponentFactory().create();
             SettlementsDagger.initializeClient(clientComponent);
-            log.info("Client subcomponent initialized after root component");
+            log.debug("Client subcomponent initialized after root component");
         }
 
-        log.info("Load complete tasks complete");
+        log.info("Settlements initialized");
     }
 
     private static void registerReloadListeners(@Nonnull SettlementsComponent component) {
         NeoForge.EVENT_BUS.addListener((AddReloadListenerEvent event) -> {
-            log.info("Registering Dagger-managed data reload listeners");
+            log.debug("Registering Dagger-managed data reload listeners");
 
             // These listeners must come from the root component because AddReloadListenerEvent
             // fires before the server subcomponent exists for a given world/session. Producers are

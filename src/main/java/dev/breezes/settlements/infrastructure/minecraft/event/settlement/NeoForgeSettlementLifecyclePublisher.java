@@ -16,7 +16,7 @@ import javax.annotation.Nullable;
 /**
  * Posts each settlement lifecycle change on the NeoForge game bus as its {@link SettlementLifecycleEvent}.
  */
-@CustomLog
+@CustomLog(topic = "settlement")
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class NeoForgeSettlementLifecyclePublisher implements SettlementLifecyclePublisher {
 
@@ -46,8 +46,10 @@ public final class NeoForgeSettlementLifecyclePublisher implements SettlementLif
         try {
             NeoForge.EVENT_BUS.post(event);
         } catch (RuntimeException exception) {
+            // NeoForge's event bus logs a listener's exception with its stack trace before rethrowing it, so this line
+            // adds only the settlement it concerns
             log.error("A listener failed on {} for settlement {} in {}", event.getClass().getSimpleName(),
-                    event.getSettlement().id(), event.getLevel().dimension().location(), exception);
+                    event.getSettlement().id(), event.getLevel().dimension().location());
         }
     }
 

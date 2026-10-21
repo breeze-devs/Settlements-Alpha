@@ -50,7 +50,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
 
     private static final ResourceLocation IRON_AXE_ID = ResourceLocation.withDefaultNamespace("iron_axe");
@@ -205,8 +205,8 @@ public class ButcherLivestockBehavior extends VillagerStateMachineBehavior {
         this.target = selectedTarget.get();
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
         context.declarePrimaryDeed(BehaviorOutcome.forDeed(WorldEventType.LIVESTOCK_BUTCHERED, this.resolveSpeciesNoun(this.selectedAnimalType)));
-        log.behaviorStatus("Villager is '{}' level, maximum butcher count is {}, targeting {}",
-                expertise.toString(), limit, this.selectedAnimalType);
+        log.debug("Villager is '{}' level, maximum butcher count is {}, targeting {}",
+                expertise, limit, this.selectedAnimalType);
     }
 
     @Override

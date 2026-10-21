@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
 
     private static final double TARGET_CLOSE_ENOUGH_DISTANCE = 2;
@@ -93,22 +93,21 @@ public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
     private BehaviorStep<SettlementsWolf> createPickTargetStep() {
         return context -> {
             if (this.elapsedTicks >= ClockTicks.seconds(this.config.walkDurationSeconds()).getTicks()) {
-                log.behaviorTrace("Walk duration elapsed ({} ticks), ending", this.elapsedTicks);
+                log.debug("Walk duration elapsed ({} ticks), ending", this.elapsedTicks);
                 return StepResult.transition(WolfWalkStage.END);
             }
 
             SettlementsWolf wolf = context.getInitiator();
-            log.behaviorTrace("Picking target for wolf {} | pos={}", wolf.getUUID(), wolf.blockPosition());
+            log.trace("Picking target for wolf {} | pos={}", wolf.getUUID(), wolf.blockPosition());
             Optional<Targetable> target = RandomUtil.chance(ENTITY_TARGET_CHANCE)
                     ? this.pickEntityTarget(wolf).or(() -> this.pickBlockTarget(wolf))
                     : this.pickBlockTarget(wolf).or(() -> this.pickEntityTarget(wolf));
 
             if (target.isEmpty()) {
-                log.behaviorTrace("No target found, ending behavior");
+                log.debug("No walk target found for wolf {}, ending behavior", wolf.getUUID());
                 return StepResult.transition(WolfWalkStage.END);
             }
 
-            log.behaviorTrace("Picked target: type={} | loc={}", target.get().getType(), target.get().getLocation());
             context.setState(BehaviorStateType.TARGET, TargetState.of(target.get()));
             return StepResult.transition(WolfWalkStage.WALK_TO_TARGET);
         };
@@ -175,7 +174,6 @@ public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
         AABB scanBox = wolf.getBoundingBox().inflate(this.config.entityTargetScanRange());
         List<Entity> targets = wolf.level().getEntities(wolf, scanBox, entity -> isSniffableEntity(wolf, owner, entity));
 
-        log.behaviorTrace("Entity scan found {} candidates (range={})", targets.size(), this.config.entityTargetScanRange());
         if (targets.isEmpty()) {
             return Optional.empty();
         }
@@ -194,10 +192,9 @@ public class WolfWalkBehavior extends StateMachineBehavior<SettlementsWolf> {
         BlockPos blockPos = BlockPos.containing(randomTarget).below();
         BlockState blockState = wolf.level().getBlockState(blockPos);
         if (blockState.isAir()) {
-            log.behaviorTrace("Block target pos {} is air, skipping", blockPos);
             return Optional.empty();
         }
-        log.behaviorTrace("Block target: {}", blockPos);
+
         return Optional.of(Targetable.fromBlock(PhysicalBlock.of(Location.of(blockPos, wolf.level()), blockState)));
     }
 

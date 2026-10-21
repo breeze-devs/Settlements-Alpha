@@ -9,7 +9,7 @@ import lombok.CustomLog;
 
 import java.util.List;
 
-@CustomLog
+@CustomLog(topic = "worldgen")
 public class HubPlacer extends BuildingPlacer {
 
     private static final int DEFAULT_MAX_ATTEMPTS = 8;
@@ -44,15 +44,16 @@ public class HubPlacer extends BuildingPlacer {
                 BuildingAssignment assignment = this.createAssignment(context.getStartingPlotId(), building, null,
                         footprint, facing, ZoneTier.CORE, true, result.localResources());
                 context.getGrid().occupy(footprint.bounds());
-                log.worldgenStatus("Hub: placed {} at ({}, {}, {}) on attempt {}", building.id(), center.x(), center.y(), center.z(), attempt);
+                log.debug("Hub: placed {} at ({}, {}, {}) on attempt {}", building.id(), center.x(), center.y(), center.z(), attempt);
                 return new PlacementPhaseResult(List.of(assignment), List.of());
             }
-            log.worldgenWarn("Hub: attempt {} failed for {} at ({}, {}, {}) near anchor: {}",
+            log.trace("Hub: attempt {} failed for {} at ({}, {}, {}) near anchor: {}",
                     attempt, building.id(), center.x(), center.y(), center.z(), result.rejection());
         }
 
-        log.worldgenError("Hub: failed to place mandatory {} near anchor after {} attempts", building.id(), this.maxAttempts);
-        throw new IllegalStateException("Unable to place mandatory town hall near settlement anchor");
+        // TODO: this crashes the server. Don't
+        throw new IllegalStateException("Unable to place mandatory %s near settlement anchor after %d attempts"
+                .formatted(building.id(), this.maxAttempts));
     }
 
     private BlockPosition generatePlacementPosition(PlacementContext context, int attempt) {

@@ -18,7 +18,7 @@ import java.util.Optional;
  * TODO: nothing reads the ledger today. The deed vocabulary is deliberately kept recorded while
  *  the emission payload is redesigned, so the behaviors do not have to be revisited.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public final class BehaviorDeedLedger implements BehaviorState {
 
     public static final int MAX_ENTRIES = 3;
@@ -40,7 +40,7 @@ public final class BehaviorDeedLedger implements BehaviorState {
 
     public BehaviorOutcome addSecondary(@Nonnull BehaviorOutcome secondary) {
         if (this.entries.size() >= MAX_ENTRIES) {
-            log.behaviorWarn("Behavior deed ledger reached cap of {}; dropping secondary deed {}",
+            log.warn("Behavior deed ledger reached cap of {}; dropping secondary deed {}",
                     MAX_ENTRIES, secondary.getDeedType());
             return secondary;
         }

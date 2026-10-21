@@ -3,7 +3,6 @@ package dev.breezes.settlements.infrastructure.rendering.bubbles;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.rendering.highlight.SupplementaryEntityPass;
 import dev.breezes.settlements.presentation.ui.ClientSurfaceSuppression;
-import lombok.CustomLog;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.world.entity.LivingEntity;
@@ -14,7 +13,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLivingEvent;
 
 @EventBusSubscriber(Dist.CLIENT)
-@CustomLog
 public class BubbleRenderClientEvents {
 
     @SubscribeEvent

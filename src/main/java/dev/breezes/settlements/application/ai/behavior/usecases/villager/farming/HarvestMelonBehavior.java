@@ -54,7 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
 
     /**
@@ -151,7 +151,6 @@ public class HarvestMelonBehavior extends VillagerStateMachineBehavior {
                     boolean resolved = this.targetResolver.resolveBlockTarget(context, MemoryTypeRegistry.RIPE_MELON_SITES,
                             this.ripeMelonMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
-                        log.behaviorStatus("No additional targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 

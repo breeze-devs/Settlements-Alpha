@@ -39,7 +39,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
-@CustomLog
+@CustomLog(topic = "worldgen")
 public class SettlementStructure extends SettlementsStructure {
 
     public static final MapCodec<SettlementStructure> CODEC = simpleCodec(SettlementStructure::new);
@@ -70,18 +70,16 @@ public class SettlementStructure extends SettlementsStructure {
         Set<String> biomeTags = pipeline.resolveTemplateTags(result.siteReport());
         TemplateResolutionContext resolutionContext = new TemplateResolutionContext(biomeTags, result.history().visualMarkers());
 
-        log.info("Settlement template resolution context: biomeTags={}, visualMarkers={}",
-                resolutionContext.biomeTags(), resolutionContext.visualMarkers().markers());
+        log.debug("Settlement template resolution context: biomeTags={}", resolutionContext.biomeTags());
 
         for (BuildingAssignment assignment : result.layout().assignments()) {
             Optional<ResolvedTemplate> resolvedTemplate = templateResolver.resolve(assignment.building(), random, resolutionContext);
             if (resolvedTemplate.isEmpty()) {
-                log.error("Could not resolve template for building {} with footprint {}",
+                log.debug("Could not resolve template for building {} with footprint {}",
                         assignment.building().id(), assignment.building().footprint());
                 continue;
             }
 
-            log.info("Resolved template for {}: {}", assignment.building().id(), resolvedTemplate.get());
             ResourceLocation templateId = ResourceLocation.parse(resolvedTemplate.get().templatePath());
             BlockPos plotAnchor = BlockPositionConverter.toMinecraft(assignment.plot().bounds().min().withY(assignment.plot().targetY()));
             builder.addPiece(new SettlementBuildingPiece(

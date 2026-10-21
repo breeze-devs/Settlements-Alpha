@@ -74,6 +74,7 @@ import dev.breezes.settlements.infrastructure.rendering.animation.VillagerAnimat
 import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import dev.breezes.settlements.shared.annotations.functional.ClientSide;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import dev.breezes.settlements.shared.logging.LogCategory;
 import dev.breezes.settlements.shared.util.SyncedDataWrapper;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -787,7 +788,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             try {
                 obligation.discharge(level);
             } catch (Exception e) {
-                log.error("Failed to discharge crash-orphan obligation '{}': {}", obligation.describe(), e.getMessage());
+                log.as(LogCategory.BEHAVIOR).warn("Failed to discharge crash-orphan obligation '{}'", obligation.describe(), e);
             }
 
             if (!obligation.stillValid(level)) {
@@ -796,7 +797,8 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
             } else {
                 entry.incrementFailedAttempts();
                 if (entry.getFailedAttempts() >= MAX_DISCHARGE_ATTEMPTS) {
-                    log.error("Abandoning crash-orphan obligation '{}' after {} failed attempts — manual cleanup may be required",
+                    log.as(LogCategory.BEHAVIOR).error(
+                            "Abandoning crash-orphan obligation '{}' after {} failed attempts; manual cleanup may be required",
                             obligation.describe(), MAX_DISCHARGE_ATTEMPTS);
                     ledger.resolveOrphan(obligation);
                 }
@@ -1308,7 +1310,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
         int takenCount = itemstack.getCount();
         this.getSettlementsInventory().add(itemstack);
 
-        log.info("Picking up {}", itemEntity.getItem());
         this.onItemPickup(itemEntity);
         this.take(itemEntity, takenCount);
         itemstack.setCount(0);

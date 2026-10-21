@@ -19,7 +19,7 @@ import java.util.Map;
  * Every file contributes its words, so a pack extends the pools by adding a file and replaces a file's words by
  * overriding its id. The merged pools hold the words in file id order, then in each file's own order.
  */
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public class SettlementNamePoolDataManager extends CodecJsonDataManager<SettlementNamePools>
         implements SettlementNamePoolRegistry {
 
@@ -48,10 +48,10 @@ public class SettlementNamePoolDataManager extends CodecJsonDataManager<Settleme
         this.pools = new SettlementNamePools(prefixes, suffixes);
 
         if (this.pools.prefixes().isEmpty()) {
-            log.warn("No settlement name prefixes are loaded, so settlements cannot get generated names");
+            log.error("No settlement name prefixes are loaded, so settlements cannot get generated names");
         }
         if (this.pools.suffixes().isEmpty()) {
-            log.warn("No settlement name suffixes are loaded, so settlements cannot get generated names");
+            log.error("No settlement name suffixes are loaded, so settlements cannot get generated names");
         }
     }
 

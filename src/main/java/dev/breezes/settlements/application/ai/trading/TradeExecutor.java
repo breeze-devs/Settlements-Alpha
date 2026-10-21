@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import javax.annotation.Nonnull;
 
 @ServerScope
-@CustomLog
+@CustomLog(topic = "behavior")
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class TradeExecutor {
 
@@ -27,7 +27,7 @@ public final class TradeExecutor {
 
         this.validateTrade(session, buyer, seller, sellerInventory);
 
-        log.info("Executing trade session {}: buyer={}, seller={}, item={}, bundleSize={}, price={}",
+        log.debug("Executing trade session {}: buyer={}, seller={}, item={}, bundleSize={}, price={}",
                 session.getSessionId(), buyer.getUUID(), seller.getUUID(), session.getMatchedItem(),
                 session.getBundleSize(), session.getBuyerOffer());
         this.villagerWallet.transfer(buyer, seller, session.getBuyerOffer());

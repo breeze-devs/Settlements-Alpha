@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ChaseChickensBehavior extends VillagerStateMachineBehavior {
 
     private static final float STRIKE_DAMAGE = 0.01F;

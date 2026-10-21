@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-@CustomLog
+@CustomLog(topic = "worldgen")
 public class RoadInfillPlacer extends BuildingPlacer {
 
     /**
@@ -96,7 +96,7 @@ public class RoadInfillPlacer extends BuildingPlacer {
                         ));
                         context.getGrid().occupy(footprint.bounds());
                         buildingQueue.poll();
-                        log.worldgenStatus("RoadInfill: placed {} at ({},{},{}) zone={}",
+                        log.debug("RoadInfill: placed {} at ({},{},{}) zone={}",
                                 building.id(), center.x(), center.y(), center.z(), zone);
                         // Placement succeeded: advance by the full building footprint + spacing so
                         // the next candidate starts just past this building.
@@ -109,7 +109,7 @@ public class RoadInfillPlacer extends BuildingPlacer {
                 }
 
                 if (!buildingQueue.isEmpty() && usedRoadLength > roadLength) {
-                    log.worldgenWarn("RoadInfill: exhausted road {} side={} with {} buildings still queued",
+                    log.debug("RoadInfill: exhausted road {} side={} with {} buildings still queued",
                             road.type(), side, buildingQueue.size());
                 }
             }

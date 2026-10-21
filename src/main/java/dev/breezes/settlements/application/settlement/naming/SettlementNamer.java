@@ -33,7 +33,7 @@ import java.util.UUID;
  */
 @ServerSide
 @ServerScope
-@CustomLog
+@CustomLog(topic = "settlement")
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class SettlementNamer {
 

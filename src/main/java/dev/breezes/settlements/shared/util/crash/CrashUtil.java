@@ -1,15 +1,19 @@
 package dev.breezes.settlements.shared.util.crash;
 
 import dev.breezes.settlements.shared.util.crash.report.CrashReport;
-import lombok.CustomLog;
+
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 import javax.annotation.Nonnull;
 
-@CustomLog
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CrashUtil {
 
+    /**
+     * Throws the report's exception without logging it. The code that catches the exception logs it, with its cause.
+     */
     public static void crash(@Nonnull CrashReport report) {
-        log.error(report.getLogMessage());
         throw report.getException();
     }
 

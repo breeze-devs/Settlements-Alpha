@@ -31,7 +31,7 @@ import java.util.UUID;
  * as appropriate per entry. No English strings are constructed here.
  */
 @ServerScope
-@CustomLog
+@CustomLog(topic = "inference")
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class EpisodicEntryAssembler {
 
@@ -204,7 +204,7 @@ public final class EpisodicEntryAssembler {
         try {
             return WorldEventType.valueOf(rawType);
         } catch (IllegalArgumentException e) {
-            log.info("Skipping episodic entry with unrecognized world event type: {}", rawType);
+            log.debug("Skipping episodic entry with unrecognized world event type: {}", rawType);
             return null;
         }
     }
@@ -218,7 +218,7 @@ public final class EpisodicEntryAssembler {
         try {
             return UUID.fromString(raw);
         } catch (IllegalArgumentException e) {
-            log.error("Failed to parse UUID: {}", raw, e);
+            log.warn("Ignoring malformed actor UUID '{}' in a knowledge entry", raw, e);
             return null;
         }
     }

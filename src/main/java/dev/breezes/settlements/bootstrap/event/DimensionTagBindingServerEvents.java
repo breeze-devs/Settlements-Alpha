@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * tag reads the same on every start (platform standard P19).
  */
 @EventBusSubscriber
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public final class DimensionTagBindingServerEvents {
 
     // TODO: delete this class when a Minecraft upgrade binds dimension tags on a newly created world's first start;
@@ -42,7 +42,7 @@ public final class DimensionTagBindingServerEvents {
                                 entry -> TagKey.create(Registries.LEVEL_STEM, entry.getKey()),
                                 entry -> List.copyOf(entry.getValue())));
         dimensions.bindTags(tags);
-        log.info("Bound {} dimension tags to the server's dimensions", tags.size());
+        log.debug("Bound {} dimension tags to the server's dimensions", tags.size());
     }
 
 }

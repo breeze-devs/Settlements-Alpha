@@ -4,12 +4,13 @@ import dev.breezes.settlements.domain.generation.model.building.BuildingDefiniti
 import dev.breezes.settlements.domain.generation.model.geometry.BoundingRegion;
 import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
 import dev.breezes.settlements.domain.generation.model.survey.TerrainGrid;
+import dev.breezes.settlements.shared.logging.levels.LogLevel;
 import lombok.CustomLog;
 
 import javax.annotation.Nullable;
 import java.util.Set;
 
-@CustomLog
+@CustomLog(topic = "worldgen")
 public class PlacementValidator {
 
     private final BoundingRegion buildArea;
@@ -57,12 +58,16 @@ public class PlacementValidator {
             }
         }
 
-        log.worldgenTrace("Placement validation: building={} center=({},{},{}) result={}",
-                building.id(),
-                footprint.center().x(),
-                footprint.center().y(),
-                footprint.center().z(),
-                result.valid() ? "ACCEPTED" : result.rejection());
+        // Runs once per placement candidate, so the guard keeps the varargs array and the boxed coordinates off the
+        // generation path while TRACE is off
+        if (log.isEnabled(LogLevel.TRACE)) {
+            log.trace("Placement validation: building={} center=({},{},{}) result={}",
+                    building.id(),
+                    footprint.center().x(),
+                    footprint.center().y(),
+                    footprint.center().z(),
+                    result.valid() ? "ACCEPTED" : result.rejection());
+        }
         return result;
     }
 

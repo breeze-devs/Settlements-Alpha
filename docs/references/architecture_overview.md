@@ -81,6 +81,7 @@ conventions.
 | Settlement generation | [Generation Overview](generation/overview.md), [Pipeline](generation/pipeline.md), [Minecraft Integration](generation/minecraft_integration.md) |
 | Animation, locomotion, models, or rendered attachments | [Animation System](animation_system.md), [Animation Import](animation_import_blockbench.md), [Model Tuning](animation_model_tuning.md) |
 | HUD regions, previews, or entity highlights | [Player Surfaces](player_surfaces.md) |
+| Log lines: loggers, categories, severities, exceptions, or argument cost | [Logging Conventions](logging_conventions.md) |
 | Test graph setup and test construction | [Testing Guide](testing_guide.md) |
 
 Extension recipes belong in the subsystem guide beside the boundaries they connect. Follow its source links to the

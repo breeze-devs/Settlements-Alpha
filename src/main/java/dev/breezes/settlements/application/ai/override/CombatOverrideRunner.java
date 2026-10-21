@@ -33,7 +33,7 @@ import java.util.UUID;
  * The runner remains active between combat actions, keeping movement and interaction reserved so ordinary behavior
  * cannot resume mid-fight.
  */
-@CustomLog
+@CustomLog(topic = "planning")
 final class CombatOverrideRunner implements OverrideRunner {
 
     /**
@@ -167,7 +167,7 @@ final class CombatOverrideRunner implements OverrideRunner {
         }
 
         if (this.actionElapsedTicks >= ACTION_MAX_DURATION.getTicksAsInt()) {
-            log.behaviorWarn("Combat action exceeded max duration ({} ticks) for villager {}; replacing it",
+            log.warn("Combat action exceeded max duration ({} ticks) for villager {}; replacing it",
                     ACTION_MAX_DURATION.getTicksAsInt(), villager.getUUID());
             return true;
         }
@@ -180,7 +180,7 @@ final class CombatOverrideRunner implements OverrideRunner {
         try {
             this.action.tick(1, level, villager);
         } catch (Exception e) {
-            log.behaviorError("Combat action threw during tick for villager {}; ending combat execution", villager.getUUID(), e);
+            log.error("Combat action threw during tick for villager {}; ending combat execution", villager.getUUID(), e);
             // Signal completion so a failed tick still follows the normal stop() cleanup contract.
             this.ended = true;
         }
@@ -203,7 +203,7 @@ final class CombatOverrideRunner implements OverrideRunner {
             }
             next.start(level, villager);
         } catch (Exception e) {
-            log.behaviorError("Combat action threw during start for villager {}; ending combat execution", villager.getUUID(), e);
+            log.error("Combat action threw during start for villager {}; ending combat execution", villager.getUUID(), e);
             this.ended = true;
             return;
         }

@@ -10,7 +10,6 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
 import dev.breezes.settlements.domain.ai.brain.ISettlementsBrainEntity;
 import lombok.Builder;
-import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,7 +22,6 @@ import javax.annotation.Nullable;
  * {@code ConditionalStep}. Conceptually it is "a step that gates its action behind a distance
  * condition," which is more specific than the general conditional dispatch contract.
  */
-@CustomLog
 public class StayCloseStep<T extends ISettlementsBrainEntity> extends AbstractStep<T> {
 
     private static final String DEFAULT_NAME = "StayCloseStep";

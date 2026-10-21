@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  */
 @ServerSide
 @ServerScope
-@CustomLog
+@CustomLog(topic = "settlement")
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class SettlementMembershipService {
 

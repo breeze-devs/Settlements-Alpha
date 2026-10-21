@@ -210,7 +210,7 @@ public final class SocialCueRuntimeState {
     }
 
     /**
-     * Latches a failed fire-chance roll onto the per-key cooldown, without an active cue.
+     * Starts the per-key cooldown for a cue that did not fire, without an active cue.
      */
     public void recordCueDeclined(String cueKey, long gameTime, long cooldownTicks) {
         this.cueCooldowns.put(cueKey, gameTime + cooldownTicks);

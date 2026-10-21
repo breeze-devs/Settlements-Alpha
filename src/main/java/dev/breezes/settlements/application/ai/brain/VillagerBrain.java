@@ -12,7 +12,6 @@ import dev.breezes.settlements.domain.ai.sensors.ISensor;
 import dev.breezes.settlements.domain.ai.threat.ThreatVerdict;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import lombok.CustomLog;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-@CustomLog
 public class VillagerBrain implements IVillagerBrain {
 
     private final BaseVillager villager;

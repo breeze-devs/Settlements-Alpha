@@ -58,7 +58,7 @@ import java.util.Map;
  * produce disjoint item sets for the tool smith (forged metal tools here, everything else there) — so
  * this behavior owns its own station preference and gesture rather than being a flavor of generic crafting.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ForgeToolBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;

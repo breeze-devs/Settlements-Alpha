@@ -22,7 +22,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@CustomLog
+@CustomLog(topic = "worldgen")
 public class HistoryEventEngine {
 
     private static final int MAX_DRAWS = 32;
@@ -79,7 +79,7 @@ public class HistoryEventEngine {
                 .flatMap(survivor -> survivor.definition().visualMarkers().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new)));
 
-        log.info("Rolled history events produced visual markers: {}", visualMarkers.markers());
+        log.debug("Rolled history events produced visual markers: {}", visualMarkers.markers());
 
         List<DrawnHistoryEvent> events = survivors.stream()
                 .map(survivor -> new DrawnHistoryEvent(survivor.definition().id(), survivor.timeHorizon()))
@@ -199,7 +199,7 @@ public class HistoryEventEngine {
             for (Map.Entry<TraitId, Float> modifier : event.traitModifiers().entrySet()) {
                 TraitId traitId = modifier.getKey();
                 if (!knownTraits.contains(traitId)) {
-                    log.warn("Skipping unknown trait modifier '{}' referenced by history event '{}'", traitId, event.id());
+                    log.error("Skipping unknown trait modifier '{}' referenced by history event '{}'", traitId, event.id());
                     continue;
                 }
 

@@ -8,6 +8,7 @@ import dev.breezes.settlements.domain.generation.model.building.BuildingDefiniti
 import dev.breezes.settlements.domain.generation.model.building.BuildingFootprint;
 import dev.breezes.settlements.domain.generation.model.building.ResolvedTemplate;
 import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import dev.breezes.settlements.shared.logging.LogCategory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.AccessLevel;
@@ -43,7 +44,7 @@ import java.util.stream.Collectors;
 @Singleton
 @ServerSide
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public final class NbtTemplateResolver extends SimplePreparableReloadListener<Map<String, List<TemplateMetadata>>> implements TemplateResolver {
 
     private static final String NEOFORGE_STRUCTURE_ROOT = "structure/";
@@ -58,7 +59,7 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
     @Override
     protected Map<String, List<TemplateMetadata>> prepare(@Nonnull ResourceManager resourceManager,
                                                           @Nonnull ProfilerFiller profiler) {
-        log.resourceLoadingStatus("Discovering settlement structure NBT templates...");
+        log.debug("Discovering settlement structure NBT templates...");
         Map<ResourceLocation, Resource> nbtResources = resourceManager.listResources(TEMPLATE_DISCOVERY_ROOT,
                 path -> path.getPath().endsWith(NBT_EXTENSION));
 
@@ -81,31 +82,29 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
 
             int[] structureSize = structureSizeOptional.get();
             if (!matchesMetadataDimensions(metadata, structureSize)) {
-                log.resourceLoadingError("Skipping template {} because metadata dimensions (width={}, height={}, depth={},) do not match NBT size {}",
-                        resourceLocation, metadata.getWidth(), metadata.getDepth(), metadata.getHeight(), structureSize);
+                log.warn("Skipping template {} because metadata dimensions (width={}, height={}, depth={}) do not match NBT size {}",
+                        resourceLocation, metadata.getWidth(), metadata.getHeight(), metadata.getDepth(), structureSize);
                 continue;
             }
 
-            log.resourceLoadingStatus("Loaded building template {}: {}", resourceLocation, metadata);
+            log.debug("Loaded building template {}: {}", resourceLocation, metadata);
             entriesByBuilding.computeIfAbsent(metadata.getBuildingDefinition(), ignored -> new ArrayList<>()).add(metadata);
         }
 
         if (entriesByBuilding.isEmpty()) {
-            log.resourceLoadingWarn("No settlement building templates were discovered under {}", TEMPLATE_DISCOVERY_ROOT);
+            log.warn("No settlement building templates were discovered under {}", TEMPLATE_DISCOVERY_ROOT);
             return Map.of();
         }
 
-        int totalTemplates = entriesByBuilding.values().stream().mapToInt(List::size).sum();
         for (Map.Entry<String, List<TemplateMetadata>> entry : entriesByBuilding.entrySet()) {
             boolean hasUntaggedFallback = entry.getValue().stream()
                     .anyMatch(template -> template.getTags().isEmpty());
             if (!hasUntaggedFallback) {
-                log.resourceLoadingError("Template catalog entry '{}' has no untagged fallback template", entry.getKey());
+                log.warn("Template catalog entry '{}' has no untagged fallback template", entry.getKey());
             }
 
-            log.resourceLoadingStatus("Template catalog type '{}' loaded with {} variants", entry.getKey(), entry.getValue().size());
+            log.debug("Template catalog type '{}' loaded with {} variants", entry.getKey(), entry.getValue().size());
         }
-        log.resourceLoadingStatus("Loaded {} settlement building templates across {} building types", totalTemplates, entriesByBuilding.size());
 
         return entriesByBuilding.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
@@ -120,7 +119,7 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
         int totalTemplates = preparedCatalog.values().stream()
                 .mapToInt(List::size)
                 .sum();
-        log.resourceLoadingStatus("Applied settlement template catalog with {} templates across {} building types",
+        log.debug("Applied settlement template catalog with {} templates across {} building types",
                 totalTemplates, preparedCatalog.size());
     }
 
@@ -130,7 +129,7 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
                                               TemplateResolutionContext context) {
         List<TemplateMetadata> candidates = this.catalog.get(definition.id());
         if (candidates == null || candidates.isEmpty()) {
-            log.info("Template resolution found no catalog entries for building {}", definition.id());
+            log.as(LogCategory.WORLDGEN).warn("Template resolution found no catalog entries for building {}", definition.id());
             return Optional.empty();
         }
 
@@ -185,7 +184,8 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
         }
 
         if (allFootprintMatches.isEmpty()) {
-            log.info("Template resolution found no footprint matches for building {} in {} candidates", definition.id(), candidates.size());
+            log.as(LogCategory.WORLDGEN).warn("Template resolution found no footprint matches for building {} in {} candidates",
+                    definition.id(), candidates.size());
             return Optional.empty();
         }
 
@@ -198,7 +198,8 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
                 selected = pickRandom(untaggedMatches, random);
                 resolutionPath = "untagged-fallback";
             } else {
-                log.error("No untagged fallback for building {}, selecting randomly from {} candidates", definition.id(), allFootprintMatches.size());
+                log.as(LogCategory.WORLDGEN).warn("No untagged fallback for building {}, selecting randomly from {} candidates",
+                        definition.id(), allFootprintMatches.size());
                 selected = pickRandom(allFootprintMatches, random);
                 resolutionPath = "error-random-fallback";
             }
@@ -213,13 +214,15 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
                 selected = pickRandom(untaggedMatches, random);
                 resolutionPath = "untagged-fallback";
             } else {
-                log.error("No untagged fallback for building {}, no tag match for {}", definition.id(), requestedTags);
+                log.as(LogCategory.WORLDGEN).warn("No untagged fallback for building {}, no tag match for {}",
+                        definition.id(), requestedTags);
                 selected = pickRandom(allFootprintMatches, random);
                 resolutionPath = "error-random-fallback";
             }
         }
 
-        log.info("Resolved template for building {} via {} (candidates={}, requestedTags={}, selected={}, templateTags={})",
+        log.as(LogCategory.WORLDGEN).debug(
+                "Resolved template for building {} via {} (candidates={}, requestedTags={}, selected={}, templateTags={})",
                 definition.id(), resolutionPath, allFootprintMatches.size(), requestedTags, selected.resourceLocationOrThrow(), selected.getTags());
 
         return Optional.of(ResolvedTemplate.builder()
@@ -236,23 +239,23 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
 
         Optional<Resource> resourceOptional = resourceManager.getResource(metadataPath);
         if (resourceOptional.isEmpty()) {
-            log.resourceLoadingWarn("Ignoring template {} because required companion metadata {} is missing", nbtResource, metadataPath);
+            log.warn("Ignoring template {} because required companion metadata {} is missing", nbtResource, metadataPath);
             return Optional.empty();
         }
 
         try (BufferedReader reader = resourceOptional.get().openAsReader()) {
             TemplateMetadata metadata = GSON.fromJson(reader, TemplateMetadata.class);
             if (metadata == null) {
-                log.resourceLoadingWarn("Ignoring template metadata {} because it is empty or malformed", metadataPath);
+                log.warn("Ignoring template metadata {} because it is empty or malformed", metadataPath);
                 return Optional.empty();
             }
             if (!metadata.isValid()) {
-                log.resourceLoadingWarn("Ignoring template metadata {} because required fields are missing or invalid", metadataPath);
+                log.warn("Ignoring template metadata {} because required fields are missing or invalid", metadataPath);
                 return Optional.empty();
             }
             return Optional.of(metadata);
         } catch (Exception e) {
-            log.resourceLoadingWarn("Failed to read template metadata {}: {}", metadataPath, e.getMessage());
+            log.warn("Failed to read template metadata {}", metadataPath, e);
             return Optional.empty();
         }
     }
@@ -260,7 +263,7 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
     private static Optional<int[]> readStructureSize(ResourceManager resourceManager, ResourceLocation nbtResource) {
         Optional<Resource> resourceOptional = resourceManager.getResource(nbtResource);
         if (resourceOptional.isEmpty()) {
-            log.resourceLoadingWarn("Skipping template {} because resource stream could not be opened", nbtResource);
+            log.warn("Skipping template {} because resource stream could not be opened", nbtResource);
             return Optional.empty();
         }
 
@@ -270,7 +273,7 @@ public final class NbtTemplateResolver extends SimplePreparableReloadListener<Ma
 
             return Optional.of(new int[]{sizeTag.getInt(0), sizeTag.getInt(1), sizeTag.getInt(2)});
         } catch (Exception e) {
-            log.resourceLoadingWarn("Failed to read structure size from {}", nbtResource, e);
+            log.warn("Failed to read structure size from {}", nbtResource, e);
             return Optional.empty();
         }
     }

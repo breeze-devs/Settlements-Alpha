@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@CustomLog
+@CustomLog(topic = "worldgen")
 public class ConstrainedPlacer extends BuildingPlacer {
 
     private static final double ANGLE_STEP = Math.PI / 8.0d;
@@ -29,7 +29,7 @@ public class ConstrainedPlacer extends BuildingPlacer {
             Optional<PlacedCandidate> candidateOptional = this.findConstrainedPlacement(building, context);
             if (candidateOptional.isEmpty()) {
                 remaining.add(building);
-                log.worldgenWarn("Constrained: demoted {} — no valid position", building.id());
+                log.debug("Constrained: demoted {} due to no valid position", building.id());
                 continue;
             }
 
@@ -50,7 +50,7 @@ public class ConstrainedPlacer extends BuildingPlacer {
             );
             placed.add(assignment);
             context.getGrid().occupy(candidate.footprint().bounds());
-            log.worldgenStatus("Constrained: placed {} at ({},{},{}) zone={}",
+            log.debug("Constrained: placed {} at ({},{},{}) zone={}",
                     building.id(),
                     candidate.footprint().center().x(),
                     candidate.footprint().center().y(),

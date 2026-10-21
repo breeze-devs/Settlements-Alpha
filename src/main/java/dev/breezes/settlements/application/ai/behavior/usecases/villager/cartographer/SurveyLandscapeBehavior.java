@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
 
     private static final int SURVEY_POINT_HORIZONTAL_REACH = 5;
@@ -199,8 +199,7 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
         }
 
         if (sampled.isEmpty()) {
-            log.behaviorWarn("No reachable survey points found; stopping behavior");
-            this.requestStop("no_reachable_survey_points");
+            this.requestStop("No reachable survey points found");
             return;
         }
 

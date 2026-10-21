@@ -32,7 +32,7 @@ public class BooleanConfigAnnotationProcessor implements ConfigAnnotationSubProc
             ConfigurationType type = annotation.type();
             String className = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, field.getDeclaringClass().getSimpleName());
 
-            ModConfigSpec.Builder builder = registry.getBuilder(type.getFilePath());
+            ModConfigSpec.Builder builder = registry.getBuilder(type);
             builder.push(className);
             ModConfigSpec.BooleanValue configValue = builder.comment(annotation.description())
                     .define(annotation.identifier(), annotation.defaultValue());
@@ -56,7 +56,7 @@ public class BooleanConfigAnnotationProcessor implements ConfigAnnotationSubProc
                 field.set(null, configValue.get()); // instance is null for static fields
                 log.debug("Set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get());
             } catch (Exception e) {
-                log.error("Failed to set field '{}.{}' to {}", field.getDeclaringClass().getSimpleName(), field.getName(), configValue.get(), e);
+                log.error("Failed to set field {}.{}", field.getDeclaringClass().getSimpleName(), field.getName(), e);
             }
         }
     }

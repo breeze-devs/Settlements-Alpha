@@ -16,7 +16,7 @@ import javax.annotation.Nonnull;
 
 @Singleton
 @RequiredArgsConstructor(onConstructor_ = @Inject)
-@CustomLog
+@CustomLog(topic = "resource_loading")
 public final class GenerationDataValidationReloadListener extends SimplePreparableReloadListener<Void> {
 
     private final GenerationDataValidator validator = new GenerationDataValidator();
@@ -32,7 +32,7 @@ public final class GenerationDataValidationReloadListener extends SimplePreparab
 
     @Override
     protected void apply(Void ignored, @Nonnull ResourceManager resourceManager, @Nonnull ProfilerFiller profiler) {
-        log.info("Validating generation datapack cross-registry references");
+        log.debug("Validating generation datapack cross-registry references");
         this.validator.validateAndApply(
                 this.traitDefinitionDataManager,
                 this.traitScorerDataManager,

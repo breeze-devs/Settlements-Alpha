@@ -45,7 +45,7 @@ import java.util.function.Supplier;
  * cancellation reserved for server shutdown only (to free GPU resources, never to preempt a running batch).
  */
 @ServerScope
-@CustomLog
+@CustomLog(topic = "inference")
 public final class PersonaGenerationService {
 
     private final PersonaRequestAssembler assembler;
@@ -170,14 +170,17 @@ public final class PersonaGenerationService {
         this.currentHandle.set(handle);
 
         log.debug("Persona batch dispatched: {} villager(s)", batchIds.size());
-        handle.completion().thenRun(() -> this.onBatchCompleted(batchIds, resultCount.get()));
+        handle.completion().thenRun(() -> this.onBatchCompleted(handle, batchIds, resultCount.get()));
     }
 
     /**
-     * Runs on the gateway's executor thread once the batch stream ends by any means. Membership is
+     * Runs once the batch stream ends by any means, on the thread that ends it. Membership is
      * released for the whole batch at once -- see the {@link #inFlight} field doc for why.
      */
-    private void onBatchCompleted(@Nonnull List<UUID> batchIds, int resultCount) {
+    private void onBatchCompleted(@Nonnull InferenceStreamHandle handle, @Nonnull List<UUID> batchIds, int resultCount) {
+        // The completion signal does not say whether the stream was canceled, but shutdown() detaches the handle before
+        // cancelling it. Read before releasing the batch, since a release lets the next dispatch replace the handle.
+        boolean cancelled = this.currentHandle.get() != handle;
         batchIds.forEach(this.inFlight::remove);
         this.batchInFlight.set(false);
 
@@ -194,7 +197,9 @@ public final class PersonaGenerationService {
                 : Math.min(previous * 2, this.config.backoffCeilingTicks());
         this.currentBackoffTicks.set(next);
         this.cooldownRemainingTicks.set(next);
-        log.warn("Persona batch returned zero results for {} villager(s); backing off {} ticks", batchIds.size(), next);
+        if (!cancelled) {
+            log.debug("Persona batch returned zero results for {} villager(s); backing off {} ticks", batchIds.size(), next);
+        }
     }
 
     /**

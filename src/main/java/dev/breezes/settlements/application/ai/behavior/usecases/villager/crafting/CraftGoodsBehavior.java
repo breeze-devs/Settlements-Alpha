@@ -38,7 +38,7 @@ import java.util.Map;
  * A single catalog entry and {@code BehaviorKey} serve every profession: the behavior self-resolves the
  * villager's profession recipes at runtime.
  */
-@CustomLog
+@CustomLog(topic = "behavior")
 public class CraftGoodsBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0;

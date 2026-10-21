@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class HarvestSweetBerriesBehavior extends VillagerStateMachineBehavior {
 
     private static final ClockTicks SETTLE_DURATION = ClockTicks.seconds(1);
@@ -153,7 +153,6 @@ public class HarvestSweetBerriesBehavior extends VillagerStateMachineBehavior {
                     boolean resolved = this.targetResolver.resolveBlockTarget(ctx, MemoryTypeRegistry.RIPE_SWEET_BERRY_BUSH_SITES,
                             this.ripeSweetBerryBushMatcher, this.confirmBox, this.maxConfirms, 1);
                     if (!resolved) {
-                        log.behaviorStatus("No additional sweet berry bush targets found, ending behavior");
                         return StepResult.transition(Stage.AWARD);
                     }
 

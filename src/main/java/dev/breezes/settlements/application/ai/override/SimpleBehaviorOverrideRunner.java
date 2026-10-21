@@ -19,7 +19,7 @@ import java.util.Set;
 /**
  * Runs one behavior as an override with a duration limit.
  */
-@CustomLog
+@CustomLog(topic = "planning")
 final class SimpleBehaviorOverrideRunner implements OverrideRunner {
 
     /**
@@ -67,7 +67,7 @@ final class SimpleBehaviorOverrideRunner implements OverrideRunner {
         this.elapsedTicks += 1;
         // Check before delegation so execution cannot exceed its allotted number of ticks.
         if (this.elapsedTicks > this.maxDurationTicks) {
-            log.behaviorWarn("Override '{}' exceeded max duration ({} ticks) for villager {}; force-stopping wedged override",
+            log.warn("Override '{}' exceeded max duration ({} ticks) for villager {}; force-stopping wedged override",
                     this.behaviorKey, this.maxDurationTicks, villager.getUUID());
             this.wedged = true;
             return;
@@ -76,7 +76,7 @@ final class SimpleBehaviorOverrideRunner implements OverrideRunner {
         try {
             this.behavior.tick(1, level, villager);
         } catch (RuntimeException e) {
-            log.behaviorError("Override '{}' threw during tick for villager {}; force-stopping wedged override",
+            log.error("Override '{}' threw during tick for villager {}; force-stopping wedged override",
                     this.behaviorKey, villager.getUUID(), e);
             // Signal completion so a failed tick still follows the normal stop() cleanup contract.
             this.wedged = true;

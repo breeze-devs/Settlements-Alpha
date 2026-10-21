@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CustomLog
+@CustomLog(topic = "behavior")
 public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 4;
@@ -148,7 +148,6 @@ public class ThrowPotionsBehavior extends VillagerStateMachineBehavior {
         }
 
         if (this.targetToThrow == null) {
-            log.behaviorStatus("No target found to throw potion at");
             this.requestStop("No target found to throw potion at");
             return;
         }

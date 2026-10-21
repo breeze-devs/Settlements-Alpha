@@ -33,7 +33,7 @@ final class VillagerStatsSnapshotClientDispatcher {
         }
 
         if (statsScreen.getSessionId() != sessionId) {
-            log.debug("Cannot apply {} because session ID mismatch: expected {}, got {}",
+            log.debug("Cannot apply {} with sessionId={} because the open stats screen has sessionId={}",
                     snapshotName, sessionId, statsScreen.getSessionId());
             return;
         }

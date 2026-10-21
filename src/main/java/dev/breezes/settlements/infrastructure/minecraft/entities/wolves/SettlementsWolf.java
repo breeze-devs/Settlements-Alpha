@@ -28,7 +28,6 @@ import dev.breezes.settlements.infrastructure.minecraft.mixins.WolfMixin;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaBasicNavigationManager;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.AccessLevel;
-import lombok.CustomLog;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.particles.ParticleTypes;
@@ -64,7 +63,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@CustomLog
 @Getter
 public class SettlementsWolf extends Wolf implements ISettlementsBrainEntity, Pettable {
 
