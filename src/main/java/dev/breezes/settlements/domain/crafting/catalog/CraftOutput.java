@@ -2,8 +2,6 @@ package dev.breezes.settlements.domain.crafting.catalog;
 
 import net.minecraft.resources.ResourceLocation;
 
-import javax.annotation.Nonnull;
-
 /**
  * The product of a {@link CraftRecipe}.
  * <p>
@@ -12,7 +10,7 @@ import javax.annotation.Nonnull;
  * abstract. Resolving eagerly at parse time would couple catalog loading to registry population order.
  */
 public record CraftOutput(
-        @Nonnull ResourceLocation itemId,
+        ResourceLocation itemId,
         int count
 ) {
 

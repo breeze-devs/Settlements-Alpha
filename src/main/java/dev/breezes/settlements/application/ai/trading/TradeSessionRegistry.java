@@ -19,6 +19,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @CustomLog
 public final class TradeSessionRegistry {
 
+    /**
+     * How long an initiator has to reach its partner.
+     * A session still in its approach phase closes a short slack after.
+     */
+    public static final ClockTicks MAX_APPROACH_DURATION = ClockTicks.seconds(10);
+
     private static final int DEADLINE_SLACK_TICKS = ClockTicks.seconds(2).getTicksAsInt();
 
     private final TradingConfig tradingConfig;
@@ -149,7 +155,7 @@ public final class TradeSessionRegistry {
         return switch (phase) {
             case SYN_SENT -> ClockTicks.seconds(this.tradingConfig.inviteTimeoutSeconds()).getTicks();
             case ESTABLISHED -> ClockTicks.seconds(2).getTicks();
-            case APPROACH -> ClockTicks.seconds(10).getTicks() + DEADLINE_SLACK_TICKS;
+            case APPROACH -> MAX_APPROACH_DURATION.getTicks() + DEADLINE_SLACK_TICKS;
             case OPENING_OFFER -> (this.tradingConfig.openingOfferDuration().getTicks() * 2L) + DEADLINE_SLACK_TICKS;
             case NEGOTIATING ->
                     (this.tradingConfig.negotiationRoundDuration().getTicks() * 2L * this.tradingConfig.maxNegotiationRounds())
@@ -167,7 +173,7 @@ public final class TradeSessionRegistry {
         this.sessionParticipantsBySessionId.put(session.getSessionId(), participants);
     }
 
-    private record SessionParticipants(@Nonnull UUID firstParticipantId, @Nonnull UUID secondParticipantId) {
+    private record SessionParticipants(UUID firstParticipantId, UUID secondParticipantId) {
     }
 
 }

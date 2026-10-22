@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.threat.CombatReadiness;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.entities.VillagerProfessionKey;
 import dev.breezes.settlements.domain.genetics.Gene;
@@ -62,6 +63,11 @@ public final class BallistaCombatOption implements CombatOption {
     // Delay retries long enough to try another ballista or combat option, but allow recovery from temporary obstructions
     private static final ClockTicks REFUSAL_MEMORY = ClockTicks.seconds(20);
 
+    private static final BehaviorDisplayMetadata DISPLAY_INFO = BehaviorDisplayMetadata.builder()
+            .displayNameKey("ui.settlements.behavior.combat.man_ballista")
+            .iconItemId(ItemRegistry.BALLISTA.getId())
+            .build();
+
     private final BehaviorSupport support;
     private final BallistaOperationConfig config;
 
@@ -110,6 +116,11 @@ public final class BallistaCombatOption implements CombatOption {
     @Override
     public IBehavior<BaseVillager> createBehavior(@Nonnull LivingEntity target) {
         return new ManBallistaBehavior(this.support, this, this.config, this.shotChecks, target);
+    }
+
+    @Override
+    public BehaviorDisplayMetadata displayInfo() {
+        return DISPLAY_INFO;
     }
 
     /**

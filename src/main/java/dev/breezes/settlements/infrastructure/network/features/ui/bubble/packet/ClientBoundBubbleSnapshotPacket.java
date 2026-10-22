@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record ClientBoundBubbleSnapshotPacket(int villagerEntityId,
-                                              @Nonnull List<BubbleEntrySnapshot> entries) implements ClientBoundPacket {
+                                              List<BubbleEntrySnapshot> entries) implements ClientBoundPacket {
 
     private static final int MAX_ENTRIES = 32;
 
@@ -52,7 +52,6 @@ public record ClientBoundBubbleSnapshotPacket(int villagerEntityId,
         }
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

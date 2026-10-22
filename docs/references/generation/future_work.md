@@ -19,10 +19,8 @@ provides enough context to seed a detailed design document.
 
 ## Known Issues
 
-1. **[CRITICAL]** Minecraft crashes when the town_hall cannot be placed in the world at world-gen
-   time.
-2. Settlements only generate in a small allowlist of biomes — ref
-   `src/main/resources/data/settlements/tags/worldgen/biome/has_settlement.json`.
+The eligible-biome allowlist is limited; see
+`src/main/resources/data/settlements/tags/worldgen/biome/has_settlement.json`.
 
 ---
 

@@ -3,15 +3,13 @@ package dev.breezes.settlements.domain.ai.planning;
 import dev.breezes.settlements.domain.time.TimeOfDay;
 import lombok.Builder;
 
-import javax.annotation.Nonnull;
-
 /**
  * @param startTick start tick in civil time (0 = midnight). Civil time never wraps, so this is always
  *                  strictly less than {@code endTick} within a single authored day.
  */
 @Builder
 public record DayPlanActivityBlock(
-        @Nonnull DayPlanActivityContext context,
+        DayPlanActivityContext context,
         int startTick,
         int endTick
 ) {

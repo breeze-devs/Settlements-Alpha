@@ -115,15 +115,15 @@ public final class CrosshairHudRenderer implements LayeredDraw.Layer, ClientSess
             return blockHit != null ? new BlockTarget(level, blockHit.getBlockPos().immutable()) : null;
         }
 
-        record BlockTarget(@Nonnull Level level, @Nonnull BlockPos pos) implements AimTargetKey {
+        record BlockTarget(Level level, BlockPos pos) implements AimTargetKey {
         }
 
-        record EntityTarget(@Nonnull Level level, int entityId) implements AimTargetKey {
+        record EntityTarget(Level level, int entityId) implements AimTargetKey {
         }
 
     }
 
-    private record ResolvedHudContent(@Nonnull HudContent content, float alpha) {
+    private record ResolvedHudContent(HudContent content, float alpha) {
     }
 
     /**

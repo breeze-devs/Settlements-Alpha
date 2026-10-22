@@ -13,8 +13,8 @@ import net.minecraft.core.BlockPos;
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
-public record BlockResource(@Nonnull BlockMatcher matcher,
-                            @Nonnull MemoryType.DecayingSpatialMemoryType memoryType) {
+public record BlockResource(BlockMatcher matcher,
+                            MemoryType.DecayingSpatialMemoryType memoryType) {
 
     /**
      * Produces a site-update write from an index query result.

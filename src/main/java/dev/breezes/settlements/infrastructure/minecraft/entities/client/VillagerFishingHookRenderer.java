@@ -167,7 +167,6 @@ public class VillagerFishingHookRenderer extends EntityRenderer<VillagerFishingH
     }
 
     @Override
-    @Nonnull
     public ResourceLocation getTextureLocation(@Nonnull VillagerFishingHook entity) {
         return TEXTURE_LOCATION;
     }

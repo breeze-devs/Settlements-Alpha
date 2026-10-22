@@ -29,12 +29,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 @CustomLog(topic = "behavior")
 public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
 
-    private static final double APPROACH_DISTANCE_SQUARED = 9.0D;
     private static final ClockTicks RESPONDER_PRESENTATION_DELAY = ClockTicks.seconds(2);
     private static final double TRADE_CLOSE_ENOUGH_DISTANCE = 3.0D;
 
@@ -58,6 +56,9 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
         this.tradeSessionPresenter = tradeSessionPresenter;
 
         this.preconditions.add(this.hasTradeToMirror());
+        // Ends a walk toward an initiator whose trade closed before this villager reached it
+        this.continueConditions.add(ICondition.named("TradeSessionStillOpen",
+                villager -> this.sessionRegistry.getActiveSession(villager.getUUID()).isPresent()));
         this.initializeStateMachine(
                 StagedStep.<BaseVillager>builder()
                         .name("TradeAcceptBehavior")
@@ -83,8 +84,8 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
         this.lastObservedSignature = null;
 
         if (world instanceof ServerLevel serverLevel) {
-            // Set trading target
-            Optional.ofNullable(serverLevel.getEntity(villager.getUUID()))
+            this.sessionRegistry.getActiveSession(villager.getUUID())
+                    .map(session -> serverLevel.getEntity(session.getInitiatorId()))
                     .map(Targetable::fromEntity)
                     .ifPresent(target -> context.setState(BehaviorStateType.TARGET, TargetState.of(target)));
         }
@@ -104,6 +105,8 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
 
     private StepResult mirror(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager self = context.getInitiator().getMinecraftEntity();
+        self.getNavigationManager().stop();
+
         TradeSession session = this.sessionRegistry.getActiveSession(self.getUUID()).orElse(null);
         if (session == null) {
             // Closing a trade removes its session for both villagers, so a missing session is the trade's normal end
@@ -150,7 +153,7 @@ public final class TradeAcceptBehavior extends VillagerStateMachineBehavior {
         CLOSED,
     }
 
-    private record PresentationSignature(@Nonnull TradeSessionPhase phase,
+    private record PresentationSignature(TradeSessionPhase phase,
                                          int buyerOffer,
                                          int sellerAsk) {
 

@@ -146,7 +146,7 @@ final class ClaimOutline {
      *                           chunk
      * @param continuesPastEnd   whether the outline goes on straight past the end
      */
-    record Edge(int chunkX, int chunkZ, @Nonnull Direction side, @Nonnull UUID owner,
+    record Edge(int chunkX, int chunkZ, Direction side, UUID owner,
                 double start, double end, boolean continuesPastStart, boolean continuesPastEnd) {
 
         /**

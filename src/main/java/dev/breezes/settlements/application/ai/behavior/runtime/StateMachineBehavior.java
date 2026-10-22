@@ -143,7 +143,6 @@ public abstract class StateMachineBehavior<T extends Entity & ISettlementsBrainE
         return Optional.ofNullable(this.lastDeeds);
     }
 
-    @Nonnull
     @Override
     public BehaviorLifecycleResult getLastLifecycleResult() {
         return this.lastLifecycleResult;

@@ -181,7 +181,6 @@ public class SettlementsCat extends Cat implements ISettlementsBrainEntity, Pett
      * Client render hook: the per-axis squish scale for the current frame, or {@link PetSquish#IDENTITY}
      * when no petting reaction is playing.
      */
-    @Nonnull
     public PetSquish.Factors getPetSquishFactors(float partialTick) {
         return this.petReaction.squishFactors(this.tickCount, partialTick);
     }

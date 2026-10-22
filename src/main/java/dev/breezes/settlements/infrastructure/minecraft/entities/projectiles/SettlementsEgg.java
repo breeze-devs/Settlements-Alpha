@@ -62,7 +62,6 @@ public class SettlementsEgg extends ThrowableItemProjectile {
     }
 
     @Override
-    @Nonnull
     protected Item getDefaultItem() {
         return Items.EGG;
     }

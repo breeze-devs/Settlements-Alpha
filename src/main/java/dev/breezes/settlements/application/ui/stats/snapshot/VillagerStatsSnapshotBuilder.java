@@ -1,5 +1,6 @@
 package dev.breezes.settlements.application.ui.stats.snapshot;
 
+import dev.breezes.settlements.application.ai.override.OverrideRunner;
 import dev.breezes.settlements.application.ai.planning.PlanRuntimeState;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.demand.ActiveDemand;
@@ -34,6 +35,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.schedule.Activity;
 
@@ -49,12 +51,19 @@ import java.util.stream.Collectors;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class VillagerStatsSnapshotBuilder {
 
+    /**
+     * Shown for a running behavior that has no display metadata.
+     */
+    private static final BehaviorDisplayMetadata UNKNOWN_BEHAVIOR = BehaviorDisplayMetadata.builder()
+            .displayNameKey("ui.settlements.behavior.behavior.unknown")
+            .iconItemId(ResourceLocation.withDefaultNamespace("barrier"))
+            .build();
+
     private final VillagerWallet villagerWallet;
     private final TradeCatalogRegistry tradeCatalogRegistry;
     private final DemandEvaluator demandEvaluator;
     private final IBehaviorCatalog behaviorCatalog;
 
-    @Nonnull
     public VillagerStatsSnapshot buildStats(@Nonnull BaseVillager villager, long gameTime) {
         String villagerName = villager.getName().getString();
         String professionKey = villager.getVillagerData().getProfession().toString();
@@ -66,7 +75,7 @@ public final class VillagerStatsSnapshotBuilder {
         Activity activity = villager.getBrain().getActiveNonCoreActivity().orElse(Activity.IDLE);
         SchedulePhase schedulePhase = mapSchedulePhase(activity);
 
-        Optional<ActiveBehaviorInfo> activeBehavior = this.findActiveBehavior(villager);
+        Optional<BehaviorDisplayMetadata> activeBehavior = this.findActiveBehavior(villager);
 
         // Adjectives/characterSketch are only meaningful once the LLM-authored persona has actually
         // landed; PENDING/FAILED personas carry empty placeholder values that the client already
@@ -87,8 +96,8 @@ public final class VillagerStatsSnapshotBuilder {
                 .geneValues(geneValues)
                 .homePos(extractMemoryPos(villager, MemoryModuleType.HOME).orElse(null))
                 .workstationPos(extractMemoryPos(villager, MemoryModuleType.JOB_SITE).orElse(null))
-                .activeBehaviorNameKey(activeBehavior.map(ActiveBehaviorInfo::nameKey).orElse(null))
-                .activeBehaviorIconId(activeBehavior.map(ActiveBehaviorInfo::iconId).orElse(null))
+                .activeBehaviorNameKey(activeBehavior.map(BehaviorDisplayMetadata::displayNameKey).orElse(null))
+                .activeBehaviorIconId(activeBehavior.map(displayInfo -> displayInfo.iconItemId().toString()).orElse(null))
                 .schedulePhase(schedulePhase)
                 .reputation(0) // TODO: wire to actual villager reputation data
                 .hunger(villager.getHunger())
@@ -154,7 +163,13 @@ public final class VillagerStatsSnapshotBuilder {
                 .map(GlobalPos::pos);
     }
 
-    private Optional<ActiveBehaviorInfo> findActiveBehavior(@Nonnull BaseVillager villager) {
+    private Optional<BehaviorDisplayMetadata> findActiveBehavior(@Nonnull BaseVillager villager) {
+        // An installed override runs in place of the day plan, so it takes precedence
+        OverrideRunner overrideRunner = villager.getOverrideRuntimeState().getRunner();
+        if (overrideRunner != null) {
+            return Optional.of(overrideRunner.displayInfo().orElse(UNKNOWN_BEHAVIOR));
+        }
+
         PlanRuntimeState runtimeState = villager.getPlanRuntimeState();
         IBehavior<BaseVillager> behavior = runtimeState.getCurrentBehavior();
         if (behavior == null || behavior.getStatus() != BehaviorStatus.RUNNING) {
@@ -162,13 +177,10 @@ public final class VillagerStatsSnapshotBuilder {
         }
 
         BehaviorPlanningMetadata descriptor = runtimeState.getCurrentDescriptor();
-        BehaviorDisplayMetadata displayInfo = descriptor == null
-                ? null
-                : this.behaviorCatalog.getDisplayInfo(descriptor.getKey()).orElse(null);
-
-        return Optional.of(new ActiveBehaviorInfo(
-                displayInfo != null ? displayInfo.displayNameKey() : "ui.settlements.behavior.behavior.unknown",
-                displayInfo != null ? displayInfo.iconItemId().toString() : "minecraft:barrier"));
+        if (descriptor == null) {
+            return Optional.of(UNKNOWN_BEHAVIOR);
+        }
+        return Optional.of(this.behaviorCatalog.getDisplayInfo(descriptor.getKey()).orElse(UNKNOWN_BEHAVIOR));
     }
 
     private static SchedulePhase mapSchedulePhase(@Nonnull Activity activity) {
@@ -185,9 +197,6 @@ public final class VillagerStatsSnapshotBuilder {
             return SchedulePhase.IDLE;
         }
         return SchedulePhase.UNKNOWN;
-    }
-
-    private record ActiveBehaviorInfo(@Nonnull String nameKey, @Nonnull String iconId) {
     }
 
 }

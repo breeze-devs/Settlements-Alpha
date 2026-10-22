@@ -85,7 +85,6 @@ public class DayPlanScreen extends LayoutScreen {
         this.iconCache = new HashMap<>();
     }
 
-    @Nonnull
     @Override
     protected UIElement buildRoot() {
         int panelW = getPanelWidth();

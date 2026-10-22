@@ -1,8 +1,10 @@
 package dev.breezes.settlements.application.ai.behavior.usecases.villager.trading;
 
+import dev.breezes.settlements.application.ai.trading.TradeSessionRegistry;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.catalog.TradePriceResolver;
 import dev.breezes.settlements.application.economy.demand.ActiveDemand;
+import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
@@ -35,9 +37,17 @@ public final class PartnerScanner {
     private final TradeCatalogRegistry tradeCatalogRegistry;
     private final TradePriceResolver tradePriceResolver;
     private final VillagerWallet villagerWallet;
+    private final TradeSessionRegistry sessionRegistry;
+    private final DemandEvaluator demandEvaluator;
 
-    public Optional<TradeCandidate> findPartner(@Nonnull BaseVillager buyer,
-                                                @Nonnull List<ActiveDemand> activeDemands) {
+    /**
+     * Finds a perceived villager the buyer could open a trade with now, trying the buyer's demands in priority order.
+     *
+     * @return empty when the buyer is already in a trade session, holds no emeralds, wants nothing, or perceives no
+     * villager selling what it wants at a price it can offer
+     */
+    public Optional<TradeCandidate> findPartner(@Nonnull BaseVillager buyer) {
+        List<ActiveDemand> activeDemands = this.resolveBuyableDemands(buyer);
         if (activeDemands.isEmpty()) {
             return Optional.empty();
         }
@@ -56,7 +66,49 @@ public final class PartnerScanner {
             }
         }
 
+        log.trace("Trade partner search found no seller for villager {} across {} active demands", buyer.getUUID(),
+                activeDemands.size());
         return Optional.empty();
+    }
+
+    /**
+     * Matches one villager as the buyer's trade partner now, trying the buyer's demands in priority order.
+     *
+     * @return empty when the seller is no longer available to trade, or when the buyer is already in a trade session,
+     * holds no emeralds, or wants nothing the seller sells at a price it can offer
+     */
+    public Optional<TradeCandidate> matchPartner(@Nonnull BaseVillager buyer, @Nonnull BaseVillager seller) {
+        if (seller == buyer || !seller.isTradeAvailable()) {
+            return Optional.empty();
+        }
+
+        for (ActiveDemand activeDemand : this.resolveBuyableDemands(buyer)) {
+            Optional<TradeCandidate> candidate = this.matchCandidate(buyer, seller, activeDemand);
+            if (candidate.isPresent()) {
+                return candidate;
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * The buyer's active demands in priority order, or an empty list when the buyer cannot open a trade now.
+     */
+    private List<ActiveDemand> resolveBuyableDemands(@Nonnull BaseVillager buyer) {
+        if (this.sessionRegistry.getActiveSession(buyer.getUUID()).isPresent()) {
+            log.trace("Trade partner search skipped: villager {} already has an active session", buyer.getUUID());
+            return List.of();
+        }
+        if (this.villagerWallet.getBalance(buyer) <= 0) {
+            log.trace("Trade partner search skipped: villager {} has no emerald balance", buyer.getUUID());
+            return List.of();
+        }
+
+        List<ActiveDemand> activeDemands = this.demandEvaluator.resolve(buyer);
+        if (activeDemands.isEmpty()) {
+            log.trace("Trade partner search skipped: villager {} has no active demands", buyer.getUUID());
+        }
+        return activeDemands;
     }
 
     private PerceivedEntities getPerceivedEntities(@Nonnull BaseVillager villager) {
@@ -124,10 +176,10 @@ public final class PartnerScanner {
     }
 
     @Builder
-    public record TradeCandidate(@Nonnull BaseVillager partner,
-                                 @Nonnull ActiveDemand activeDemand,
-                                 @Nonnull Item matchedItem,
-                                 @Nonnull OfferEntry offerEntry,
+    public record TradeCandidate(BaseVillager partner,
+                                 ActiveDemand activeDemand,
+                                 Item matchedItem,
+                                 OfferEntry offerEntry,
                                  int buyerOffer,
                                  int sellerAsk) {
     }

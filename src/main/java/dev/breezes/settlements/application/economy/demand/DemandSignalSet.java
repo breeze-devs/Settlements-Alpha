@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public record DemandSignalSet(@Nonnull List<DemandSignal> entries) {
+public record DemandSignalSet(List<DemandSignal> entries) {
 
     private static final DemandSignalSet EMPTY = new DemandSignalSet(List.of());
 

@@ -56,9 +56,9 @@ enum BallistaVerb {
      * @param loaded whether ammunition is seated
      */
     @Builder
-    record Situation(@Nonnull MainHand mainHand,
+    record Situation(MainHand mainHand,
                      boolean sneaking,
-                     @Nonnull BallistaStateMachine.Stage stage,
+                     BallistaStateMachine.Stage stage,
                      boolean loaded) {
     }
 

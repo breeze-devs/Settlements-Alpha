@@ -19,7 +19,8 @@ post-brain ticks driven directly from `BaseVillager.customServerAiStep()`:
    `PlanSlot` entries. It owns what the villager is *doing* at any given moment.
 2. **Reactive override** — tiered execution arbitrated by `OverrideArbiter` and ticked *inside* `PlanRunnerBehavior`.
    Pluggable `OverridePolicy` strategies can interrupt the running plan slot when a fresh stimulus arrives — a threat
-   the villager has chosen to fight, a trade/courtship invite to accept, or a demanded item spotted nearby — and a
+   the villager has chosen to fight, a trade/courtship invite to accept, a demanded item spotted nearby, or a seller of
+   a wanted item in view — and a
    higher tier can in turn preempt a lower one that is already running.
 3. **Background (activity-ambient)** — contextual vanilla behaviors registered under the active activity fill the
    villager's time when the foreground is not occupying a resource channel. They own what the villager *feels like*
@@ -383,10 +384,16 @@ does, reads `PlanRuntimeState.isBehaviorActive()`.
 ### Where the stimuli come from
 
 Stimuli are pollable state, never broadcasts. The invite-accept policies read the courtship and trade session registries,
-which the matching initiate behavior writes when it sends its invite; demanded-item pickup reads a sensor memory; combat
-reads the villager's threat verdict; a raid duty reads the raid at the villager's position. A registry is the state of
-record for a first-accept-wins offer, and a broadcast log cannot be one, because two readers of the same announcement
-both believe they have the offer.
+which the matching initiate behavior writes when it sends its invite; demanded-item pickup, projectile retrieval, and
+trade initiation read sensor memories; combat reads the villager's threat verdict; a raid duty reads the raid at the
+villager's position. A registry is the state of record for a first-accept-wins offer, and a broadcast log cannot be one,
+because two readers of the same announcement both believe they have the offer.
+
+A sensor that feeds a policy remembers its targets, such as the seller or the dropped items, rather than a flag that some
+exist. The behavior the policy installs re-checks the remembered target and gives up when it no longer holds, rather
+than searching again. That keeps the sensor the one place a target is chosen: a second search could settle on a
+different target, and it would repeat the sensor's most expensive work, such as path searches, on the tick the override
+starts. A remembered target can be up to one scan old, so the re-check is required.
 
 TODO: add player-requested overrides through debug commands and dialogue so a player can direct a villager to perform a
 specific behavior immediately, such as asking a farmer to harvest pumpkins.
@@ -543,6 +550,7 @@ a plan mid-slot.
 | Arbitration is a separate component from execution | `OverrideArbiter` vs. `OverrideRunner` | Tier/order/admission/preemption decisions and one runner's own bookkeeping (elapsed ticks, its ceiling, exception containment) change for different reasons; combined, every new kind of execution would have to edit arbitration. |
 | Override precedence is a tier, then a list position | Each policy declares its `OverrideTier`; `OverridePolicyModule` lists the policies highest tier first | A single ranking cannot express "only strictly higher tiers may preempt a running one". The tier carries that rule, protected-plan admission and reactive-activity admission, so it stays on the policy whose nature it describes. Order within a tier only compares policies, so no one policy can state it: a rank number on each means nothing until read against every sibling's, and two equal numbers leave the order to chance. A list ranked out of tier order is rejected at construction rather than re-sorted, so the list never shows an order that does not run. |
 | Every override runner is bounded in time | Per-behavior ceiling, a fixed fallback for a key with no descriptor; per action for combat | Overrides are reactive and short-lived; a wedged one (e.g. mirroring a session that never closes) must not freeze the villager. On trip, the runner reports complete and the arbiter stops it and re-queues the interrupted slot — identically to a natural finish. A fight's length is the verdict's to decide, so the combat runner bounds each action instead ([`threat_response.md`](threat_response.md#combat)). |
+| Trade initiation is an override, not a plan slot | `OPPORTUNISTIC` policy on a seller the sensor remembers, outside every behavior pool | Its precondition is an encounter: a perceived villager selling what this one wants. A plan is generated before that encounter can be forecast, so a planned trade slot mostly fails its precondition while the villager walks past real chances between slots. A fall-through leaves seller and want unchanged, so the wait between attempts lives in a brain memory rather than the behavior's own cooldown. |
 | Policy evaluation is throttled and staggered | `OverrideRuntimeState.EVALUATION_INTERVAL`, random per-villager phase | Evaluating every policy every tick for every villager is pure overhead on the peaceful path; ticking whatever is already installed still happens every tick so a running override never feels laggy. |
 | Opportunity requirements down-weight, not filter | `PlannerPolicy.LOW_OPPORTUNITY_MULTIPLIER` | Keeps starved behaviors in the pool so plans stay resilient; the packer prunes only zero-weight entries, so the multiplier must stay above zero. Forecast is computed on the server thread before the async handoff (decaying-memory reads aren't thread-safe). |
 | Activity selection | One level-triggered `ActivityArbiter` | Per-villager schedules vary by profession and authored plan blocks, which a static `Schedule` cannot represent. Deriving every activity, reactive ones included, from current state in one place leaves no exit behavior to miss and one list of which activities are reactive. |

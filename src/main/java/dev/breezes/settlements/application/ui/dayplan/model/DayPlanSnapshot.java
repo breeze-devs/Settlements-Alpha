@@ -5,18 +5,17 @@ import dev.breezes.settlements.domain.ai.schedule.PlanDayType;
 import lombok.Builder;
 import lombok.Singular;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 @Builder
 public record DayPlanSnapshot(
         long dayNumber,
-        @Nonnull PlanDayType dayType,
-        @Nonnull String currentTime,
-        @Nonnull PlanStatus planStatus,
+        PlanDayType dayType,
+        String currentTime,
+        PlanStatus planStatus,
         int villagerEntityId,
-        @Nonnull String villagerName,
-        @Singular @Nonnull List<DayPlanSlotSnapshot> slots
+        String villagerName,
+        @Singular List<DayPlanSlotSnapshot> slots
 ) {
 
 }

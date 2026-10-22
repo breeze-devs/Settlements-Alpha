@@ -35,7 +35,6 @@ public class SettlementDebugOverlayState implements ClientSessionResettable {
         this.expiresAtMillis = 0L;
     }
 
-    @Nonnull
     public Optional<ClientBoundSettlementDebugPacket> get() {
         if (this.current == null) {
             return Optional.empty();

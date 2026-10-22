@@ -26,7 +26,7 @@ import java.util.List;
  *                   flare, in blocks; zero shows every flare
  * @param flares     at most MAX_FLARES
  */
-public record ClientBoundFlarePacket(double hideWithin, @Nonnull List<Flare> flares) implements ClientBoundPacket {
+public record ClientBoundFlarePacket(double hideWithin, List<Flare> flares) implements ClientBoundPacket {
 
     public static final int MAX_FLARES = 64;
 
@@ -83,7 +83,7 @@ public record ClientBoundFlarePacket(double hideWithin, @Nonnull List<Flare> fla
      * @param apexY      the height of the burst, should be above the launch point
      * @param explosions the burst, as a firework rocket carries it; at most Fireworks.MAX_EXPLOSIONS
      */
-    public record Flare(@Nonnull Vec3 launch, double apexY, @Nonnull List<FireworkExplosion> explosions) {
+    public record Flare(Vec3 launch, double apexY, List<FireworkExplosion> explosions) {
 
         public Flare {
             Validate.isTrue(apexY >= launch.y, "apexY must not be below the launch point: %s < %s", apexY, launch.y);

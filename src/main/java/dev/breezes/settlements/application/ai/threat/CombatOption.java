@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.threat;
 
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -36,5 +37,10 @@ public interface CombatOption {
      * Creates a fresh, unstarted combat action aimed at the given hostile.
      */
     IBehavior<BaseVillager> createBehavior(@Nonnull LivingEntity target);
+
+    /**
+     * The name and icon a player sees while one of this option's combat actions runs.
+     */
+    BehaviorDisplayMetadata displayInfo();
 
 }

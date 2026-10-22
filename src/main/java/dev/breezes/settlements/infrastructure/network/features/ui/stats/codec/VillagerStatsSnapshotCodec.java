@@ -129,7 +129,6 @@ public final class VillagerStatsSnapshotCodec {
         }
     }
 
-    @Nonnull
     private static List<String> readAdjectives(@Nonnull FriendlyByteBuf buffer) {
         int size = buffer.readVarInt();
         if (size < 0 || size > MAX_ADJECTIVES) {

@@ -288,7 +288,6 @@ public final class ResourceIndexRefresher {
      * in any axis-aligned direction), so the worker never needs to touch the live world.
      * Unloaded neighbor chunks have no entry; the view falls back to air for those positions.
      */
-    @Nonnull
     private static Long2ObjectMap<PalettedContainer<BlockState>> takeSnapshot(@Nonnull ServerLevel level,
                                                                               @Nonnull LevelChunk targetChunk,
                                                                               int targetSectionY) {
@@ -349,7 +348,6 @@ public final class ResourceIndexRefresher {
      * on the live target section (main thread). Conservative — only skips, never
      * drops real hits.
      */
-    @Nonnull
     private static Set<BlockResource> computeSurvivors(@Nonnull Set<BlockResource> resources,
                                                        @Nonnull LevelChunkSection section) {
         Set<BlockResource> survivors = new HashSet<>(resources.size());

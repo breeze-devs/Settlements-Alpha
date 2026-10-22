@@ -163,7 +163,6 @@ public class VillagerStatsScreen extends LayoutScreen {
         rebuildLoadingCachedComponents();
     }
 
-    @Nonnull
     @Override
     protected UIElement buildRoot() {
         int panelW = getPanelWidth();
@@ -754,7 +753,6 @@ public class VillagerStatsScreen extends LayoutScreen {
         return rows;
     }
 
-    @Nonnull
     private ItemStack createOfferTooltipStack(@Nonnull OfferEntry offer) {
         ItemStack stack = createDisplayStack(offer.match());
         List<Component> lore = List.of(
@@ -771,7 +769,6 @@ public class VillagerStatsScreen extends LayoutScreen {
         return withLore(stack, lore);
     }
 
-    @Nonnull
     private ItemStack createDemandTooltipStack(@Nonnull DemandDisplayEntry demand) {
         ItemStack stack = createDisplayStack(demand.match());
         List<Component> lore = new ArrayList<>();
@@ -799,7 +796,6 @@ public class VillagerStatsScreen extends LayoutScreen {
         return withLore(stack, lore);
     }
 
-    @Nonnull
     private ItemStack createDisplayStack(@Nonnull ItemMatch match) {
         return switch (match) {
             case ItemMatch.ItemRef itemRef -> {
@@ -816,7 +812,6 @@ public class VillagerStatsScreen extends LayoutScreen {
         };
     }
 
-    @Nonnull
     private static ItemStack withLore(@Nonnull ItemStack stack, @Nonnull List<Component> lore) {
         ItemStack tooltipStack = stack.copy();
         tooltipStack.set(DataComponents.LORE, new ItemLore(lore));

@@ -11,7 +11,7 @@ import javax.annotation.Nonnull;
  * <p>
  * Never import VillagerProfession in domain code.
  */
-public record VillagerProfessionKey(@Nonnull ResourceLocation id) {
+public record VillagerProfessionKey(ResourceLocation id) {
 
     // Vanilla professions
     public static final VillagerProfessionKey NONE = vanilla("none");

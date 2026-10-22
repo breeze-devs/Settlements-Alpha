@@ -13,7 +13,7 @@ import java.util.stream.Stream;
  * This is the authoritative zone-enumeration seam: any current or future behavior that needs to
  * discover a lily's cells should call {@link #streamCells()} rather than re-deriving the geometry.
  */
-public record CultivationZone(@Nonnull BlockPos lilyPos, int halfExtentX, int halfExtentZ) {
+public record CultivationZone(BlockPos lilyPos, int halfExtentX, int halfExtentZ) {
 
     public static final int MIN_HALF_EXTENT = 1;
     /**

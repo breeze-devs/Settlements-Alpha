@@ -9,7 +9,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nonnull;
 
-public record ServerBoundCloseUiPacket(@Nonnull UiChannel channel, long sessionId) implements ServerBoundPacket {
+public record ServerBoundCloseUiPacket(UiChannel channel, long sessionId) implements ServerBoundPacket {
 
     public static final Type<ServerBoundCloseUiPacket> ID = new Type<>(ResourceLocationUtil.mod("ui_sync_close_serverbound"));
     public static final StreamCodec<FriendlyByteBuf, ServerBoundCloseUiPacket> CODEC =
@@ -24,7 +24,6 @@ public record ServerBoundCloseUiPacket(@Nonnull UiChannel channel, long sessionI
         buffer.writeLong(this.sessionId);
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

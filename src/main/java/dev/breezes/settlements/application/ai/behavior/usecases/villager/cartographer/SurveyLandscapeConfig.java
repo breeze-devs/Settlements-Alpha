@@ -6,10 +6,6 @@ import dev.breezes.settlements.application.config.validation.BehaviorCooldownVal
 import dev.breezes.settlements.infrastructure.config.annotations.BehaviorConfig;
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigurationType;
 import dev.breezes.settlements.infrastructure.config.annotations.integers.IntegerConfig;
-import dev.breezes.settlements.infrastructure.config.annotations.maps.MapConfig;
-import dev.breezes.settlements.infrastructure.config.annotations.maps.MapEntry;
-
-import java.util.Map;
 
 @BehaviorConfig(name = "survey_landscape", type = ConfigurationType.BEHAVIOR)
 public record SurveyLandscapeConfig(
@@ -46,20 +42,6 @@ public record SurveyLandscapeConfig(
                 min = 1)
         int behaviorCooldownMax,
 
-        @MapConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "expertise_survey_point_count",
-                description = "Number of distant points the cartographer surveys per behavior run, by expertise level.",
-                deserializer = "StringToInteger",
-                defaultValue = {
-                        @MapEntry(key = "novice", value = "3"),
-                        @MapEntry(key = "apprentice", value = "4"),
-                        @MapEntry(key = "journeyman", value = "4"),
-                        @MapEntry(key = "expert", value = "5"),
-                        @MapEntry(key = "master", value = "6")
-                })
-        Map<String, Integer> expertiseSurveyPointCount,
-
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "min_point_distance",
@@ -77,15 +59,6 @@ public record SurveyLandscapeConfig(
                 min = 20,
                 max = 512)
         int maxPointDistance,
-
-        @IntegerConfig(
-                type = ConfigurationType.BEHAVIOR,
-                identifier = "min_point_separation",
-                description = "Minimum distance (in blocks) between sampled survey points to avoid clustering.",
-                defaultValue = 15,
-                min = 5,
-                max = 128)
-        int minPointSeparation,
 
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,

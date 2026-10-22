@@ -3,6 +3,7 @@ package dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces;
 import dev.breezes.settlements.bootstrap.registry.structures.StructureRegistry;
 import dev.breezes.settlements.domain.generation.model.geometry.Direction;
 import dev.breezes.settlements.infrastructure.minecraft.worldgen.SettlementsStructurePiece;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -19,8 +20,10 @@ public class SettlementBuildingPiece extends SettlementsStructurePiece {
     private static final String SETTLEMENT_ID_TAG = "SettlementId";
     private static final String BUILDING_DEFINITION_ID_TAG = "BuildingDefinitionId";
 
+    @Getter
     @Nullable
     private final UUID settlementId;
+    @Getter
     private final String buildingDefinitionId;
 
     public SettlementBuildingPiece(StructureTemplateManager templateManager, ResourceLocation templateId,
@@ -53,16 +56,6 @@ public class SettlementBuildingPiece extends SettlementsStructurePiece {
             tag.putUUID(SETTLEMENT_ID_TAG, this.settlementId);
         }
         tag.putString(BUILDING_DEFINITION_ID_TAG, this.buildingDefinitionId);
-    }
-
-    @Nullable
-    public UUID getSettlementId() {
-        return this.settlementId;
-    }
-
-    @Nonnull
-    public String getBuildingDefinitionId() {
-        return this.buildingDefinitionId;
     }
 
     public static Rotation fromDirection(@Nonnull Direction direction) {

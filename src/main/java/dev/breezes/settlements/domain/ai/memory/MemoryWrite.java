@@ -5,7 +5,7 @@ import dev.breezes.settlements.domain.ai.brain.IBrain;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public record MemoryWrite<T>(@Nonnull MemoryType<T> type, @Nullable T value) implements IMemoryWrite {
+public record MemoryWrite<T>(MemoryType<T> type, @Nullable T value) implements IMemoryWrite {
 
     public static <T> MemoryWrite<T> of(@Nonnull MemoryType<T> type, @Nonnull T value) {
         return new MemoryWrite<>(type, value);

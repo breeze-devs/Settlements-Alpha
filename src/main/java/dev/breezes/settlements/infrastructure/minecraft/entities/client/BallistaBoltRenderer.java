@@ -64,7 +64,6 @@ public class BallistaBoltRenderer extends EntityRenderer<BallistaBolt> {
     }
 
     @Override
-    @Nonnull
     public ResourceLocation getTextureLocation(@Nonnull BallistaBolt bolt) {
         return BallistaBoltModel.TEXTURE;
     }

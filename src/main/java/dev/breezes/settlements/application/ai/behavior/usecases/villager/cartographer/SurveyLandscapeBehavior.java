@@ -33,12 +33,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 
 @CustomLog(topic = "behavior")
 public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
@@ -58,7 +54,6 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
     private final SurveyLandscapeConfig config;
 
     // Runtime state
-    private final Queue<Location> remainingPoints = new ArrayDeque<>();
     private boolean shouldRewardExperience;
 
     public SurveyLandscapeBehavior(@Nonnull SurveyLandscapeConfig config,
@@ -73,16 +68,14 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
     @Override
     protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext<BaseVillager> context) {
-        this.sampleSurveyPoints(villager, world);
-
-        if (this.remainingPoints.isEmpty()) {
+        Optional<Location> surveyPoint = this.trySampleSurveyPoint(villager, world);
+        if (surveyPoint.isEmpty()) {
+            this.requestStop("No reachable survey point found");
             return;
         }
 
         this.shouldRewardExperience = false;
-
-        Location firstPoint = this.remainingPoints.poll();
-        context.setState(BehaviorStateType.TARGET, TargetState.of(this.toTargetable(firstPoint)));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(this.toTargetable(surveyPoint.get())));
     }
 
     @Override
@@ -94,8 +87,6 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
         villager.getNavigationManager().stop();
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
-
-        this.remainingPoints.clear();
     }
 
     private StagedStep<BaseVillager> createControlStep() {
@@ -169,49 +160,16 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
         return MapSketch.step(context -> {
             this.shouldRewardExperience = true;
 
-            if (context.primaryDeed().isEmpty()) {
-                BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LANDSCAPE_SURVEYED, null);
-                outcome.markSucceeded();
-                context.declarePrimaryDeed(outcome);
-            }
-
-            if (this.remainingPoints.isEmpty()) {
-                // All points surveyed
-                return StepResult.transition(SurveyStage.END);
-            }
-
-            Location nextPoint = this.remainingPoints.poll();
-            context.setState(BehaviorStateType.TARGET, TargetState.of(this.toTargetable(nextPoint)));
-            return StepResult.transition(SurveyStage.NAVIGATE_TO_POINT);
+            BehaviorOutcome outcome = BehaviorOutcome.forDeed(WorldEventType.LANDSCAPE_SURVEYED, null);
+            outcome.markSucceeded();
+            context.declarePrimaryDeed(outcome);
+            return StepResult.transition(SurveyStage.END);
         });
     }
 
-    private void sampleSurveyPoints(@Nonnull BaseVillager villager, @Nonnull Level world) {
-        int pointCount = this.config.expertiseSurveyPointCount()
-                .getOrDefault(villager.getExpertise().getConfigName(), 2);
-
-        Location origin = Location.fromEntity(villager, false);
-        List<Location> sampled = new ArrayList<>();
-
-        for (int i = 0; i < pointCount; i++) {
-            Optional<Location> candidate = this.trySamplePoint(origin, sampled, villager, world);
-            candidate.ifPresent(sampled::add);
-        }
-
-        if (sampled.isEmpty()) {
-            this.requestStop("No reachable survey points found");
-            return;
-        }
-
-        this.remainingPoints.addAll(sampled);
-    }
-
-    private Optional<Location> trySamplePoint(@Nonnull Location origin,
-                                              @Nonnull List<Location> existing,
-                                              @Nonnull BaseVillager villager,
-                                              @Nonnull Level world) {
+    private Optional<Location> trySampleSurveyPoint(@Nonnull BaseVillager villager, @Nonnull Level world) {
         ServerLevel serverLevel = (ServerLevel) world;
-        double minSeparationSquared = (double) this.config.minPointSeparation() * this.config.minPointSeparation();
+        Location origin = Location.fromEntity(villager, false);
 
         for (int attempt = 0; attempt < MAX_SAMPLING_RETRIES; attempt++) {
             double yaw = RandomUtil.randomDouble(0, 2 * Math.PI);
@@ -236,14 +194,6 @@ public class SurveyLandscapeBehavior extends VillagerStateMachineBehavior {
             }
 
             Location candidate = Location.of(x + 0.5, y, z + 0.5, world);
-
-            // Reject if too close to a previously accepted point to avoid clustering
-            boolean tooClose = existing.stream()
-                    .anyMatch(p -> p.distanceSquared(candidate) < minSeparationSquared);
-            if (tooClose) {
-                continue;
-            }
-
             if (!villager.getNavigationManager().canReach(candidate, NAVIGATION_COMPLETION_DISTANCE)) {
                 continue;
             }

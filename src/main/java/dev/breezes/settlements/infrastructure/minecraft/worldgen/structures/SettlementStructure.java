@@ -63,7 +63,12 @@ public class SettlementStructure extends SettlementsStructure {
         TerrainGrid terrainGrid = TerrainGridFactory.fromGenerationContext(context, bounds);
         GenerationPipeline pipeline = SettlementsDagger.component().generationPipeline();
 
-        GenerationResult result = pipeline.generate(terrainGrid, bounds, seed);
+        Optional<GenerationResult> generated = pipeline.generate(terrainGrid, bounds, seed);
+        if (generated.isEmpty()) {
+            log.warn("Failed to generate settlement at chunk {}, {}", chunkPos.x, chunkPos.z);
+            return;
+        }
+        GenerationResult result = generated.get();
 
         TemplateResolver templateResolver = SettlementsDagger.component().nbtTemplateResolver();
         Random random = new Random(seed);

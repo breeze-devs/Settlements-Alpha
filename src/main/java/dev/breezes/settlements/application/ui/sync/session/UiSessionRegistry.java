@@ -38,7 +38,8 @@ public final class UiSessionRegistry {
     public UiSession startOrReplaceSession(@Nonnull ServerPlayer player,
                                            @Nonnull UiChannel channel,
                                            int villagerEntityId,
-                                           long gameTime) {
+                                           long gameTime,
+                                           @Nonnull Map<UiChannel, UiServerChannelDefinition> channelDefinitions) {
         UUID playerUuid = player.getUUID();
         long sessionId = this.sessionIdGenerator.incrementAndGet();
 
@@ -58,6 +59,7 @@ public final class UiSessionRegistry {
         } else {
             log.debug("Replaced ui session player={} oldSessionId={} newSessionId={} channel={} villagerEntityId={}",
                     playerUuid, previousSession.getSessionId(), sessionId, channel, villagerEntityId);
+            getDefinition(previousSession, channelDefinitions).getSnapshotPublisher().onSessionClosed(previousSession);
         }
 
         return nextSession;

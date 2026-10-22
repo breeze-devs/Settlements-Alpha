@@ -51,7 +51,6 @@ public class EggSplatParticle extends TextureSheetParticle {
     }
 
     @Override
-    @Nonnull
     public ParticleRenderType getRenderType() {
         // Translucent sheet required so alpha blending (fade-out) works correctly
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;

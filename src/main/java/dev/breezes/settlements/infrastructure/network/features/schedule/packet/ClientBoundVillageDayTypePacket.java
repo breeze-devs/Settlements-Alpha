@@ -16,7 +16,7 @@ import javax.annotation.Nonnull;
  * its own clock.
  */
 public record ClientBoundVillageDayTypePacket(long calendarDay,
-                                              @Nonnull PlanDayType dayType) implements ClientBoundPacket {
+                                              PlanDayType dayType) implements ClientBoundPacket {
 
     public static final Type<ClientBoundVillageDayTypePacket> ID =
             new Type<>(ResourceLocationUtil.mod("packet_village_day_type_clientbound"));

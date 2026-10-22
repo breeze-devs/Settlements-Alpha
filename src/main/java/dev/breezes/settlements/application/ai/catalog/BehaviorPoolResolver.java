@@ -33,7 +33,6 @@ public class BehaviorPoolResolver {
     // Behaviors every profession inherits regardless of their pool definition
     private static final List<PoolEntry> UNIVERSAL_ENTRIES = List.of(
             PoolEntry.of(BehaviorKey.EAT_FOOD),
-            PoolEntry.of(BehaviorKey.TRADE_INITIATE),
             PoolEntry.of(BehaviorKey.COURTSHIP_INITIATE),
             PoolEntry.of(BehaviorKey.DONATE_EMERALDS),
             PoolEntry.of(BehaviorKey.MANAGE_CHESTS),

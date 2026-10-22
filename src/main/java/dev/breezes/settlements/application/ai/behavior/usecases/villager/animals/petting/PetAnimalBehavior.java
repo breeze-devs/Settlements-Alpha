@@ -35,7 +35,8 @@ public class PetAnimalBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 2.0D;
     private static final int NAVIGATION_COMPLETION_DISTANCE = 1;
-    private static final int APPROACH_TIMEOUT_TICKS = ClockTicks.seconds(30).getTicksAsInt();
+    private static final ClockTicks APPROACH_TIMEOUT = ClockTicks.seconds(30);
+    public static final ClockTicks MAX_RUN_DURATION = ClockTicks.of(APPROACH_TIMEOUT.getTicks() * 2);
 
     private static final int PET_INTERVAL_TICKS = ClockTicks.seconds(1).getTicksAsInt();
 
@@ -86,7 +87,7 @@ public class PetAnimalBehavior extends VillagerStateMachineBehavior {
                         .unreachableTransition(PetStage.END)
                         .build())
                 .actionStep(ctx -> StepResult.transition(PetStage.PET))
-                .timeoutTicks(APPROACH_TIMEOUT_TICKS)
+                .timeoutTicks(APPROACH_TIMEOUT.getTicksAsInt())
                 .timeoutTransition(PetStage.END)
                 .build();
     }

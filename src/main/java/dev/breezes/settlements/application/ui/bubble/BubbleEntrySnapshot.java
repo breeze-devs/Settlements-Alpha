@@ -12,16 +12,16 @@ import java.util.UUID;
  */
 @Builder
 public record BubbleEntrySnapshot(
-        @Nonnull UUID bubbleId,
-        @Nonnull BubbleChannel channel,
+        UUID bubbleId,
+        BubbleChannel channel,
         @Nullable String ownerKey,
         int priority,
         long expireGameTime,
         long createdGameTime,
         long sequenceNumber,
         int contentVersion,
-        @Nonnull String sourceType,
-        @Nonnull List<BubbleSegment> segments
+        String sourceType,
+        List<BubbleSegment> segments
 ) {
 
     public BubbleEntrySnapshot {

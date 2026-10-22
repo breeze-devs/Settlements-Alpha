@@ -143,7 +143,6 @@ public class RecordConfigProcessor {
     /**
      * Process a single Record component and create its ModConfigSpec binding.
      */
-    @Nonnull
     private ComponentBinding processComponent(@Nonnull RecordComponent component,
                                               @Nonnull ModConfigSpec.Builder builder,
                                               @Nonnull String configName) {
@@ -345,7 +344,6 @@ public class RecordConfigProcessor {
         /**
          * Get the value from the config, with the appropriate type handling.
          */
-        @Nonnull
         public Object getValue() {
             Object rawValue = this.configValue.get();
 

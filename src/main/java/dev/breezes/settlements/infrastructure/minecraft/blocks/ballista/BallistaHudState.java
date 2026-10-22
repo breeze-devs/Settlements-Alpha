@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
  * @param use        what a standing use does, or null when it would be refused
  * @param aimOffered whether a sneaking use enters aim mode
  */
-public record BallistaHudState(@Nonnull Status status,
+public record BallistaHudState(Status status,
                                boolean boltNeeded,
                                @Nullable Gesture use,
                                boolean aimOffered) {

@@ -325,6 +325,8 @@ public final class CourtshipInitiateBehavior extends VillagerStateMachineBehavio
 
         BlockPos primaryBed = this.bedReservationService.tryClaimVacantHome(serverLevel, self).orElse(null);
         if (primaryBed == null) {
+            // Install cooldown even if there's no free bed
+            applyBreedCooldown(self, partner);
             return doAbort(self, session, CourtshipCloseReason.ABORTED_NO_BED);
         }
 

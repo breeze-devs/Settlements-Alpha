@@ -14,7 +14,7 @@ import javax.annotation.Nonnull;
  * save can fall between them. Ticket counts are saved with the world, so a claimed ticket saved before its handoff or
  * release would stay held, remembered by nobody, until its bed is broken.
  */
-public record ReleaseHomePoiObligation(@Nonnull BlockPos bedPos) implements TeardownObligation {
+public record ReleaseHomePoiObligation(BlockPos bedPos) implements TeardownObligation {
 
     @Override
     public BlockPos targetPos() {

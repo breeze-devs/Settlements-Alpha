@@ -17,7 +17,7 @@ import java.util.List;
 public sealed interface BubbleSegment permits BubbleSegment.Item, BubbleSegment.Text, BubbleSegment.Translatable, BubbleSegment.Sprite {
 
     @Builder
-    record Item(@Nonnull ResourceLocation itemId, int count) implements BubbleSegment {
+    record Item(ResourceLocation itemId, int count) implements BubbleSegment {
 
         public Item {
             if (count < 0) {
@@ -38,8 +38,8 @@ public sealed interface BubbleSegment permits BubbleSegment.Item, BubbleSegment.
     }
 
     @Builder
-    record Text(@Nonnull String literal,
-                @Nonnull ChatFormatting color,
+    record Text(String literal,
+                ChatFormatting color,
                 boolean bold,
                 float scale) implements BubbleSegment {
 
@@ -55,9 +55,9 @@ public sealed interface BubbleSegment permits BubbleSegment.Item, BubbleSegment.
     }
 
     @Builder
-    record Translatable(@Nonnull String key,
-                        @Nonnull List<String> args,
-                        @Nonnull ChatFormatting color,
+    record Translatable(String key,
+                        List<String> args,
+                        ChatFormatting color,
                         boolean bold,
                         float scale) implements BubbleSegment {
 
@@ -73,8 +73,8 @@ public sealed interface BubbleSegment permits BubbleSegment.Item, BubbleSegment.
     }
 
     @Builder
-    record Sprite(@Nonnull SpriteRef sprite,
-                  @Nonnull ClockTicks frameDuration) implements BubbleSegment {
+    record Sprite(SpriteRef sprite,
+                  ClockTicks frameDuration) implements BubbleSegment {
     }
 
 }

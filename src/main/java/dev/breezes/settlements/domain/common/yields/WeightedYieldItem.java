@@ -3,14 +3,12 @@ package dev.breezes.settlements.domain.common.yields;
 import lombok.Builder;
 import net.minecraft.resources.ResourceLocation;
 
-import javax.annotation.Nonnull;
-
 /**
  * A single weighted drop candidate within a {@link WeightedYieldPool}.
  */
 @Builder
 public record WeightedYieldItem(
-        @Nonnull ResourceLocation item,
+        ResourceLocation item,
         double weight,
         int minCount,
         int maxCount

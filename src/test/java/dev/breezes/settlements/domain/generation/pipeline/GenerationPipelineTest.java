@@ -74,7 +74,7 @@ class GenerationPipelineTest {
         TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
         SurveyBounds bounds = boundsForGrid(64, 64);
 
-        GenerationResult result = this.pipeline.generate(grid, bounds, 12345L);
+        GenerationResult result = this.pipeline.generate(grid, bounds, 12345L).orElseThrow();
 
         assertNotNull(result);
         assertTrue(result.siteReport().resourceTags().contains(ResourceTag.LUMBER)
@@ -91,7 +91,7 @@ class GenerationPipelineTest {
     void historyEvent_isAppliedToProfileWeightsAndVisualMarkers() {
         TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
         SurveyBounds bounds = boundsForGrid(64, 64);
-        GenerationResult baselineResult = this.pipeline.generate(grid, bounds, 12345L);
+        GenerationResult baselineResult = this.pipeline.generate(grid, bounds, 12345L).orElseThrow();
         GenerationPipeline pipelineWithHistory = new GenerationPipeline(
                 lookup(),
                 registry(),
@@ -99,7 +99,7 @@ class GenerationPipelineTest {
                 singleEventHistoryRegistry(),
                 traitRegistry());
 
-        GenerationResult result = pipelineWithHistory.generate(grid, bounds, 12345L);
+        GenerationResult result = pipelineWithHistory.generate(grid, bounds, 12345L).orElseThrow();
 
         assertEquals(List.of(new DrawnHistoryEvent(EXPLORERS_EVENT, EXPLORERS_TIME_HORIZON)), result.history().events());
         assertEquals(Set.of("explorer_camp", "flagpole"), result.history().visualMarkers().markers());
@@ -114,14 +114,14 @@ class GenerationPipelineTest {
         TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
         SurveyBounds bounds = boundsForGrid(64, 64);
 
-        GenerationResult result = this.pipeline.generate(grid, bounds, 12345L);
+        GenerationResult result = this.pipeline.generate(grid, bounds, 12345L).orElseThrow();
         GenerationPipeline comparisonPipeline = new GenerationPipeline(
                 lookup(),
                 registry(),
                 buildingRegistry(),
                 emptyHistoryRegistry(),
                 traitRegistry());
-        GenerationResult comparison = comparisonPipeline.generate(grid, bounds, 12345L);
+        GenerationResult comparison = comparisonPipeline.generate(grid, bounds, 12345L).orElseThrow();
 
         assertTrue(result.history().events().isEmpty());
         assertTrue(result.history().visualMarkers().isEmpty());
@@ -134,8 +134,8 @@ class GenerationPipelineTest {
         TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
         SurveyBounds bounds = boundsForGrid(64, 64);
 
-        GenerationResult first = this.pipeline.generate(grid, bounds, 24680L);
-        GenerationResult second = this.pipeline.generate(grid, bounds, 24680L);
+        GenerationResult first = this.pipeline.generate(grid, bounds, 24680L).orElseThrow();
+        GenerationResult second = this.pipeline.generate(grid, bounds, 24680L).orElseThrow();
 
         assertEquals(domainSignature(first), domainSignature(second));
     }
@@ -148,7 +148,7 @@ class GenerationPipelineTest {
 
         for (long seed : spreadSeeds(20)) {
             // Act
-            SettlementProfile profile = this.pipeline.generate(grid, bounds, seed).profile();
+            SettlementProfile profile = this.pipeline.generate(grid, bounds, seed).orElseThrow().profile();
 
             // Assert
             ScaleTier tier = profile.scaleTier();
@@ -206,8 +206,8 @@ class GenerationPipelineTest {
         TerrainGrid grid = gridFilled(64, 64, 64, BiomeId.of("minecraft:plains"));
         SurveyBounds bounds = boundsForGrid(64, 64);
 
-        GenerationResult first = this.pipeline.generate(grid, bounds, 111L);
-        GenerationResult second = this.pipeline.generate(grid, bounds, 222L);
+        GenerationResult first = this.pipeline.generate(grid, bounds, 111L).orElseThrow();
+        GenerationResult second = this.pipeline.generate(grid, bounds, 222L).orElseThrow();
 
         assertNotEquals(domainSignature(first), domainSignature(second));
     }

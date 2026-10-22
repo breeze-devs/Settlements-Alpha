@@ -51,7 +51,7 @@ class BuildingDefinitionDataManagerTest {
     @Test
     void constrained_have_resources() {
         assertFalse(this.manager.constrainedBuildings().isEmpty());
-        assertTrue(this.manager.constrainedBuildings().stream().allMatch(definition -> !definition.requiresResources().isEmpty()));
+        assertTrue(this.manager.constrainedBuildings().stream().noneMatch(definition -> definition.requiresResources().isEmpty()));
     }
 
     @Test

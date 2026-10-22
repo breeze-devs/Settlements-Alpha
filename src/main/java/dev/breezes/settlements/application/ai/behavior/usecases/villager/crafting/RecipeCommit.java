@@ -76,7 +76,7 @@ public final class RecipeCommit {
         return Optional.of(new Result(outputItem, outputTotal));
     }
 
-    public record Result(@Nonnull Item outputItem, int outputTotal) {
+    public record Result(Item outputItem, int outputTotal) {
     }
 
 }

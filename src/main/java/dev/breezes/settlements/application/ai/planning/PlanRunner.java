@@ -169,12 +169,7 @@ public class PlanRunner implements DayPlanHandoff {
         // Synchronous stop so teardown obligations are discharged immediately
         behavior.stop(level, villager);
 
-        DayPlan plan = villager.getDayPlan();
-        if (plan != null) {
-            plan.getCurrentSlot()
-                    .filter(slot -> slot.getStatus() == PlanSlotStatus.ACTIVE)
-                    .ifPresent(slot -> slot.markStatus(PlanSlotStatus.INTERRUPTED));
-        }
+        interruptActiveSlot(villager.getDayPlan());
         runtime.clearCurrentBehavior();
         return true;
     }
@@ -423,11 +418,7 @@ public class PlanRunner implements DayPlanHandoff {
                               @Nonnull String reason,
                               @Nonnull DeltaResult delta) {
         DayPlan oldPlan = villager.getDayPlan();
-        if (oldPlan != null) {
-            oldPlan.getCurrentSlot()
-                    .filter(slot -> slot.getStatus() == PlanSlotStatus.ACTIVE)
-                    .ifPresent(slot -> slot.markStatus(PlanSlotStatus.INTERRUPTED));
-        }
+        interruptActiveSlot(oldPlan);
 
         // Carry forward the old plan's still-future pinned placements before it is discarded, so a
         // reset never silently wipes a fixed-time commitment.
@@ -570,6 +561,21 @@ public class PlanRunner implements DayPlanHandoff {
                 .isPresent();
     }
 
+    /**
+     * Marks the plan's current slot INTERRUPTED if it is ACTIVE.
+     * Call it once the slot's behavior has stopped, so the plan no longer reads as mid-slot.
+     */
+    @VisibleForTesting
+    static void interruptActiveSlot(@Nullable DayPlan plan) {
+        if (plan == null) {
+            return;
+        }
+
+        plan.getCurrentSlot()
+                .filter(slot -> slot.getStatus() == PlanSlotStatus.ACTIVE)
+                .ifPresent(slot -> slot.markStatus(PlanSlotStatus.INTERRUPTED));
+    }
+
     private void submitNextPlanAsync(@Nonnull ServerLevel level,
                                      @Nonnull BaseVillager villager,
                                      @Nonnull PlanRuntimeState runtime,
@@ -618,6 +624,9 @@ public class PlanRunner implements DayPlanHandoff {
         // still holding the body; forceStop discharges its teardown obligations (nav, held item,
         // sessions) instead of just nulling the reference, and is a no-op when nothing is running.
         this.forceStop(level, villager);
+        // Left ACTIVE, the stopped slot would block adopting the successor at its wake, and an exhausted plan is never
+        // ticked again to end it
+        interruptActiveSlot(plan);
         plan.markStatus(PlanStatus.COMPLETED);
         if (!runtime.isPlanExhausted()) {
             runtime.markPlanExhausted();

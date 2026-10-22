@@ -78,7 +78,7 @@ class BuildingManifestCalculatorTest {
     void hamletSmallManifest() {
         SettlementProfile profile = profile(ScaleTier.HAMLET, LUMBER, List.of(), List.of());
 
-        BuildingManifest manifest = this.calculator.calculate(profile, new Random(101L));
+        BuildingManifest manifest = this.calculator.calculate(profile, new Random(101L)).orElseThrow();
 
         assertTrue(manifest.buildings().size() >= 5);
         assertTrue(manifest.buildings().size() <= 8);
@@ -89,7 +89,7 @@ class BuildingManifestCalculatorTest {
     void villageIncludesCivics() {
         SettlementProfile profile = profile(ScaleTier.VILLAGE, LUMBER, List.of(FARMING), List.of(FISHING));
 
-        BuildingManifest manifest = this.calculator.calculate(profile, new Random(202L));
+        BuildingManifest manifest = this.calculator.calculate(profile, new Random(202L)).orElseThrow();
 
         assertTrue(containsId(manifest, "settlements:building_definitions/town_hall"));
         assertTrue(containsId(manifest, "settlements:building_definitions/tavern"));
@@ -104,7 +104,7 @@ class BuildingManifestCalculatorTest {
                 List.of(MINING, DEFENSE)
         );
 
-        BuildingManifest manifest = this.calculator.calculate(profile, new Random(303L));
+        BuildingManifest manifest = this.calculator.calculate(profile, new Random(303L)).orElseThrow();
 
         assertTrue(manifest.buildings().size() >= 25);
         assertTrue(manifest.buildings().size() <= 40);
@@ -125,7 +125,7 @@ class BuildingManifestCalculatorTest {
                 .withDouble(0.00d)
                 .withDouble(0.00d);
 
-        BuildingManifest manifest = this.calculator.calculate(profile, random);
+        BuildingManifest manifest = this.calculator.calculate(profile, random).orElseThrow();
 
         long lumberCount = countIds(manifest, Set.of("settlements:building_definitions/sawmill", "settlements:building_definitions/log_storage"));
         long farmingCount = countIds(manifest, Set.of("settlements:building_definitions/farmhouse", "settlements:building_definitions/barn"));
@@ -144,7 +144,7 @@ class BuildingManifestCalculatorTest {
                 .withDouble(0.00d)
                 .withDouble(0.00d);
 
-        BuildingManifest manifest = this.calculator.calculate(profile, random);
+        BuildingManifest manifest = this.calculator.calculate(profile, random).orElseThrow();
 
         assertEquals(5, manifest.buildings().size());
         assertEquals(1, countIds(manifest, Set.of("settlements:building_definitions/house")));
@@ -154,7 +154,7 @@ class BuildingManifestCalculatorTest {
     void constrainedSortedFirst() {
         SettlementProfile profile = profile(ScaleTier.VILLAGE, LUMBER, List.of(FISHING), List.of(MINING));
 
-        BuildingManifest manifest = this.calculator.calculate(profile, new Random(404L));
+        BuildingManifest manifest = this.calculator.calculate(profile, new Random(404L)).orElseThrow();
 
         boolean seenUnconstrained = false;
         for (BuildingDefinition definition : manifest.buildings()) {
@@ -170,7 +170,7 @@ class BuildingManifestCalculatorTest {
     void withinPartitionSortedByPriority() {
         SettlementProfile profile = profile(ScaleTier.VILLAGE, LUMBER, List.of(FISHING), List.of(MINING));
 
-        BuildingManifest manifest = this.calculator.calculate(profile, new Random(505L));
+        BuildingManifest manifest = this.calculator.calculate(profile, new Random(505L)).orElseThrow();
 
         assertPartitionSortedDescending(manifest.buildings().stream().filter(def -> !def.requiresResources().isEmpty()).toList());
         assertPartitionSortedDescending(manifest.buildings().stream().filter(def -> def.requiresResources().isEmpty()).toList());
@@ -192,7 +192,7 @@ class BuildingManifestCalculatorTest {
                 .withDouble(0.00d)
                 .withDouble(0.00d);
 
-        BuildingManifest manifest = this.calculator.calculate(profile, random);
+        BuildingManifest manifest = this.calculator.calculate(profile, random).orElseThrow();
 
         assertFalse(containsId(manifest, "settlements:building_definitions/primary_only_lumber"));
     }
@@ -201,8 +201,8 @@ class BuildingManifestCalculatorTest {
     void deterministic() {
         SettlementProfile profile = profile(ScaleTier.VILLAGE, LUMBER, List.of(FARMING), List.of(FISHING));
 
-        BuildingManifest first = this.calculator.calculate(profile, new Random(606L));
-        BuildingManifest second = this.calculator.calculate(profile, new Random(606L));
+        BuildingManifest first = this.calculator.calculate(profile, new Random(606L)).orElseThrow();
+        BuildingManifest second = this.calculator.calculate(profile, new Random(606L)).orElseThrow();
 
         assertEquals(
                 first.buildings().stream().map(BuildingDefinition::id).toList(),
@@ -214,7 +214,7 @@ class BuildingManifestCalculatorTest {
     void emptyTraitBuildings() {
         SettlementProfile profile = profile(ScaleTier.HAMLET, TRADE, List.of(), List.of());
 
-        BuildingManifest manifest = assertDoesNotThrow(() -> this.calculator.calculate(profile, new Random(707L)));
+        BuildingManifest manifest = assertDoesNotThrow(() -> this.calculator.calculate(profile, new Random(707L)).orElseThrow());
 
         assertTrue(containsId(manifest, "settlements:building_definitions/town_hall"));
         assertTrue(containsId(manifest, "settlements:building_definitions/house"));
@@ -229,9 +229,27 @@ class BuildingManifestCalculatorTest {
                 List.of(MINING, DEFENSE)
         );
 
-        BuildingManifest manifest = this.calculator.calculate(profile, new Random(808L));
+        BuildingManifest manifest = this.calculator.calculate(profile, new Random(808L)).orElseThrow();
 
         assertTrue(manifest.buildings().size() <= ScaleTier.TOWN.maxBuildings());
+    }
+
+    @Test
+    void calculate_isEmpty_whenARequiredDefinitionIsMissing() {
+        // Arrange — a registry whose datapack lost the town hall
+        BuildingManifestCalculator withoutTownHall = new BuildingManifestCalculator(new TestBuildingRegistry(List.of(
+                WELL,
+                TAVERN,
+                MARKET_STALL,
+                HOUSE
+        )));
+        SettlementProfile profile = profile(ScaleTier.VILLAGE, LUMBER, List.of(), List.of());
+
+        // Act
+        Optional<BuildingManifest> manifest = withoutTownHall.calculate(profile, new Random(909L));
+
+        // Assert
+        assertTrue(manifest.isEmpty());
     }
 
     private static SettlementProfile profile(ScaleTier scaleTier,

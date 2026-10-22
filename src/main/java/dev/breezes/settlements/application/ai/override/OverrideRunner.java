@@ -1,11 +1,13 @@
 package dev.breezes.settlements.application.ai.override;
 
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import net.minecraft.server.level.ServerLevel;
 
 import javax.annotation.Nonnull;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -48,6 +50,13 @@ public interface OverrideRunner {
      * The behavior channels claimed by this execution.
      */
     Set<BehaviorChannel> occupiedChannels();
+
+    /**
+     * The name and icon a player sees for this execution, or empty when it has none.
+     * <p>
+     * May change from tick to tick as execution advances.
+     */
+    Optional<BehaviorDisplayMetadata> displayInfo();
 
     /**
      * A short label identifying this runner's execution for logs and diagnostics.

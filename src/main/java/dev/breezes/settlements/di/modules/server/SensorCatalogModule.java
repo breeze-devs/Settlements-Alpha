@@ -4,6 +4,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
 import dagger.multibindings.Multibinds;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.trading.PartnerScanner;
 import dev.breezes.settlements.application.ai.inference.InferenceGate;
 import dev.breezes.settlements.application.ai.sensors.BlockResource;
 import dev.breezes.settlements.application.ai.sensors.BlockResourceSensor;
@@ -13,9 +14,11 @@ import dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensorCo
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensor;
 import dev.breezes.settlements.application.ai.sensors.EntityPerceptionSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.NearbyHostilesSensor;
+import dev.breezes.settlements.application.ai.sensors.PurchasableDemandedItemSensor;
 import dev.breezes.settlements.application.ai.sensors.RetrievableProjectileSensor;
 import dev.breezes.settlements.application.ai.sensors.RetrievableProjectileSensorConfig;
 import dev.breezes.settlements.application.ai.sensors.WorldResourceIndex;
+import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.di.BaseLane;
 import dev.breezes.settlements.di.CognitionScoped;
@@ -77,6 +80,13 @@ public abstract class SensorCatalogModule {
     @BaseLane
     static VillagerSensorFactory demandedGroundItemSensor(DemandedGroundItemSensorConfig config, DemandEvaluator demandEvaluator) {
         return villager -> new DemandedGroundItemSensor(config, demandEvaluator);
+    }
+
+    @Provides
+    @IntoSet
+    @BaseLane
+    static VillagerSensorFactory purchasableDemandedItemSensor(TradingConfig config, PartnerScanner partnerScanner) {
+        return villager -> new PurchasableDemandedItemSensor(config, partnerScanner);
     }
 
     @Provides

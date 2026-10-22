@@ -3,11 +3,8 @@ package dev.breezes.settlements.domain.generation.history;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.profile.TraitIdCodec;
-import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
 import dev.breezes.settlements.domain.generation.model.survey.ResourceTagCodec;
-import dev.breezes.settlements.domain.generation.model.survey.WaterFeatureType;
 import dev.breezes.settlements.domain.generation.model.survey.WaterFeatureTypeCodec;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -31,15 +28,15 @@ public final class EventPreconditionsCodec {
     public static final Codec<EventPreconditions> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.unboundedMap(TraitIdCodec.CODEC, Codec.FLOAT)
-                            .optionalFieldOf("min_trait_weights", Map.<TraitId, Float>of())
+                            .optionalFieldOf("min_trait_weights", Map.of())
                             .forGetter(EventPreconditions::minTraitWeights),
                     ResourceTagCodec.CODEC.listOf()
                             .xmap(Set::copyOf, list -> list.stream().toList())
-                            .optionalFieldOf("required_resource_tags", Set.<ResourceTag>of())
+                            .optionalFieldOf("required_resource_tags", Set.of())
                             .forGetter(EventPreconditions::requiredResourceTags),
                     WaterFeatureTypeCodec.CODEC.listOf()
                             .xmap(Set::copyOf, list -> list.stream().toList())
-                            .optionalFieldOf("required_water_features", Set.<WaterFeatureType>of())
+                            .optionalFieldOf("required_water_features", Set.of())
                             .forGetter(EventPreconditions::requiredWaterFeatures),
                     Codec.INT.optionalFieldOf("min_population", 0).forGetter(EventPreconditions::minPopulation),
                     FOUNDING_CODEC.optionalFieldOf("founding", SettlementFoundingKind.ESTABLISHED)

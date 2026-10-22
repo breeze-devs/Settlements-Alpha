@@ -2,8 +2,6 @@ package dev.breezes.settlements.application.ai.override;
 
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 
-import javax.annotation.Nonnull;
-
 /**
  * The result of an {@link OverridePolicy} evaluation: what the policy asks to install in the override slot.
  */
@@ -14,7 +12,7 @@ public sealed interface OverrideRequest {
      *
      * @param behaviorKey the behavior to install
      */
-    record CatalogBehavior(@Nonnull BehaviorKey behaviorKey) implements OverrideRequest {
+    record CatalogBehavior(BehaviorKey behaviorKey) implements OverrideRequest {
     }
 
     /**
@@ -24,7 +22,7 @@ public sealed interface OverrideRequest {
      *
      * @param runner the runner to install
      */
-    record PreparedRunner(@Nonnull OverrideRunner runner) implements OverrideRequest {
+    record PreparedRunner(OverrideRunner runner) implements OverrideRequest {
     }
 
 }

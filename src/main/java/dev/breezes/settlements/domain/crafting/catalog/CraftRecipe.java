@@ -4,7 +4,6 @@ import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -17,10 +16,10 @@ import java.util.List;
  */
 @Builder
 public record CraftRecipe(
-        @Nonnull String id,
-        @Nonnull List<CraftIngredient> inputs,
+        String id,
+        List<CraftIngredient> inputs,
         int emeralds,
-        @Nonnull CraftOutput output,
+        CraftOutput output,
         int priority
 ) {
 

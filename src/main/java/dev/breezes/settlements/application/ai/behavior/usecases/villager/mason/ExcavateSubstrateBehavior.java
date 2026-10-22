@@ -303,10 +303,10 @@ public class ExcavateSubstrateBehavior extends VillagerStateMachineBehavior {
         return List.of(new ItemStack(Items.IRON_NUGGET, 1));
     }
 
-    private record ExcavatableSubstrateSource(@Nonnull String name,
-                                              @Nonnull MemoryType<List<GlobalPos>> memoryType,
-                                              @Nonnull BlockMatcher matcher,
-                                              @Nonnull ResourceLocation selectionBlockId) {
+    private record ExcavatableSubstrateSource(String name,
+                                              MemoryType<List<GlobalPos>> memoryType,
+                                              BlockMatcher matcher,
+                                              ResourceLocation selectionBlockId) {
     }
 
 }

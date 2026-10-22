@@ -268,7 +268,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
      * dist sides, before any field above is initialized -- must stay a pure construction call.
      */
     @Override
-    @Nonnull
     protected PathNavigation createNavigation(@Nonnull Level level) {
         return new SettlementsGroundPathNavigation(this, level);
     }
@@ -1146,7 +1145,6 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
     }
 
     @Override
-    @Nonnull
     public ITeardownLedger getTeardownLedger() {
         return this.getData(AttachmentRegistry.VILLAGER_TEARDOWN_LEDGER);
     }
@@ -1364,7 +1362,9 @@ public class BaseVillager extends Villager implements ISettlementsVillager, IVil
                 MemoryTypeRegistry.SIGHTED_HOSTILES.getModuleType(),
                 MemoryTypeRegistry.UNSEEN_HOSTILES.getModuleType(),
                 MemoryTypeRegistry.CULTIVATION_SITES.getModuleType(),
-                MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY.getModuleType(),
+                MemoryTypeRegistry.DEMANDED_GROUND_ITEMS.getModuleType(),
+                MemoryTypeRegistry.DEMANDED_ITEM_SELLER.getModuleType(),
+                MemoryTypeRegistry.TRADE_INITIATE_COOLDOWN.getModuleType(),
                 MemoryTypeRegistry.GOLEM_SUMMON_COOLDOWN.getModuleType(),
                 MemoryTypeRegistry.CHART_RAIDERS_COOLDOWN.getModuleType(),
                 MemoryTypeRegistry.REFUSED_BALLISTAS.getModuleType(),

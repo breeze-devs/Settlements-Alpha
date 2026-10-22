@@ -2,9 +2,7 @@ package dev.breezes.settlements.domain.animation;
 
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 
-import javax.annotation.Nonnull;
-
-public record LocomotionAnimationContext(@Nonnull NavigationType navigationType,
+public record LocomotionAnimationContext(NavigationType navigationType,
                                          float limbSwing,
                                          float limbSwingAmount) {
 

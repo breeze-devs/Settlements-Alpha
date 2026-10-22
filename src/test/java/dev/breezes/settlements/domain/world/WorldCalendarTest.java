@@ -99,7 +99,7 @@ class WorldCalendarTest {
         long absolute = WorldCalendar.absoluteTickFor(1L, TimeOfDay.AT_04_30.getMinecraftTick());
 
         // Assert
-        assertEquals((long) TimeOfDay.AT_04_30.getMinecraftTick(), absolute);
+        assertEquals(TimeOfDay.AT_04_30.getMinecraftTick(), absolute);
     }
 
     @Test
@@ -110,7 +110,7 @@ class WorldCalendarTest {
         long absolute = WorldCalendar.absoluteTickFor(1L, TimeOfDay.AT_00_00.getMinecraftTick());
 
         // Assert
-        assertEquals((long) TimeOfDay.AT_00_00.getMinecraftTick(), absolute);
+        assertEquals(TimeOfDay.AT_00_00.getMinecraftTick(), absolute);
     }
 
     @Test

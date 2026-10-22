@@ -412,7 +412,7 @@ public final class SettlementBorderRenderer implements ClientSessionResettable {
     /**
      * The claims of a level as this client holds them.
      */
-    private record LevelClaims(@Nonnull Level level) implements ClaimOutline.ChunkClaims {
+    private record LevelClaims(Level level) implements ClaimOutline.ChunkClaims {
 
         @Override
         public boolean holds(int chunkX, int chunkZ) {

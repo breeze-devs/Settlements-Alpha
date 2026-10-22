@@ -8,14 +8,21 @@ import dev.breezes.settlements.application.ui.dayplan.DayPlanSnapshotPublisher;
 import dev.breezes.settlements.application.ui.stats.VillagerStatsSnapshotPublisher;
 import dev.breezes.settlements.application.ui.sync.UiServerChannelDefinition;
 import dev.breezes.settlements.application.ui.sync.UiSessionValidator;
+import dev.breezes.settlements.di.ServerScope;
 import dev.breezes.settlements.di.UiChannelKey;
 import dev.breezes.settlements.infrastructure.network.features.ui.sync.UiChannel;
 
+/**
+ * Registers the server side of each UI channel.
+ * Every definition is server-scoped, so the packet handlers that open and close a session reach the same
+ * snapshot publisher the server tick drives.
+ */
 @Module
 public abstract class UiSyncModule {
 
     @Provides
     @IntoMap
+    @ServerScope
     @UiChannelKey(UiChannel.DAY_PLAN)
     static UiServerChannelDefinition dayPlan(DayPlanSessionValidator validator,
                                              DayPlanSnapshotPublisher publisher) {
@@ -29,6 +36,7 @@ public abstract class UiSyncModule {
 
     @Provides
     @IntoMap
+    @ServerScope
     @UiChannelKey(UiChannel.VILLAGER_STATS)
     static UiServerChannelDefinition villagerStats(VillagerStatsSnapshotPublisher publisher) {
         return UiServerChannelDefinition.builder()

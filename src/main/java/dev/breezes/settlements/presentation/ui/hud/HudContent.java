@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Singular;
 import net.minecraft.network.chat.Component;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -14,7 +13,7 @@ import java.util.List;
  */
 @ClientSide
 @Builder
-public record HudContent(@Nonnull Component headline,
-                         @Nonnull @Singular("detail") List<Component> details,
+public record HudContent(Component headline,
+                         @Singular("detail") List<Component> details,
                          int accentColor) {
 }

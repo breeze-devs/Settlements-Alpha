@@ -2,7 +2,6 @@ package dev.breezes.settlements.domain.common.yields;
 
 import lombok.Builder;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -11,7 +10,7 @@ import java.util.List;
 @Builder
 public record WeightedYieldPool(
         int rolls,
-        @Nonnull List<WeightedYieldItem> items
+        List<WeightedYieldItem> items
 ) {
 
     public WeightedYieldPool {

@@ -14,7 +14,7 @@ public class HubPlacer extends BuildingPlacer {
 
     private static final int DEFAULT_MAX_ATTEMPTS = 8;
     private static final int DEFAULT_MAX_RADIUS = 48;
-    private static final String TOWN_HALL_ID = "settlements:building_definitions/town_hall";
+    static final String TOWN_HALL_ID = "settlements:building_definitions/town_hall";
 
     private final int maxAttempts;
     private final int maxRadius;
@@ -51,9 +51,9 @@ public class HubPlacer extends BuildingPlacer {
                     attempt, building.id(), center.x(), center.y(), center.z(), result.rejection());
         }
 
-        // TODO: this crashes the server. Don't
-        throw new IllegalStateException("Unable to place mandatory %s near settlement anchor after %d attempts"
-                .formatted(building.id(), this.maxAttempts));
+        log.debug("Hub: no valid site for {} within {} blocks of anchor ({}, {}, {}) after {} attempts", building.id(),
+                this.maxRadius, context.getAnchor().x(), context.getAnchor().y(), context.getAnchor().z(), this.maxAttempts);
+        return new PlacementPhaseResult(List.of(), List.of(building));
     }
 
     private BlockPosition generatePlacementPosition(PlacementContext context, int attempt) {

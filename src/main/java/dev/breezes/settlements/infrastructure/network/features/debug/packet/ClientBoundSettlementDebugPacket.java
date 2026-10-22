@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record ClientBoundSettlementDebugPacket(
-        @Nonnull BoundingBox settlementBox,
-        @Nonnull List<BuildingBox> buildings,
-        @Nonnull List<RoadBox> roads
+        BoundingBox settlementBox,
+        List<BuildingBox> buildings,
+        List<RoadBox> roads
 ) implements ClientBoundPacket {
 
     private static final int MAX_BUILDINGS = 256;
@@ -88,7 +88,6 @@ public record ClientBoundSettlementDebugPacket(
         }
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;
@@ -103,7 +102,6 @@ public record ClientBoundSettlementDebugPacket(
         buffer.writeInt(box.maxZ());
     }
 
-    @Nonnull
     private static BoundingBox readBoundingBox(@Nonnull FriendlyByteBuf buffer) {
         return new BoundingBox(
                 buffer.readInt(),
@@ -120,7 +118,6 @@ public record ClientBoundSettlementDebugPacket(
         buffer.writeInt(blockPos.getZ());
     }
 
-    @Nonnull
     private static BlockPos readBlockPos(@Nonnull FriendlyByteBuf buffer) {
         return new BlockPos(buffer.readInt(), buffer.readInt(), buffer.readInt());
     }
@@ -129,7 +126,6 @@ public record ClientBoundSettlementDebugPacket(
         buffer.writeByte(roadType.ordinal());
     }
 
-    @Nonnull
     private static RoadType readRoadType(@Nonnull FriendlyByteBuf buffer) {
         int ordinal = buffer.readUnsignedByte();
         RoadType[] values = RoadType.values();
@@ -139,13 +135,13 @@ public record ClientBoundSettlementDebugPacket(
         return values[ordinal];
     }
 
-    public record BuildingBox(@Nonnull BoundingBox box, @Nonnull String displayName) {
+    public record BuildingBox(BoundingBox box, String displayName) {
     }
 
-    public record RoadBox(@Nonnull BoundingBox box,
-                          @Nonnull RoadType roadType,
-                          @Nonnull BlockPos start,
-                          @Nonnull BlockPos end) {
+    public record RoadBox(BoundingBox box,
+                          RoadType roadType,
+                          BlockPos start,
+                          BlockPos end) {
     }
 
 }

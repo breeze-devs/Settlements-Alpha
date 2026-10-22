@@ -29,10 +29,10 @@ import java.util.Optional;
  * is serializable without MC registry access at construction time, enabling clean
  * unit tests of the codec.
  */
-public record ResetBlockStateObligation(@Nonnull BlockPos pos,
-                                        @Nonnull ResourceLocation expectedBlockId,
-                                        @Nonnull String propertyName,
-                                        @Nonnull String resetValue) implements TeardownObligation {
+public record ResetBlockStateObligation(BlockPos pos,
+                                        ResourceLocation expectedBlockId,
+                                        String propertyName,
+                                        String resetValue) implements TeardownObligation {
 
     @Override
     public BlockPos targetPos() {

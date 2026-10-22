@@ -1,6 +1,7 @@
 package dev.breezes.settlements.application.ai.threat;
 
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -36,6 +37,11 @@ final class FakeCombatOptions {
             @Override
             public IBehavior<BaseVillager> createBehavior(@Nonnull LivingEntity target) {
                 throw new UnsupportedOperationException("A fake combat option launches no action");
+            }
+
+            @Override
+            public BehaviorDisplayMetadata displayInfo() {
+                throw new UnsupportedOperationException("A fake combat option has no display");
             }
         };
     }

@@ -6,6 +6,7 @@ import dev.breezes.settlements.application.ai.threat.IThreatResponse;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.override.OverrideTier;
 import dev.breezes.settlements.domain.ai.perception.PerceivedEntities;
@@ -14,6 +15,7 @@ import dev.breezes.settlements.domain.ai.threat.ThreatVerdict;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.Brain;
@@ -23,6 +25,7 @@ import net.minecraft.world.entity.npc.Villager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -44,6 +47,14 @@ final class CombatOverrideRunner implements OverrideRunner {
     // Villagers can keep talking while they fight, so SOCIAL and COGNITION stay free
     private static final Set<BehaviorChannel> OCCUPIED_CHANNELS =
             Set.of(BehaviorChannel.MOVEMENT, BehaviorChannel.INTERACTION);
+
+    /**
+     * Shown while no combat action runs, since the fight continues between actions.
+     */
+    private static final BehaviorDisplayMetadata FIGHTING_DISPLAY_INFO = BehaviorDisplayMetadata.builder()
+            .displayNameKey("ui.settlements.behavior.combat.fighting")
+            .iconItemId(ResourceLocation.withDefaultNamespace("iron_sword"))
+            .build();
 
     private final OverrideTier tier;
 
@@ -147,6 +158,11 @@ final class CombatOverrideRunner implements OverrideRunner {
     @Override
     public Set<BehaviorChannel> occupiedChannels() {
         return OCCUPIED_CHANNELS;
+    }
+
+    @Override
+    public Optional<BehaviorDisplayMetadata> displayInfo() {
+        return Optional.of(this.actionOption != null ? this.actionOption.displayInfo() : FIGHTING_DISPLAY_INFO);
     }
 
     @Override

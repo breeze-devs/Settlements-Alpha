@@ -171,12 +171,11 @@ class HttpMonologueGatewayTest {
      * Stubs {@code transport.postStreaming} to synchronously deliver each string in {@code lines}
      * to the {@code onLine} consumer, then returns {@code handle}.
      */
-    @SuppressWarnings("unchecked")
     private static void deliverLines(InferenceTransport transport,
                                      InferenceStreamHandle handle,
                                      String... lines) {
         doAnswer(invocation -> {
-            Consumer<String> onLine = (Consumer<String>) invocation.getArgument(3);
+            Consumer<String> onLine = invocation.getArgument(3);
             for (String line : lines) {
                 onLine.accept(line);
             }

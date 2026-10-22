@@ -3,15 +3,13 @@ package dev.breezes.settlements.application.economy.demand;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import lombok.Builder;
 
-import javax.annotation.Nonnull;
-
 @Builder
 public record ActiveDemand(
-        @Nonnull ItemMatch match,
+        ItemMatch match,
         int desiredCount,
         int priority,
         int basePricePerUnit,
-        @Nonnull Origin origin
+        Origin origin
 ) {
 
     public ActiveDemand {
@@ -30,7 +28,7 @@ public record ActiveDemand(
         STATIC_SHORTFALL,
 
         SIGNAL,
-        
+
         STATIC_BOOSTED_BY_SIGNAL,
     }
 

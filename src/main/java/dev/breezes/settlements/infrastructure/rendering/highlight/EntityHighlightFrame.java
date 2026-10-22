@@ -6,7 +6,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.entity.Entity;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -22,8 +21,8 @@ import javax.annotation.Nullable;
  */
 @ClientSide
 @Builder
-public record EntityHighlightFrame(@Nonnull LocalPlayer localPlayer,
+public record EntityHighlightFrame(LocalPlayer localPlayer,
                                    float partialTick,
-                                   @Nonnull Frustum frustum,
+                                   Frustum frustum,
                                    @Nullable Entity aimedAtEntity) {
 }

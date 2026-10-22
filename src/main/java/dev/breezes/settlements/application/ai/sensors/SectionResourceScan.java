@@ -7,7 +7,7 @@ import java.util.Map;
  * Immutable snapshot of a single 16³ section's block resources at a given tick.
  */
 public record SectionResourceScan(long scannedAtTick,
-                                  @Nonnull Map<BlockResource, long[]> hitsByResource) {
+                                  Map<BlockResource, long[]> hitsByResource) {
 
     private static final long[] EMPTY = new long[0];
 

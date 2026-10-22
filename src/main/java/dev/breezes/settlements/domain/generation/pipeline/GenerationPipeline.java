@@ -7,11 +7,9 @@ import dev.breezes.settlements.domain.generation.history.HistoryEventEngine;
 import dev.breezes.settlements.domain.generation.history.HistoryEventRegistry;
 import dev.breezes.settlements.domain.generation.history.HistoryEventResult;
 import dev.breezes.settlements.domain.generation.history.SettlementFoundingKind;
-import dev.breezes.settlements.domain.generation.layout.LayoutResult;
 import dev.breezes.settlements.domain.generation.layout.SettlementLayoutEngine;
 import dev.breezes.settlements.domain.generation.model.GenerationResult;
 import dev.breezes.settlements.domain.generation.model.SettlementCharacter;
-import dev.breezes.settlements.domain.generation.model.building.BuildingManifest;
 import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.profile.SettlementProfile;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
@@ -43,10 +41,12 @@ public class GenerationPipeline {
 
     /**
      * Generates an established settlement on its site.
+     *
+     * @return the settlement, or empty anything in the pipeline went wrong
      */
-    public GenerationResult generate(@Nonnull TerrainGrid terrainGrid,
-                                     @Nonnull SurveyBounds bounds,
-                                     long seed) {
+    public Optional<GenerationResult> generate(@Nonnull TerrainGrid terrainGrid,
+                                               @Nonnull SurveyBounds bounds,
+                                               long seed) {
         Random random = new Random(seed);
         ScaleTier scaleTier = new SamplingEngine().determineScaleTier(random);
         int initialPopulation = random.nextInt(scaleTier.minPopulation(), scaleTier.maxPopulation() + 1);
@@ -56,13 +56,10 @@ public class GenerationPipeline {
                 SettlementFoundingKind.ESTABLISHED, random.nextLong());
 
         BuildingManifestCalculator manifestCalculator = new BuildingManifestCalculator(this.buildingRegistry);
-        BuildingManifest manifest = manifestCalculator.calculate(character.profile(), random);
-
         SettlementLayoutEngine layoutEngine = new SettlementLayoutEngine();
-        LayoutResult layout = layoutEngine.generateLayout(character.siteReport(), character.profile(), manifest,
-                this.biomeLookup);
-
-        return new GenerationResult(character.siteReport(), character.profile(), character.history(), layout, seed);
+        return manifestCalculator.calculate(character.profile(), random)
+                .flatMap(manifest -> layoutEngine.generateLayout(character.siteReport(), character.profile(), manifest, this.biomeLookup))
+                .map(layout -> new GenerationResult(character.siteReport(), character.profile(), character.history(), layout, seed));
     }
 
     /**

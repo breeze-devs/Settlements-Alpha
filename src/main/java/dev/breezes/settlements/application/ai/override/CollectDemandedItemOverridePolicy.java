@@ -17,9 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Override policy that fires an opportunistic item pickup when
- * {@link dev.breezes.settlements.application.ai.sensors.DemandedGroundItemSensor} has flagged a
- * demanded item nearby and the villager is free.
+ * Override policy that picks up nearby items when the villager perceived demanded items on the ground and is free.
  */
 @ServerScope
 @NoArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
@@ -39,9 +37,7 @@ public final class CollectDemandedItemOverridePolicy implements OverridePolicy {
 
     @Override
     public Optional<OverrideRequest> evaluate(@Nonnull ServerLevel level, @Nonnull BaseVillager villager) {
-        boolean itemNearby = villager.getSettlementsBrain().getMemory(MemoryTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY)
-                .orElse(false);
-        if (!itemNearby) {
+        if (villager.getSettlementsBrain().getMemory(MemoryTypeRegistry.DEMANDED_GROUND_ITEMS).isEmpty()) {
             return Optional.empty();
         }
 

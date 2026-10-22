@@ -55,7 +55,6 @@ public final class SettlementsDagger {
         clientSessionComponent = settlementsClientSessionComponent;
     }
 
-    @Nonnull
     public static SettlementsComponent component() {
         if (component == null) {
             throw new IllegalStateException("SettlementsComponent has not been initialized yet");
@@ -64,7 +63,6 @@ public final class SettlementsDagger {
         return component;
     }
 
-    @Nonnull
     public static ServerComponent serverOrThrow() {
         if (serverComponent == null) {
             throw new IllegalStateException("ServerComponent has not been initialized yet");
@@ -78,7 +76,6 @@ public final class SettlementsDagger {
         return serverComponent;
     }
 
-    @Nonnull
     public static ClientComponent client() {
         if (clientComponent == null) {
             throw new IllegalStateException("ClientComponent has not been initialized yet");
@@ -90,15 +87,6 @@ public final class SettlementsDagger {
     @Nullable
     public static ClientComponent clientOrNull() {
         return clientComponent;
-    }
-
-    @Nonnull
-    public static ClientSessionComponent clientSessionOrThrow() {
-        if (clientSessionComponent == null) {
-            throw new IllegalStateException("ClientSessionComponent has not been initialized yet");
-        }
-
-        return clientSessionComponent;
     }
 
     @Nullable

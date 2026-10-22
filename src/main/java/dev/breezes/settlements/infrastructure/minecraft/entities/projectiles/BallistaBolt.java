@@ -169,7 +169,6 @@ public class BallistaBolt extends AbstractArrow {
     }
 
     @Override
-    @Nonnull
     protected ItemStack getDefaultPickupItem() {
         return new ItemStack(ItemRegistry.BALLISTA_BOLT.get());
     }
@@ -189,7 +188,6 @@ public class BallistaBolt extends AbstractArrow {
     }
 
     @Override
-    @Nonnull
     public AABB getBoundingBoxForCulling() {
         // The shaft is drawn behind the tip, so a box around the tip alone culls the bolt while its shaft is on screen
         Vec3 tipToTail = this.pointing().scale(-TIP_REACH_BLOCKS);

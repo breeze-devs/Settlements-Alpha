@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 
 import java.util.ArrayList;
@@ -41,8 +42,24 @@ public final class MemoryTypeRegistry {
     public static final MemoryType.VanillaMemoryType<Boolean> PLAN_BEHAVIOR_ACTIVE = MemoryType.vanillaBacked(
             "plan_behavior_active", MemoryModuleTypeRegistry.PLAN_BEHAVIOR_ACTIVE);
 
-    public static final MemoryType.VanillaMemoryType<Boolean> DEMANDED_GROUND_ITEM_NEARBY = MemoryType.vanillaBacked(
-            "demanded_ground_item_nearby", MemoryModuleTypeRegistry.DEMANDED_GROUND_ITEM_NEARBY);
+    /**
+     * Nearby items that the villager wants and could pathfind to.
+     */
+    public static final MemoryType.VanillaMemoryType<List<ItemEntity>> DEMANDED_GROUND_ITEMS = MemoryType.vanillaBacked(
+            "demanded_ground_items", MemoryModuleTypeRegistry.DEMANDED_GROUND_ITEMS);
+
+    /**
+     * A perceived villager selling an item this villager wants.
+     */
+    public static final MemoryType.VanillaMemoryType<ISettlementsVillager> DEMANDED_ITEM_SELLER = MemoryType.vanillaBacked(
+            "demanded_item_seller", MemoryModuleTypeRegistry.DEMANDED_ITEM_SELLER);
+
+    /**
+     * Present while the villager waits after a trade it initiated, whatever its outcome, before initiating another.
+     * Not saved with the brain, so a reload ends the wait.
+     */
+    public static final MemoryType.VanillaMemoryType<Boolean> TRADE_INITIATE_COOLDOWN = MemoryType.vanillaBacked(
+            "trade_initiate_cooldown", MemoryModuleTypeRegistry.TRADE_INITIATE_COOLDOWN);
 
     public static final MemoryType.VanillaMemoryType<Set<GlobalPos>> BARRIERS_TO_CLOSE = MemoryType.vanillaBacked(
             "barriers_to_close", MemoryModuleTypeRegistry.BARRIERS_TO_CLOSE);

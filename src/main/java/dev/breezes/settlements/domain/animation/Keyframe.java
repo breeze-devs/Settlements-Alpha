@@ -2,7 +2,7 @@ package dev.breezes.settlements.domain.animation;
 
 import javax.annotation.Nonnull;
 
-public record Keyframe<V>(int tick, @Nonnull V value, @Nonnull Easing easingToNext) {
+public record Keyframe<V>(int tick, @Nonnull V value, Easing easingToNext) {
 
     public Keyframe {
         if (tick < 0) {

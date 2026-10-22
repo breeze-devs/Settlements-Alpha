@@ -7,7 +7,6 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.world.location.Location;
 import net.minecraft.sounds.SoundEvent;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -23,22 +22,22 @@ public sealed interface CueStep
     /**
      * Triggers a one-shot animation on the villager
      */
-    record Gesture(@Nonnull AnimationArchetype archetype) implements CueStep {
+    record Gesture(AnimationArchetype archetype) implements CueStep {
     }
 
     /**
      * Produces a villager utterance for the dispatching {@code VillagerSpeechService} to fan
      * out to every speech sink.
      */
-    record Speak(@Nonnull DialogueLine line,
-                 @Nonnull SpeechRegister register,
-                 @Nonnull ClockTicks ttl) implements CueStep {
+    record Speak(DialogueLine line,
+                 SpeechRegister register,
+                 ClockTicks ttl) implements CueStep {
     }
 
     /**
      * Plays a world sound at the villager's position
      */
-    record Sound(@Nonnull SoundEvent soundEvent,
+    record Sound(SoundEvent soundEvent,
                  float volume,
                  float pitch) implements CueStep {
     }
@@ -54,7 +53,7 @@ public sealed interface CueStep
     /**
      * Idles for a fixed duration before the next step fires
      */
-    record Wait(@Nonnull ClockTicks duration) implements CueStep {
+    record Wait(ClockTicks duration) implements CueStep {
     }
 
 }

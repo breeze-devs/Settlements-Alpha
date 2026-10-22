@@ -8,10 +8,10 @@ import java.util.UUID;
 
 @Builder
 public record BubbleEntry(
-        @Nonnull UUID bubbleId,
-        @Nonnull BubbleChannel channel,
+        UUID bubbleId,
+        BubbleChannel channel,
         @Nullable String ownerKey,
-        @Nonnull BubbleMessage message,
+        BubbleMessage message,
         long createdGameTime,
         long expireGameTime,
         long sequenceNumber,

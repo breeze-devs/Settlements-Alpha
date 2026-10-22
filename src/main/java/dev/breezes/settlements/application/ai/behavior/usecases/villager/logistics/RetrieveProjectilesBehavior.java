@@ -160,6 +160,7 @@ public class RetrieveProjectilesBehavior extends VillagerStateMachineBehavior {
                         .unreachableTransition(Stage.LOOP)
                         .build())
                 .actionStep(pickupStep)
+                .targetLostTransition(Stage.LOOP)
                 .timeoutTicks(COLLECT_TIMEOUT_TICKS)
                 .timeoutTransition(Stage.END)
                 .build();

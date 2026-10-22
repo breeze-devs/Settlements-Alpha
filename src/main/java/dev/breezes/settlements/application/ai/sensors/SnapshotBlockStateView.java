@@ -34,7 +34,6 @@ final class SnapshotBlockStateView implements BlockStateView {
      */
     private final Long2ObjectMap<PalettedContainer<BlockState>> sectionsByKey;
 
-    @Nonnull
     @Override
     public BlockState getBlockState(@Nonnull BlockPos pos) {
         int sectionX = SectionPos.blockToSectionCoord(pos.getX());

@@ -2,7 +2,6 @@ package dev.breezes.settlements.domain.generation.history;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.profile.TraitIdCodec;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -28,7 +27,7 @@ public final class HistoryEventDefinitionCodec {
                     Codec.FLOAT.optionalFieldOf("probability_weight", 1.0f).forGetter(HistoryEventDefinition::probabilityWeight),
                     EventPreconditionsCodec.CODEC.optionalFieldOf("preconditions", EventPreconditions.NONE).forGetter(HistoryEventDefinition::preconditions),
                     Codec.unboundedMap(TraitIdCodec.CODEC, Codec.FLOAT)
-                            .optionalFieldOf("trait_modifiers", Map.<TraitId, Float>of())
+                            .optionalFieldOf("trait_modifiers", Map.of())
                             .forGetter(HistoryEventDefinition::traitModifiers),
                     Codec.STRING.listOf().optionalFieldOf("visual_markers", List.of()).forGetter(HistoryEventDefinition::visualMarkers),
                     Codec.STRING.fieldOf("narrative_text").forGetter(HistoryEventDefinition::narrativeText)

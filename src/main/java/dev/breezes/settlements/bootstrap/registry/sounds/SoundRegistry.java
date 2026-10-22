@@ -53,7 +53,6 @@ public enum SoundRegistry {
     ;
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound
-    @Nonnull
     private final IPlayable playable;
 
     public void playGlobally(@Nonnull Location location, @Nonnull SoundSource soundSource) {

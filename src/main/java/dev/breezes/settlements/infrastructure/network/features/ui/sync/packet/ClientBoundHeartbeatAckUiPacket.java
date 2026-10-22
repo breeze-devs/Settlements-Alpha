@@ -9,7 +9,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nonnull;
 
-public record ClientBoundHeartbeatAckUiPacket(@Nonnull UiChannel channel, long sessionId) implements ClientBoundPacket {
+public record ClientBoundHeartbeatAckUiPacket(UiChannel channel, long sessionId) implements ClientBoundPacket {
 
     public static final Type<ClientBoundHeartbeatAckUiPacket> ID = new Type<>(ResourceLocationUtil.mod("ui_sync_heartbeat_ack_clientbound"));
     public static final StreamCodec<FriendlyByteBuf, ClientBoundHeartbeatAckUiPacket> CODEC =
@@ -24,7 +24,6 @@ public record ClientBoundHeartbeatAckUiPacket(@Nonnull UiChannel channel, long s
         buffer.writeLong(this.sessionId);
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

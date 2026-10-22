@@ -55,7 +55,8 @@ public class ServerBoundOpenUiPacketHandler implements ServerSidePacketHandler<S
 
         long gameTime = player.serverLevel().getGameTime();
         long dayTime = player.serverLevel().getDayTime();
-        UiSession session = this.sessionRegistry.startOrReplaceSession(player, packet.channel(), packet.villagerEntityId(), gameTime);
+        UiSession session = this.sessionRegistry.startOrReplaceSession(player, packet.channel(), packet.villagerEntityId(),
+                gameTime, this.channelDefinitions);
         PacketDistributor.sendToPlayer(player, new ClientBoundOpenUiPacket(packet.channel(), session.getSessionId(), packet.villagerEntityId()));
         definition.getSnapshotPublisher().onSessionOpened(session, player, villager, gameTime, dayTime);
     }

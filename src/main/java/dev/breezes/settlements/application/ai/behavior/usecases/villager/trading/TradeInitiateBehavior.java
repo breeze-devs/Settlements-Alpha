@@ -22,9 +22,9 @@ import dev.breezes.settlements.application.ai.trading.TradingConfig;
 import dev.breezes.settlements.application.economy.VillagerWallet;
 import dev.breezes.settlements.application.economy.catalog.TradePriceResolver;
 import dev.breezes.settlements.application.economy.demand.ActiveDemand;
-import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
 import dev.breezes.settlements.application.economy.demand.DemandSignalService;
 import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.EventOutcome;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
@@ -33,6 +33,7 @@ import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.domain.time.RandomRangeTickable;
 import dev.breezes.settlements.domain.time.Tickable;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -42,7 +43,6 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,7 +62,6 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
     }
 
     private static final int DEAL_PRICE_EPSILON = 1;
-    private static final double APPROACH_DISTANCE_SQUARED = 9.0D;
     private static final double TRADE_CLOSE_ENOUGH_DISTANCE = 3.0D;
 
     private final TradingConfig config;
@@ -73,7 +72,6 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
     private final VillagerWallet villagerWallet;
     private final TradeExecutor tradeExecutor;
     private final TradeSessionPresenter tradeSessionPresenter;
-    private final DemandEvaluator demandEvaluator;
     private final PartnerScanner partnerScanner;
     private final NegotiationEngine negotiationEngine;
 
@@ -96,7 +94,7 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
                                  @Nonnull PartnerScanner partnerScanner,
                                  @Nonnull NegotiationEngine negotiationEngine) {
         super(log,
-                Tickable.staggered(ClockTicks.seconds(config.initiatePreconditionCooldownSeconds())),
+                Tickable.staggered(ClockTicks.seconds(config.partnerScanIntervalSeconds())),
                 RandomRangeTickable.of(
                         ClockTicks.seconds(config.initiateBehaviorCooldownSecondsMax()),
                         ClockTicks.seconds(config.initiateBehaviorCooldownSecondsMin())),
@@ -110,7 +108,6 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
         this.villagerWallet = villagerWallet;
         this.tradeExecutor = tradeExecutor;
         this.tradeSessionPresenter = tradeSessionPresenter;
-        this.demandEvaluator = support.getDemandEvaluator();
         this.partnerScanner = partnerScanner;
         this.negotiationEngine = negotiationEngine;
 
@@ -141,6 +138,12 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
             }
         });
 
+        // The override lane builds this behavior fresh for every run, so its own cooldown never spans two attempts.
+        // The memory carries the wait instead, after any outcome, so a failed attempt does not re-invite the same seller.
+        ClockTicks cooldown = ClockTicks.seconds(RandomUtil.randomInt(this.config.initiateBehaviorCooldownSecondsMin(),
+                this.config.initiateBehaviorCooldownSecondsMax(), true));
+        villager.getSettlementsBrain().setMemory(MemoryTypeRegistry.TRADE_INITIATE_COOLDOWN, true, cooldown);
+
         this.pendingCandidate = null;
         this.activeDemand = null;
         this.activeSessionId = null;
@@ -149,28 +152,13 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
 
     private ICondition<BaseVillager> canInitiateTrade() {
         return ICondition.named("can initiate villager trade", villager -> {
-            this.pendingCandidate = null;
-            if (this.sessionRegistry.getActiveSession(villager.getUUID()).isPresent()) {
-                log.trace("Trade initiation blocked: villager {} already has an active session", villager.getUUID());
-                return false;
-            }
-            if (this.villagerWallet.getBalance(villager) <= 0) {
-                log.trace("Trade initiation blocked: villager {} has no emerald balance", villager.getUUID());
-                return false;
-            }
-
-            List<ActiveDemand> activeDemands = this.demandEvaluator.resolve(villager);
-            if (activeDemands.isEmpty()) {
-                log.trace("Trade initiation blocked: villager {} has no active demands", villager.getUUID());
-                return false;
-            }
-
-            log.trace("Trade initiation evaluating {} active demands for villager {}", activeDemands.size(), villager.getUUID());
-
-            this.pendingCandidate = this.partnerScanner.findPartner(villager, activeDemands)
+            // Re-check only the seller the sensor chose; searching again here could settle on a different one
+            this.pendingCandidate = villager.getSettlementsBrain().getMemory(MemoryTypeRegistry.DEMANDED_ITEM_SELLER)
+                    .flatMap(seller -> this.partnerScanner.matchPartner(villager, seller.getMinecraftEntity()))
                     .orElse(null);
             if (this.pendingCandidate == null) {
-                log.trace("Trade initiation blocked: villager {} found no partner candidate", villager.getUUID());
+                // Discard the stale observation so another attempt waits for a fresh sensor scan.
+                villager.getSettlementsBrain().clearMemory(MemoryTypeRegistry.DEMANDED_ITEM_SELLER);
                 return false;
             }
 
@@ -188,7 +176,12 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
                 .stageStepMap(Map.of(
                         Stage.SCAN_AND_INVITE, this::scanAndInvite,
                         Stage.WAIT_FOR_ACCEPT, this::waitForAccept,
-                        Stage.APPROACH, this::approach,
+                        Stage.APPROACH, StayCloseStep.<BaseVillager>builder()
+                                .closeEnoughDistance(TRADE_CLOSE_ENOUGH_DISTANCE)
+                                .navigateStep(new NavigateToTargetStep<>(NavigationType.WALK, 2))
+                                .actionStep(this::arriveAtSeller)
+                                .timeoutTicks(TradeSessionRegistry.MAX_APPROACH_DURATION.getTicksAsInt())
+                                .build(),
                         Stage.OPENING_OFFER, this::openingOffer,
                         Stage.NEGOTIATE, StayCloseStep.<BaseVillager>builder()
                                 .closeEnoughDistance(TRADE_CLOSE_ENOUGH_DISTANCE)
@@ -243,24 +236,23 @@ public final class TradeInitiateBehavior extends VillagerStateMachineBehavior {
             return StepResult.noOp();
         }
 
+        BaseVillager seller = this.resolveParticipant(buyer.level(), session.get().getSellerId()).orElse(null);
+        if (seller == null) {
+            this.sessionRegistry.closeSession(session.get().getSessionId(), CloseReason.EXTERNAL_CANCEL);
+            return StepResult.fail("Trade failed due to missing seller");
+        }
+
+        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(seller)));
         session.get().transitionTo(TradeSessionPhase.APPROACH, buyer.level().getGameTime());
         return StepResult.transition(Stage.APPROACH);
     }
 
-    private StepResult approach(@Nonnull BehaviorContext<BaseVillager> context) {
+    private StepResult arriveAtSeller(@Nonnull BehaviorContext<BaseVillager> context) {
         BaseVillager buyer = context.getInitiator().getMinecraftEntity();
         TradeSession session = this.currentSession(buyer).orElse(null);
         if (session == null) {
             return StepResult.fail("Trade failed due to missing session");
         }
-
-        BaseVillager seller = this.resolveParticipant(buyer.level(), session.getSellerId()).orElse(null);
-        if (seller == null) {
-            this.sessionRegistry.closeSession(session.getSessionId(), CloseReason.EXTERNAL_CANCEL);
-            return StepResult.fail("Trade failed due to missing seller");
-        }
-
-        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(seller)));
 
         buyer.getNavigationManager().stop();
         session.transitionTo(TradeSessionPhase.OPENING_OFFER, buyer.level().getGameTime());

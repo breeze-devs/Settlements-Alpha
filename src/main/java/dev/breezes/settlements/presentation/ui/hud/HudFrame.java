@@ -7,7 +7,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -24,8 +23,8 @@ import javax.annotation.Nullable;
  */
 @ClientSide
 @Builder
-public record HudFrame(@Nonnull LocalPlayer localPlayer,
-                       @Nonnull ItemStack mainHandStack,
+public record HudFrame(LocalPlayer localPlayer,
+                       ItemStack mainHandStack,
                        @Nullable BlockHitResult blockHit,
                        @Nullable Entity aimedAtEntity,
                        float partialTick) {

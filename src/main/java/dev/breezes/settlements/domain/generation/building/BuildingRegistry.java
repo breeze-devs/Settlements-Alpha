@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface BuildingRegistry {
 
     List<BuildingDefinition> allBuildings();
- 
+
     List<BuildingDefinition> constrainedBuildings();
 
     List<BuildingDefinition> unconstrainedBuildings();
@@ -22,7 +22,6 @@ public interface BuildingRegistry {
 
     Optional<BuildingDefinition> byId(String id);
 
-    @Nonnull
     default String displayNameFor(@Nonnull String buildingDefinitionId) {
         return this.byId(buildingDefinitionId)
                 .map(BuildingDefinition::displayInfo)
@@ -30,7 +29,6 @@ public interface BuildingRegistry {
                 .orElse(buildingDefinitionId);
     }
 
-    @Nonnull
     private static String displayNameOrFallback(@Nullable DisplayInfo displayInfo, @Nonnull String fallback) {
         if (displayInfo == null || displayInfo.displayName() == null || displayInfo.displayName().isBlank()) {
             return fallback;

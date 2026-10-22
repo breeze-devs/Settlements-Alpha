@@ -4,13 +4,12 @@ import dev.breezes.settlements.application.economy.demand.ActiveDemand;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import lombok.Builder;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @Builder
 public record DemandDisplayEntry(
-        @Nonnull String id,
-        @Nonnull ItemMatch match,
+        String id,
+        ItemMatch match,
         int desiredMinCount,
         int basePricePerUnit,
         int basePriority,

@@ -3,6 +3,7 @@ package dev.breezes.settlements.application.ai.override;
 import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
 import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorChannel;
+import dev.breezes.settlements.domain.ai.catalog.BehaviorDisplayMetadata;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorKey;
 import dev.breezes.settlements.domain.ai.catalog.BehaviorPlanningMetadata;
 import dev.breezes.settlements.domain.ai.catalog.IBehaviorCatalog;
@@ -13,7 +14,9 @@ import lombok.CustomLog;
 import net.minecraft.server.level.ServerLevel;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -33,6 +36,9 @@ final class SimpleBehaviorOverrideRunner implements OverrideRunner {
     private final Set<BehaviorChannel> occupiedChannels;
     private final int maxDurationTicks;
 
+    @Nullable
+    private final BehaviorDisplayMetadata displayInfo;
+
     private int elapsedTicks;
     private boolean wedged;
 
@@ -51,6 +57,7 @@ final class SimpleBehaviorOverrideRunner implements OverrideRunner {
         this.occupiedChannels = descriptor != null
                 ? descriptor.getRequiredChannels()
                 : Collections.emptySet();
+        this.displayInfo = catalog.getDisplayInfo(behaviorKey).orElse(null);
     }
 
     @Override
@@ -104,6 +111,11 @@ final class SimpleBehaviorOverrideRunner implements OverrideRunner {
     @Override
     public Set<BehaviorChannel> occupiedChannels() {
         return this.occupiedChannels;
+    }
+
+    @Override
+    public Optional<BehaviorDisplayMetadata> displayInfo() {
+        return Optional.ofNullable(this.displayInfo);
     }
 
     @Override

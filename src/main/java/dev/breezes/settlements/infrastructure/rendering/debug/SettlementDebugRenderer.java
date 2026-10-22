@@ -76,7 +76,6 @@ public final class SettlementDebugRenderer {
         LevelRenderer.renderLineBox(poseStack, lines, aabb, red, green, blue, alpha);
     }
 
-    @Nonnull
     private static float[] colorFor(@Nonnull RoadType roadType) {
         return switch (roadType) {
             case MAIN -> new float[]{1.0f, 0.9f, 0.0f, 0.7f};

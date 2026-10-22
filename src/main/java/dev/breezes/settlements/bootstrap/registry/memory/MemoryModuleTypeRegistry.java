@@ -10,6 +10,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -70,8 +71,16 @@ public final class MemoryModuleTypeRegistry {
             "cultivation_sites",
             () -> new MemoryModuleType<>(Optional.empty()));
 
-    public static final Supplier<MemoryModuleType<Boolean>> DEMANDED_GROUND_ITEM_NEARBY = REGISTRY.register(
-            "demanded_ground_item_nearby",
+    public static final Supplier<MemoryModuleType<List<ItemEntity>>> DEMANDED_GROUND_ITEMS = REGISTRY.register(
+            "demanded_ground_items",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<ISettlementsVillager>> DEMANDED_ITEM_SELLER = REGISTRY.register(
+            "demanded_item_seller",
+            () -> new MemoryModuleType<>(Optional.empty()));
+
+    public static final Supplier<MemoryModuleType<Boolean>> TRADE_INITIATE_COOLDOWN = REGISTRY.register(
+            "trade_initiate_cooldown",
             () -> new MemoryModuleType<>(Optional.empty()));
 
     public static final Supplier<MemoryModuleType<Boolean>> GOLEM_SUMMON_COOLDOWN = REGISTRY.register(

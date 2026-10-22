@@ -58,7 +58,6 @@ public class StunnedStarParticle extends TextureSheetParticle {
     }
 
     @Override
-    @Nonnull
     public ParticleRenderType getRenderType() {
         // Translucent sheet so the fade-out alpha blending works correctly
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;

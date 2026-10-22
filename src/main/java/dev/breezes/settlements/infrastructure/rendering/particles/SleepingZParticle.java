@@ -62,7 +62,6 @@ public class SleepingZParticle extends TextureSheetParticle {
     }
 
     @Override
-    @Nonnull
     public ParticleRenderType getRenderType() {
         // Translucent sheet so the fade in and out actually blend
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;

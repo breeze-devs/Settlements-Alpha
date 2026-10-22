@@ -3,13 +3,12 @@ package dev.breezes.settlements.domain.ai.threat;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import org.apache.commons.lang3.Validate;
 
-import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
  * A recorded hit that registered as a threat.
  */
-public record QualifyingHit(float healthLost, long gameTime, @Nonnull UUID attackerId) {
+public record QualifyingHit(float healthLost, long gameTime, UUID attackerId) {
 
     /**
      * How long a recorded hit stays live once nothing further qualifies.

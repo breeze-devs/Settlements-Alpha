@@ -2,7 +2,7 @@ package dev.breezes.settlements.application.economy.demand;
 
 import javax.annotation.Nonnull;
 
-public record DemandSignalState(@Nonnull DemandSignalSet demandSignalSet, int version) {
+public record DemandSignalState(DemandSignalSet demandSignalSet, int version) {
 
     private static final DemandSignalState EMPTY = new DemandSignalState(DemandSignalSet.empty(), 0);
 

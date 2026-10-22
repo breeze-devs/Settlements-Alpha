@@ -11,7 +11,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import javax.annotation.Nonnull;
 
 public record ClientBoundVillagerInventorySnapshotPacket(long sessionId,
-                                                          @Nonnull VillagerInventorySnapshot inventory) implements ClientBoundPacket {
+                                                         VillagerInventorySnapshot inventory) implements ClientBoundPacket {
 
     public static final Type<ClientBoundVillagerInventorySnapshotPacket> ID =
             new Type<>(ResourceLocationUtil.mod("packet_villager_stats_inventory_snapshot_clientbound"));
@@ -30,7 +30,6 @@ public record ClientBoundVillagerInventorySnapshotPacket(long sessionId,
         VillagerInventorySnapshotCodec.write(buffer, this.inventory);
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

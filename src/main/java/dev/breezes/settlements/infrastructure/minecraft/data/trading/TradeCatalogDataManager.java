@@ -80,7 +80,6 @@ public class TradeCatalogDataManager extends ProfessionCatalogDataManager<StockP
         return this.valuesFor(profession);
     }
 
-    @Nonnull
     @Override
     public List<OfferEntry> findOffers(@Nonnull VillagerProfessionKey sellerProfession, @Nonnull ItemMatch want) {
         return this.offersFor(sellerProfession).stream()
@@ -89,7 +88,6 @@ public class TradeCatalogDataManager extends ProfessionCatalogDataManager<StockP
                 .toList();
     }
 
-    @Nonnull
     @Override
     public List<DemandEntry> findDemands(@Nonnull VillagerProfessionKey buyerProfession, @Nonnull ItemMatch want) {
         return this.demandsByProfession.getOrDefault(buyerProfession, List.of()).stream()
@@ -103,7 +101,6 @@ public class TradeCatalogDataManager extends ProfessionCatalogDataManager<StockP
         return this.offersByProfession.getOrDefault(profession, List.of());
     }
 
-    @Nonnull
     @Override
     public List<DemandEntry> demandsFor(@Nonnull VillagerProfessionKey profession) {
         return this.demandsByProfession.getOrDefault(profession, List.of());

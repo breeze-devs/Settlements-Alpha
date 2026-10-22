@@ -106,7 +106,7 @@ public final class CultivationLilyZoneRevealRenderer implements ClientSessionRes
      * Stable identity for the lily under the crosshair: level plus block position, so that dimension
      * travel cannot present an unrelated lily at the same position as the one already being read.
      */
-    private record LilyTargetKey(@Nonnull Level level, @Nonnull BlockPos pos) {
+    private record LilyTargetKey(Level level, BlockPos pos) {
     }
 
 }

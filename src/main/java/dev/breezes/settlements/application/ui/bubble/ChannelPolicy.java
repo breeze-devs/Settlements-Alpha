@@ -8,9 +8,9 @@ import javax.annotation.Nonnull;
 @Builder
 public record ChannelPolicy(
         int maxActive,
-        @Nonnull OverflowPolicy overflowPolicy,
+        OverflowPolicy overflowPolicy,
         int renderOrder,
-        @Nonnull ClockTicks defaultTtlCap
+        ClockTicks defaultTtlCap
 ) {
 
     public ChannelPolicy {

@@ -13,7 +13,7 @@ import javax.annotation.Nonnull;
  * A player's adjustment of a ballista's aim, as the whole intent rather than a step, so that when several players
  * adjust one machine the last adjustment to arrive is where it points.
  */
-public record ServerBoundBallistaAimPacket(@Nonnull BlockPos pos, float yaw, float pitch) implements ServerBoundPacket {
+public record ServerBoundBallistaAimPacket(BlockPos pos, float yaw, float pitch) implements ServerBoundPacket {
 
     public static final Type<ServerBoundBallistaAimPacket> ID =
             new Type<>(ResourceLocationUtil.mod("packet_ballista_aim_serverbound"));
@@ -31,7 +31,6 @@ public record ServerBoundBallistaAimPacket(@Nonnull BlockPos pos, float yaw, flo
         buffer.writeFloat(this.pitch);
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

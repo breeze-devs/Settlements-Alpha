@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,7 +35,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(123L),
                 manifest(18),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         BoundingRegion buildArea = LayoutTestFixtures.standardReport().bounds().buildArea();
         assertTrue(insideBuildAreaXZ(buildArea, result.anchor()));
@@ -50,7 +51,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(321L),
                 manifest(16),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         BuildingAssignment dock = findById(result.assignments(), "settlements:building_definitions/dock");
         BuildingAssignment mine = findById(result.assignments(), "settlements:building_definitions/mine_entrance");
@@ -66,7 +67,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(2468L),
                 stoneConstrainedManifest(8),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         assertEquals(1, result.assignments().size());
         assertEquals("settlements:building_definitions/town_hall", result.assignments().getFirst().building().id());
@@ -94,7 +95,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(1357L),
                 manifest,
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         assertEquals(1, result.assignments().size());
         assertEquals("settlements:building_definitions/town_hall", result.assignments().getFirst().building().id());
@@ -107,7 +108,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(999L),
                 manifest(22),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         BlockPosition planningCenter = planningCenter(result);
         assertTrue(result.roads().stream().anyMatch(road -> planningCenter.sameXZ(road.start()) || planningCenter.sameXZ(road.end())));
@@ -121,7 +122,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(2026L),
                 manifest(12),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         BuildingAssignment townHall = findById(result.assignments(), "settlements:building_definitions/town_hall");
         BlockPosition planningCenter = planningCenter(result);
@@ -138,7 +139,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(777L),
                 manifest(12),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         BuildingAssignment townHall = findById(result.assignments(), "settlements:building_definitions/town_hall");
         assertTrue(result.anchor().sameXZ(townHall.plot().bounds().centerXZ()));
@@ -151,13 +152,13 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(444L),
                 manifest(18),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
         LayoutResult second = this.engine.generateLayout(
                 LayoutTestFixtures.standardReport(),
                 LayoutTestFixtures.villageProfile(444L),
                 manifest(18),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         assertEquals(layoutSignature(first), layoutSignature(second));
     }
@@ -169,19 +170,19 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.hamletProfile(17L),
                 manifest(8),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
         LayoutResult village = this.engine.generateLayout(
                 LayoutTestFixtures.standardReport(),
                 LayoutTestFixtures.villageProfile(18L),
                 manifest(20),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
         LayoutResult town = this.engine.generateLayout(
                 LayoutTestFixtures.townReport(),
                 LayoutTestFixtures.townProfile(19L),
                 manifest(40),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         assertTrue(hamlet.assignments().size() >= ScaleTier.HAMLET.minBuildings());
         assertTrue(hamlet.assignments().size() <= ScaleTier.HAMLET.maxBuildings());
@@ -198,7 +199,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(321L),
                 manifest(16),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         BuildingAssignment dock = findById(result.assignments(), "settlements:building_definitions/dock");
         BuildingAssignment mine = findById(result.assignments(), "settlements:building_definitions/mine_entrance");
@@ -215,7 +216,7 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(555L),
                 manifest(20),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         assertTrue(respectsMinimumSpacing(result.assignments(), PlacementGrid.DEFAULT_MINIMUM_SPACING));
     }
@@ -240,10 +241,10 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(888L),
                 manifest(18),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         LocalResourceScanner scanner = new LocalResourceScanner(LayoutTestFixtures.lookup());
-        assertTrue(result.assignments().stream().allMatch(assignment -> !LayoutSupport.isOnWater(
+        assertTrue(result.assignments().stream().noneMatch(assignment -> LayoutSupport.isOnWater(
                 LayoutTestFixtures.standardReport().terrainGrid(),
                 scanner,
                 new LayoutSupport.CandidateFootprint(
@@ -265,15 +266,53 @@ class SettlementLayoutEngineTest {
                 LayoutTestFixtures.villageProfile(4321L),
                 manifest(18),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
         LayoutResult steep = this.engine.generateLayout(
                 LayoutTestFixtures.steepReport(),
                 LayoutTestFixtures.villageProfile(4321L),
                 manifest(18),
                 LayoutTestFixtures.lookup()
-        );
+        ).orElseThrow();
 
         assertNotEquals(layoutSignature(flat), layoutSignature(steep));
+    }
+
+    @Test
+    void generateLayout_isEmpty_whenNoSiteNearTheCenterFitsTheTownHall() {
+        // Arrange — a town hall wider than the whole build area fits at no attempted site
+        BoundingRegion buildArea = LayoutTestFixtures.standardReport().bounds().buildArea();
+        int widerThanBuildArea = buildArea.max().x() - buildArea.min().x() + 2;
+        BuildingDefinition oversizedTownHall = LayoutTestFixtures.building(HubPlacer.TOWN_HALL_ID, Map.of(),
+                TraitSlot.FLAVOR, 1000, Set.of(), false, widerThanBuildArea, widerThanBuildArea);
+        BuildingManifest manifest = new BuildingManifest(List.of(oversizedTownHall, LayoutTestFixtures.house()));
+
+        // Act
+        Optional<LayoutResult> result = this.engine.generateLayout(
+                LayoutTestFixtures.standardReport(),
+                LayoutTestFixtures.villageProfile(123L),
+                manifest,
+                LayoutTestFixtures.lookup()
+        );
+
+        // Assert
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void generateLayout_isEmpty_whenTheManifestHasNoTownHall() {
+        // Arrange
+        BuildingManifest manifest = new BuildingManifest(List.of(LayoutTestFixtures.well(), LayoutTestFixtures.house()));
+
+        // Act
+        Optional<LayoutResult> result = this.engine.generateLayout(
+                LayoutTestFixtures.standardReport(),
+                LayoutTestFixtures.villageProfile(123L),
+                manifest,
+                LayoutTestFixtures.lookup()
+        );
+
+        // Assert
+        assertTrue(result.isEmpty());
     }
 
     private static BuildingManifest manifest(int totalBuildings) {

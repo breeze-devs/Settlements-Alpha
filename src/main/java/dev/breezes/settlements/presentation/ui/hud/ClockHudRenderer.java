@@ -122,7 +122,7 @@ public final class ClockHudRenderer implements LayeredDraw.Layer, ClientSessionR
         }
     }
 
-    private record PanelLine(@Nonnull Component text, int color) {
+    private record PanelLine(Component text, int color) {
     }
 
 }

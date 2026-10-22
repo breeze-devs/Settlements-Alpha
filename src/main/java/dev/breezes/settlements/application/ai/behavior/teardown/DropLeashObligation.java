@@ -18,9 +18,9 @@ import java.util.UUID;
  * obligation from dropping a leash that a player re-attached to a fence post
  * between the crash and the villager's next reload.
  */
-public record DropLeashObligation(@Nonnull UUID animalId,
-                                  @Nonnull UUID holderId,
-                                  @Nonnull BlockPos animalPos) implements TeardownObligation {
+public record DropLeashObligation(UUID animalId,
+                                  UUID holderId,
+                                  BlockPos animalPos) implements TeardownObligation {
 
     @Override
     public BlockPos targetPos() {

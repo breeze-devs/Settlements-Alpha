@@ -16,10 +16,15 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.L
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.OneShotStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.economy.demand.ActiveDemand;
+import dev.breezes.settlements.application.economy.demand.DemandEvaluator;
+import dev.breezes.settlements.domain.ai.conditions.ICondition;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
 import dev.breezes.settlements.domain.ai.navigation.NavigationType;
 import dev.breezes.settlements.domain.ai.worldevent.WorldEventType;
 import dev.breezes.settlements.domain.animation.AnimationArchetype;
 import dev.breezes.settlements.domain.animation.PickUpAnimations;
+import dev.breezes.settlements.domain.economy.catalog.ItemMatches;
 import dev.breezes.settlements.domain.time.ClockTicks;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import lombok.CustomLog;
@@ -29,7 +34,9 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -37,31 +44,33 @@ import java.util.stream.Collectors;
 public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
 
     private static final double CLOSE_ENOUGH_DISTANCE = 1.5D;
-    private static final int NAVIGATION_COMPLETION_DISTANCE = 1;
+    public static final int NAVIGATION_COMPLETION_DISTANCE = 0;
 
-    private static final int COLLECT_TIMEOUT_TICKS = ClockTicks.seconds(20).getTicksAsInt();
+    private static final ClockTicks COLLECT_TIMEOUT = ClockTicks.seconds(30);
     private static final int MAX_ITEMS_PER_RUN = 5;
+
+    public static final ClockTicks MAX_RUN_DURATION = ClockTicks.of(COLLECT_TIMEOUT.getTicks() * 2);
 
     private enum Stage implements StageKey {
         RESOLVE, COLLECT, LOOP, END
     }
 
-    private final DemandedGroundItemCondition itemCondition;
+    private final DemandEvaluator demandEvaluator;
     private final Map<String, Integer> collectedByItem = new HashMap<>();
 
     @Nullable
-    private DemandedGroundItemCondition.Resolution resolution;
+    private ItemEntity target;
 
     public CollectDemandedItemBehavior(@Nonnull CollectDemandedItemConfig config,
                                        @Nonnull BehaviorSupport support) {
         super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable(), support);
 
-        this.itemCondition = new DemandedGroundItemCondition(support.getDemandEvaluator(), NAVIGATION_COMPLETION_DISTANCE);
-        this.preconditions.add(this.itemCondition);
+        this.demandEvaluator = support.getDemandEvaluator();
+        this.preconditions.add(ICondition.named("DemandedGroundItemsRemembered", villager -> villager != null
+                && villager.getSettlementsBrain().getMemory(MemoryTypeRegistry.DEMANDED_GROUND_ITEMS).isPresent()));
 
-        this.resolution = null;
+        this.target = null;
 
-        // Must be last — initializeStateMachine captures the step graph and calls reset() on all steps.
         this.initializeStateMachine(this.createControlStep(), Stage.END);
     }
 
@@ -88,27 +97,59 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
         return OneShotStep.<BaseVillager>builder()
                 .name("ResolveDemandedItem")
                 .action(ctx -> {
-                    // Re-run fresh every iteration
-                    if (!this.itemCondition.test(ctx.getInitiator())) {
+                    this.target = this.takeNextRemembered(ctx.getInitiator());
+                    if (this.target == null) {
                         return StepResult.transition(Stage.END);
                     }
 
-                    this.resolution = this.itemCondition.getResolution().orElse(null);
-                    if (this.resolution == null) {
-                        return StepResult.transition(Stage.END);
-                    }
-
-                    ctx.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.resolution.item())));
+                    ctx.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
                     return StepResult.transition(Stage.COLLECT);
                 })
                 .build();
+    }
+
+    /**
+     * Removes the next valid demanded item from the remembered list and returns it, or null once none is left.
+     * An item is removed whether it is collected.
+     */
+    @Nullable
+    private ItemEntity takeNextRemembered(@Nonnull BaseVillager villager) {
+        List<ItemEntity> remembered = new ArrayList<>(villager.getSettlementsBrain()
+                .getMemory(MemoryTypeRegistry.DEMANDED_GROUND_ITEMS)
+                .orElse(List.of()));
+
+        // Resolved on every take, since an earlier pickup this run may have filled the demand that made an item wanted
+        List<ActiveDemand> demands = remembered.isEmpty() ? List.of() : this.demandEvaluator.resolve(villager);
+        ItemEntity next = null;
+        while (next == null && !remembered.isEmpty()) {
+            ItemEntity candidate = remembered.removeFirst();
+            if (candidate.isAlive() && isDemanded(candidate, demands)) {
+                next = candidate;
+            }
+        }
+
+        if (remembered.isEmpty()) {
+            villager.getSettlementsBrain().clearMemory(MemoryTypeRegistry.DEMANDED_GROUND_ITEMS);
+        } else {
+            villager.getSettlementsBrain().setMemory(MemoryTypeRegistry.DEMANDED_GROUND_ITEMS, List.copyOf(remembered));
+        }
+        return next;
+    }
+
+    private static boolean isDemanded(@Nonnull ItemEntity item, @Nonnull List<ActiveDemand> demands) {
+        for (ActiveDemand demand : demands) {
+            if (ItemMatches.test(demand.match(), item.getItem())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private BehaviorStep<BaseVillager> createCollectStep() {
         TimeBasedStep<BaseVillager> pickupStep = TimeBasedStep.<BaseVillager>builder()
                 .withTickable(ClockTicks.of(PickUpAnimations.PICK_UP_DURATION_TICKS).asTickable())
                 .onStart(ctx -> {
-                    if (this.resolution == null || !this.resolution.item().isAlive()) {
+                    if (this.target == null || !this.target.isAlive()) {
                         return StepResult.transition(Stage.LOOP);
                     }
                     ctx.getInitiator().triggerMotion(AnimationArchetype.PICK_UP);
@@ -117,10 +158,10 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
                 .addKeyFrame(ClockTicks.of(PickUpAnimations.PICK_UP_AT_TICK), ctx -> {
                     // Re-validate at the keyframe: another villager or player may have grabbed the
                     // item between the time we entered the step and the animation impact frame.
-                    if (this.resolution == null || !this.resolution.item().isAlive()) {
+                    if (this.target == null || !this.target.isAlive()) {
                         return StepResult.transition(Stage.LOOP);
                     }
-                    ItemEntity item = this.resolution.item();
+                    ItemEntity item = this.target;
                     ctx.getInitiator().pickUp(item);
                     this.recordPickup(ctx, item);
                     return StepResult.noOp();
@@ -133,10 +174,11 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
                 .navigateStep(NavigateToTargetStep.<BaseVillager>builder()
                         .navigationType(NavigationType.WALK)
                         .completionDistance(NAVIGATION_COMPLETION_DISTANCE)
-                        .unreachableTransition(Stage.END)
+                        .unreachableTransition(Stage.LOOP)
                         .build())
                 .actionStep(pickupStep)
-                .timeoutTicks(COLLECT_TIMEOUT_TICKS)
+                .targetLostTransition(Stage.LOOP)
+                .timeoutTicks(COLLECT_TIMEOUT.getTicksAsInt())
                 .timeoutTransition(Stage.END)
                 .build();
     }
@@ -172,7 +214,7 @@ public class CollectDemandedItemBehavior extends VillagerStateMachineBehavior {
         villager.clearHeldItem();
         villager.setMotion(AnimationArchetype.IDLE);
         villager.getNavigationManager().stop();
-        this.resolution = null;
+        this.target = null;
         this.collectedByItem.clear();
     }
 

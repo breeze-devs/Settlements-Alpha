@@ -1,6 +1,5 @@
 package dev.breezes.settlements.application.ui.bubble;
 
-import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
@@ -13,9 +12,9 @@ public sealed interface BubbleCommand
         BubbleCommand.RemoveByOwner,
         BubbleCommand.ClearChannel {
 
-    record Upsert(@Nonnull BubbleChannel channel,
-            @Nonnull String ownerKey,
-            @Nonnull BubbleMessage message) implements BubbleCommand {
+    record Upsert(BubbleChannel channel,
+                  String ownerKey,
+                  BubbleMessage message) implements BubbleCommand {
 
         public Upsert {
             if (ownerKey.isBlank()) {
@@ -25,17 +24,17 @@ public sealed interface BubbleCommand
 
     }
 
-    record Push(@Nonnull BubbleChannel channel,
-            @Nonnull BubbleMessage message) implements BubbleCommand {
+    record Push(BubbleChannel channel,
+                BubbleMessage message) implements BubbleCommand {
 
     }
 
-    record RemoveById(@Nonnull UUID bubbleId) implements BubbleCommand {
+    record RemoveById(UUID bubbleId) implements BubbleCommand {
 
     }
 
-    record RemoveByOwner(@Nonnull BubbleChannel channel,
-            @Nonnull String ownerKey) implements BubbleCommand {
+    record RemoveByOwner(BubbleChannel channel,
+                         String ownerKey) implements BubbleCommand {
 
         public RemoveByOwner {
             if (ownerKey.isBlank()) {
@@ -44,7 +43,7 @@ public sealed interface BubbleCommand
         }
     }
 
-    record ClearChannel(@Nonnull BubbleChannel channel) implements BubbleCommand {
+    record ClearChannel(BubbleChannel channel) implements BubbleCommand {
 
     }
 

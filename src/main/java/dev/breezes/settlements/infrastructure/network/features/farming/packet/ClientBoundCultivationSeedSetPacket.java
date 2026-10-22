@@ -16,7 +16,7 @@ import java.util.List;
  * exist client-side) into the item ids the client needs to answer "is this stack a seed" on its own.
  */
 public record ClientBoundCultivationSeedSetPacket(
-        @Nonnull List<ResourceLocation> seedItemIds) implements ClientBoundPacket {
+        List<ResourceLocation> seedItemIds) implements ClientBoundPacket {
 
     /**
      * Generous ceiling on a datapack's plausible crop catalog size.
@@ -57,7 +57,6 @@ public record ClientBoundCultivationSeedSetPacket(
         }
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

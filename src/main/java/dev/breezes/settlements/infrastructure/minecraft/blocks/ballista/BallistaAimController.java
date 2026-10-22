@@ -193,7 +193,7 @@ public final class BallistaAimController implements ClientSessionResettable {
     /**
      * A machine by its level and position.
      */
-    private record AimTarget(@Nonnull Level level, @Nonnull BlockPos pos) {
+    private record AimTarget(Level level, BlockPos pos) {
     }
 
 }

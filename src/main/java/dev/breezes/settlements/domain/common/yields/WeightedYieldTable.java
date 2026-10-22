@@ -3,7 +3,6 @@ package dev.breezes.settlements.domain.common.yields;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
 
 /**
@@ -12,9 +11,9 @@ import java.util.Map;
  */
 @Builder
 public record WeightedYieldTable(
-        @Nonnull String block,
+        String block,
         double selectionWeight,
-        @Nonnull Map<String, WeightedYieldPool> pools
+        Map<String, WeightedYieldPool> pools
 ) {
 
     public WeightedYieldTable {

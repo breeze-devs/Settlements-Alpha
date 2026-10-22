@@ -20,7 +20,7 @@ public sealed interface DialogueLine permits DialogueLine.Literal, DialogueLine.
         return new Translatable(key, args);
     }
 
-    record Literal(@Nonnull String text) implements DialogueLine {
+    record Literal(String text) implements DialogueLine {
 
         public Literal {
             if (text.isBlank()) {
@@ -30,7 +30,7 @@ public sealed interface DialogueLine permits DialogueLine.Literal, DialogueLine.
 
     }
 
-    record Translatable(@Nonnull String key, @Nonnull List<String> args) implements DialogueLine {
+    record Translatable(String key, List<String> args) implements DialogueLine {
 
         public Translatable {
             if (key.isBlank()) {

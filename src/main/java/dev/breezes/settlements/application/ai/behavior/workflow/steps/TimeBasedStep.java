@@ -31,7 +31,6 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
     /**
      * Map of periodic schedules (interval + phase offset) to the behavior steps to execute on that cadence
      */
-    @Nonnull
     private final Map<PeriodicSchedule, List<BehaviorStep<T>>> periodicSteps;
 
     @Nullable
@@ -170,9 +169,7 @@ public class TimeBasedStep<T extends ISettlementsBrainEntity> extends AbstractSt
         private String name;
         @Nullable
         private ITickable tickable;
-        @Nonnull
         private final Map<Long, BehaviorStep<T>> keyFrames;
-        @Nonnull
         private final Map<PeriodicSchedule, List<BehaviorStep<T>>> periodicSteps;
         @Nullable
         private BehaviorStep<T> onStart;

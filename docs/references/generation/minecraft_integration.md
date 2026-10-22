@@ -1,7 +1,7 @@
 # Settlement Generation — Minecraft Integration
 
 **Purpose:** Bridge the abstract `GenerationResult` into the Minecraft world by resolving templates,
-emitting structure pieces, and registering the settlement as a naturally-spawning structure.
+emitting structure pieces, and integrating with Minecraft's structure system.
 
 ## Table of Contents
 
@@ -86,19 +86,18 @@ chunk's heightmap, so roads follow the terrain surface.
 
 ## Structure Registration
 
-The settlement is registered as a proper NeoForge structure set:
+Natural settlement generation is disabled: no active structure set is configured.
+`SettlementStructure` remains registered as a structure type. Enabling natural generation requires
+a structure-set JSON under `data/settlements/worldgen/structure_set/`.
 
-- `SettlementStructure` extends `SettlementsStructure` with a codec for worldgen integration.
-- Structure set JSON configures random spread placement (spacing: 34, separation: 8 — matching
-  vanilla village patterns).
-- A biome tag (`has_settlement`) controls where settlements spawn (plains, forest, savanna, taiga,
-  meadow, etc.; excluding ocean, desert, mushroom fields, nether, end).
+The `has_settlement` biome tag controls eligible biomes. Its definition is in
+`src/main/resources/data/settlements/tags/worldgen/biome/has_settlement.json`.
 
 ---
 
 ## Generation Flow
 
-When Minecraft's world-gen triggers settlement placement:
+When a settlement structure is generated:
 
 1. Derive seed from `worldSeed XOR hash(chunkPosition)`.
 2. Build the survey area with `SurveyBounds.aroundSettlementAt`, centered on the start chunk. A
@@ -114,6 +113,10 @@ When Minecraft's world-gen triggers settlement placement:
 9. Emit `SettlementRoadPiece` for each road segment.
 10. Emit one `SettlementRecordPiece`, which places nothing and carries the settlement's id, claimed
     chunks, profile, and drawn history. A start that placed no building or road emits nothing.
+
+Missing required building definitions, a manifest without a town hall, or a site that cannot fit
+the town hall cause generation to decline. The pipeline returns no result, and `SettlementStructure`
+emits no pieces, so Minecraft does not create a valid structure start.
 
 When the start chunk loads, [GeneratedSettlementRecordServerEvents][record-events] hands its
 generated metadata to [GeneratedSettlementRecorder][recorder] for server-side record admission.

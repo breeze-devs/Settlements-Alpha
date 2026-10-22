@@ -78,7 +78,6 @@ public class OrbParticle extends TextureSheetParticle {
     }
 
     @Override
-    @Nonnull
     public ParticleRenderType getRenderType() {
         // Translucent sheet so alpha blending and color tinting both work correctly
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;

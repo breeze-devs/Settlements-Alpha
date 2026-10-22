@@ -142,7 +142,7 @@ public final class CourtshipSessionRegistry {
         this.sessionParticipantsBySessionId.put(session.getSessionId(), participants);
     }
 
-    private record SessionParticipants(@Nonnull UUID firstParticipantId, @Nonnull UUID secondParticipantId) {
+    private record SessionParticipants(UUID firstParticipantId, UUID secondParticipantId) {
     }
 
 }

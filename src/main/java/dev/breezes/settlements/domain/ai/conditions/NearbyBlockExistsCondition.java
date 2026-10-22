@@ -34,7 +34,6 @@ public class NearbyBlockExistsCondition<E extends Entity> implements ICondition<
      */
     private final IBlockCondition extraBlockCondition;
 
-    @Nonnull
     private List<BlockPos> targets;
 
     /**

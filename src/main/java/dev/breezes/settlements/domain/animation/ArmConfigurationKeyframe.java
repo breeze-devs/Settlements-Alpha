@@ -2,9 +2,7 @@ package dev.breezes.settlements.domain.animation;
 
 import dev.breezes.settlements.domain.presentation.ArmConfiguration;
 
-import javax.annotation.Nonnull;
-
-public record ArmConfigurationKeyframe(int tick, @Nonnull ArmConfiguration configuration) {
+public record ArmConfigurationKeyframe(int tick, ArmConfiguration configuration) {
 
     public ArmConfigurationKeyframe {
         if (tick < 0) {

@@ -3,11 +3,9 @@ package dev.breezes.settlements.domain.generation.model.building;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.breezes.settlements.domain.generation.model.IntRange;
-import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.profile.TraitIdCodec;
 import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
 import dev.breezes.settlements.domain.generation.model.profile.TraitSlotCodec;
-import dev.breezes.settlements.domain.generation.model.survey.ResourceTag;
 import dev.breezes.settlements.domain.generation.model.survey.ResourceTagCodec;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -31,7 +29,7 @@ public final class BuildingDefinitionCodec {
             instance.group(
                     Codec.STRING.fieldOf("id").forGetter(BuildingDefinition::id),
                     Codec.unboundedMap(TraitIdCodec.CODEC, Codec.FLOAT)
-                            .optionalFieldOf("trait_affinities", Map.<TraitId, Float>of())
+                            .optionalFieldOf("trait_affinities", Map.of())
                             .forGetter(BuildingDefinition::traitAffinities),
                     TraitSlotCodec.CODEC.optionalFieldOf("minimum_rank", TraitSlot.FLAVOR).forGetter(BuildingDefinition::minimumRank),
                     Codec.INT.fieldOf("placement_priority").forGetter(BuildingDefinition::placementPriority),
@@ -39,15 +37,15 @@ public final class BuildingDefinitionCodec {
                     Codec.INT.fieldOf("zone_tier_max").forGetter(definition -> definition.zoneTierPreference().maxInclusive()),
                     Codec.BOOL.fieldOf("requires_road_frontage").forGetter(BuildingDefinition::requiresRoadFrontage),
                     ResourceTagCodec.CODEC.listOf().xmap(Set::copyOf, set -> set.stream().toList())
-                            .optionalFieldOf("requires_resources", Set.<ResourceTag>of())
+                            .optionalFieldOf("requires_resources", Set.of())
                             .forGetter(BuildingDefinition::requiresResources),
                     ResourceTagCodec.CODEC.listOf().xmap(Set::copyOf, set -> set.stream().toList())
-                            .optionalFieldOf("forbidden_resources", Set.<ResourceTag>of())
+                            .optionalFieldOf("forbidden_resources", Set.of())
                             .forGetter(BuildingDefinition::forbiddenResources),
                     Codec.INT.fieldOf("footprint_width").forGetter(definition -> definition.footprint().width()),
                     Codec.INT.fieldOf("footprint_depth").forGetter(definition -> definition.footprint().depth()),
                     Codec.STRING.listOf().xmap(Set::copyOf, set -> set.stream().toList())
-                            .optionalFieldOf("preferred_tags", Set.<String>of())
+                            .optionalFieldOf("preferred_tags", Set.of())
                             .forGetter(BuildingDefinition::preferredTags),
                     Codec.STRING.optionalFieldOf("npc_profession").forGetter(definition -> Optional.ofNullable(definition.npcProfession())),
                     Codec.INT.fieldOf("npc_count").forGetter(BuildingDefinition::npcCount)

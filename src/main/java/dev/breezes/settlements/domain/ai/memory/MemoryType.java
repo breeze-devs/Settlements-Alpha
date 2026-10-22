@@ -89,8 +89,8 @@ public sealed interface MemoryType<T> permits MemoryType.VanillaMemoryType, Memo
      * {@code T} is the exact vanilla payload type — no cast is required at the call site because
      * the {@code MemoryModuleType<T>} and the accessor generic parameter line up structurally.
      */
-    record VanillaMemoryType<T>(@Nonnull String identifier,
-                                @Nonnull Supplier<MemoryModuleType<T>> moduleTypeSupplier) implements MemoryType<T> {
+    record VanillaMemoryType<T>(String identifier,
+                                Supplier<MemoryModuleType<T>> moduleTypeSupplier) implements MemoryType<T> {
 
         /**
          * Returns the underlying vanilla MemoryModuleType.
@@ -133,7 +133,7 @@ public sealed interface MemoryType<T> permits MemoryType.VanillaMemoryType, Memo
      * (upsert + confirmed-absence) protocol rather than wholesale overwrite. Any attempt to call
      * {@link #write} here is a programming error — the caller must use {@link IBrain#updateSites}.
      */
-    record DecayingSpatialMemoryType(@Nonnull String identifier,
+    record DecayingSpatialMemoryType(String identifier,
                                      long retentionTicks,
                                      int maxEntries) implements MemoryType<List<GlobalPos>> {
 

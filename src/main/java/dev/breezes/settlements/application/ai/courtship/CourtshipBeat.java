@@ -10,11 +10,9 @@ import javax.annotation.Nullable;
  * Data for a single choreography beat describing what each role plays.
  * Used by CourtshipPresenter to dispatch role-specific effects.
  */
-public record CourtshipBeat(
-        @Nonnull AnimationArchetype presenterMotion,
-        @Nonnull AnimationArchetype receiverMotion,
-        @Nullable SoundEvent sound
-) {
+public record CourtshipBeat(AnimationArchetype presenterMotion,
+                            AnimationArchetype receiverMotion,
+                            @Nullable SoundEvent sound) {
 
     /**
      * Returns the animation archetype for the given role, keeping role-to-motion mapping

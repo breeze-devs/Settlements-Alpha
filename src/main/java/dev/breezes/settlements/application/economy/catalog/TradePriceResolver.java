@@ -19,7 +19,6 @@ import java.util.Optional;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor_ = @Inject)
 public final class TradePriceResolver {
 
-    @Nonnull
     private final TradeCatalogRegistry tradeCatalogRegistry;
 
     public Optional<Integer> resolveDemandPrice(@Nonnull BaseVillager buyer, @Nonnull ItemMatch want) {

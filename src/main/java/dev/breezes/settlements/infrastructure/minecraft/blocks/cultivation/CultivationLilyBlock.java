@@ -93,7 +93,6 @@ public class CultivationLilyBlock extends BaseEntityBlock {
     }
 
     @Override
-    @Nonnull
     protected MapCodec<CultivationLilyBlock> codec() {
         return CODEC;
     }
@@ -114,14 +113,12 @@ public class CultivationLilyBlock extends BaseEntityBlock {
     }
 
     @Override
-    @Nonnull
     public RenderShape getRenderShape(@Nonnull BlockState state) {
         return RenderShape.MODEL;
     }
 
 
     @Override
-    @Nonnull
     protected BlockState updateShape(@Nonnull BlockState state,
                                      @Nonnull Direction direction,
                                      @Nonnull BlockState neighborState,
@@ -137,7 +134,6 @@ public class CultivationLilyBlock extends BaseEntityBlock {
     }
 
     @Override
-    @Nonnull
     public VoxelShape getShape(@Nonnull BlockState state,
                                @Nonnull BlockGetter level,
                                @Nonnull BlockPos pos,
@@ -146,7 +142,6 @@ public class CultivationLilyBlock extends BaseEntityBlock {
     }
 
     @Override
-    @Nonnull
     public VoxelShape getCollisionShape(@Nonnull BlockState state,
                                         @Nonnull BlockGetter level,
                                         @Nonnull BlockPos pos,
@@ -165,7 +160,6 @@ public class CultivationLilyBlock extends BaseEntityBlock {
      * pass, which is what a decline needs to fall through to placement.
      */
     @Override
-    @Nonnull
     protected ItemInteractionResult useItemOn(@Nonnull ItemStack stack,
                                               @Nonnull BlockState state,
                                               @Nonnull Level level,

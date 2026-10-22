@@ -63,11 +63,10 @@ public record CourtshipInitiateConfig(
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "breed_cooldown_seconds",
-                description = "Seconds both parents are placed on breed cooldown after every completed "
-                        + "courtship, whether it produced a child or ended as a date.",
-                defaultValue = 300,
-                min = 1,
-                max = 3600)
+                description = "Seconds both parents are placed on breed cooldown after courtship finishes",
+                defaultValue = 2400,
+                min = 300,
+                max = 36000)
         int breedCooldownSeconds
 ) implements BehaviorTimingConfig {
 

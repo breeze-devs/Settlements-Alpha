@@ -9,6 +9,7 @@ import dev.breezes.settlements.application.ai.override.CourtshipAcceptOverridePo
 import dev.breezes.settlements.application.ai.override.OverridePolicy;
 import dev.breezes.settlements.application.ai.override.RetrieveProjectilesOverridePolicy;
 import dev.breezes.settlements.application.ai.override.TradeAcceptOverridePolicy;
+import dev.breezes.settlements.application.ai.override.TradeInitiateOverridePolicy;
 
 import java.util.List;
 
@@ -25,14 +26,16 @@ public abstract class OverridePolicyModule {
                                                  CourtshipAcceptOverridePolicy courtshipAccept,
                                                  TradeAcceptOverridePolicy tradeAccept,
                                                  CollectDemandedItemOverridePolicy collectDemandedItem,
-                                                 RetrieveProjectilesOverridePolicy retrieveProjectiles) {
+                                                 RetrieveProjectilesOverridePolicy retrieveProjectiles,
+                                                 TradeInitiateOverridePolicy tradeInitiate) {
         return List.of(
                 combat,
                 chartRaiders,
                 courtshipAccept,
                 tradeAccept,
                 collectDemandedItem,
-                retrieveProjectiles
+                retrieveProjectiles,
+                tradeInitiate
         );
     }
 

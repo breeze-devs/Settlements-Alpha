@@ -3,7 +3,6 @@ package dev.breezes.settlements.application.ai.threat;
 import dev.breezes.settlements.domain.ai.threat.ThreatVerdict;
 import org.apache.commons.lang3.Validate;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -12,7 +11,7 @@ import javax.annotation.Nullable;
  * @param verdict   the villager's response to its current situation
  * @param selection the option and target authorizing the verdict; present exactly when the verdict is COMBAT
  */
-public record ThreatAssessmentResult(@Nonnull ThreatVerdict verdict,
+public record ThreatAssessmentResult(ThreatVerdict verdict,
                                      @Nullable CombatSelection selection) {
 
     /**

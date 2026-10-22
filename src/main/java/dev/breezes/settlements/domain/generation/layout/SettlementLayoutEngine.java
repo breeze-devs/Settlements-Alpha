@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,10 +57,15 @@ public class SettlementLayoutEngine {
         this.infillPlacer = infillPlacer;
     }
 
-    public LayoutResult generateLayout(SiteReport report,
-                                       SettlementProfile profile,
-                                       BuildingManifest manifest,
-                                       BiomeSurveyLookup biomeLookup) {
+    /**
+     * Places the manifest's buildings and lays the roads between them, around a town hall near the site's center.
+     *
+     * @return the layout, or empty when the manifest has no town hall or no valid site for it lies near the center
+     */
+    public Optional<LayoutResult> generateLayout(SiteReport report,
+                                                 SettlementProfile profile,
+                                                 BuildingManifest manifest,
+                                                 BiomeSurveyLookup biomeLookup) {
         Random random = new Random(profile.seed());
         LocalResourceScanner resourceScanner = new LocalResourceScanner(biomeLookup);
         PlacementGrid grid = new PlacementGrid(PlacementGrid.DEFAULT_MINIMUM_SPACING);
@@ -84,13 +90,19 @@ public class SettlementLayoutEngine {
         List<BuildingAssignment> allAssignments = new ArrayList<>();
         List<BuildingDefinition> pool = new ArrayList<>(LayoutSupport.sortedManifestBuildings(manifest));
 
-        BuildingDefinition hub = pool.stream()
-                .filter(building -> "settlements:building_definitions/town_hall".equals(building.id()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Manifest must contain settlements:building_definitions/town_hall"));
-        pool.remove(hub);
-        context.setBuildings(List.of(hub));
+        Optional<BuildingDefinition> hub = pool.stream()
+                .filter(building -> HubPlacer.TOWN_HALL_ID.equals(building.id()))
+                .findFirst();
+        if (hub.isEmpty()) {
+            log.error("Building manifest has no {}, so its settlement is skipped", HubPlacer.TOWN_HALL_ID);
+            return Optional.empty();
+        }
+        pool.remove(hub.get());
+        context.setBuildings(List.of(hub.get()));
         PlacementPhaseResult hubResult = this.hubPlacer.executePlacement(context);
+        if (hubResult.placed().isEmpty()) {
+            return Optional.empty();
+        }
         allAssignments.addAll(hubResult.placed());
         BuildingAssignment hubAssignment = hubResult.placed().getFirst();
         BlockPosition planningCenter = hubAssignment.plot().bounds().centerXZ().withY(hubAssignment.plot().targetY());
@@ -178,7 +190,7 @@ public class SettlementLayoutEngine {
                 scatterResult.placed().size(), scatterResult.remaining().size());
         log.debug("Layout complete: {} buildings, {} roads", allAssignments.size(), roads.size());
 
-        return new LayoutResult(anchor, context.getPlanningCenter(), roads, allAssignments);
+        return Optional.of(new LayoutResult(anchor, context.getPlanningCenter(), roads, allAssignments));
     }
 
 }

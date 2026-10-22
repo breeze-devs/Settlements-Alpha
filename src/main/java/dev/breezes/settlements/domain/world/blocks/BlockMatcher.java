@@ -7,8 +7,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import javax.annotation.Nonnull;
 import java.util.function.Predicate;
 
-public record BlockMatcher(@Nonnull Predicate<BlockState> statePredicate,
-                           @Nonnull BlockStateCondition contextPredicate) implements LiveBlockSiteMatcher {
+public record BlockMatcher(Predicate<BlockState> statePredicate,
+                           BlockStateCondition contextPredicate) implements LiveBlockSiteMatcher {
 
     public BlockMatcher(@Nonnull Predicate<BlockState> statePredicate) {
         this(statePredicate, (ignored, ignored2) -> true);

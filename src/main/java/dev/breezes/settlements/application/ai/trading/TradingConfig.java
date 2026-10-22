@@ -18,21 +18,21 @@ public record TradingConfig(
 
         @IntegerConfig(type = ConfigurationType.BEHAVIOR,
                 identifier = "initiate_precondition_cooldown_seconds",
-                description = "Seconds between expensive initiator precondition scans.",
-                defaultValue = 10,
-                min = 1)
-        int initiatePreconditionCooldownSeconds,
+                description = "Seconds between each villager's scans for a nearby villager selling an item it wants.",
+                defaultValue = 30,
+                min = 10)
+        int partnerScanIntervalSeconds,
 
         @IntegerConfig(type = ConfigurationType.BEHAVIOR,
                 identifier = "initiate_behavior_cooldown_seconds_min",
-                description = "Minimum initiator behavior cooldown in seconds.",
+                description = "Minimum seconds a villager waits after a trade it initiated before initiating another.",
                 defaultValue = 5,
                 min = 1)
         int initiateBehaviorCooldownSecondsMin,
 
         @IntegerConfig(type = ConfigurationType.BEHAVIOR,
                 identifier = "initiate_behavior_cooldown_seconds_max",
-                description = "Maximum initiator behavior cooldown in seconds.",
+                description = "Maximum seconds a villager waits after a trade it initiated before initiating another.",
                 defaultValue = 15,
                 min = 1)
         int initiateBehaviorCooldownSecondsMax,
@@ -114,12 +114,12 @@ public record TradingConfig(
     // BehaviorTimingConfig — maps to the initiator role, which is the primary actor
     @Override
     public int preconditionCheckCooldownMin() {
-        return this.initiatePreconditionCooldownSeconds;
+        return this.partnerScanIntervalSeconds;
     }
 
     @Override
     public int preconditionCheckCooldownMax() {
-        return this.initiatePreconditionCooldownSeconds;
+        return this.partnerScanIntervalSeconds;
     }
 
     @Override

@@ -22,9 +22,9 @@ import javax.annotation.Nonnull;
  * CAULDRON again, not WATER_CAULDRON), making {@link #stillValid} return false.
  * - A player replaced the block with something else, preventing a clobber of their work.
  */
-public record RestoreBlockObligation(@Nonnull BlockPos pos,
-                                     @Nonnull ResourceLocation restoreBlockId,
-                                     @Nonnull ResourceLocation ownedBlockId) implements TeardownObligation {
+public record RestoreBlockObligation(BlockPos pos,
+                                     ResourceLocation restoreBlockId,
+                                     ResourceLocation ownedBlockId) implements TeardownObligation {
 
     @Override
     public BlockPos targetPos() {

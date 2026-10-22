@@ -9,9 +9,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nonnull;
 
-public record ClientBoundUiUnavailablePacket(@Nonnull UiChannel channel,
+public record ClientBoundUiUnavailablePacket(UiChannel channel,
                                              long sessionId,
-                                             @Nonnull String reasonKey) implements ClientBoundPacket {
+                                             String reasonKey) implements ClientBoundPacket {
 
     private static final int MAX_REASON_KEY_LENGTH = 256;
 
@@ -29,7 +29,6 @@ public record ClientBoundUiUnavailablePacket(@Nonnull UiChannel channel,
         buffer.writeUtf(this.reasonKey, MAX_REASON_KEY_LENGTH);
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

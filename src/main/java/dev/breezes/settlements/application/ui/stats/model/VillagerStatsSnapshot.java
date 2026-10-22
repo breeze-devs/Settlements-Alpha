@@ -6,7 +6,6 @@ import dev.breezes.settlements.domain.personality.OriginType;
 import lombok.Builder;
 import net.minecraft.core.BlockPos;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -15,20 +14,20 @@ public record VillagerStatsSnapshot(
         long gameTime,
         int villagerEntityId,
         @Nullable String villagerName,
-        @Nonnull String professionKey,
+        String professionKey,
         int expertiseLevel,
         float currentHealth,
         float maxHealth,
-        @Nonnull double[] geneValues,
+        double[] geneValues,
         @Nullable BlockPos homePos,
         @Nullable BlockPos workstationPos,
         @Nullable String activeBehaviorNameKey,
         @Nullable String activeBehaviorIconId,
-        @Nonnull SchedulePhase schedulePhase,
+        SchedulePhase schedulePhase,
         int reputation,
         float hunger,
         int walletBalance,
-        @Nonnull List<String> adjectives,
+        List<String> adjectives,
         @Nullable String characterSketch,
         @Nullable OriginType origin
 ) {

@@ -24,7 +24,7 @@ public final class NearestKSelector {
      * @param truncated {@code true} when the number of in-box hits exceeded K; a truncated
      *                  result is not authoritative for absence — it only knows the K nearest
      */
-    public record SelectionResult(@Nonnull LongList sites, boolean truncated) {
+    public record SelectionResult(LongList sites, boolean truncated) {
     }
 
     /**

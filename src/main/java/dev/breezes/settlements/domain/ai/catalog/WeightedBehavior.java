@@ -1,11 +1,9 @@
 package dev.breezes.settlements.domain.ai.catalog;
 
-import javax.annotation.Nonnull;
-
 /**
  * A behavior descriptor paired with the profession-pool weight that should shape routine planning.
  */
-public record WeightedBehavior(@Nonnull BehaviorPlanningMetadata descriptor, int weight) {
+public record WeightedBehavior(BehaviorPlanningMetadata descriptor, int weight) {
 
     public WeightedBehavior {
         if (weight < 0) {

@@ -30,13 +30,13 @@ public final class TradeExecutor {
         log.debug("Executing trade session {}: buyer={}, seller={}, item={}, bundleSize={}, price={}",
                 session.getSessionId(), buyer.getUUID(), seller.getUUID(), session.getMatchedItem(),
                 session.getBundleSize(), session.getBuyerOffer());
-        this.villagerWallet.transfer(buyer, seller, session.getBuyerOffer());
 
         int removed = sellerInventory.consume(session.getMatchedItem(), session.getBundleSize());
         if (removed != session.getBundleSize()) {
             throw new IllegalStateException("Validated seller inventory drifted before trade commit");
         }
 
+        this.villagerWallet.transfer(buyer, seller, session.getBuyerOffer());
         buyerInventory.add(new ItemStack(session.getMatchedItem(), session.getBundleSize()));
     }
 

@@ -2,6 +2,7 @@ package dev.breezes.settlements.infrastructure.minecraft.worldgen.pieces;
 
 import dev.breezes.settlements.bootstrap.registry.structures.StructureRegistry;
 import dev.breezes.settlements.domain.generation.model.layout.RoadType;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
@@ -35,11 +36,15 @@ public class SettlementRoadPiece extends StructurePiece {
     private static final String WEALTH_LEVEL_TAG = "WealthLevel";
     private static final String SETTLEMENT_ID_TAG = "SettlementId";
 
+    @Getter
     private final BlockPos start;
+    @Getter
     private final BlockPos end;
+    @Getter
     private final RoadType roadType;
     private final float wealthLevel;
     @Nullable
+    @Getter
     private final UUID settlementId;
 
     public SettlementRoadPiece(@Nonnull BlockPos start,
@@ -83,26 +88,6 @@ public class SettlementRoadPiece extends StructurePiece {
         if (this.settlementId != null) {
             tag.putUUID(SETTLEMENT_ID_TAG, this.settlementId);
         }
-    }
-
-    @Nullable
-    public UUID getSettlementId() {
-        return this.settlementId;
-    }
-
-    @Nonnull
-    public BlockPos getStart() {
-        return this.start;
-    }
-
-    @Nonnull
-    public BlockPos getEnd() {
-        return this.end;
-    }
-
-    @Nonnull
-    public RoadType getRoadType() {
-        return this.roadType;
     }
 
     @Override

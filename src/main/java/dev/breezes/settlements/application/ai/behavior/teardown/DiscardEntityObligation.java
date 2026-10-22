@@ -16,8 +16,8 @@ import java.util.UUID;
  * {@code spawnPos} is the block position where the entity was spawned, used by
  * reconciliation to distinguish "entity gone" from "chunk not loaded yet".
  */
-public record DiscardEntityObligation(@Nonnull UUID entityId,
-                                      @Nonnull BlockPos spawnPos) implements TeardownObligation {
+public record DiscardEntityObligation(UUID entityId,
+                                      BlockPos spawnPos) implements TeardownObligation {
 
     @Override
     public BlockPos targetPos() {

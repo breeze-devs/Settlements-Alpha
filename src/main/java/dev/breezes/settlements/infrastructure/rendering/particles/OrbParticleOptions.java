@@ -10,8 +10,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
-import javax.annotation.Nonnull;
-
 /**
  * Particle options for the "orb" particle type, carrying a packed RGB color and a motion mode.
  * <p>
@@ -107,7 +105,6 @@ public record OrbParticleOptions(int packedRgb, MotionMode motionMode) implement
             );
 
     @Override
-    @Nonnull
     public ParticleType<OrbParticleOptions> getType() {
         // Resolved via the registry at runtime — the registry holds the canonical ParticleType instance.
         return ParticleTypeRegistry.ORB.get();

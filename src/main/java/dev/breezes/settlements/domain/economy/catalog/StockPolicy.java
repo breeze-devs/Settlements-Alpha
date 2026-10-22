@@ -7,8 +7,8 @@ import javax.annotation.Nullable;
 
 @Builder
 public record StockPolicy(
-        @Nonnull String id,
-        @Nonnull ItemMatch match,
+        String id,
+        ItemMatch match,
         @Nullable RestockFacet restock,
         @Nullable OfferFacet offer,
         @Nullable DumpFacet dump
@@ -35,7 +35,6 @@ public record StockPolicy(
         }
     }
 
-    @Nonnull
     public DemandEntry toDemandEntry() {
         if (this.restock == null) {
             throw new IllegalStateException("StockPolicy has no restock facet");
@@ -50,7 +49,6 @@ public record StockPolicy(
                 .build();
     }
 
-    @Nonnull
     public OfferEntry toOfferEntry() {
         if (this.offer == null) {
             throw new IllegalStateException("StockPolicy has no offer facet");
@@ -66,7 +64,6 @@ public record StockPolicy(
                 .build();
     }
 
-    @Nonnull
     public SupplyEntry toSupplyEntry() {
         if (this.dump == null) {
             throw new IllegalStateException("StockPolicy has no dump facet");

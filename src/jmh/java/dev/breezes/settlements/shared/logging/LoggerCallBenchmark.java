@@ -89,12 +89,12 @@ public class LoggerCallBenchmark {
 
     // Instance fields rather than constants, so the JIT cannot fold the arguments: mod code logs
     // values read at runtime, and boxing and the varargs array are part of what a call costs.
-    private UUID villagerId = UUID.fromString("3f2b9c4e-8a1d-4e6f-9b2a-5c7d8e9f0a1b");
-    private UUID playerId = UUID.fromString("0c6e1d52-7f3a-4b8e-a91d-2e4f6a8b0c13");
-    private int scheduleStage = 3;
-    private long sessionId = 12L;
-    private String channel = "villager_trade";
-    private int villagerEntityId = 48_213;
+    private final UUID villagerId = UUID.fromString("3f2b9c4e-8a1d-4e6f-9b2a-5c7d8e9f0a1b");
+    private final UUID playerId = UUID.fromString("0c6e1d52-7f3a-4b8e-a91d-2e4f6a8b0c13");
+    private final int scheduleStage = 3;
+    private final long sessionId = 12L;
+    private final String channel = "villager_trade";
+    private final int villagerEntityId = 48_213;
 
     /**
      * Fails the trial unless the host configuration is active and was built completely. Log4j

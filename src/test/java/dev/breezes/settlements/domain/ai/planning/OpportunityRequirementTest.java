@@ -140,7 +140,7 @@ class OpportunityRequirementTest {
     void inventoryItem_constructor_rejectsEmptyItemSet() {
         // Arrange + Act + Assert
         assertThrows(IllegalArgumentException.class,
-                () -> new OpportunityRequirement.InventoryItemOpportunity(Set.<Item>of()));
+                () -> new OpportunityRequirement.InventoryItemOpportunity(Set.of()));
     }
 
 }

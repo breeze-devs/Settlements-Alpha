@@ -277,6 +277,33 @@ class PlanRunnerTimingTest {
         assertFalse(active);
     }
 
+    @Test
+    void interruptActiveSlot_releasesTheAdoptionGateOfAPlanStoppedMidSlot() {
+        // Arrange
+        PlanSlot runningSlot = slot(1_000, 600, PlanSlotStatus.ACTIVE);
+        DayPlan plan = plan(runningSlot);
+
+        // Act
+        PlanRunner.interruptActiveSlot(plan);
+
+        // Assert
+        assertEquals(PlanSlotStatus.INTERRUPTED, runningSlot.getStatus());
+        assertFalse(PlanRunner.hasActiveCurrentSlot(plan));
+    }
+
+    @Test
+    void interruptActiveSlot_leavesAQueuedSlotQueued() {
+        // Arrange
+        PlanSlot queuedSlot = slot(1_000, 600, PlanSlotStatus.PENDING);
+        DayPlan plan = plan(queuedSlot);
+
+        // Act
+        PlanRunner.interruptActiveSlot(plan);
+
+        // Assert
+        assertEquals(PlanSlotStatus.PENDING, queuedSlot.getStatus());
+    }
+
     private static DayPlan plan(PlanSlot... slots) {
         DayPlan.DayPlanBuilder builder = DayPlan.builder()
                 .dayType(PlanDayType.WORK_DAY)

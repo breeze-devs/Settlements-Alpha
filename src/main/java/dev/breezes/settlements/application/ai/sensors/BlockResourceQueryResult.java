@@ -2,8 +2,6 @@ package dev.breezes.settlements.application.ai.sensors;
 
 import it.unimi.dsi.fastutil.longs.LongList;
 
-import javax.annotation.Nonnull;
-
 /**
  * Query result from a WorldResourceIndex sweep for a single resource.
  * <p>
@@ -18,5 +16,5 @@ import javax.annotation.Nonnull;
  * nearest were retained. A truncated result is NOT authoritative for absence beyond those K sites,
  * so confirmed-absence regions must not be emitted even when the scan was otherwise complete.
  */
-public record BlockResourceQueryResult(@Nonnull LongList packedSites, boolean complete, boolean truncated) {
+public record BlockResourceQueryResult(LongList packedSites, boolean complete, boolean truncated) {
 }

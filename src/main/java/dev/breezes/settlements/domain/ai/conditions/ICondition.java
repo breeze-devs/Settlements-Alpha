@@ -16,7 +16,6 @@ public interface ICondition<T> extends Predicate<T> {
         return this.getClass().getSimpleName();
     }
 
-    @Nonnull
     static <T> ICondition<T> named(@Nonnull String description, @Nonnull Predicate<T> predicate) {
         return new ICondition<>() {
             @Override
@@ -25,7 +24,7 @@ public interface ICondition<T> extends Predicate<T> {
             }
 
             @Override
-            public @Nonnull String description() {
+            public String description() {
                 return description;
             }
         };

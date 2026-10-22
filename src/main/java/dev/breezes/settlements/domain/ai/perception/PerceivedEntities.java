@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public record PerceivedEntities(@Nonnull List<SensedEntity> entities) {
+public record PerceivedEntities(List<SensedEntity> entities) {
 
     private static final PerceivedEntities EMPTY = new PerceivedEntities(List.of());
 

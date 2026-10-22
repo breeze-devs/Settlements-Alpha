@@ -11,7 +11,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import javax.annotation.Nonnull;
 
 public record ClientBoundDayPlanSnapshotPacket(long sessionId,
-                                               @Nonnull DayPlanSnapshot snapshot) implements ClientBoundPacket {
+                                               DayPlanSnapshot snapshot) implements ClientBoundPacket {
 
     public static final Type<ClientBoundDayPlanSnapshotPacket> ID = new Type<>(ResourceLocationUtil.mod("packet_day_plan_snapshot_clientbound"));
     public static final StreamCodec<FriendlyByteBuf, ClientBoundDayPlanSnapshotPacket> CODEC =
@@ -26,7 +26,6 @@ public record ClientBoundDayPlanSnapshotPacket(long sessionId,
         DayPlanSnapshotCodec.write(buffer, this.snapshot);
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

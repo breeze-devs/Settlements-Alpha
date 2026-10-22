@@ -9,7 +9,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nonnull;
 
-public record ClientBoundOpenUiPacket(@Nonnull UiChannel channel, long sessionId, int villagerEntityId) implements ClientBoundPacket {
+public record ClientBoundOpenUiPacket(UiChannel channel, long sessionId,
+                                      int villagerEntityId) implements ClientBoundPacket {
 
     public static final Type<ClientBoundOpenUiPacket> ID = new Type<>(ResourceLocationUtil.mod("ui_sync_open_clientbound"));
     public static final StreamCodec<FriendlyByteBuf, ClientBoundOpenUiPacket> CODEC =
@@ -25,7 +26,6 @@ public record ClientBoundOpenUiPacket(@Nonnull UiChannel channel, long sessionId
         buffer.writeInt(this.villagerEntityId);
     }
 
-    @Nonnull
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return ID;

@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nonnull;
 
-public record LevelBlockStateView(@Nonnull Level level) implements BlockStateView {
+public record LevelBlockStateView(Level level) implements BlockStateView {
 
     @Override
     public BlockState getBlockState(@Nonnull BlockPos pos) {

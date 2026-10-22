@@ -3,16 +3,15 @@ package dev.breezes.settlements.application.economy.demand;
 import dev.breezes.settlements.domain.economy.catalog.ItemMatch;
 import lombok.Builder;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @Builder
 public record DemandSignal(
-        @Nonnull ItemMatch match,
+        ItemMatch match,
         int desiredCount,
         int priorityBoost,
         @Nullable Integer pricePerUnitOverride,
-        @Nonnull String source,
+        String source,
         long createdGameTime,
         long lastTouchedGameTime
 ) {

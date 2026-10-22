@@ -18,9 +18,7 @@ import javax.annotation.Nullable;
 @Getter
 public abstract class TransformedDisplay {
 
-    @Nonnull
     protected final TransformationMatrix transformationMatrix;
-    @Nonnull
     protected final DisplayType displayType;
 
     @Nullable

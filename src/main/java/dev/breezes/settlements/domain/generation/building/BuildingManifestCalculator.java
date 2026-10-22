@@ -6,6 +6,7 @@ import dev.breezes.settlements.domain.generation.model.profile.ScaleTier;
 import dev.breezes.settlements.domain.generation.model.profile.SettlementProfile;
 import dev.breezes.settlements.domain.generation.model.profile.TraitId;
 import dev.breezes.settlements.domain.generation.model.profile.TraitSlot;
+import lombok.CustomLog;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+@CustomLog(topic = "worldgen")
 public class BuildingManifestCalculator {
 
     private static final String TOWN_HALL_ID = "settlements:building_definitions/town_hall";
@@ -21,6 +23,11 @@ public class BuildingManifestCalculator {
     private static final String WELL_ID = "settlements:building_definitions/well";
     private static final String MARKET_STALL_ID = "settlements:building_definitions/market_stall";
     private static final String HOUSE_ID = "settlements:building_definitions/house";
+
+    // Every id passed to requiredDefinition, checked before drawing, because a definition a datapack removed
+    // must skip the settlement rather than throwing an error and crashing the server.
+    // TODO: Validate required definitions by settlement tier so a missing tavern does not reject hamlets.
+    private static final List<String> REQUIRED_IDS = List.of(TOWN_HALL_ID, TAVERN_ID, WELL_ID, MARKET_STALL_ID, HOUSE_ID);
 
     private static final Comparator<BuildingDefinition> MANIFEST_ORDER =
             Comparator.<BuildingDefinition>comparingInt(definition -> definition.requiresResources().isEmpty() ? 1 : 0)
@@ -32,7 +39,21 @@ public class BuildingManifestCalculator {
         this.registry = registry;
     }
 
-    public BuildingManifest calculate(@Nonnull SettlementProfile profile, @Nonnull Random random) {
+    /**
+     * Randomly selects the buildings for settlement with the given profile.
+     *
+     * @return the manifest, or empty when the building registry lacks a required definition
+     */
+    public Optional<BuildingManifest> calculate(@Nonnull SettlementProfile profile, @Nonnull Random random) {
+        List<String> missing = REQUIRED_IDS.stream()
+                .filter(id -> this.registry.byId(id).isEmpty())
+                .toList();
+        if (!missing.isEmpty()) {
+            log.error("Required building definitions {} are missing, so no settlement can generate; a datapack may have "
+                    + "removed or broken them", missing);
+            return Optional.empty();
+        }
+
         List<BuildingDefinition> manifest = new ArrayList<>();
 
         this.addUniversalBuildings(profile.scaleTier(), manifest, random);
@@ -42,7 +63,7 @@ public class BuildingManifestCalculator {
         List<BuildingDefinition> sorted = manifest.stream()
                 .sorted(MANIFEST_ORDER)
                 .toList();
-        return new BuildingManifest(sorted);
+        return Optional.of(new BuildingManifest(sorted));
     }
 
     private void addUniversalBuildings(@Nonnull ScaleTier scaleTier,
@@ -68,10 +89,6 @@ public class BuildingManifestCalculator {
                                    @Nonnull Random random) {
         for (TraitId trait : profile.allTraits()) {
             TraitSlot slot = profile.getTraitSlot(trait);
-            if (slot == null) {
-                continue;
-            }
-
             int drawCount = switch (slot) {
                 case PRIMARY -> random.nextInt(2, 4 + 1);
                 case SECONDARY -> random.nextInt(1, 2 + 1);
